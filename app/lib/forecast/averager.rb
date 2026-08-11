@@ -14,8 +14,11 @@ class Forecast::Averager
   # in forecasts.effective_poll_weight. `skipped_count` is the polls inside
   # the window that did not measure this matchup (see #measure).
   Result = Struct.new(:mean_margin, :weight, :poll_count, :window_days, :skipped_count, keyword_init: true) do
+    # "Polled" means there is an average to blend, not merely that rows exist.
+    # Polls whose weights sum to zero leave the race on its prior — and this is
+    # what keeps the blend from ever multiplying by a nil mean.
     def polled?
-      poll_count.positive?
+      !mean_margin.nil?
     end
   end
 
@@ -93,8 +96,13 @@ class Forecast::Averager
   # pivot sample size and no age weighs exactly 1.
   def weight_for(poll)
     recency = Math.exp(-Math.log(2) * age_days(poll) / @half_life_days)
-    sample_size = poll.sample_size || @default_sample_size
-    recency * Math.sqrt([ sample_size, @sample_size_cap ].min / @sample_size_pivot)
+    # A recorded sample size of zero is an unknown sample size, not a poll of
+    # nobody. The scraper already normalises those to nil; manual and CSV entry
+    # can still get there, and a zero would otherwise weigh the poll out of
+    # existence rather than fall back to the default.
+    size = poll.sample_size
+    size = @default_sample_size unless size&.positive?
+    recency * Math.sqrt([ size, @sample_size_cap ].min / @sample_size_pivot)
   end
 
   def age_days(poll)

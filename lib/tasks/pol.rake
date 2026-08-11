@@ -53,6 +53,15 @@ namespace :pol do
     puts
     printf("  Model run %d — %s in %.1fs (seed %d)\n", run.id, run.status, elapsed, run.rng_seed)
     puts "  " + "-" * 62
+
+    # In production the runner logs a failure and returns rather than raising,
+    # so the task has to notice for itself instead of formatting nils.
+    unless run.succeeded?
+      puts "  #{run.error_message}"
+      puts
+      next
+    end
+
     printf("  %-30s %+30.2f\n", "Generic ballot (D−R)", runner.national_env)
     printf("  %-30s %30s\n", "  from", "#{runner.generic_ballot.poll_count} polls, W = " \
                                        "#{runner.generic_ballot.weight.round(2)}, " \

@@ -47,9 +47,10 @@ class Forecast::Runner
 
   private
     def forecast!
-      @generic_ballot = Forecast::Averager.new(as_of: as_of).for_generic_ballot
+      averager = Forecast::Averager.new(as_of: as_of)
+      @generic_ballot = averager.for_generic_ballot
       @national_env = national_environment(@generic_ballot)
-      @race_models = build_race_models
+      @race_models = build_race_models(averager)
       @simulation = Forecast::Simulator.new(
         entries: @race_models.map(&:to_entry),
         seed: model_run.rng_seed,
@@ -82,10 +83,13 @@ class Forecast::Runner
       fallback
     end
 
-    def build_race_models
+    # Races in id order: the simulator takes its draws in the order it is
+    # handed the entries, so a stable order is part of what makes a seed
+    # reproduce a run. Candidates and polls are loaded in two queries rather
+    # than 470 apiece.
+    def build_race_models(averager)
       races = Race.where(office: MODELLED_OFFICES).includes(:candidates).order(:id).to_a
       polls = Poll.where(race_id: races.map(&:id)).includes(:poll_results).group_by(&:race_id)
-      averager = Forecast::Averager.new(as_of: as_of)
 
       races.map do |race|
         Forecast::RaceModel.new(

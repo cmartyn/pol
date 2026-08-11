@@ -19,6 +19,7 @@ class Forecast::RaceModel
   end
 
   MAJOR_PARTIES = %w[dem rep].freeze
+  CHAMBERS = { "senate" => :senate, "house" => :house }.freeze
 
   def initialize(race:, national_env:, averager:, polls: nil)
     @race = race
@@ -129,7 +130,10 @@ class Forecast::RaceModel
   def to_entry
     Forecast::Simulator::Entry.new(
       race_id: race.id,
-      chamber: race.house? ? :house : :senate,
+      # A governor race has no chamber to be counted into, and quietly filing
+      # one under "senate" would corrupt a control probability. The runner
+      # never hands one over; if that changes, this says so.
+      chamber: CHAMBERS.fetch(race.office),
       mu: mu,
       sigma: sigma,
       weight: average.weight,

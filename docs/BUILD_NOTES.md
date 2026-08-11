@@ -457,9 +457,9 @@ Democrat minus Republican.
 
 ## A. Error-model constants
 
-Phase 0 wrote four sigmas into `config/model_params.yml` marked
-`VERIFY-PHASE-3`. Each is now cited in that file. The reasoning, and the one
-value that moved, are here.
+Phase 0 wrote four sigmas and a time multiplier into `config/model_params.yml`
+marked `VERIFY-PHASE-3`. Each is now cited in that file. The reasoning, and the
+one value that moved, are here.
 
 A note on units, because it decides everything: these are standard deviations
 of the **election-day-equivalent error on the margin**. Published research
@@ -545,6 +545,23 @@ noise, which is exactly what does wash out. The fix is a regional or state-level
 shared term, which is a change to the model's structure rather than to a
 number, and is left for a later phase. Recorded here so the number is read with
 its limits known.
+
+**How much it matters, measured.** Standing `sigma_national` up to 538's full
+correlated total is not the right fix, but it does bound the size of the effect,
+because it is the same variance arriving through the only correlated channel
+this model has. Re-running the live board at three values, same seed, same
+inputs:
+
+| `sigma_national` | House D control | seat SD | seat range | Senate D control |
+|---|---|---|---|---|
+| **2.5** (ours) | **96.3%** | 13.6 | 186–303 | **31.1%** |
+| 3.5 | 90.2% | 19.0 | 167–333 | 35.1% |
+| 4.58 (538's correlated total) | 83.9% | 25.4 | 137–360 | 38.0% |
+
+So the honest reading of the live House number is **"around 85–95%, and nearer
+the bottom of that"**, not 96%. The Senate is less exposed but moves too, by
+about 7 points. Neither figure is wrong for the model as specified; both are
+narrower than the evidence supports.
 
 ### A5. Time inflation `t = min(1.75, 1 + days/180)` — kept
 
@@ -684,7 +701,14 @@ closes the run. A run can be reproduced exactly from its own row.
    back-dated or late run cannot shrink the error below its election-day value
    or invert it.
 
-10. **Race order is part of the seed.** Draws come off one Box–Muller stream, so
+10. **A recorded sample size of zero is an unknown sample size**, not a poll of
+    nobody, and falls back to the default 400. The scraper already normalises
+    zero to nil (Phase 2 §D5); manual and CSV entry can still produce one.
+    Relatedly, "polled" means *there is an average to blend*, not *rows exist*:
+    a race whose polls carry no weight sits on its prior, which is also what
+    stops the blend ever multiplying by a missing mean.
+
+11. **Race order is part of the seed.** Draws come off one Box–Muller stream, so
     the runner always orders races by id; the same seed with the races in a
     different order is a different (still valid, still reproducible) run.
 
@@ -747,7 +771,7 @@ races cannot average away as much as 435.
 
 ## F. Tests
 
-94 new tests (the suite goes 191 → 285), all off fixtures and hand arithmetic;
+98 new tests (the suite goes 191 → 289), all off fixtures and hand arithmetic;
 nothing touches the network. The load-bearing ones:
 
 - **Averager** — every weighted mean is a literal worked out from the published

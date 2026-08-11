@@ -138,6 +138,20 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     assert_in_delta 10.0, subject.mu, 1e-9
   end
 
+  # The blend must never be handed a nil mean to multiply. Polls that carry no
+  # weight leave the race on its prior, exactly as no polls would.
+  test "polls that carry no weight leave the race on its prior" do
+    race = senate_race(lean: 4.0, incumbent_party: :rep, open_seat: true)
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 400, sample_size: 600,
+                results: { dem: 90.0, rep: 5.0 })
+    subject = model(race, national_env: 2.0)
+
+    refute_predicate subject, :polled?
+    assert_equal 0.0, subject.blend_weight
+    assert_in_delta 6.0, subject.mu, 1e-9
+    assert_equal :sigma_state_unpolled, subject.sigma_key
+  end
+
   test "a house district blends its own polls the same way" do
     race = house_race(baseline_margin: 2.7)
     create_poll(pollster: @beacon, race: race, field_end: AS_OF, sample_size: 1350,
@@ -300,6 +314,12 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
 
   test "a house race reports the house chamber" do
     assert_equal :house, model(house_race(baseline_margin: 0.0), national_env: 0.0).to_entry.chamber
+  end
+
+  test "a race belonging to no chamber refuses to be simulated into one" do
+    governor = Race.create!(office: :governor, state: "OH", cycle: 2026, slug: "governor-oh-2026", lean: 0.0)
+
+    assert_raises(KeyError) { model(governor, national_env: 0.0).to_entry }
   end
 
   private

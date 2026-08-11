@@ -16,6 +16,22 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     @delta = pollsters(:delta_metrics)
   end
 
+  # A sample size of zero reaches the database only through manual or CSV
+  # entry — the scraper normalises it to nil — and it means "unknown", not "a
+  # poll of nobody". Weighed literally it would be zero, which at one poll
+  # would leave the average with a weight of zero and no mean at all.
+  test "a sample size of zero is read as unknown, like a missing one" do
+    zero = create_poll(pollster: @beacon, field_end: AS_OF - 7, sample_size: 0, results: { dem: 51.0, rep: 46.0 })
+    missing = create_poll(pollster: @cardinal, field_end: AS_OF - 7, sample_size: nil, results: { dem: 51.0, rep: 46.0 })
+
+    assert_in_delta @averager.weight_for(missing), @averager.weight_for(zero), 1e-12
+    assert_in_delta 0.5773503, @averager.weight_for(zero), 1e-7
+
+    result = @averager.call(polls: [ zero ])
+    assert_predicate result, :polled?
+    assert_in_delta 5.0, result.mean_margin, 1e-9
+  end
+
   # w(age 0, n 600)  = 1 × sqrt(600/600)  = 1.0
   # w(age 14, n 2400) = 0.5 × sqrt(1500/600) = 0.5 × 1.5811388 = 0.7905694
   # mean = (6.0 × 1.0 + −3.0 × 0.7905694) / 1.7905694 = 2.0263340
