@@ -1,0 +1,47 @@
+<% content_for :title, "Scrape runs · Admin · Pol" %>
+
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <h1 class="font-serif text-2xl font-semibold text-slate-900">Scrape runs</h1>
+  <%= button_to "Run scrape now", admin_scrape_runs_path, method: :post,
+        class: "rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700",
+        form: { data: { testid: "admin-run-scrape-form" } } %>
+</div>
+
+<div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+  <table class="w-full min-w-[720px] text-left text-sm" data-testid="admin-scrape-runs-table">
+    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="py-2 pl-4 pr-3 font-medium">Source</th>
+        <th class="py-2 pr-3 font-medium">Status</th>
+        <th class="py-2 pr-3 font-medium">Fetched</th>
+        <th class="py-2 pr-3 font-medium">New</th>
+        <th class="py-2 pr-3 font-medium">Dup</th>
+        <th class="py-2 pr-3 font-medium">Started</th>
+        <th class="py-2 pr-4 font-medium">Finished</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @scrape_runs.each do |run| %>
+        <tr data-testid="admin-scrape-run-row">
+          <td class="py-2 pl-4 pr-3 text-slate-700"><%= run.source %></td>
+          <td class="py-2 pr-3">
+            <span class="font-medium <%= run.succeeded? ? "text-green-700" : (run.failed? ? "text-red-700" : "text-amber-700") %>" data-testid="admin-scrape-run-status">
+              <%= run.status %>
+            </span>
+            <% if run.error_message.present? %>
+              <p class="text-xs text-red-600"><%= run.error_message %></p>
+            <% end %>
+          </td>
+          <td class="py-2 pr-3 text-slate-600"><%= run.fetched_count %></td>
+          <td class="py-2 pr-3 text-slate-600"><%= run.new_count %></td>
+          <td class="py-2 pr-3 text-slate-600"><%= run.duplicate_count %></td>
+          <td class="py-2 pr-3 whitespace-nowrap text-slate-500"><%= run.started_at.strftime("%b %-d, %-I:%M %p") %></td>
+          <td class="py-2 pr-4 whitespace-nowrap text-slate-500"><%= run.finished_at.strftime("%b %-d, %-I:%M %p") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @scrape_runs.empty? %>
+    <p class="p-4 text-sm text-slate-500" data-testid="admin-scrape-runs-empty">No scrape runs yet.</p>
+  <% end %>
+</div>

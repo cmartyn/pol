@@ -1,0 +1,42 @@
+<% content_for :title, "Model runs · Admin · Pol" %>
+
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <h1 class="font-serif text-2xl font-semibold text-slate-900">Model runs</h1>
+  <%= button_to "Run model now", admin_model_runs_path, method: :post,
+        class: "rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700",
+        form: { data: { testid: "admin-run-model-form" } } %>
+</div>
+
+<div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+  <table class="w-full min-w-[640px] text-left text-sm" data-testid="admin-model-runs-table">
+    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="py-2 pl-4 pr-3 font-medium">Started</th>
+        <th class="py-2 pr-3 font-medium">Status</th>
+        <th class="py-2 pr-3 font-medium">Trigger</th>
+        <th class="py-2 pr-3 font-medium">Finished</th>
+        <th class="py-2 pr-4 font-medium">Seed</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @model_runs.each do |run| %>
+        <tr data-testid="admin-model-run-row">
+          <td class="py-2 pl-4 pr-3 whitespace-nowrap">
+            <%= link_to run.started_at&.strftime("%b %-d, %Y %-I:%M %p") || "—", admin_model_run_path(run), class: "font-medium text-amber-700 hover:text-amber-800" %>
+          </td>
+          <td class="py-2 pr-3">
+            <span class="font-medium <%= run.succeeded? ? "text-green-700" : (run.failed? ? "text-red-700" : "text-amber-700") %>" data-testid="admin-model-run-status">
+              <%= run.status %>
+            </span>
+          </td>
+          <td class="py-2 pr-3 text-slate-600"><%= run.trigger %></td>
+          <td class="py-2 pr-3 whitespace-nowrap text-slate-500"><%= run.finished_at&.strftime("%b %-d, %-I:%M %p") || "—" %></td>
+          <td class="py-2 pr-4 font-mono text-xs text-slate-500"><%= run.rng_seed %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @model_runs.empty? %>
+    <p class="p-4 text-sm text-slate-500" data-testid="admin-model-runs-empty">No model runs yet.</p>
+  <% end %>
+</div>
