@@ -73,6 +73,20 @@ class PollTest < ActiveSupport::TestCase
     assert_includes poll.errors[:dedup_digest], "can't be blank"
   end
 
+  test "unique index prevents two polls with the same dedup_digest" do
+    duplicate = Poll.new(
+      pollster: pollsters(:beacon_polling), source_url: "https://example.com/dup",
+      field_end: Date.new(2026, 7, 1), entry_mode: :scraped,
+      dedup_digest: polls(:maine_poll_one).dedup_digest
+    )
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      ActiveRecord::Base.transaction(requires_new: true) do
+        duplicate.save(validate: false)
+      end
+    end
+  end
+
   test "compute_digest is deterministic for the same inputs" do
     args = {
       pollster_slug: "beacon-polling", race_id: 1,
