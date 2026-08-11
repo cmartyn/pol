@@ -7,8 +7,13 @@ class Ingest::SeedRacesTest < ActiveSupport::TestCase
     stub_wikipedia_page(Ingest::Sources::PRESIDENTIAL_TITLES.fetch(2020), fixture: "presidential_2020.html")
   end
 
+  # The trimmed fixture legitimately carries six states rather than fifty, so
+  # these runs tell the seeder what to expect. The real 435 floor is exercised
+  # by the guard tests at the bottom.
+  FIXTURE_DISTRICTS = 33
+
   def seed
-    Ingest::SeedRaces.new.call
+    Ingest::SeedRaces.new(expected_districts: FIXTURE_DISTRICTS).call
   end
 
   test "seeds every Senate race on the verified list, specials included" do
@@ -65,7 +70,7 @@ class Ingest::SeedRacesTest < ActiveSupport::TestCase
     summary = seed
     district = Race.find_by!(slug: "house-2026-al-01")
 
-    assert_equal 24, summary.house, "the fixture carries four states' worth of districts"
+    assert_equal FIXTURE_DISTRICTS, summary.house, "the fixture carries six states' worth of districts"
     assert_equal "house", district.office
     assert_equal 1, district.district
     assert_in_delta(-57.0, district.baseline_margin)
@@ -84,15 +89,17 @@ class Ingest::SeedRacesTest < ActiveSupport::TestCase
     assert_in_delta imputed, Race.find_by!(slug: "house-2026-wa-09").baseline_margin
   end
 
-  # The fixture deliberately holds the four most awkward states, so its
-  # imputation rate (6 of 24) is far above the real page's. The rate across all
-  # 435 districts is recorded in docs/BUILD_NOTES.md from the live run; what
-  # this pins down is *which* districts get imputed and that nothing else does.
+  # The fixture deliberately holds the most awkward states, so its imputation
+  # rate is far above the real page's. The rate across all 435 districts is
+  # recorded in docs/BUILD_NOTES.md from the live run; what this pins down is
+  # *which* districts get imputed and that nothing else does.
   test "only the districts a major party skipped are imputed" do
     summary = seed
 
     assert_equal %w[AL-3 AL-4 AL-5 LA-4 WA-4 WA-9], summary.imputed_districts.sort
     assert_equal summary.imputed, Race.house.where(baseline_imputed: true).count
+    assert_equal 0, Race.house.where(baseline_imputed: true, state: "MN").count,
+                 "a DFL label is not a missing Democrat"
   end
 
   test "re-running changes nothing and duplicates nothing" do
@@ -118,5 +125,28 @@ class Ingest::SeedRacesTest < ActiveSupport::TestCase
     assert_not Candidate.exists?(dropped.id)
     assert Candidate.exists?(cited.id)
     assert_match(/Cited Hopeful/, summary.warnings.first)
+  end
+
+  # A House that comes back short means the page changed shape under us. The
+  # forecast would still run, just silently wrong, so the seed task has to fail
+  # instead — and fail before writing anything, not halfway through.
+  test "a short House parse stops the seed rather than filling in part of the board" do
+    before = Race.house.count
+
+    error = assert_raises(Ingest::SeedRaces::IncompleteSource) { Ingest::SeedRaces.new.call }
+
+    assert_equal before, Race.house.count, "not one district should have been written"
+    assert_match(/parsed 33 districts, expected 435/, error.message)
+    assert_match(/"MN"=>8/, error.message.gsub(" => ", "=>"), "the message should say what it did find")
+  end
+
+  test "the floor defaults to a full House" do
+    assert_equal 435, Ingest::SeedRaces::HOUSE_DISTRICTS
+  end
+
+  test "the floor can be waived outright" do
+    summary = Ingest::SeedRaces.new(expected_districts: nil).call
+
+    assert_equal FIXTURE_DISTRICTS, summary.house
   end
 end

@@ -59,7 +59,12 @@ namespace :pol do
       # districts; both are capped so the fixtures stay a sane size. Everything
       # the parsers have to cope with survives the cut.
       { file: "generic_ballot.html",      title: Ingest::Sources.generic_ballot_title,                     sections: /\Apolling\z/i, max_rows: 45 },
-      { file: "house_results_2024.html",  title: Ingest::Sources::HOUSE_RESULTS_TITLE,                     sections: /\A(Alabama|Alaska|Louisiana|Washington)\z/ },
+      # Minnesota and North Dakota are in the list because they are the only
+      # two states whose Democrats are not labelled "Democratic" on the page
+      # (DFL and Democratic-NPL). Without them the fixture cannot catch a
+      # party-label regression, which is exactly how eight Minnesota districts
+      # once ended up with fabricated baselines.
+      { file: "house_results_2024.html",  title: Ingest::Sources::HOUSE_RESULTS_TITLE,                     sections: /\A(Alabama|Alaska|Louisiana|Minnesota|North Dakota|Washington)\z/ },
       { file: "presidential_2024.html",   title: Ingest::Sources::PRESIDENTIAL_TITLES.fetch(2024),         sections: /results by state/i },
       { file: "presidential_2020.html",   title: Ingest::Sources::PRESIDENTIAL_TITLES.fetch(2020),         sections: /results by state/i }
     ]

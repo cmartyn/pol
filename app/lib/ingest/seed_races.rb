@@ -6,13 +6,23 @@ module Ingest
   # Idempotent: every race is upserted by slug, so re-running after a primary
   # resolves updates in place rather than duplicating.
   class SeedRaces
+    # Raised rather than seeding a partial House. Wikipedia can restructure a
+    # page at any time, and a parser that quietly returns 300 districts would
+    # leave the forecast silently wrong instead of visibly broken.
+    IncompleteSource = Class.new(StandardError)
+
     SENATE_DATA = Rails.root.join("db/seed_data/senate_2026.yml")
+    HOUSE_DISTRICTS = 435
 
     Summary = Struct.new(:senate, :specials, :house, :imputed, :imputed_districts, :leans, :warnings, keyword_init: true)
 
-    def initialize(client: WikipediaClient.new, logger: Rails.logger)
+    # expected_districts is the floor the House parse has to clear. Tests that
+    # run against the trimmed fixture pass the subset they expect; nil skips
+    # the check entirely.
+    def initialize(client: WikipediaClient.new, logger: Rails.logger, expected_districts: HOUSE_DISTRICTS)
       @client = client
       @logger = logger
+      @expected_districts = expected_districts
       @warnings = []
     end
 
@@ -114,6 +124,8 @@ module Ingest
       def seed_house
         title = Sources::HOUSE_RESULTS_TITLE
         districts = HouseResultsParser.new(html: @client.page_html(title), page_url: WikipediaClient.article_url(title)).call
+        check_district_count!(districts, title)
+
         default = Pol::Params.fetch!(:fundamentals, :imputed_baseline_margin).to_f
         imputed = []
 
@@ -135,6 +147,19 @@ module Ingest
         end
 
         [ districts.size, imputed ]
+      end
+
+      # Raised before a single House row is written, so a page we can no longer
+      # read fully fails the task rather than half-filling the board. Senate
+      # seeding has already run at this point, but it is idempotent — fix the
+      # parser and re-run.
+      def check_district_count!(districts, title)
+        return if @expected_districts.nil? || districts.size == @expected_districts
+
+        found = districts.keys.group_by { |key| key.split("-").first }.transform_values(&:size)
+        raise IncompleteSource,
+              "#{title} parsed #{districts.size} districts, expected #{@expected_districts}. " \
+              "Refusing to seed a partial House. Districts found per state: #{found.sort.to_h.inspect}"
       end
 
       # Districts where a major party did not appear on the 2024 ballot (safe

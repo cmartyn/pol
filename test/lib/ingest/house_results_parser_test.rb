@@ -1,11 +1,12 @@
 require "test_helper"
 
 class Ingest::HouseResultsParserTest < ActiveSupport::TestCase
-  # The fixture keeps four states off the real 2024 results page, chosen for
+  # The fixture keeps six states off the real 2024 results page, chosen for
   # what they break: Alabama (a rowspan district and safe-seat blowouts),
   # Alaska (ranked choice), Louisiana (a jungle primary with several
-  # Republicans on one line) and Washington (top-two, including a race with no
-  # Republican at all).
+  # Republicans on one line), Washington (top-two, including a race with no
+  # Republican at all), and Minnesota + North Dakota, the only two states whose
+  # Democrats are not labelled "Democratic" on the page.
   SOURCE = "https://en.wikipedia.org/wiki/2024_United_States_House_of_Representatives_elections".freeze
 
   setup do
@@ -13,9 +14,31 @@ class Ingest::HouseResultsParserTest < ActiveSupport::TestCase
   end
 
   test "reads every district in the fixture's states, and no delegates or specials" do
-    assert_equal 24, @districts.size
-    assert_equal({ "AL" => 7, "AK" => 1, "LA" => 6, "WA" => 10 }, @districts.values.group_by(&:state).transform_values(&:size))
+    assert_equal 33, @districts.size
+    assert_equal({ "AL" => 7, "AK" => 1, "LA" => 6, "MN" => 8, "ND" => 1, "WA" => 10 },
+                 @districts.values.group_by(&:state).transform_values(&:size))
     assert_not @districts.key?("NY-3"), "the Special elections table must not become a district"
+  end
+
+  # Minnesota's Democrats run as the DFL, with no "Democrat" in the label at
+  # all. When the parser did not know that, all eight districts read as having
+  # no Democratic candidate, and the seeder replaced a +50 seat with an imputed
+  # −35 one. Every Minnesota district is genuinely two-way contested.
+  test "Minnesota's DFL counts as Democratic" do
+    assert_equal 50.4, @districts.fetch("MN-5").margin.round(1)
+    assert_equal 75.2, @districts.fetch("MN-5").dem_pct
+    assert @districts.fetch("MN-5").contested?
+
+    assert_equal 13.5, @districts.fetch("MN-2").margin.round(1)
+    assert_equal 17.0, @districts.fetch("MN-3").margin.round(1)
+    assert_equal 34.8, @districts.fetch("MN-4").margin.round(1)
+    assert(("MN-1".."MN-8").all? { |key| @districts.fetch(key).contested? },
+           "no Minnesota district should ever need an imputed baseline")
+  end
+
+  test "North Dakota's Democratic-NPL counts as Democratic too" do
+    assert_equal 30.5, @districts.fetch("ND-1").dem_pct
+    assert @districts.fetch("ND-1").contested?
   end
 
   test "a straightforward two-way race" do

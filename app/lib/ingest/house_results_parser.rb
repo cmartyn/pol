@@ -44,7 +44,14 @@ module Ingest
     CANDIDATES_HEADER = /candidate/i
     # "Kim Schrier (Democratic) 53.9%" — name, party in parens, percentage.
     CANDIDATE_RESULT = /\(([A-Za-z][A-Za-z .'’–-]*)\)\s*([\d.]+)\s*%/
-    DEM = /democrat/i
+    # Minnesota's Democrats appear on the ballot as the Democratic–Farmer–Labor
+    # party and are labelled "DFL", with no "Democrat" anywhere in the string.
+    # Miss that and all eight Minnesota districts read as having no Democratic
+    # candidate at all, which turns a +50 seat into an imputed −35 one. (North
+    # Dakota's "Democratic-NPL" is caught by the plain pattern already; those
+    # two are the only non-standard Democratic labels on the page, out of 28
+    # party labels in total — the rest are genuine third parties.)
+    DEM = /democrat|\bDFL\b/i
     REP = /republican/i
 
     def initialize(html:, page_url:)
