@@ -1,0 +1,36 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+maine_poll_one_dem:
+  poll: maine_poll_one
+  candidate: maine_dem
+  party: dem
+  pct: 47.5
+
+maine_poll_one_rep:
+  poll: maine_poll_one
+  candidate: maine_rep
+  party: rep
+  pct: 44.0
+
+maine_poll_two_dem:
+  poll: maine_poll_two
+  candidate: maine_dem
+  party: dem
+  pct: 46.0
+
+maine_poll_two_rep:
+  poll: maine_poll_two
+  candidate: maine_rep
+  party: rep
+  pct: 45.0
+
+# Generic-ballot results have no candidate — party is still always set.
+generic_ballot_dem:
+  poll: generic_ballot_poll
+  party: dem
+  pct: 46.5
+
+generic_ballot_rep:
+  poll: generic_ballot_poll
+  party: rep
+  pct: 44.5

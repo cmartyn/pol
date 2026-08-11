@@ -1,0 +1,44 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# A small coherent mini-world: two Senate races (one polled, one not) and
+# one House race with a 2024 baseline, used across every later phase.
+
+senate_maine:
+  office: senate
+  state: "ME"
+  cycle: 2026
+  seat_class: 2
+  special: false
+  slug: senate-me-2026
+  incumbent_name: Pat Rivers
+  incumbent_party: rep
+  open_seat: false
+  lean: 3.5
+  uncontested: false
+
+senate_florida_special:
+  office: senate
+  state: "FL"
+  cycle: 2026
+  special: true
+  slug: senate-fl-2026-special
+  incumbent_name: Alex Bowen
+  incumbent_party: rep
+  open_seat: false
+  lean: -12.0
+  uncontested: false
+
+house_ny_17:
+  office: house
+  state: "NY"
+  district: 17
+  cycle: 2026
+  special: false
+  slug: house-ny-17-2026
+  incumbent_name: Casey Nolan
+  incumbent_party: dem
+  open_seat: false
+  baseline_margin: 2.7
+  baseline_source_url: https://example.com/wikipedia-fixture/ny-17-2024
+  baseline_imputed: false
+  uncontested: false

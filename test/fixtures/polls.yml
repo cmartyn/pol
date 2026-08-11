@@ -1,0 +1,38 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# dedup_digest values are arbitrary distinct literals, not real
+# Poll.compute_digest output — fixtures only need uniqueness + presence.
+
+maine_poll_one:
+  pollster: beacon_polling
+  race: senate_maine
+  field_start: 2026-07-10
+  field_end: 2026-07-14
+  sample_size: 812
+  population: lv
+  source_url: https://example.com/polls/maine-1
+  dedup_digest: fixture-digest-maine-poll-one
+  entry_mode: scraped
+  raw_payload:
+    source_row: "Beacon Polling (7/10-7/14, LV 812): Ellis 47.5, Rivers 44.0"
+
+maine_poll_two:
+  pollster: cardinal_research
+  race: senate_maine
+  field_start: 2026-07-20
+  field_end: 2026-07-24
+  sample_size: 650
+  population: rv
+  source_url: https://example.com/polls/maine-2
+  dedup_digest: fixture-digest-maine-poll-two
+  entry_mode: scraped
+
+generic_ballot_poll:
+  pollster: delta_metrics
+  field_start: 2026-07-25
+  field_end: 2026-07-28
+  sample_size: 1200
+  population: lv
+  source_url: https://example.com/polls/generic-1
+  dedup_digest: fixture-digest-generic-ballot-one
+  entry_mode: scraped

@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+model_run_one:
+  started_at: 2026-08-01 06:00:00
+  finished_at: 2026-08-01 06:00:47
+  status: succeeded
+  params_snapshot:
+    n_sims: 10000
+    half_life_days: 14
+  rng_seed: 20260801
+  trigger: cron

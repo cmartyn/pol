@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+beacon_polling:
+  name: Beacon Polling
+  slug: beacon-polling
+
+cardinal_research:
+  name: Cardinal Research
+  slug: cardinal-research
+
+delta_metrics:
+  name: Delta Metrics
+  slug: delta-metrics

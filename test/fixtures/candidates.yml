@@ -1,0 +1,32 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+maine_dem:
+  race: senate_maine
+  name: Jordan Ellis
+  party: dem
+  incumbent: false
+
+maine_rep:
+  race: senate_maine
+  name: Pat Rivers
+  party: rep
+  incumbent: true
+
+maine_ind:
+  race: senate_maine
+  name: Sam Winter
+  party: ind
+  caucus_with: dem
+  incumbent: false
+
+ny17_dem:
+  race: house_ny_17
+  name: Casey Nolan
+  party: dem
+  incumbent: true
+
+ny17_rep:
+  race: house_ny_17
+  name: Drew Halloran
+  party: rep
+  incumbent: false

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+maine_poll_reaction:
+  race: senate_maine
+  kind: poll_reaction
+  headline: New Maine poll shows tightening Senate race
+  dek: Two surveys this month put the margin inside single digits.
+  body_markdown: |
+    Two new polls of the Maine Senate race, released this week, show Jordan
+    Ellis leading Pat Rivers by a narrower margin than earlier in the cycle.
+    Beacon Polling put the race at Ellis +3.5 among likely voters, while
+    Cardinal Research found a tighter Ellis +1.0 among registered voters.
+  cited_poll_ids: <%= [ActiveRecord::FixtureSet.identify(:maine_poll_one), ActiveRecord::FixtureSet.identify(:maine_poll_two)] %>
+  model_run: model_run_one
+  model_slug: fixture/writer-model
+  status: published
+  published_at: 2026-08-02 09:00:00

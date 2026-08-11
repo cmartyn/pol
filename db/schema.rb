@@ -10,9 +10,69 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_023604) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_030010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "candidates", force: :cascade do |t|
+    t.integer "caucus_with"
+    t.datetime "created_at", null: false
+    t.boolean "incumbent", default: false, null: false
+    t.string "name", null: false
+    t.integer "party", null: false
+    t.bigint "race_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["race_id", "party"], name: "index_candidates_on_race_id_and_party"
+    t.index ["race_id"], name: "index_candidates_on_race_id"
+  end
+
+  create_table "chamber_forecasts", force: :cascade do |t|
+    t.integer "chamber", null: false
+    t.datetime "created_at", null: false
+    t.float "mean_dem_seats", null: false
+    t.bigint "model_run_id", null: false
+    t.float "p_dem_control", null: false
+    t.float "p_rep_control", null: false
+    t.jsonb "seat_histogram"
+    t.datetime "updated_at", null: false
+    t.index ["model_run_id", "chamber"], name: "index_chamber_forecasts_on_model_run_id_and_chamber", unique: true
+    t.index ["model_run_id"], name: "index_chamber_forecasts_on_model_run_id"
+  end
+
+  create_table "dispatches", force: :cascade do |t|
+    t.text "body_markdown", null: false
+    t.jsonb "cited_poll_ids", default: [], null: false
+    t.datetime "created_at", null: false
+    t.string "dek"
+    t.datetime "edited_at"
+    t.string "headline", null: false
+    t.integer "kind", null: false
+    t.bigint "model_run_id"
+    t.string "model_slug"
+    t.datetime "published_at"
+    t.bigint "race_id"
+    t.integer "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["model_run_id"], name: "index_dispatches_on_model_run_id"
+    t.index ["race_id"], name: "index_dispatches_on_race_id"
+    t.index ["status", "published_at"], name: "index_dispatches_on_status_and_published_at"
+  end
+
+  create_table "forecasts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.float "effective_poll_weight", default: 0.0, null: false
+    t.jsonb "margin_percentiles"
+    t.float "mean_margin", null: false
+    t.bigint "model_run_id", null: false
+    t.float "p_dem_win", null: false
+    t.float "p_other_win", default: 0.0, null: false
+    t.float "p_rep_win", null: false
+    t.bigint "race_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["model_run_id", "race_id"], name: "index_forecasts_on_model_run_id_and_race_id", unique: true
+    t.index ["model_run_id"], name: "index_forecasts_on_model_run_id"
+    t.index ["race_id"], name: "index_forecasts_on_race_id"
+  end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.integer "callback_priority"
@@ -114,6 +174,95 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_023604) do
     t.index ["scheduled_at"], name: "index_good_jobs_on_scheduled_at", where: "(finished_at IS NULL)"
   end
 
+  create_table "model_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.datetime "finished_at"
+    t.jsonb "params_snapshot"
+    t.bigint "rng_seed"
+    t.datetime "started_at"
+    t.integer "status", null: false
+    t.integer "trigger", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status", "started_at"], name: "index_model_runs_on_status_and_started_at"
+  end
+
+  create_table "poll_results", force: :cascade do |t|
+    t.bigint "candidate_id"
+    t.datetime "created_at", null: false
+    t.integer "party", null: false
+    t.float "pct", null: false
+    t.bigint "poll_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["candidate_id"], name: "index_poll_results_on_candidate_id"
+    t.index ["poll_id", "party"], name: "index_poll_results_on_poll_id_and_party"
+    t.index ["poll_id"], name: "index_poll_results_on_poll_id"
+  end
+
+  create_table "polls", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "dedup_digest", null: false
+    t.integer "entry_mode", null: false
+    t.date "field_end", null: false
+    t.date "field_start"
+    t.bigint "pollster_id", null: false
+    t.integer "population", default: 3, null: false
+    t.bigint "race_id"
+    t.jsonb "raw_payload"
+    t.integer "sample_size"
+    t.string "source_url", null: false
+    t.string "sponsor"
+    t.datetime "updated_at", null: false
+    t.index ["dedup_digest"], name: "index_polls_on_dedup_digest", unique: true
+    t.index ["field_end"], name: "index_polls_on_field_end"
+    t.index ["pollster_id"], name: "index_polls_on_pollster_id"
+    t.index ["race_id"], name: "index_polls_on_race_id"
+  end
+
+  create_table "pollsters", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_pollsters_on_slug", unique: true
+  end
+
+  create_table "races", force: :cascade do |t|
+    t.boolean "baseline_imputed", default: false, null: false
+    t.float "baseline_margin"
+    t.string "baseline_source_url"
+    t.datetime "created_at", null: false
+    t.integer "cycle", default: 2026, null: false
+    t.integer "district"
+    t.string "incumbent_name"
+    t.integer "incumbent_party"
+    t.float "lean"
+    t.integer "office", null: false
+    t.boolean "open_seat", default: false, null: false
+    t.integer "seat_class"
+    t.string "slug", null: false
+    t.boolean "special", default: false, null: false
+    t.string "state", null: false
+    t.boolean "uncontested", default: false, null: false
+    t.integer "uncontested_party"
+    t.datetime "updated_at", null: false
+    t.index ["office"], name: "index_races_on_office"
+    t.index ["slug"], name: "index_races_on_slug", unique: true
+  end
+
+  create_table "scrape_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "duplicate_count", default: 0, null: false
+    t.text "error_message"
+    t.integer "fetched_count", default: 0, null: false
+    t.datetime "finished_at", null: false
+    t.integer "new_count", default: 0, null: false
+    t.string "source", null: false
+    t.datetime "started_at", null: false
+    t.integer "status", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -139,5 +288,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_023604) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  add_foreign_key "candidates", "races"
+  add_foreign_key "chamber_forecasts", "model_runs"
+  add_foreign_key "dispatches", "model_runs"
+  add_foreign_key "dispatches", "races"
+  add_foreign_key "forecasts", "model_runs"
+  add_foreign_key "forecasts", "races"
+  add_foreign_key "poll_results", "candidates"
+  add_foreign_key "poll_results", "polls"
+  add_foreign_key "polls", "pollsters"
+  add_foreign_key "polls", "races"
   add_foreign_key "sessions", "users"
 end

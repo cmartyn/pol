@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+senate_chamber_forecast:
+  model_run: model_run_one
+  chamber: senate
+  p_dem_control: 0.55
+  p_rep_control: 0.45
+  mean_dem_seats: 51.2
+  seat_histogram:
+    "50": 0.12
+    "51": 0.28
+    "52": 0.30
+    "53": 0.18
+    "54": 0.12
+
+house_chamber_forecast:
+  model_run: model_run_one
+  chamber: house
+  p_dem_control: 0.48
+  p_rep_control: 0.52
+  mean_dem_seats: 215.4
+  seat_histogram:
+    "210": 0.10
+    "215": 0.35
+    "218": 0.20
+    "220": 0.25
+    "225": 0.10

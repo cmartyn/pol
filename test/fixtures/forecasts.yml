@@ -1,0 +1,16 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+maine_forecast:
+  model_run: model_run_one
+  race: senate_maine
+  p_dem_win: 0.62
+  p_rep_win: 0.38
+  p_other_win: 0.0
+  mean_margin: 3.2
+  margin_percentiles:
+    "5": -6.5
+    "25": -0.5
+    "50": 3.2
+    "75": 6.9
+    "95": 12.8
+  effective_poll_weight: 1.8

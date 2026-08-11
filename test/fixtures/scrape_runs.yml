@@ -1,0 +1,10 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+senate_scrape_run:
+  source: 2026 United States Senate elections (Wikipedia overview)
+  status: succeeded
+  fetched_count: 3
+  new_count: 3
+  duplicate_count: 0
+  started_at: 2026-08-02 08:55:00
+  finished_at: 2026-08-02 08:57:12
