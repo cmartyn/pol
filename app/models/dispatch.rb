@@ -18,11 +18,20 @@ class Dispatch < ApplicationRecord
   # on cited_poll_ids can serve, and `[7] @> [7]` is true. The tidier-looking
   # `?|` is not an option — it only matches string elements, and these are
   # stored as JSON numbers.
+  #
+  # The OR is assembled by Active Record (`reduce(:or)`) rather than by joining
+  # a condition string n times, so no SQL fragment here is ever built from a
+  # value: every clause is the same frozen literal with one bound parameter.
+  # The joined-string version was equally safe — the ids were `to_i`'d and the
+  # values bound — but Brakeman cannot see that a string built at runtime
+  # contains only literal text, and it reported it as possible SQL injection
+  # (Phase 5's one standing warning). Making the safety structural rather than
+  # argued is cheaper than carrying a suppression.
   scope :citing_any, ->(poll_ids) {
     ids = Array(poll_ids).map(&:to_i).uniq
     next none if ids.empty?
 
-    where(Array.new(ids.size, "cited_poll_ids @> ?").join(" OR "), *ids.map { |id| [ id ].to_json })
+    ids.map { |id| where("cited_poll_ids @> ?", [ id ].to_json) }.reduce(:or)
   }
 
   private

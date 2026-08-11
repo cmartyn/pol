@@ -110,6 +110,23 @@ class DispatchTest < ActiveSupport::TestCase
     assert_empty Dispatch.citing_any(nil)
   end
 
+  # The scope ORs one containment test per id together, so it has to narrow
+  # whatever relation it is chained onto rather than OR-ing itself around it.
+  # Newsroom::Caps#duplicate chains it exactly this way; if the OR ever escaped
+  # its own parentheses the duplicate guard would start matching dispatches for
+  # other races and the newsroom would go quiet for no reason.
+  test "citing_any narrows the relation it is chained onto" do
+    elsewhere = Dispatch.create!(headline: "Elsewhere", body_markdown: "body", kind: :poll_reaction,
+                                 status: :published, published_at: Time.current,
+                                 race: races(:senate_florida_special), cited_poll_ids: [ 4242 ])
+    ids = [ polls(:maine_poll_one).id, 4242 ]
+
+    assert_equal 2, Dispatch.citing_any(ids).count
+    assert_equal [ elsewhere ], Dispatch.where(race: races(:senate_florida_special)).citing_any(ids).to_a
+    assert_equal [ dispatches(:maine_poll_reaction) ], Dispatch.citing_any(ids).where(race: races(:senate_maine)).to_a
+    assert_empty Dispatch.retracted.citing_any(ids)
+  end
+
   test "a dispatch that cites nothing is not caught by the duplicate guard" do
     dispatches(:maine_poll_reaction).update!(cited_poll_ids: [])
 
