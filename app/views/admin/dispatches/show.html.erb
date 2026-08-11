@@ -1,0 +1,55 @@
+<% content_for :title, "#{@dispatch.headline} · Admin · Pol" %>
+
+<div class="flex flex-wrap items-start justify-between gap-4">
+  <div>
+    <div class="flex items-center gap-2">
+      <span class="rounded-full px-2 py-0.5 text-xs font-medium <%= dispatch_kind_color(@dispatch.kind) %>"><%= @dispatch.kind.humanize %></span>
+      <span class="font-medium <%= @dispatch.retracted? ? "text-red-700" : "text-green-700" %>" data-testid="admin-dispatch-status"><%= @dispatch.status %></span>
+    </div>
+    <h1 class="mt-2 font-serif text-2xl font-semibold text-slate-900" data-testid="admin-dispatch-headline"><%= @dispatch.headline %></h1>
+    <% if @dispatch.dek.present? %><p class="mt-1 text-slate-600" data-testid="admin-dispatch-dek"><%= @dispatch.dek %></p><% end %>
+  </div>
+  <div class="flex shrink-0 gap-2">
+    <%= link_to "Edit", edit_admin_dispatch_path(@dispatch), class: "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" %>
+    <% unless @dispatch.retracted? %>
+      <%= button_to "Retract", retract_admin_dispatch_path(@dispatch), method: :post,
+            form: { data: { turbo_confirm: "Retract this dispatch? It stays visible here, but the public site will no longer show it, and the newsroom will remember it as withdrawn rather than trying to say it again." } },
+            class: "rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50",
+            data: { testid: "admin-dispatch-retract-button" } %>
+    <% end %>
+  </div>
+</div>
+
+<dl class="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 rounded-lg border border-slate-200 bg-white p-5 text-sm sm:grid-cols-4">
+  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Race</dt>
+    <dd class="mt-0.5"><% if @dispatch.race %><%= link_to @dispatch.race.name, race_path(@dispatch.race.slug), class: "text-amber-700 hover:text-amber-800" %><% else %>National<% end %></dd></div>
+  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Model</dt><dd class="mt-0.5"><%= @dispatch.model_slug %></dd></div>
+  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Published</dt><dd class="mt-0.5"><%= @dispatch.published_at&.strftime("%b %-d, %Y %-I:%M %p") || "—" %></dd></div>
+  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Model run</dt>
+    <dd class="mt-0.5"><% if @dispatch.model_run %><%= link_to "Run ##{@dispatch.model_run.id}", admin_model_run_path(@dispatch.model_run), class: "text-amber-700 hover:text-amber-800" %><% else %>—<% end %></dd></div>
+  <% if @dispatch.edited_at.present? %>
+    <div><dt class="text-xs uppercase tracking-wide text-slate-400">Edited</dt><dd class="mt-0.5" data-testid="admin-dispatch-edited-at"><%= @dispatch.edited_at.strftime("%b %-d, %Y %-I:%M %p") %></dd></div>
+  <% end %>
+</dl>
+
+<section class="mt-6 rounded-lg border border-slate-200 bg-white p-5">
+  <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Body</h2>
+  <div class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-700" data-testid="admin-dispatch-body"><%= simple_format(@dispatch.body_markdown) %></div>
+</section>
+
+<section class="mt-6 rounded-lg border border-slate-200 bg-white p-5">
+  <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Cited polls</h2>
+  <% if @cited_polls.any? %>
+    <ul class="mt-3 space-y-1 text-sm" data-testid="admin-dispatch-cited-polls">
+      <% @cited_polls.each do |poll| %>
+        <li>
+          <%= link_to admin_poll_path(poll), class: "text-amber-700 hover:text-amber-800", data: { testid: "admin-dispatch-cited-poll" } do %>
+            <%= poll.pollster.name %> (<%= poll.field_end.strftime("%b %-d, %Y") %>)
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="mt-3 text-sm text-slate-500" data-testid="admin-dispatch-cited-polls-empty">No polls cited.</p>
+  <% end %>
+</section>

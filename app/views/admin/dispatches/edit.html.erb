@@ -1,0 +1,34 @@
+<% content_for :title, "Edit dispatch · Admin · Pol" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">Edit dispatch</h1>
+<p class="mt-1 text-sm text-slate-600">Saving marks this piece "Updated by the editor" on the public site.</p>
+
+<% if @dispatch.errors.any? %>
+  <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" data-testid="admin-dispatch-errors">
+    <ul class="list-inside list-disc">
+      <% @dispatch.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: @dispatch, url: admin_dispatch_path(@dispatch), method: :patch, class: "mt-6 space-y-4 rounded-lg border border-slate-200 bg-white p-5", data: { testid: "admin-dispatch-form" } do |f| %>
+  <div>
+    <%= f.label :headline, class: "block text-sm font-medium text-slate-700" %>
+    <%= f.text_field :headline, class: "mt-1 w-full rounded-md border-slate-300 text-sm", data: { testid: "admin-dispatch-headline-input" } %>
+    <p class="mt-1 text-xs text-slate-500">Max <%= Pol::Params.fetch!(:newsroom, :headline_max_chars) %> characters.</p>
+  </div>
+  <div>
+    <%= f.label :dek, class: "block text-sm font-medium text-slate-700" %>
+    <%= f.text_field :dek, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
+  </div>
+  <div>
+    <%= f.label :body_markdown, "Body", class: "block text-sm font-medium text-slate-700" %>
+    <%= f.text_area :body_markdown, rows: 12, class: "mt-1 w-full rounded-md border-slate-300 text-sm", data: { testid: "admin-dispatch-body-input" } %>
+  </div>
+  <div class="flex gap-2">
+    <%= f.submit "Save dispatch", class: "cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700", data: { testid: "admin-dispatch-submit" } %>
+    <%= link_to "Cancel", admin_dispatch_path(@dispatch), class: "rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" %>
+  </div>
+<% end %>

@@ -1,0 +1,63 @@
+<% content_for :title, "Skip log · Admin · Pol" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">Skip log</h1>
+<p class="mt-1 text-sm text-slate-600">Every piece the newsroom decided not to publish, and why.</p>
+
+<div class="mt-4 flex flex-wrap gap-2" data-testid="admin-skips-today-header">
+  <% if @today_counts_by_reason.any? %>
+    <% @today_counts_by_reason.sort_by { |_, count| -count }.each do |reason, count| %>
+      <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700" data-testid="admin-skip-today-reason-count">
+        <%= reason.humanize %>: <%= count %>
+      </span>
+    <% end %>
+  <% else %>
+    <span class="text-sm text-slate-500" data-testid="admin-skips-today-empty">No skips today.</span>
+  <% end %>
+</div>
+
+<%= form_with url: admin_newsroom_skips_path, method: :get, class: "mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4", data: { testid: "admin-skip-filters" } do %>
+  <div>
+    <label class="block text-xs font-medium text-slate-500" for="reason">Reason</label>
+    <select name="reason" id="reason" class="mt-1 rounded-md border-slate-300 text-sm">
+      <%= options_for_select([ [ "All reasons", "" ] ] + NewsroomSkip.reasons.keys.map { |r| [ r.humanize, r ] }, params[:reason]) %>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500" for="kind">Kind</label>
+    <select name="kind" id="kind" class="mt-1 rounded-md border-slate-300 text-sm">
+      <%= options_for_select([ [ "All kinds", "" ] ] + NewsroomSkip.kinds.keys.map { |k| [ k.humanize, k ] }, params[:kind]) %>
+    </select>
+  </div>
+  <button type="submit" class="rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">Filter</button>
+  <%= link_to "Reset", admin_newsroom_skips_path, class: "px-1 text-sm text-slate-500 hover:text-slate-700" %>
+<% end %>
+
+<div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+  <table class="w-full min-w-[720px] text-left text-sm" data-testid="admin-skips-table">
+    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="py-2 pl-4 pr-3 font-medium">When</th>
+        <th class="py-2 pr-3 font-medium">Kind</th>
+        <th class="py-2 pr-3 font-medium">Reason</th>
+        <th class="py-2 pr-3 font-medium">Race</th>
+        <th class="py-2 pr-4 font-medium">Detail</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @skips.each do |skip| %>
+        <tr data-testid="admin-skip-row">
+          <td class="py-2 pl-4 pr-3 whitespace-nowrap text-slate-500"><%= skip.created_at.strftime("%b %-d, %-I:%M %p") %></td>
+          <td class="py-2 pr-3 text-slate-700"><%= skip.kind.humanize %></td>
+          <td class="py-2 pr-3">
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700" data-testid="admin-skip-reason"><%= skip.reason.humanize %></span>
+          </td>
+          <td class="py-2 pr-3 text-slate-600"><% if skip.race %><%= link_to skip.race.name, race_path(skip.race.slug), class: "hover:text-amber-700" %><% else %>National<% end %></td>
+          <td class="py-2 pr-4 text-slate-600"><%= skip.detail %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @skips.empty? %>
+    <p class="p-4 text-sm text-slate-500" data-testid="admin-skips-empty">No skips match this filter.</p>
+  <% end %>
+</div>
