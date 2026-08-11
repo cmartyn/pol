@@ -1,0 +1,301 @@
+# The 2026 U.S. Senate map: 33 Class 2 seats plus the Florida and Ohio Class 3
+# specials. Verified against Wikipedia and senate.gov on August 11, 2026 —
+# see docs/BUILD_NOTES.md section A1 for the sources and for the list of races
+# whose nominees are not settled yet.
+#
+# open_seat is true exactly when the sitting senator is not on the November
+# ballot. `unsettled` is documentation only: it marks races where a listed
+# candidate is a declared front-runner rather than a nominee, and it is why
+# some races carry only one major-party candidate (we do not invent the other).
+#
+# Independents get no caucus_with unless they have said which way they would
+# caucus. Dan Osborn, for one, has said he would caucus with neither party.
+---
+- state: AL
+  seat_class: 2
+  incumbent_name: Tommy Tuberville
+  incumbent_party: rep
+  open_seat: true
+  candidates:
+    - { name: Barry Moore, party: rep }
+    - { name: Everett Wess, party: dem }
+- state: AK
+  seat_class: 2
+  incumbent_name: Dan Sullivan
+  incumbent_party: rep
+  open_seat: false
+  unsettled: true
+  candidates:
+    - { name: Dan Sullivan, party: rep, incumbent: true }
+    - { name: Mary Peltola, party: dem }
+- state: AR
+  seat_class: 2
+  incumbent_name: Tom Cotton
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Tom Cotton, party: rep, incumbent: true }
+    - { name: Hallie Shoffner, party: dem }
+- state: CO
+  seat_class: 2
+  incumbent_name: John Hickenlooper
+  incumbent_party: dem
+  open_seat: false
+  candidates:
+    - { name: John Hickenlooper, party: dem, incumbent: true }
+    - { name: Mark Baisley, party: rep }
+- state: DE
+  seat_class: 2
+  incumbent_name: Chris Coons
+  incumbent_party: dem
+  open_seat: false
+  unsettled: true
+  candidates:
+    - { name: Chris Coons, party: dem, incumbent: true }
+- state: FL
+  special: true
+  seat_class: 3
+  incumbent_name: Ashley Moody
+  incumbent_party: rep
+  open_seat: false
+  unsettled: true
+  candidates:
+    - { name: Ashley Moody, party: rep, incumbent: true }
+- state: GA
+  seat_class: 2
+  incumbent_name: Jon Ossoff
+  incumbent_party: dem
+  open_seat: false
+  candidates:
+    - { name: Jon Ossoff, party: dem, incumbent: true }
+    - { name: Mike Collins, party: rep }
+- state: ID
+  seat_class: 2
+  incumbent_name: Jim Risch
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Jim Risch, party: rep, incumbent: true }
+    - { name: Todd Achilles, party: ind }
+- state: IL
+  seat_class: 2
+  incumbent_name: Dick Durbin
+  incumbent_party: dem
+  open_seat: true
+  candidates:
+    - { name: Juliana Stratton, party: dem }
+    - { name: Don Tracy, party: rep }
+- state: IA
+  seat_class: 2
+  incumbent_name: Joni Ernst
+  incumbent_party: rep
+  open_seat: true
+  candidates:
+    - { name: Ashley Hinson, party: rep }
+    - { name: Josh Turek, party: dem }
+- state: KS
+  seat_class: 2
+  incumbent_name: Roger Marshall
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Roger Marshall, party: rep, incumbent: true }
+    - { name: Adam Hamilton, party: dem }
+- state: KY
+  seat_class: 2
+  incumbent_name: Mitch McConnell
+  incumbent_party: rep
+  open_seat: true
+  candidates:
+    - { name: Andy Barr, party: rep }
+    - { name: Charles Booker, party: dem }
+- state: LA
+  seat_class: 2
+  incumbent_name: Bill Cassidy
+  incumbent_party: rep
+  open_seat: true
+  candidates:
+    - { name: Julia Letlow, party: rep }
+    - { name: Jamie Davis, party: dem }
+- state: ME
+  seat_class: 2
+  incumbent_name: Susan Collins
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Susan Collins, party: rep, incumbent: true }
+    - { name: Troy Jackson, party: dem }
+- state: MA
+  seat_class: 2
+  incumbent_name: Ed Markey
+  incumbent_party: dem
+  open_seat: false
+  unsettled: true
+  candidates:
+    - { name: Ed Markey, party: dem, incumbent: true }
+    - { name: John Deaton, party: rep }
+- state: MI
+  seat_class: 2
+  incumbent_name: Gary Peters
+  incumbent_party: dem
+  open_seat: true
+  candidates:
+    - { name: Abdul El-Sayed, party: dem }
+    - { name: Mike Rogers, party: rep }
+- state: MN
+  seat_class: 2
+  incumbent_name: Tina Smith
+  incumbent_party: dem
+  open_seat: true
+  unsettled: true
+  candidates: []
+- state: MS
+  seat_class: 2
+  incumbent_name: Cindy Hyde-Smith
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Cindy Hyde-Smith, party: rep, incumbent: true }
+    - { name: Scott Colom, party: dem }
+    - { name: Ty Pinkins, party: ind }
+- state: MT
+  seat_class: 2
+  incumbent_name: Steve Daines
+  incumbent_party: rep
+  open_seat: true
+  candidates:
+    - { name: Kurt Alme, party: rep }
+    - { name: Alani Bankhead, party: dem }
+    - { name: Seth Bodnar, party: ind }
+- state: NE
+  seat_class: 2
+  incumbent_name: Pete Ricketts
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Pete Ricketts, party: rep, incumbent: true }
+    - { name: Dan Osborn, party: ind }
+- state: NH
+  seat_class: 2
+  incumbent_name: Jeanne Shaheen
+  incumbent_party: dem
+  open_seat: true
+  unsettled: true
+  candidates:
+    - { name: Chris Pappas, party: dem }
+    - { name: Scott Brown, party: rep }
+- state: NJ
+  seat_class: 2
+  incumbent_name: Cory Booker
+  incumbent_party: dem
+  open_seat: false
+  candidates:
+    - { name: Cory Booker, party: dem, incumbent: true }
+    - { name: Justin Murphy, party: rep }
+- state: NM
+  seat_class: 2
+  incumbent_name: Ben Ray Luján
+  incumbent_party: dem
+  open_seat: false
+  candidates:
+    - { name: Ben Ray Luján, party: dem, incumbent: true }
+    - { name: Larry Marker, party: rep }
+- state: NC
+  seat_class: 2
+  incumbent_name: Thom Tillis
+  incumbent_party: rep
+  open_seat: true
+  candidates:
+    - { name: Michael Whatley, party: rep }
+    - { name: Roy Cooper, party: dem }
+- state: OH
+  special: true
+  seat_class: 3
+  incumbent_name: Jon Husted
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Jon Husted, party: rep, incumbent: true }
+    - { name: Sherrod Brown, party: dem }
+- state: OK
+  seat_class: 2
+  incumbent_name: Alan S. Armstrong
+  incumbent_party: rep
+  open_seat: true
+  unsettled: true
+  candidates:
+    - { name: Kevin Hern, party: rep }
+- state: OR
+  seat_class: 2
+  incumbent_name: Jeff Merkley
+  incumbent_party: dem
+  open_seat: false
+  candidates:
+    - { name: Jeff Merkley, party: dem, incumbent: true }
+    - { name: David Brock Smith, party: rep }
+- state: RI
+  seat_class: 2
+  incumbent_name: Jack Reed
+  incumbent_party: dem
+  open_seat: false
+  unsettled: true
+  candidates:
+    - { name: Jack Reed, party: dem, incumbent: true }
+    - { name: Raymond McKay, party: rep }
+- state: SC
+  seat_class: 2
+  incumbent_name: Darline Graham
+  incumbent_party: rep
+  open_seat: false
+  unsettled: true
+  candidates:
+    - { name: Annie Andrews, party: dem }
+- state: SD
+  seat_class: 2
+  incumbent_name: Mike Rounds
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Mike Rounds, party: rep, incumbent: true }
+    - { name: Brian Bengs, party: ind }
+- state: TN
+  seat_class: 2
+  incumbent_name: Bill Hagerty
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Bill Hagerty, party: rep, incumbent: true }
+    - { name: Marquita Bradshaw, party: dem }
+- state: TX
+  seat_class: 2
+  incumbent_name: John Cornyn
+  incumbent_party: rep
+  open_seat: true
+  candidates:
+    - { name: Ken Paxton, party: rep }
+    - { name: James Talarico, party: dem }
+- state: VA
+  seat_class: 2
+  incumbent_name: Mark Warner
+  incumbent_party: dem
+  open_seat: false
+  candidates:
+    - { name: Mark Warner, party: dem, incumbent: true }
+    - { name: Bert Mizusawa, party: rep }
+- state: WV
+  seat_class: 2
+  incumbent_name: Shelley Moore Capito
+  incumbent_party: rep
+  open_seat: false
+  candidates:
+    - { name: Shelley Moore Capito, party: rep, incumbent: true }
+    - { name: Rachel Fetty Anderson, party: dem }
+- state: WY
+  seat_class: 2
+  incumbent_name: Cynthia Lummis
+  incumbent_party: rep
+  open_seat: true
+  unsettled: true
+  candidates:
+    - { name: Harriet Hageman, party: rep }
+    - { name: James Byrd, party: dem }
