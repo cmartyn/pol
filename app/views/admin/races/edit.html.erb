@@ -1,0 +1,120 @@
+<% content_for :title, "Edit #{@race.name} · Admin · Pol" %>
+
+<p class="text-xs font-medium uppercase tracking-wide text-slate-400">Editing race</p>
+<h1 class="font-serif text-2xl font-semibold text-slate-900"><%= @race.name %></h1>
+<%= link_to "View on the public site →", race_path(@race.slug), class: "text-sm text-amber-700 hover:text-amber-800" %>
+
+<div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-testid="admin-race-guardrail-note">
+  Changes here apply starting with the <strong>next model run</strong> — they do not retroactively change any forecast already on the board. Use
+  <%= link_to "Run model now", admin_model_runs_path, class: "font-semibold underline" %> to apply them immediately.
+</div>
+
+<% if @race.errors.any? %>
+  <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" data-testid="admin-race-errors">
+    <ul class="list-inside list-disc">
+      <% @race.errors.full_messages.each do |message| %><li><%= message %></li><% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: @race, url: admin_race_path(@race), method: :patch, class: "mt-6 grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2", data: { testid: "admin-race-form" } do |f| %>
+  <div>
+    <%= f.label :lean, "Lean (D−R points; Senate/Governor)", class: "block text-sm font-medium text-slate-700" %>
+    <%= f.number_field :lean, step: 0.01, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
+  </div>
+  <div>
+    <%= f.label :baseline_margin, "Baseline margin (D−R points; House)", class: "block text-sm font-medium text-slate-700" %>
+    <%= f.number_field :baseline_margin, step: 0.01, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
+  </div>
+  <div class="flex items-center gap-2 pt-6">
+    <%= f.check_box :baseline_imputed, class: "rounded border-slate-300" %>
+    <%= f.label :baseline_imputed, "Baseline is imputed (no major-party 2024 opponent)", class: "text-sm text-slate-700" %>
+  </div>
+  <div></div>
+  <div>
+    <%= f.label :incumbent_name, class: "block text-sm font-medium text-slate-700" %>
+    <%= f.text_field :incumbent_name, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
+  </div>
+  <div>
+    <%= f.label :incumbent_party, class: "block text-sm font-medium text-slate-700" %>
+    <%= f.select :incumbent_party, options_for_select([ [ "—", "" ] ] + Race.incumbent_parties.keys.map { |p| [ p.capitalize, p ] }, @race.incumbent_party), {}, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :open_seat, class: "rounded border-slate-300" %>
+    <%= f.label :open_seat, class: "text-sm text-slate-700" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :special, class: "rounded border-slate-300" %>
+    <%= f.label :special, class: "text-sm text-slate-700" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :uncontested, class: "rounded border-slate-300", data: { testid: "admin-race-uncontested-checkbox" } %>
+    <%= f.label :uncontested, class: "text-sm text-slate-700" %>
+  </div>
+  <div>
+    <%= f.label :uncontested_party, class: "block text-sm font-medium text-slate-700" %>
+    <%= f.select :uncontested_party, options_for_select([ [ "—", "" ] ] + Race.uncontested_parties.keys.map { |p| [ p.capitalize, p ] }, @race.uncontested_party), {}, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
+  </div>
+
+  <div class="col-span-full flex gap-2">
+    <%= f.submit "Save race", class: "cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700", data: { testid: "admin-race-submit" } %>
+    <%= link_to "Back to races", admin_races_path, class: "rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" %>
+  </div>
+<% end %>
+
+<section class="mt-6 rounded-lg border border-slate-200 bg-white p-5">
+  <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Candidates</h2>
+
+  <div class="mt-3 space-y-3" data-testid="admin-candidates-list">
+    <% @race.candidates.each do |candidate| %>
+      <div class="flex flex-wrap items-end gap-3 border-b border-slate-100 pb-3 last:border-b-0" data-testid="admin-candidate-row">
+        <%= form_with model: candidate, url: admin_race_candidate_path(@race, candidate), method: :patch, class: "flex flex-wrap items-end gap-3", data: { testid: "admin-candidate-edit-form" } do |cf| %>
+          <div>
+            <%= cf.label :name, class: "block text-xs font-medium text-slate-500" %>
+            <%= cf.text_field :name, class: "mt-1 rounded-md border-slate-300 text-sm", data: { testid: "admin-candidate-name-input" } %>
+          </div>
+          <div>
+            <%= cf.label :party, class: "block text-xs font-medium text-slate-500" %>
+            <%= cf.select :party, Candidate.parties.keys.map { |p| [ p.capitalize, p ] }, {}, class: "mt-1 rounded-md border-slate-300 text-sm" %>
+          </div>
+          <div>
+            <%= cf.label :caucus_with, "Caucuses with", class: "block text-xs font-medium text-slate-500" %>
+            <%= cf.select :caucus_with, options_for_select([ [ "—", "" ] ] + Candidate.caucus_withs.keys.map { |p| [ p.capitalize, p ] }, candidate.caucus_with), {}, class: "mt-1 rounded-md border-slate-300 text-sm" %>
+          </div>
+          <label class="flex items-center gap-1.5 pb-2 text-sm text-slate-700">
+            <%= cf.check_box :incumbent, class: "rounded border-slate-300" %> Incumbent
+          </label>
+          <%= cf.submit "Save", class: "cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50" %>
+        <% end %>
+        <%= button_to "Remove", admin_race_candidate_path(@race, candidate), method: :delete,
+              form: { data: { turbo_confirm: "Remove #{candidate.name}?" } },
+              class: "rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50" %>
+      </div>
+    <% end %>
+    <% if @race.candidates.empty? %>
+      <p class="text-sm text-slate-500" data-testid="admin-candidates-empty">No candidates on this race.</p>
+    <% end %>
+  </div>
+
+  <div class="mt-5 border-t border-slate-200 pt-4">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Add a candidate</h3>
+    <%= form_with url: admin_race_candidates_path(@race), method: :post, class: "mt-2 flex flex-wrap items-end gap-3", data: { testid: "admin-candidate-new-form" } do |cf| %>
+      <div>
+        <%= cf.label :name, "Candidate", class: "block text-xs font-medium text-slate-500" %>
+        <%= cf.text_field :name, class: "mt-1 rounded-md border-slate-300 text-sm", data: { testid: "admin-candidate-new-name-input" } %>
+      </div>
+      <div>
+        <%= cf.label :party, class: "block text-xs font-medium text-slate-500" %>
+        <%= cf.select :party, Candidate.parties.keys.map { |p| [ p.capitalize, p ] }, {}, class: "mt-1 rounded-md border-slate-300 text-sm" %>
+      </div>
+      <div>
+        <%= cf.label :caucus_with, "Caucuses with", class: "block text-xs font-medium text-slate-500" %>
+        <%= cf.select :caucus_with, options_for_select([ [ "—", "" ] ] + Candidate.caucus_withs.keys.map { |p| [ p.capitalize, p ] }), {}, class: "mt-1 rounded-md border-slate-300 text-sm" %>
+      </div>
+      <label class="flex items-center gap-1.5 pb-2 text-sm text-slate-700">
+        <%= cf.check_box :incumbent, class: "rounded border-slate-300" %> Incumbent
+      </label>
+      <%= cf.submit "Add candidate", class: "cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700", data: { testid: "admin-candidate-add-submit" } %>
+    <% end %>
+  </div>
+</section>

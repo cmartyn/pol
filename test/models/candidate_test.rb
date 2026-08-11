@@ -23,4 +23,10 @@ class CandidateTest < ActiveSupport::TestCase
   test "belongs to a race" do
     assert_equal races(:senate_maine), candidates(:maine_dem).race
   end
+
+  test "requires a name" do
+    candidate = Candidate.new(race: races(:senate_maine), party: :dem)
+    assert_not candidate.valid?
+    assert_includes candidate.errors[:name], "can't be blank"
+  end
 end

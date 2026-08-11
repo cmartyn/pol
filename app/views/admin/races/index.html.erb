@@ -1,0 +1,56 @@
+<% content_for :title, "Races · Admin · Pol" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">Races</h1>
+
+<%= form_with url: admin_races_path, method: :get, class: "mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4", data: { testid: "admin-race-filters" } do %>
+  <div>
+    <label class="block text-xs font-medium text-slate-500" for="office">Office</label>
+    <select name="office" id="office" class="mt-1 rounded-md border-slate-300 text-sm">
+      <%= options_for_select([ [ "All offices", "" ] ] + Race.offices.keys.map { |o| [ o.capitalize, o ] }, params[:office]) %>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500" for="state">State</label>
+    <input type="text" name="state" id="state" value="<%= params[:state] %>" placeholder="Maine or ME" class="mt-1 rounded-md border-slate-300 text-sm" data-testid="admin-race-state-search">
+  </div>
+  <button type="submit" class="rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">Search</button>
+  <%= link_to "Reset", admin_races_path, class: "px-1 text-sm text-slate-500 hover:text-slate-700" %>
+<% end %>
+
+<div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+  <table class="w-full min-w-[720px] text-left text-sm" data-testid="admin-races-table">
+    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="py-2 pl-4 pr-3 font-medium">Race</th>
+        <th class="py-2 pr-3 font-medium">Slug</th>
+        <th class="py-2 pr-3 font-medium">Lean / baseline</th>
+        <th class="py-2 pr-3 font-medium">Polls</th>
+        <th class="py-2 pr-4 font-medium"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @races.each do |race| %>
+        <tr data-testid="admin-race-row">
+          <td class="py-2 pl-4 pr-3">
+            <%= link_to race.name, edit_admin_race_path(race), class: "font-medium text-slate-900 hover:text-amber-700" %>
+            <% if race.uncontested? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-slate-600" data-testid="admin-race-uncontested-badge">uncontested</span><% end %>
+          </td>
+          <td class="py-2 pr-3 font-mono text-xs text-slate-500"><%= race.slug %></td>
+          <td class="py-2 pr-3 text-slate-600">
+            <% if race.house? %>
+              <%= race.baseline_margin&.round(1) || "—" %>
+              <% if race.baseline_imputed? %><span class="ml-1 rounded bg-amber-50 px-1 py-0.5 text-[10px] font-medium uppercase text-amber-700" data-testid="admin-race-imputed-badge">imputed</span><% end %>
+            <% else %>
+              <%= race.lean&.round(1) || "—" %>
+            <% end %>
+          </td>
+          <td class="py-2 pr-3 text-slate-600"><%= @poll_counts.fetch(race.id, 0) %></td>
+          <td class="py-2 pr-4"><%= link_to "Edit", edit_admin_race_path(race), class: "text-amber-700 hover:text-amber-800" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @races.empty? %>
+    <p class="p-4 text-sm text-slate-500" data-testid="admin-races-empty">No races match this filter.</p>
+  <% end %>
+</div>
