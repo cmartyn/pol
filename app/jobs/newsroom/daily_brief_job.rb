@@ -8,12 +8,14 @@ module Newsroom
     KIND = :daily_brief
 
     def perform
-      return unless Newsroom.clear_to_write?(kind: KIND)
-
       model_run = ModelRun.succeeded.latest.first
       unless model_run
         return log("no succeeded model run yet; there is no board to describe")
       end
+
+      # Only once there is a board to describe: a brief that was never going to
+      # be written is not a brief the newsroom decided against.
+      return unless Newsroom.clear_to_write?(kind: KIND)
 
       reason, detail = Caps.blocking(kind: KIND)
       if reason

@@ -82,7 +82,7 @@ class Newsroom::DailyBriefJobTest < ActiveJob::TestCase
     assert_predicate skip, :daily_brief?
   end
 
-  test "the kill switch stops the brief" do
+  test "the kill switch stops the brief, and says so exactly once" do
     Setting.set(Setting::AGENTS_ENABLED_KEY, "false")
 
     assert_no_difference "Dispatch.count" do
@@ -90,7 +90,18 @@ class Newsroom::DailyBriefJobTest < ActiveJob::TestCase
     end
 
     assert_predicate NewsroomSkip.sole, :agents_disabled?
+    assert_predicate NewsroomSkip.sole, :daily_brief?
     assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
+  end
+
+  test "a disabled newsroom with no board to describe is silent" do
+    Dispatch.update_all(model_run_id: nil)
+    ModelRun.update_all(status: ModelRun.statuses.fetch("failed"))
+    Setting.set(Setting::AGENTS_ENABLED_KEY, "false")
+
+    assert_no_difference "NewsroomSkip.count" do
+      with_api_key { Newsroom::DailyBriefJob.perform_now }
+    end
   end
 
   test "bin/rails pol:brief runs the same job the cron does" do

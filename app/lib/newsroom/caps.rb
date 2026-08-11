@@ -66,18 +66,26 @@ module Newsroom
         "(##{previous.id}); the cooldown is #{days} days" ]
     end
 
-    # The reason ingestion can safely re-present a poll: if anything published
-    # already cites it, the story has been told.
+    # The reason ingestion can safely re-present a poll: if anything already
+    # cites it, the story has been told.
+    #
+    # Retracted dispatches count here, unlike in the day caps above. A
+    # retraction should give the day's budget back — that piece isn't on the
+    # site — but it must not hand the polls back to the newsroom to write up
+    # again. An editor who pulls a reaction and gets an automatically
+    # regenerated one an hour later has no way to win.
     def duplicate(race, poll_ids)
       ids = Array(poll_ids)
       return nil if ids.empty?
 
-      existing = Dispatch.published.citing_any(ids)
+      existing = Dispatch.citing_any(ids)
       existing = existing.where(race_id: race.id) if race
       first = existing.recent_first.first
       return nil unless first
 
-      [ :duplicate, "dispatch ##{first.id} already cites #{(first.cited_poll_ids & ids).inspect}" ]
+      [ :duplicate,
+        "dispatch ##{first.id}#{' (retracted)' if first.retracted?} already cites " \
+        "#{(first.cited_poll_ids & ids).inspect}" ]
     end
   end
 end

@@ -28,15 +28,23 @@ module Newsroom
     }.freeze
 
     # The one thing that must travel with a House control probability wherever
-    # it is printed. Same limitation the site's house-caveat partial and
-    # bin/rails pol:model print, in words a paragraph can absorb.
-    # See docs/BUILD_NOTES.md Phase 3 §A4.
+    # it is printed. Same limitation the site's house-caveat partial states,
+    # in words a paragraph can absorb. See docs/BUILD_NOTES.md Phase 3 §A4.
+    #
+    # Deliberately carries NO numbers. It used to quote the Phase 3 measurement
+    # ("96% here against 84% for a correlated model"), which was a snapshot of
+    # one run: the first time the House number was not 96%, this text would
+    # have instructed the model to publish a figure contradicting the payload
+    # it was reading, and the citation validator only checks poll ids — it
+    # cannot see a wrong number in prose. The size of the overstatement is not
+    # measured per run, so the caveat says there is one and refuses to price it.
     HOUSE_CAVEAT =
       "Our model correlates races through a single national error term where fuller models use several. " \
       "That makes the House seat distribution too narrow and its control probability too confident, in " \
-      "whichever party's favour it leans — measured at 96% here against 84% for a correlated model on the " \
-      "same numbers. Any sentence that gives a House control probability must say, in plain words, that our " \
-      "model overstates certainty there."
+      "whichever party's favour it leans. Any sentence that gives a House control probability must say, in " \
+      "plain words, that our model likely overstates certainty there. Do not put a figure on the " \
+      "overstatement and do not offer a corrected probability: we have not measured either for this run, " \
+      "so any number you give for them would be invented."
 
     ASSIGNMENTS = {
       poll_reaction:
@@ -85,6 +93,12 @@ module Newsroom
         chance of winning control or a majority — never holding, keeping, defending, losing or flipping one.
         The seat thresholds for control are in the payload; do not use any others, and do not describe a
         chamber's rules beyond what it gives you.
+
+        WHAT WE HAVE ALREADY SAID
+        recent_headlines is what this site has already published. Do not tell a story it already tells; if the
+        news is that a story has moved on, say what changed rather than repeating it. An entry marked
+        "[RETRACTED by editor]" was pulled by a human after publication. Treat everything it claimed as
+        withdrawn: do not re-assert it, do not restate it in different words, and do not refer to it.
 
         UNCERTAINTY
         A probability is not a prediction. Write probabilities as our estimate of a chance, never as a

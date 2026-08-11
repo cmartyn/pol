@@ -92,6 +92,28 @@ class Newsroom::MovementNotesJobTest < ActiveJob::TestCase
 
     assert_predicate NewsroomSkip.sole, :agents_disabled?
     assert_predicate NewsroomSkip.sole, :movement_note?
+    assert_equal @race, NewsroomSkip.sole.race
+  end
+
+  # This job runs after every successful model run — a dozen times on a busy
+  # day — and almost always finds nothing moved. Checking the kill switch
+  # before that is what used to fill the skip log with rows for pieces that
+  # were never going to exist.
+  test "a disabled newsroom is silent on a week when nothing moved" do
+    moved_by(0.01)
+    Setting.set(Setting::AGENTS_ENABLED_KEY, "false")
+
+    assert_no_difference "NewsroomSkip.count" do
+      with_api_key { perform }
+    end
+  end
+
+  test "a disabled newsroom with no run history at all is silent" do
+    Setting.set(Setting::AGENTS_ENABLED_KEY, "false")
+
+    assert_no_difference "NewsroomSkip.count" do
+      with_api_key { perform }
+    end
   end
 
   test "with no API key nothing is attempted" do

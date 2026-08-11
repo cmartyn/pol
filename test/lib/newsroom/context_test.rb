@@ -56,6 +56,12 @@ class Newsroom::ContextTest < ActiveSupport::TestCase
     assert_equal "48%", national.dig(:house, :dem_control)
     assert_match(/overstates certainty/, national.dig(:house, :must_say))
     assert_nil national.dig(:senate, :must_say)
+    # No numerals: the caveat used to quote the Phase 3 measurement ("96% here
+    # against 84%"), which is one run's snapshot. Travelling with a payload
+    # whose House number is 48%, that text would instruct the model to publish
+    # figures contradicting the numbers beside it — and the citation validator
+    # only checks poll ids, so nothing downstream could catch it.
+    refute_match(/\d/, national.dig(:house, :must_say))
     assert_equal "D+2.0", national.dig(:generic_ballot, :average)
     assert_equal 1, national.dig(:generic_ballot, :polls_in_average)
   end
@@ -180,12 +186,34 @@ class Newsroom::ContextTest < ActiveSupport::TestCase
     assert_includes brief_payload[:recent_headlines].map { |entry| entry[:headline] }, "Florida moves"
   end
 
-  test "a retracted dispatch is not something to avoid repeating" do
+  # A headline a human pulled is the one the newsroom most needs to remember.
+  # Scoping this list to published rows meant retraction erased the piece from
+  # the newsroom's memory, leaving the writer free to re-assert exactly what an
+  # editor had just taken down.
+  test "a retracted dispatch stays in the don't-repeat list, flagged as retracted" do
     dispatches(:maine_poll_reaction).update!(status: :retracted)
 
-    payload = Newsroom::Context.poll_reaction(race: @race, polls: @polls, model_run: @run)
+    entry = Newsroom::Context.poll_reaction(race: @race, polls: @polls, model_run: @run)[:recent_headlines].sole
 
-    assert_nil payload[:recent_headlines]
+    assert_equal "#{Newsroom::Context::RETRACTED_MARKER} New Maine poll shows tightening Senate race",
+                 entry[:headline]
+    assert entry[:retracted]
+  end
+
+  test "a published dispatch is not flagged" do
+    entry = Newsroom::Context.poll_reaction(race: @race, polls: @polls, model_run: @run)[:recent_headlines].sole
+
+    assert_equal "New Maine poll shows tightening Senate race", entry[:headline]
+    refute entry.key?(:retracted)
+  end
+
+  test "the brief remembers retracted national pieces too" do
+    Dispatch.create!(kind: :daily_brief, status: :retracted, headline: "A brief the editor pulled",
+                     body_markdown: "Body.", published_at: Time.current)
+
+    headlines = Newsroom::Context.daily_brief(model_run: @run)[:recent_headlines].map { |entry| entry[:headline] }
+
+    assert_includes headlines, "#{Newsroom::Context::RETRACTED_MARKER} A brief the editor pulled"
   end
 
   test "the payload is JSON the way the model will see it" do

@@ -85,10 +85,30 @@ class Newsroom::CapsTest < ActiveSupport::TestCase
     assert_nil Newsroom::Caps.blocking(kind: :poll_reaction, race: @race, poll_ids: [ 42, 43 ])
   end
 
-  test "a retracted dispatch releases its polls" do
-    publish(cited: [ 42 ]).update!(status: :retracted)
+  # Retraction gives back the day's budget — that piece is not on the site —
+  # but it must not hand the polls back to be written up again. An editor who
+  # pulls a reaction and gets a regenerated one an hour later cannot win.
+  test "a retracted dispatch does not release its polls" do
+    retracted = publish(cited: [ 42 ])
+    retracted.update!(status: :retracted)
 
-    assert_nil Newsroom::Caps.blocking(kind: :poll_reaction, race: @race, poll_ids: [ 42 ])
+    reason, detail = Newsroom::Caps.blocking(kind: :poll_reaction, race: @race, poll_ids: [ 42 ])
+    assert_equal :duplicate, reason
+    assert_match(/##{retracted.id} \(retracted\) already cites \[42\]/, detail)
+  end
+
+  test "a retracted dispatch does give back its share of the day's cap" do
+    with_params(newsroom: { max_dispatches_per_day: 1 }) do
+      publish(cited: [ 42 ]).update!(status: :retracted)
+
+      assert_nil Newsroom::Caps.blocking(kind: :daily_brief)
+    end
+  end
+
+  test "a retracted movement note does not extend its own cooldown" do
+    publish(kind: :movement_note, at: 1.day.ago).update!(status: :retracted)
+
+    assert_nil Newsroom::Caps.blocking(kind: :movement_note, race: @race)
   end
 
   test "movement notes are capped to one per race per cooldown window" do

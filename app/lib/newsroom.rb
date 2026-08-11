@@ -30,9 +30,18 @@ module Newsroom
       MovementNotesJob.perform_later(model_run_id: model_run.id)
     end
 
-    # Called at the top of every newsroom job. Returns true when the newsroom
-    # may write; otherwise records the skip (so the admin can see the newsroom
-    # went quiet on purpose) and returns false.
+    # Returns true when the newsroom may write; otherwise records the skip (so
+    # the admin can see it went quiet on purpose) and returns false.
+    #
+    # Call this once per piece the newsroom would otherwise have written, AFTER
+    # working out that there is one — never at the top of a job. A movement
+    # check that found nothing moved is not a piece the newsroom decided
+    # against, and asking here first meant every job on the schedule wrote an
+    # agents_disabled row every time it ran: a dozen or more a day of "nothing
+    # was going to happen anyway", burying the real skips in exactly the
+    # incident where somebody is reading the list. Checking per piece also
+    # means flipping the switch mid-job stops the next piece rather than
+    # nothing at all.
     def clear_to_write?(kind:, race: nil)
       reason, detail = blocked
 

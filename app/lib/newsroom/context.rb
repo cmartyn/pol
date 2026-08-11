@@ -12,6 +12,9 @@ module Newsroom
   # race page it links to cannot disagree about what the same number is called.
   class Context
     PARTY_NAMES = { "dem" => "Democrat", "rep" => "Republican", "ind" => "independent", "other" => "other" }.freeze
+    # How a headline an editor pulled is presented to the writer. The prompt's
+    # "WHAT WE HAVE ALREADY SAID" section keys off this exact string.
+    RETRACTED_MARKER = "[RETRACTED by editor]".freeze
     POPULATIONS = {
       "lv" => "likely voters", "rv" => "registered voters", "a" => "adults", "unknown" => "unspecified"
     }.freeze
@@ -257,13 +260,24 @@ module Newsroom
       # What the newsroom has already said, so it doesn't say it again. Race
       # pieces see that race's recent headlines; the national brief sees the
       # whole feed's.
+      #
+      # Retracted pieces are in this list, flagged. A headline a human pulled is
+      # the single most important one not to write again, and scoping this to
+      # published rows had the opposite effect: retraction erased the piece from
+      # the newsroom's memory, leaving the writer free to re-assert exactly what
+      # an editor had just taken down. The prompt tells it to treat a flagged
+      # entry as withdrawn rather than as a story to follow up.
       def recent_headlines
-        scope = Dispatch.published.recent_first.limit(Pol::Params.fetch!(:newsroom, :recent_headline_count))
+        scope = Dispatch.recent_first.limit(Pol::Params.fetch!(:newsroom, :recent_headline_count))
         scope = scope.where(race_id: race.id) if race
 
         scope.map do |dispatch|
-          { headline: dispatch.headline, kind: dispatch.kind,
-            published: dispatch.published_at && long_date(dispatch.published_at.to_date) }
+          entry = {
+            headline: dispatch.retracted? ? "#{RETRACTED_MARKER} #{dispatch.headline}" : dispatch.headline,
+            kind: dispatch.kind,
+            published: dispatch.published_at && long_date(dispatch.published_at.to_date)
+          }.compact
+          dispatch.retracted? ? entry.merge(retracted: true) : entry
         end
       end
 

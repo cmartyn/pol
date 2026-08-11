@@ -152,6 +152,10 @@ class Newsroom::WriterTest < ActiveSupport::TestCase
         # a 96 in 100 chance of "holding" the House, which the payload never
         # said and which is not true.
         assert_match(/never holding, keeping, defending, losing or flipping/, messages.first["content"])
+        # And the instruction not to price the overstatement, in place of the
+        # measurement this prompt used to hardcode.
+        assert_match(/Do not put a figure on the overstatement/, messages.first["content"])
+        assert_match(/RETRACTED by editor/, messages.first["content"])
         assert_includes messages.last["content"], JSON.pretty_generate(@payload)
       end
     end

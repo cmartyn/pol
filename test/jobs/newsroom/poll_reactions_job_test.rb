@@ -45,6 +45,9 @@ class Newsroom::PollReactionsJobTest < ActiveJob::TestCase
     assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
   end
 
+  # One row per piece that would have been written — here, one race with two
+  # new polls — and the race on it, so the admin list says what was suppressed
+  # rather than only that something was.
   test "the kill switch stops the newsroom before it says a word" do
     Setting.set(Setting::AGENTS_ENABLED_KEY, "false")
 
@@ -56,7 +59,31 @@ class Newsroom::PollReactionsJobTest < ActiveJob::TestCase
     skip = NewsroomSkip.sole
     assert_predicate skip, :agents_disabled?
     assert_predicate skip, :poll_reaction?
-    assert_nil skip.race
+    assert_equal @race, skip.race
+  end
+
+  test "two races that would have been written give two rows, not one for the run" do
+    florida_poll = create_poll(pollster: pollsters(:beacon_polling), race: @other_race,
+                               field_end: Date.current, sample_size: 700, results: { dem: 45.0, rep: 47.0 })
+    Setting.set(Setting::AGENTS_ENABLED_KEY, "false")
+
+    with_api_key { perform(poll_ids: @polls.map(&:id) + [ florida_poll.id ]) }
+
+    assert_equal [ @other_race, @race ].sort_by(&:id), NewsroomSkip.all.map(&:race).sort_by(&:id)
+    assert NewsroomSkip.all.all?(&:agents_disabled?)
+  end
+
+  # The flood this replaced: with the check at the top of the job, every run on
+  # the schedule wrote a row whether or not it had anything to say, so a day
+  # spent switched off buried the real skips under a dozen no-ops.
+  test "a disabled newsroom with nothing to write says nothing at all" do
+    Setting.set(Setting::AGENTS_ENABLED_KEY, "false")
+
+    assert_no_difference "NewsroomSkip.count" do
+      with_api_key { perform(poll_ids: []) }
+      with_api_key { perform(poll_ids: [ polls(:generic_ballot_poll).id ]) }
+      with_api_key { Newsroom::PollReactionsJob.perform_now(model_run_id: 0, poll_ids: @polls.map(&:id)) }
+    end
   end
 
   test "the environment kill switch overrides the stored setting" do
@@ -78,6 +105,13 @@ class Newsroom::PollReactionsJobTest < ActiveJob::TestCase
 
     assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
     assert_predicate NewsroomSkip.sole, :no_api_key?
+    assert_equal @race, NewsroomSkip.sole.race
+  end
+
+  test "a missing key with nothing to write is also silent" do
+    assert_no_difference "NewsroomSkip.count" do
+      without_api_key { perform(poll_ids: []) }
+    end
   end
 
   test "a race at its daily cap gets a logged skip instead of a fourth piece" do

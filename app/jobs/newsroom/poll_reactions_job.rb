@@ -9,14 +9,13 @@ module Newsroom
     KIND = :poll_reaction
 
     def perform(model_run_id:, poll_ids: [])
-      return unless Newsroom.clear_to_write?(kind: KIND)
-
       model_run = ModelRun.find_by(id: model_run_id)
       return log("run #{model_run_id} is gone; nothing to react to") unless model_run
 
-      polls_by_race(poll_ids).each do |race, polls|
-        write(race, polls, model_run)
-      end
+      by_race = polls_by_race(poll_ids)
+      return log("no race-level polls in this sweep; nothing to react to") if by_race.empty?
+
+      by_race.each { |race, polls| write(race, polls, model_run) }
     end
 
     private
@@ -29,7 +28,13 @@ module Newsroom
             .group_by(&:race)
       end
 
+      # The kill switch and the API-key check live here, per race, rather than
+      # at the top of the job: this is the point where a piece would actually
+      # have been written, and it is the only point at which a skip row is
+      # worth writing.
       def write(race, polls, model_run)
+        return unless Newsroom.clear_to_write?(kind: KIND, race: race)
+
         poll_ids = polls.map(&:id)
         reason, detail = Caps.blocking(kind: KIND, race: race, poll_ids: poll_ids)
         if reason
