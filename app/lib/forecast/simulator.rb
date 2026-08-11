@@ -180,8 +180,14 @@ class Forecast::Simulator
       dem_holdover = Pol::Params.fetch!(:chambers, :senate_holdover_dem_caucus)
       rep_holdover = Pol::Params.fetch!(:chambers, :senate_holdover_rep)
       vp_party = Pol::Params.fetch!(:chambers, :vp_party)
-      dem_needs = vp_party == "dem" ? 50 : 51
-      rep_needs = vp_party == "rep" ? 50 : 51
+      # A tie is half the chamber; a majority without the tiebreak is one more.
+      # The vice president's party controls at a tie, the other side needs the
+      # majority — which is the whole content of the rule, and why neither
+      # number is written down anywhere but here.
+      tie = Pol::Params.fetch!(:chambers, :senate_total_seats) / 2
+      majority = tie + 1
+      dem_needs = vp_party == "dem" ? tie : majority
+      rep_needs = vp_party == "rep" ? tie : majority
 
       dem_control = 0
       rep_control = 0

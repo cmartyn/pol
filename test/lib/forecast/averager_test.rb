@@ -115,6 +115,24 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     assert_equal 2, result.poll_count
   end
 
+  # The widening threshold is a parameter like every other constant in this
+  # class, not a literal that happens to equal the file. Raising it to three
+  # makes the same two polls too thin to stand on their own.
+  test "the widening threshold comes from the params file" do
+    assert_equal 2, Pol::Params.fetch!(:averaging, :min_polls_in_window)
+
+    polls = [
+      create_poll(pollster: @beacon, field_end: AS_OF - 10, sample_size: 600, results: { dem: 49.0, rep: 45.0 }),
+      create_poll(pollster: @cardinal, field_end: AS_OF - 12, sample_size: 600, results: { dem: 47.0, rep: 46.0 })
+    ]
+
+    assert_equal 45, @averager.call(polls: polls).window_days
+
+    with_params(averaging: { min_polls_in_window: 3 }) do
+      assert_equal 120, Forecast::Averager.new(as_of: AS_OF).call(polls: polls).window_days
+    end
+  end
+
   test "a poll exactly on the window boundary is inside it" do
     polls = [
       create_poll(pollster: @beacon, field_end: AS_OF - 45, sample_size: 600, results: { dem: 50.0, rep: 44.0 }),

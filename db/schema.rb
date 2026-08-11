@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_030010) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_040001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -185,6 +185,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_030010) do
     t.integer "trigger", null: false
     t.datetime "updated_at", null: false
     t.index ["status", "started_at"], name: "index_model_runs_on_status_and_started_at"
+    t.index ["status"], name: "index_model_runs_on_single_running", unique: true, where: "(status = 0)"
   end
 
   create_table "poll_results", force: :cascade do |t|

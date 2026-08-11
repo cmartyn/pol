@@ -4,10 +4,6 @@
 #
 # Every constant comes from `averaging:` in config/model_params.yml.
 class Forecast::Averager
-  # Fewer than this many usable polls inside the narrow window and the window
-  # widens to averaging.extended_window_days.
-  MIN_POLLS_IN_WINDOW = 2
-
   # mean_margin is nil when nothing qualified — callers fall back to the
   # prior rather than pretending zero is an estimate. `weight` is W, the sum
   # of poll weights, which is what the blend saturates against and what lands
@@ -29,6 +25,7 @@ class Forecast::Averager
     @as_of = as_of.to_date
     @window_days = Pol::Params.fetch!(:averaging, :window_days)
     @extended_window_days = Pol::Params.fetch!(:averaging, :extended_window_days)
+    @min_polls_in_window = Pol::Params.fetch!(:averaging, :min_polls_in_window)
     @half_life_days = Pol::Params.fetch!(:averaging, :half_life_days).to_f
     @default_sample_size = Pol::Params.fetch!(:averaging, :default_sample_size)
     @sample_size_cap = Pol::Params.fetch!(:averaging, :sample_size_cap)
@@ -70,7 +67,7 @@ class Forecast::Averager
     measured = in_hand.filter_map { |poll| measure(poll, side_a, side_b) }
 
     window = @window_days
-    window = @extended_window_days if within(measured, @window_days).size < MIN_POLLS_IN_WINDOW
+    window = @extended_window_days if within(measured, @window_days).size < @min_polls_in_window
 
     kept = one_per_pollster(within(measured, window))
     skipped = in_hand.count { |poll| age_days(poll) <= window } - within(measured, window).size

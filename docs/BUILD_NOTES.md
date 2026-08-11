@@ -708,7 +708,18 @@ closes the run. A run can be reproduced exactly from its own row.
     a race whose polls carry no weight sits on its prior, which is also what
     stops the blend ever multiplying by a missing mean.
 
-11. **Race order is part of the seed.** Draws come off one Box–Muller stream, so
+11. **One run at a time, enforced by the database.** `model_runs` carries a
+    partial unique index over `status = running`, so two workers inserting in
+    the same instant cannot both open a run — the check and the insert are one
+    operation, and every path in is covered rather than only the ones that
+    remember to ask. A run left `running` by a killed worker would otherwise
+    block every later run forever while the site served stale numbers, so the
+    next run fails anything older than `simulation.stale_run_minutes` (30 —
+    about a thousand times the 1.6 s a run takes, and well inside the 2-hour
+    scrape cadence) and takes over, leaving the abandoned row its own
+    `error_message` rather than sweeping it away.
+
+12. **Race order is part of the seed.** Draws come off one Box–Muller stream, so
     the runner always orders races by id; the same seed with the races in a
     different order is a different (still valid, still reproducible) run.
 
@@ -771,7 +782,7 @@ races cannot average away as much as 435.
 
 ## F. Tests
 
-98 new tests (the suite goes 191 → 289), all off fixtures and hand arithmetic;
+112 new tests (the suite goes 191 → 303), all off fixtures and hand arithmetic;
 nothing touches the network. The load-bearing ones:
 
 - **Averager** — every weighted mean is a literal worked out from the published
@@ -797,3 +808,11 @@ nothing touches the network. The load-bearing ones:
   Maine's `mu` cross-checked by hand; reproducibility; the 2024 fallback; the
   governor exclusion; and three failure paths, including one that proves a
   half-written run rolls back and leaves the previous succeeded run showing.
+- **Concurrency** — the unique index proven by a second `create!` raising, with
+  the enum-to-index literal pinned alongside it so the two cannot drift; a run
+  abandoned past the cutoff failed and succeeded by its replacement, through
+  both the job and the runner; a run inside the cutoff still blocking.
+- **Parameter linkage** — the constants that decide chamber control and window
+  widening are tested by *moving* them: flipping `vp_party` turns 50 Democratic
+  seats from no control into control, and raising `min_polls_in_window` widens
+  a window that two polls had held.

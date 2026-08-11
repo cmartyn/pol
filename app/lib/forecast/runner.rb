@@ -9,6 +9,12 @@ class Forecast::Runner
   # to no chamber; the forecast covers the two chambers it models.
   MODELLED_OFFICES = %i[senate house].freeze
 
+  # Raised when another run is already in flight. Not a failed run — there is
+  # no run row to mark, because the database refused to create one. Callers
+  # decide what to say about it; nobody should treat it as an error worth
+  # retrying, because the run that is already going will produce the numbers.
+  AlreadyRunning = Class.new(StandardError)
+
   def self.call(**options)
     new(**options).call
   end
@@ -28,24 +34,63 @@ class Forecast::Runner
   attr_reader :model_run, :national_env, :generic_ballot, :simulation, :race_models
 
   def call
-    @model_run = ModelRun.create!(
-      status: :running,
-      trigger: trigger,
-      started_at: Time.current,
-      params_snapshot: Pol::Params.to_h,
-      rng_seed: @seed || SecureRandom.random_number(2**62)
-    )
+    @model_run = start_run!
 
-    forecast!
-    model_run
-  rescue StandardError => error
-    fail_run!(error)
-    raise if @raise_on_error
+    begin
+      forecast!
+      model_run
+    rescue StandardError => error
+      fail_run!(error)
+      raise if @raise_on_error
 
-    model_run
+      model_run
+    end
   end
 
   private
+    # Opening a run is the concurrency guard, and it is the database that
+    # enforces it: `index_model_runs_on_single_running` is a partial unique
+    # index over status = running, so of two workers inserting in the same
+    # instant exactly one succeeds. Asking "is one running?" first and
+    # inserting second would leave a window between the two where both see
+    # false. Every path in — the job, bin/rails pol:model, a console — goes
+    # through here and is covered by the same guarantee.
+    def start_run!
+      release_stale_run!
+
+      ModelRun.create!(
+        status: :running,
+        trigger: trigger,
+        started_at: Time.current,
+        params_snapshot: Pol::Params.to_h,
+        rng_seed: @seed || SecureRandom.random_number(2**62)
+      )
+    rescue ActiveRecord::RecordNotUnique
+      raise AlreadyRunning, "a forecast run is already in flight"
+    end
+
+    # Without this, one killed worker freezes the forecast permanently: the row
+    # it left behind says `running`, the unique index refuses every later run,
+    # and the site keeps serving plausible stale numbers with nothing to
+    # indicate anything is wrong. A run older than stale_run_minutes cannot be
+    # alive — a full run takes under two seconds — so the next run fails it and
+    # takes over. The row keeps its own error_message, so the wreck is visible
+    # afterwards rather than silently swept away.
+    def release_stale_run!
+      cutoff = Pol::Params.fetch!(:simulation, :stale_run_minutes).minutes.ago
+      stale = ModelRun.running.where("started_at IS NULL OR started_at < ?", cutoff)
+
+      released = stale.update_all(
+        status: ModelRun.statuses.fetch("failed"),
+        error_message: "abandoned: still running after #{Pol::Params.fetch!(:simulation, :stale_run_minutes)} " \
+                       "minutes, failed by the run that took over",
+        finished_at: Time.current,
+        updated_at: Time.current
+      )
+
+      logger.warn("Forecast::Runner: released #{released} abandoned run(s)") if released.positive?
+    end
+
     def forecast!
       averager = Forecast::Averager.new(as_of: as_of)
       @generic_ballot = averager.for_generic_ballot
@@ -121,6 +166,24 @@ class Forecast::Runner
       ::Forecast.insert_all!(rows) if rows.any?
     end
 
+    # A caveat that has to travel with these two rows, because everything
+    # downstream — the homepage number, a dispatch headline, an API consumer —
+    # reads p_dem_control without reading the model.
+    #
+    # v1 correlates races through ONE shared national error. 538's House model
+    # uses four correlated terms (national 3, regional 2, state 2,
+    # demographic-cluster 2, combining to 4.58 against our 2.5). The missing
+    # correlation does not average away over 435 districts, so the House seat
+    # distribution here is too narrow and p_dem_control for the House is
+    # systematically too confident, in the direction of whichever party is
+    # ahead. Measured on the live board: 96.3% here against 83.9% at 538's
+    # correlated total, seat SD 13.6 against 25.4. The Senate is affected too,
+    # by roughly 7 points, but less: 35 races cannot average away as much.
+    #
+    # The fix is a regional or state-level shared term — a change to the
+    # model's structure, not to a constant, and deliberately deferred. Until
+    # then, anything that publishes these numbers should say so.
+    # See docs/BUILD_NOTES.md Phase 3 §A4.
     def write_chamber_forecasts
       now = Time.current
       rows = simulation.chambers.map do |outcome|

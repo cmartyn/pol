@@ -4,6 +4,11 @@
 averaging:
   window_days: 45
   extended_window_days: 120
+  # Below this many usable polls inside window_days, the window widens to
+  # extended_window_days. One poll is a data point; two is the beginning of an
+  # average, and a lone poll deserves company from further back before the
+  # model leans on it.
+  min_polls_in_window: 2
   half_life_days: 14
   default_sample_size: 400
   sample_size_cap: 1500
@@ -81,10 +86,23 @@ chambers:
   # the Senate at 50 and Democrats need 51.
   # citation: docs/BUILD_NOTES.md Phase 2 §A2
   vp_party: "rep"
+  # 100 senators, so a tie is 50 and a majority without the tiebreak is 51.
+  # The simulator derives both Senate thresholds from this and vp_party rather
+  # than carrying 50 and 51 as literals: the vice president's party controls at
+  # a tie, everyone else needs a majority. Fixed at 100 by Article I and 50
+  # states; here because the arithmetic reads from it.
+  senate_total_seats: 100
   # 435 seats; a majority is 218.
   house_majority_seats: 218
 simulation:
   n_sims: 10000
+  # How long a run may sit in `running` before the next run treats it as dead,
+  # marks it failed and takes over. A full run measures 1.6 seconds, so 30
+  # minutes is about a thousand times the observed runtime — no healthy run is
+  # still going — while staying well inside the 2-hour scrape cadence, so a
+  # process killed mid-run costs at most one cycle rather than freezing the
+  # forecast until someone notices.
+  stale_run_minutes: 30
 election:
   date: "2026-11-03"
 newsroom:

@@ -47,7 +47,19 @@ namespace :pol do
     runner = Forecast::Runner.new(trigger: :manual)
 
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    run = runner.call
+    begin
+      run = runner.call
+    rescue Forecast::Runner::AlreadyRunning => error
+      # The manual path is not exempt from the concurrency guard: it inserts
+      # against the same unique index as the job, so a run kicked off by hand
+      # while an ingest run is in flight is refused rather than racing it.
+      in_flight = ModelRun.running.first
+      puts
+      puts "  #{error.message} — run #{in_flight&.id} started #{in_flight&.started_at&.to_fs(:short)}."
+      puts "  Try again once it finishes; a run takes a couple of seconds."
+      puts
+      next
+    end
     elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
 
     puts
@@ -78,6 +90,15 @@ namespace :pol do
              neither > 0.0005 ? format("   neither %4.1f%%", 100 * neither) : " " * 16,
              chamber.mean_dem_seats)
     end
+    puts "  " + "-" * 62
+    # The number does not travel without this. v1 correlates races through one
+    # national error where 538 uses four, so the House seat distribution is too
+    # narrow and its control probability is too confident — measured at 96.3%
+    # here against 83.9% at 538's correlated total.
+    puts "  Read House control as several points softer than printed: v1 has one"
+    puts "  correlated error term where 538 has four, which overstates certainty"
+    puts "  in whichever party leads (~96% here reads ~84% at 538's correlated"
+    puts "  total). Senate is affected too, by roughly 7 points. BUILD_NOTES §A4."
     puts "  " + "-" * 62
 
     if previous

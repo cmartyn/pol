@@ -25,6 +25,46 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     end
   end
 
+  # Stepping aside is not a failure. If it raised, good_job would retry it and
+  # the queue would fill with jobs fighting over a run that is already going.
+  test "stepping aside does not surface as a job failure" do
+    ModelRun.create!(status: :running, trigger: :cron, started_at: 1.minute.ago)
+
+    assert_nothing_raised { Forecast::RunJob.perform_now(trigger: :ingest) }
+  end
+
+  # The scenario that used to freeze the forecast permanently: a worker killed
+  # mid-run leaves a `running` row with no finished_at, and every later job
+  # steps aside forever while the site serves stale numbers.
+  test "a run abandoned by a killed worker is failed and the next run takes over" do
+    abandoned = ModelRun.create!(
+      status: :running, trigger: :ingest,
+      started_at: (Pol::Params.fetch!(:simulation, :stale_run_minutes) + 1).minutes.ago
+    )
+
+    assert_difference "ModelRun.succeeded.count", 1 do
+      Forecast::RunJob.perform_now(trigger: :cron)
+    end
+
+    abandoned.reload
+    assert_predicate abandoned, :failed?
+    assert_match(/abandoned/, abandoned.error_message)
+    assert_not_nil abandoned.finished_at
+  end
+
+  test "a run that is merely slow is left alone" do
+    slow = ModelRun.create!(
+      status: :running, trigger: :ingest,
+      started_at: (Pol::Params.fetch!(:simulation, :stale_run_minutes) - 1).minutes.ago
+    )
+
+    assert_no_difference "ModelRun.count" do
+      assert_nil Forecast::RunJob.perform_now(trigger: :ingest)
+    end
+
+    assert_predicate slow.reload, :running?
+  end
+
   test "a run that already finished does not block the next one" do
     ModelRun.create!(status: :failed, trigger: :cron, started_at: 1.minute.ago, finished_at: 1.minute.ago)
 

@@ -147,6 +147,42 @@ class Forecast::SimulatorTest < ActiveSupport::TestCase
     assert_equal({ "50" => 493, "51" => 507 }, senate.seat_histogram)
   end
 
+  # The two Senate thresholds are derived, not written down: a tie is half of
+  # chambers.senate_total_seats and a majority is one more, and the vice
+  # president's party is the one that controls at a tie. Flipping vp_party is
+  # the proof that both numbers come from the file — the same 50 Democratic
+  # seats that control nothing under a Republican VP control outright under a
+  # Democratic one.
+  test "the senate thresholds come from senate_total_seats and vp_party" do
+    assert_equal 100, Pol::Params.fetch!(:chambers, :senate_total_seats)
+
+    entries = balance_of_power_entries(caucus: :uncommitted)
+    republican_vp = chamber(simulate(entries, seed: 7, n_sims: 1000), :senate)
+
+    assert_equal 0.0, republican_vp.p_dem_control
+    assert_equal 0.493, republican_vp.p_rep_control
+
+    with_params(chambers: { vp_party: "dem" }) do
+      democratic_vp = chamber(simulate(entries, seed: 7, n_sims: 1000), :senate)
+
+      # 50 Democratic-caucus seats is now control, and 50 Republican is not.
+      assert_equal 1.0, democratic_vp.p_dem_control
+      assert_equal 0.0, democratic_vp.p_rep_control
+    end
+  end
+
+  test "a bigger senate would need a bigger majority" do
+    entries = Array.new(17) { |index| entry(index, certain: side(:dem)) }
+
+    # 34 holdovers + 17 = 51, a majority of 100.
+    assert_equal 1.0, chamber(simulate(entries, seed: 1, n_sims: 10), :senate).p_dem_control
+
+    with_params(chambers: { senate_total_seats: 120 }) do
+      # The same 51 seats is nowhere near a majority of 120.
+      assert_equal 0.0, chamber(simulate(entries, seed: 1, n_sims: 10), :senate).p_dem_control
+    end
+  end
+
   test "the house needs 218 seats" do
     majority = Pol::Params.fetch!(:chambers, :house_majority_seats)
     entries = Array.new(220) { |index| entry(index, chamber: :house, certain: side(:dem)) }

@@ -146,6 +146,85 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     assert_operator run.chamber_forecasts.find_by(chamber: :senate).mean_dem_seats, :>=, 35.0
   end
 
+  # --- Concurrency --------------------------------------------------------
+
+  test "the database refuses a second running run, whoever asks" do
+    ModelRun.create!(status: :running, trigger: :ingest, started_at: 1.minute.ago)
+
+    assert_no_difference "ModelRun.count" do
+      assert_raises(Forecast::Runner::AlreadyRunning) do
+        Forecast::Runner.call(trigger: :manual, as_of: AS_OF, n_sims: 50)
+      end
+    end
+  end
+
+  # The guard is a partial unique index, not a Ruby check, so it holds against
+  # two inserts in the same instant rather than only against sequential ones.
+  # This is the closest a single-process test can get to that: it proves the
+  # constraint is enforced by the database, which is what makes the atomicity
+  # true. The literal in the index has to match the enum, so that is pinned too.
+  test "only one running run can exist at the database level" do
+    assert_equal 0, ModelRun.statuses.fetch("running"),
+                 "the partial index is defined WHERE status = 0"
+
+    ModelRun.create!(status: :running, trigger: :ingest, started_at: 1.minute.ago)
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      ModelRun.create!(status: :running, trigger: :manual, started_at: Time.current)
+    end
+  end
+
+  test "runs that are not running are not covered by the guard" do
+    assert_nothing_raised do
+      3.times { ModelRun.create!(status: :succeeded, trigger: :cron, started_at: Time.current) }
+      3.times { ModelRun.create!(status: :failed, trigger: :cron, started_at: Time.current) }
+    end
+  end
+
+  test "an abandoned run is failed and its successor runs" do
+    stale_minutes = Pol::Params.fetch!(:simulation, :stale_run_minutes)
+    abandoned = ModelRun.create!(status: :running, trigger: :ingest, started_at: (stale_minutes + 1).minutes.ago)
+
+    run = Forecast::Runner.call(trigger: :cron, as_of: AS_OF, seed: SEED, n_sims: 50)
+
+    assert_predicate run, :succeeded?
+    assert_predicate abandoned.reload, :failed?
+    assert_match(/abandoned: still running after #{stale_minutes} minutes/, abandoned.error_message)
+    assert_not_nil abandoned.finished_at
+    # The wreck keeps its own record rather than being quietly reused.
+    assert_not_equal abandoned.id, run.id
+  end
+
+  test "a running row with no started_at at all is treated as abandoned" do
+    orphan = ModelRun.create!(status: :running, trigger: :ingest, started_at: nil)
+
+    Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+
+    assert_predicate orphan.reload, :failed?
+  end
+
+  test "a run inside the staleness window still blocks" do
+    stale_minutes = Pol::Params.fetch!(:simulation, :stale_run_minutes)
+    fresh = ModelRun.create!(status: :running, trigger: :ingest, started_at: (stale_minutes - 1).minutes.ago)
+
+    assert_raises(Forecast::Runner::AlreadyRunning) do
+      Forecast::Runner.call(trigger: :manual, as_of: AS_OF, n_sims: 50)
+    end
+
+    assert_predicate fresh.reload, :running?
+  end
+
+  # A run that fails leaves no running row behind, so it never becomes the
+  # thing that blocks the next one.
+  test "a failed run unblocks the next one immediately" do
+    raising(ChamberForecast, :insert_all!, "the database fell over") do
+      assert_raises(RuntimeError) { Forecast::Runner.call(trigger: :manual, as_of: AS_OF, n_sims: 50) }
+    end
+
+    assert_empty ModelRun.running
+    assert_predicate Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50), :succeeded?
+  end
+
   # --- Failure ------------------------------------------------------------
 
   test "a run that blows up marks itself failed and re-raises outside production" do

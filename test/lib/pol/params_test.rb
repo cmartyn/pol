@@ -44,6 +44,15 @@ class Pol::ParamsTest < ActiveSupport::TestCase
       Pol::Params.fetch!(:chambers, :senate_holdover_rep) + 35
     assert_equal "rep", Pol::Params.fetch!(:chambers, :vp_party)
     assert_equal 218, Pol::Params.fetch!(:chambers, :house_majority_seats)
+    # The simulator derives both Senate thresholds from this rather than
+    # carrying 50 and 51 as literals.
+    assert_equal 100, Pol::Params.fetch!(:chambers, :senate_total_seats)
+    assert_equal 51, (Pol::Params.fetch!(:chambers, :senate_total_seats) / 2) + 1
+  end
+
+  test "the thresholds the engine leans on all live in the file" do
+    assert_equal 2, Pol::Params.fetch!(:averaging, :min_polls_in_window)
+    assert_operator Pol::Params.fetch!(:simulation, :stale_run_minutes), :>, 0
   end
 
   test "the error model carries a sigma for every draw the simulator makes" do

@@ -18,6 +18,19 @@ module StubHelper
     replacing(object, name, ->(*, **) { raise message }, &block)
   end
 
+  # with_params(chambers: { vp_party: "dem" }) { ... }
+  #
+  # Overrides model_params.yml for the duration of the block, so a test can
+  # prove a constant is genuinely read from the file rather than hardcoded
+  # somewhere that happens to agree with it. Pol::Params memoises per process
+  # and reload! re-reads from disk, so the restore is exact.
+  def with_params(overrides)
+    Pol::Params.to_h.deep_merge!(overrides)
+    yield
+  ensure
+    Pol::Params.reload!
+  end
+
   private
     def replacing(object, name, implementation)
       singleton = object.singleton_class
