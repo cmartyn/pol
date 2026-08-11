@@ -36,7 +36,7 @@
     <dd class="mt-0.5"><%= @poll.sponsor.presence || "—" %></dd>
   </div>
   <div><dt class="text-xs uppercase tracking-wide text-slate-400">Source</dt>
-    <dd class="mt-0.5"><%= link_to @poll.source_url, @poll.source_url, class: "break-all text-amber-700 hover:text-amber-800", target: "_blank", rel: "noopener nofollow", data: { testid: "admin-poll-source-link" } %></dd>
+    <dd class="mt-0.5"><%= safe_external_link(@poll.source_url, @poll.source_url, class: "break-all text-amber-700 hover:text-amber-800", target: "_blank", rel: "noopener nofollow", data: { testid: "admin-poll-source-link" }) %></dd>
   </div>
   <div><dt class="text-xs uppercase tracking-wide text-slate-400">Created</dt>
     <dd class="mt-0.5"><%= @poll.created_at.strftime("%B %-d, %Y %-I:%M %p") %></dd>

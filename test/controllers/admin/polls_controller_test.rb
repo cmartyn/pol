@@ -59,6 +59,16 @@ class Admin::PollsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='admin-poll-raw-payload-empty']"
   end
 
+  test "show renders a non-http(s) source_url as inert text, not a clickable href" do
+    polls(:maine_poll_one).update_column(:source_url, "javascript:alert(1)")
+
+    get admin_poll_path(polls(:maine_poll_one))
+
+    assert_select "a[data-testid='admin-poll-source-link']", count: 0
+    assert_select "a[href='javascript:alert(1)']", count: 0
+    assert_select "body", text: /javascript:alert\(1\)/
+  end
+
   # --- new/create --------------------------------------------------------------
 
   test "new renders the form" do
