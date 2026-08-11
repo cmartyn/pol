@@ -1,0 +1,25 @@
+<%# locals: payload — Site::Charts::Timeline.build(race:) %>
+<div data-testid="timeline-chart">
+  <% if payload[:points].empty? %>
+    <p class="text-sm text-slate-500" data-testid="timeline-empty">No model run has forecast this race yet.</p>
+  <% else %>
+    <% if payload[:sparse] %>
+      <p class="mb-2 text-sm text-slate-500" data-testid="timeline-sparse-note">
+        Only <%= pluralize(payload[:points].size, "model run") %> so far — the trend will fill in as more land.
+      </p>
+    <% end %>
+    <div data-controller="timeline-chart" class="w-full">
+      <svg data-timeline-chart-target="svg" viewBox="0 0 640 220" class="h-auto w-full"
+           role="img" aria-label="Win probability over time"></svg>
+      <script type="application/json" data-timeline-chart-target="payload"><%= json_escape(payload.to_json).html_safe %></script>
+    </div>
+    <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+      <span><span class="inline-block h-2 w-2 rounded-full bg-blue-700"></span> Dem win probability</span>
+      <span><span class="inline-block h-2 w-2 rounded-full bg-red-700"></span> Rep win probability</span>
+      <% if payload[:show_other] %>
+        <span><span class="inline-block h-2 w-2 rounded-full bg-slate-500"></span> Other win probability</span>
+      <% end %>
+      <span><span class="inline-block h-2 w-3 bg-slate-100 align-middle"></span> Tossup band</span>
+    </p>
+  <% end %>
+</div>

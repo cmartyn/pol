@@ -1,0 +1,67 @@
+<% content_for :title, "Pol — 2026 midterms forecast" %>
+
+<h1 class="font-serif text-3xl font-semibold text-slate-900">2026 midterms forecast</h1>
+<%= render "shared/as_of", time: @latest_run&.started_at %>
+
+<% if @latest_run.nil? %>
+  <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="dashboard-empty">
+    No forecast run has completed yet. Once one has, the Senate and House pictures will appear here.
+  </p>
+<% else %>
+  <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
+    <%= render "home/chamber_card", chamber_forecast: @senate_chamber_forecast, histogram: @senate_histogram,
+                                     title: "Senate", house: false %>
+    <%= render "home/chamber_card", chamber_forecast: @house_chamber_forecast, histogram: @house_histogram,
+                                     title: "House", house: true %>
+  </div>
+<% end %>
+
+<section class="mt-10 border-t border-slate-200 pt-6" data-testid="national-environment">
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">National environment</h2>
+  <% if @national_environment.polled? %>
+    <p class="mt-1 text-lg text-slate-800">
+      Generic ballot:
+      <span class="font-semibold <%= @national_environment.mean_margin.positive? ? "text-blue-700" : "text-red-700" %>">
+        <%= Site::Format.margin(@national_environment.mean_margin, side_a_party: "dem", side_b_party: "rep") %>
+      </span>
+      <span class="text-sm text-slate-500">
+        (<%= pluralize(@national_environment.poll_count, "poll") %>, <%= @national_environment.window_days %>-day window, as of today)
+      </span>
+    </p>
+  <% else %>
+    <p class="mt-1 text-slate-500" data-testid="national-environment-empty">No generic-ballot polling in the current window.</p>
+  <% end %>
+</section>
+
+<% if @movers.present? %>
+  <section class="mt-10 border-t border-slate-200 pt-6" data-testid="movers-section">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Movers</h2>
+    <p class="mt-1 text-sm text-slate-500">Biggest shifts in Democratic win probability, this run vs. about a week ago.</p>
+    <ul class="mt-4 divide-y divide-slate-100">
+      <% @movers.each do |mover| %>
+        <li class="flex items-center justify-between gap-4 py-2 text-sm" data-testid="mover-row">
+          <%= link_to mover.race.name, race_path(mover.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
+          <span class="whitespace-nowrap font-semibold <%= mover.direction == :dem ? "text-blue-700" : "text-red-700" %>">
+            <%= number_with_precision(mover.delta_pp.abs, precision: 1) %> pts toward <%= mover.direction == :dem ? "Dem" : "Rep" %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
+<section class="mt-10 border-t border-slate-200 pt-6" data-testid="dashboard-dispatches">
+  <div class="flex items-baseline justify-between">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Latest dispatches</h2>
+    <%= link_to "All dispatches →", dispatches_path, class: "text-sm font-medium text-amber-700 hover:text-amber-800" %>
+  </div>
+  <div class="mt-2 max-w-3xl">
+    <% if @dispatches.any? %>
+      <%= render partial: "dispatches/dispatch", collection: @dispatches, as: :dispatch, locals: { truncate: true } %>
+    <% else %>
+      <p class="text-slate-500" data-testid="dispatches-empty">
+        No dispatches published yet — the autonomous newsroom comes online in a later phase.
+      </p>
+    <% end %>
+  </div>
+</section>

@@ -1,0 +1,8 @@
+<%# The House control probability never ships unqualified — see the brief's
+    non-negotiable rule #1 and docs/BUILD_NOTES.md Phase 3 §A4/§8.1: v1's
+    error structure is national-only correlation, and the House number is
+    measured 6-12 points overconfident. %>
+<p class="mt-1 text-xs text-slate-500" data-testid="house-caveat">
+  <sup>&dagger;</sup> Model likely overstates certainty here — see
+  <%= link_to "Known limitations", "#{methodology_path}#known-limitations", class: "underline decoration-dotted hover:text-slate-700" %>.
+</p>

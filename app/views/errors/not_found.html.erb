@@ -1,0 +1,14 @@
+<% content_for :title, "Not found · Pol" %>
+
+<div class="mx-auto max-w-2xl py-24 text-center" data-testid="not-found">
+  <p class="font-serif text-6xl text-slate-300">404</p>
+  <h1 class="mt-4 text-2xl font-semibold text-slate-900">We couldn't find that page</h1>
+  <p class="mt-3 text-slate-600">
+    The race, dispatch or page you're looking for doesn't exist — or its slug changed.
+  </p>
+  <div class="mt-8 flex justify-center gap-4 text-sm font-medium">
+    <%= link_to "Dashboard", root_path, class: "text-amber-700 hover:text-amber-800" %>
+    <%= link_to "Senate", senate_path, class: "text-amber-700 hover:text-amber-800" %>
+    <%= link_to "House", house_path, class: "text-amber-700 hover:text-amber-800" %>
+  </div>
+</div>

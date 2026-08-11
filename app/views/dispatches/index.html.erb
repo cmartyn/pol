@@ -1,0 +1,14 @@
+<% content_for :title, "Dispatches · Pol" %>
+
+<h1 class="font-serif text-3xl font-semibold text-slate-900">Dispatches</h1>
+<p class="mt-1 text-slate-600">Every note the newsroom has published, newest first.</p>
+
+<div class="mt-8 max-w-3xl" data-testid="dispatches-feed">
+  <% if @dispatches.any? %>
+    <%= render partial: "dispatches/dispatch", collection: @dispatches, as: :dispatch %>
+  <% else %>
+    <p class="text-slate-500" data-testid="dispatches-empty">
+      No dispatches published yet — the autonomous newsroom comes online in a later phase.
+    </p>
+  <% end %>
+</div>

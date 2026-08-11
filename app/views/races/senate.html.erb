@@ -1,0 +1,45 @@
+<% content_for :title, "Senate · Pol" %>
+
+<h1 class="font-serif text-3xl font-semibold text-slate-900">Senate</h1>
+<p class="mt-1 text-slate-600">All 35 seats on the 2026 ballot.</p>
+<%= render "shared/as_of", time: @latest_run&.started_at %>
+
+<div class="mt-6 overflow-x-auto">
+  <table class="w-full min-w-[720px] text-left text-sm" data-testid="senate-table">
+    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide">
+      <tr>
+        <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Race", "state", current_sort: @sort, current_direction: @direction %></th>
+        <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Rating", "rating", current_sort: @sort, current_direction: @direction %></th>
+        <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Win prob.", "probability", current_sort: @sort, current_direction: @direction %></th>
+        <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Margin", "margin", current_sort: @sort, current_direction: @direction %></th>
+        <th class="py-2 pr-3 font-medium hidden sm:table-cell">Trend</th>
+        <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Polls", "polls", current_sort: @sort, current_direction: @direction %></th>
+        <th class="py-2 font-medium"><%= senate_sort_header "Last poll", "last_poll", current_sort: @sort, current_direction: @direction %></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @rows.each do |row| %>
+        <tr data-testid="senate-race-row">
+          <td class="py-2.5 pr-3">
+            <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
+            <% if row.race.special? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">special</span><% end %>
+          </td>
+          <td class="py-2.5 pr-3 text-slate-700" data-testid="rating-word"><%= rating_word_for(row.race, row.forecast) || "—" %></td>
+          <td class="py-2.5 pr-3"><%= probability_chip(row.forecast) %></td>
+          <td class="py-2.5 pr-3 font-semibold">
+            <% if row.forecast %>
+              <span class="<%= party_text_color(margin_party(row.race, row.forecast.mean_margin)) %>">
+                <%= formatted_margin(row.race, row.forecast.mean_margin) %>
+              </span>
+            <% else %>
+              <span class="text-slate-300">—</span>
+            <% end %>
+          </td>
+          <td class="py-2.5 pr-3 hidden sm:table-cell"><%= render "races/margin_bar", race: row.race, value: row.forecast&.mean_margin %></td>
+          <td class="py-2.5 pr-3 text-slate-600"><%= row.poll_count %></td>
+          <td class="py-2.5 text-slate-600"><%= row.last_poll_date&.strftime("%b %-d, %Y") || "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

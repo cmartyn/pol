@@ -11,9 +11,17 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/"). Placeholder until Phase 4 (public
-  # site) adds the real homepage — this just gives root_url/root_path a
-  # target so the post-login redirect in Authentication#after_authentication_url
-  # has somewhere to go.
-  root to: "rails/health#show"
+  # The public site (Phase 4) — everything below is unauthenticated, served
+  # by PublicController subclasses. Phase 6's admin lives elsewhere and is
+  # untouched by this file.
+  root "home#index"
+
+  get "senate", to: "races#senate"
+  get "house", to: "races#house"
+  get "races/:slug", to: "races#show", as: :race
+
+  get "dispatches", to: "dispatches#index"
+
+  get "methodology", to: "pages#methodology"
+  get "about", to: "pages#about"
 end

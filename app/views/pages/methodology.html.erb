@@ -1,0 +1,121 @@
+<% content_for :title, "Methodology · Pol" %>
+
+<h1 class="font-serif text-3xl font-semibold text-slate-900">Methodology</h1>
+<p class="mt-2 max-w-2xl text-slate-600">
+  Every parameter this model uses lives in one file
+  (<code class="rounded bg-slate-100 px-1 py-0.5 text-sm">config/model_params.yml</code>) and is listed below,
+  with a citation where one exists. If a number isn't on this page, it isn't in the model.
+</p>
+
+<section class="mt-10 max-w-3xl" id="how-it-works">
+  <h2 class="font-serif text-xl font-semibold text-slate-900">How the forecast works</h2>
+  <ol class="mt-4 list-decimal space-y-4 pl-5 text-slate-700">
+    <li>
+      <strong class="text-slate-900">Average the polls.</strong> For each race, polls fielded within the last
+      <%= Pol::Params.fetch!(:averaging, :window_days) %> days are averaged — widening to
+      <%= Pol::Params.fetch!(:averaging, :extended_window_days) %> days when fewer than
+      <%= Pol::Params.fetch!(:averaging, :min_polls_in_window) %> qualify — keeping one poll per pollster and
+      weighting by recency (a <%= Pol::Params.fetch!(:averaging, :half_life_days) %>-day half-life) and sample
+      size (capped at <%= number_with_delimiter(Pol::Params.fetch!(:averaging, :sample_size_cap)) %>).
+    </li>
+    <li>
+      <strong class="text-slate-900">Blend with fundamentals.</strong> The poll average is blended with a
+      fundamentals-only prior — partisan lean and incumbency for the Senate; the district's 2024 result and the
+      national swing since then for the House. The more a race has been polled, the more the average counts,
+      saturating at a poll weight of <%= Pol::Params.fetch!(:blend, :weight_saturation) %>; a race with no polls
+      sits entirely on its prior.
+    </li>
+    <li>
+      <strong class="text-slate-900">Simulate <%= number_with_delimiter(Pol::Params.fetch!(:simulation, :n_sims)) %>
+      correlated elections.</strong> Every simulated world draws one shared national error — so a bad night for a
+      party is a bad night everywhere, not race-by-race independent luck — plus an independent error for each
+      race. Every error is scaled up the further out from election day the forecast is run
+      (up to <%= Pol::Params.fetch!(:error_model, :time_mult_cap) %>&times; at its widest).
+    </li>
+    <li>
+      <strong class="text-slate-900">Call control.</strong> <%= Pol::Params.fetch!(:chambers, :senate_holdover_dem_caucus) %>
+      Democratic-caucus and <%= Pol::Params.fetch!(:chambers, :senate_holdover_rep) %> Republican Senate seats
+      aren't on the 2026 ballot at all; add each simulated world's contested seats to those holdovers. Because the
+      sitting vice president is <%= Pol::Params.fetch!(:chambers, :vp_party) == "rep" ? "a Republican" : "a Democrat" %>
+      (the tiebreak), Republicans control the Senate at a <%= Pol::Params.fetch!(:chambers, :senate_total_seats) / 2 %>-seat
+      tie and Democrats need <%= (Pol::Params.fetch!(:chambers, :senate_total_seats) / 2) + 1 %> — an independent who
+      hasn't said which party they'd caucus with is <em>uncommitted</em>, and a world where an uncommitted
+      independent holds the balance counts toward neither party's control probability. The House is simpler: whoever
+      reaches <%= Pol::Params.fetch!(:chambers, :house_majority_seats) %> of 435 seats controls it. A candidate's
+      party (for <em>who wins this race</em>) and their caucus (for <em>who controls the chamber</em>) are
+      deliberately different questions throughout.
+    </li>
+  </ol>
+</section>
+
+<section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="known-limitations" data-testid="limitations">
+  <h2 class="font-serif text-xl font-semibold text-slate-900">Known limitations</h2>
+  <ul class="mt-4 list-disc space-y-3 pl-5 text-slate-700">
+    <li>
+      <strong class="text-slate-900">The House control probability is overconfident.</strong> v1 correlates every
+      race through a single shared national error term. 538's published House model uses four correlated terms
+      (national, regional, state and demographic-cluster); ours has only the first. Measured on the live board —
+      same seed, same inputs, just the national term stood up to match — the reported House control probability
+      (96.3%) falls to 83.9% once that fuller correlation is approximated, so the honest reading of the live House
+      number is roughly <strong>85&ndash;95%, nearer the bottom of that range</strong>, not the number shown at
+      face value. The Senate is affected too, by roughly 7 points, but less: 35 races can't average away as much
+      correlated uncertainty as 435. See docs/BUILD_NOTES.md Phase 3 §A4 and §8.1. Wherever this site shows a
+      House control probability, it carries a footnote back to this paragraph.
+    </li>
+    <li>
+      <strong class="text-slate-900">No pollster house-effect correction.</strong> Every poll is weighted by
+      recency and sample size only — a pollster with a persistent lean toward one party isn't adjusted for or
+      down-weighted for it.
+    </li>
+    <li>
+      <strong class="text-slate-900">2024 House baselines are redistricting-stale.</strong> Several states redrew
+      their House districts for 2026. A district's baseline is still its 2024 result on 2024 lines — for a
+      redrawn district, that describes different territory than the one actually on the 2026 ballot.
+    </li>
+    <li>
+      <strong class="text-slate-900">Imputed baselines.</strong> 37 of 435 House districts (8.5%) had no
+      major-party opponent in 2024 at all, so their baseline is a fixed
+      &plusmn;<%= Pol::Params.fetch!(:fundamentals, :imputed_baseline_margin) %>-point assumption signed toward
+      the winner, rather than a real two-party result. These carry a small "est." marker on the House table.
+    </li>
+    <li>
+      <strong class="text-slate-900">Unsettled nominees.</strong> A number of 2026 primaries hadn't happened, or
+      hadn't been called, as of the last time races were seeded. Where a party's nominee isn't settled yet, the
+      model uses the declared front-runner where one has emerged, or a generic party prior where it hasn't —
+      never a guess at a specific name.
+    </li>
+  </ul>
+</section>
+
+<section class="mt-10">
+  <h2 class="font-serif text-xl font-semibold text-slate-900">Every parameter</h2>
+  <p class="mt-1 text-slate-600">In file order, exactly as config/model_params.yml has them.</p>
+
+  <% @params.each do |section, keys| %>
+    <div class="mt-8">
+      <h3 class="text-base font-semibold text-slate-900"><%= section_title(section) %></h3>
+      <div class="mt-2 overflow-x-auto">
+        <table class="w-full min-w-[480px] text-left text-sm" data-testid="param-table-<%= section %>">
+          <tbody class="divide-y divide-slate-100">
+            <% keys.each do |key, value| %>
+              <tr data-testid="param-row">
+                <td class="w-64 py-1.5 pr-3 align-top font-mono text-xs text-slate-500"><%= key %></td>
+                <td class="w-32 py-1.5 pr-3 align-top font-medium text-slate-900" data-testid="param-value"><%= param_value(value) %></td>
+                <td class="py-1.5 align-top text-xs text-slate-500" data-testid="param-citation">
+                  <% citations = Site::ParamCitations.for(section, key) %>
+                  <% if citations.any? %>
+                    <% citations.each do |citation| %>
+                      <div class="break-all"><%= citation_link(citation) %></div>
+                    <% end %>
+                  <% else %>
+                    <span class="text-slate-300">&mdash;</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</section>

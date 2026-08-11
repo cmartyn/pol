@@ -1,0 +1,19 @@
+<%# locals: payload — Site::Charts::PollsScatter.build(race:, polls:), or nil when the race has no polls;
+             race — the same Race, only needed to format the average-margin caption below.
+    The brief wants this chart to omit itself gracefully rather than render
+    an empty axes box, so the caller only renders this partial `if payload`. %>
+<div data-controller="polls-scatter-chart" data-testid="polls-scatter-chart" class="w-full">
+  <svg data-polls-scatter-chart-target="svg" viewBox="0 0 640 220" class="h-auto w-full"
+       role="img" aria-label="Poll margins over time"></svg>
+  <script type="application/json" data-polls-scatter-chart-target="payload"><%= json_escape(payload.to_json).html_safe %></script>
+  <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+    <span><span class="inline-block h-2 w-2 rounded-full bg-blue-700"></span> Dem-leaning poll</span>
+    <span><span class="inline-block h-2 w-2 rounded-full bg-red-700"></span> Rep-leaning poll</span>
+    <% if payload[:average_margin] %>
+      <span>
+        <span class="inline-block h-0.5 w-3 bg-amber-600 align-middle"></span>
+        current average: <strong class="font-semibold text-slate-700"><%= formatted_margin(race, payload[:average_margin]) %></strong>
+      </span>
+    <% end %>
+  </p>
+</div>

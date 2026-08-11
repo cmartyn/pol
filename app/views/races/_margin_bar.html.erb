@@ -1,0 +1,20 @@
+<%# locals: race, value (nilable margin, side_a - side_b in points)
+    The brief's sparkline substitute: a tiny diverging bar rather than a
+    35-row D3 chart, which would mean 35 separate chart inits for a table
+    cell that's decorative next to the numeric margin column. %>
+<% cap = 30.0 %>
+<% if value.nil? %>
+  <span class="text-slate-300" data-testid="margin-bar-empty">&mdash;</span>
+<% else %>
+  <% side_a, side_b = race_sides(race) %>
+  <% fraction = [ value.abs / cap, 1.0 ].min * 50.0 %>
+  <div class="relative h-2 w-16 rounded bg-slate-100" data-testid="margin-bar"
+       title="<%= Site::Format.margin(value, side_a_party: side_a, side_b_party: side_b) %>">
+    <div class="absolute inset-y-0 left-1/2 w-px bg-slate-300"></div>
+    <% if value.round(1).positive? %>
+      <div class="absolute inset-y-0 left-1/2 rounded-r bg-blue-600" style="width: <%= fraction.round(1) %>%"></div>
+    <% elsif value.round(1).negative? %>
+      <div class="absolute inset-y-0 right-1/2 rounded-l bg-red-600" style="width: <%= fraction.round(1) %>%"></div>
+    <% end %>
+  </div>
+<% end %>

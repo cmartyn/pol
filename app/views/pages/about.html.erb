@@ -1,0 +1,27 @@
+<% content_for :title, "About · Pol" %>
+
+<h1 class="font-serif text-3xl font-semibold text-slate-900">About Pol</h1>
+
+<div class="mt-6 max-w-2xl space-y-4 text-slate-700">
+  <p>
+    Pol is a forecast of the 2026 U.S. Senate and House elections, built from public polling and historical
+    fundamentals — the same kind of inputs any forecaster works from — run through a correlated Monte Carlo
+    simulation and published with every number traceable back to where it came from.
+  </p>
+  <p>
+    <strong class="text-slate-900">No secret sauce.</strong> Every constant this model uses — every error term,
+    every weight, every threshold that decides a chamber's control — lives in a single file and is shown, with
+    its citation where one exists, on the <%= link_to "methodology page", methodology_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
+    If a number isn't there, it isn't in the model.
+  </p>
+  <p>
+    <strong class="text-slate-900">An autonomous newsroom, with an editor.</strong> The dispatches on this site
+    are written by an AI agent reading the model's own numbers straight off the page — it doesn't know anything
+    the forecast doesn't already show. A human editor reviews what's published and can amend or retract it;
+    a dispatch says so when that's happened.
+  </p>
+  <p>
+    Questions, corrections, or something look wrong?
+    <%= mail_to "cmartyn@gmail.com", "cmartyn@gmail.com", class: "font-medium text-amber-700 hover:text-amber-800" %>.
+  </p>
+</div>

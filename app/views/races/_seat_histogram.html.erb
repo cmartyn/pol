@@ -1,0 +1,44 @@
+<%# locals: payload, title
+    Server-rendered SVG, not D3: a static bar chart over a few dozen known
+    bins with no interactivity need doesn't benefit from D3's data-binding,
+    and this partial has to render identically at a small size (dashboard)
+    and a large one (/house), which a fixed-viewBox SVG does for free. %>
+<% bins = payload[:bins] %>
+<div data-testid="seat-histogram-<%= payload[:chamber] %>" class="w-full">
+  <svg viewBox="0 0 600 130" class="h-auto w-full" role="img"
+       aria-label="<%= title %> seat distribution across simulated worlds, centered near <%= payload[:mean_dem_seats]&.round || "an unknown number of" %> Democratic-caucus seats">
+    <% if bins.any? %>
+      <% max_probability = payload[:max_probability] %>
+      <% chart_height = 100.0 %>
+      <% n = bins.size %>
+      <% slot_width = 600.0 / n %>
+      <% bar_width = [ slot_width - 1.5, 0.5 ].max %>
+      <% bins.each_with_index do |bin, i| %>
+        <% bar_height = max_probability.positive? ? (bin.probability / max_probability) * chart_height : 0.0 %>
+        <% x = i * slot_width %>
+        <% y = chart_height - bar_height %>
+        <rect x="<%= x.round(2) %>" y="<%= y.round(2) %>" width="<%= bar_width.round(2) %>" height="<%= [ bar_height, 0.5 ].max.round(2) %>"
+              class="<%= bin.meets_dem_threshold ? "fill-blue-600" : "fill-slate-300" %>">
+          <title><%= bin.seats %> seats: <%= Site::Format.percent(bin.probability) %> of simulations</title>
+        </rect>
+      <% end %>
+      <% threshold_index = bins.index { |bin| bin.seats >= payload[:dem_threshold] } %>
+      <% if threshold_index %>
+        <% threshold_x = (threshold_index * slot_width).round(2) %>
+        <line x1="<%= threshold_x %>" y1="0" x2="<%= threshold_x %>" y2="<%= chart_height %>"
+              stroke="#475569" stroke-width="1" stroke-dasharray="3,2" />
+      <% end %>
+      <text x="0" y="<%= chart_height + 16 %>" font-size="11" fill="#64748b"><%= bins.first.seats %></text>
+      <text x="600" y="<%= chart_height + 16 %>" text-anchor="end" font-size="11" fill="#64748b"><%= bins.last.seats %></text>
+      <text x="300" y="<%= chart_height + 16 %>" text-anchor="middle" font-size="11" fill="#94a3b8">seats (Dem caucus), dashed line = majority</text>
+    <% else %>
+      <text x="300" y="55" text-anchor="middle" font-size="12" fill="#94a3b8">No simulation yet</text>
+    <% end %>
+  </svg>
+
+  <p class="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
+    <span class="font-semibold text-blue-700"><%= Site::Format.percent(payload[:p_dem_control]) %> Dem control</span>
+    <span class="font-semibold text-red-700"><%= Site::Format.percent(payload[:p_rep_control]) %> Rep control</span>
+    <span class="text-slate-500">mean <%= number_with_precision(payload[:mean_dem_seats], precision: 1) %> Dem-caucus seats</span>
+  </p>
+</div>

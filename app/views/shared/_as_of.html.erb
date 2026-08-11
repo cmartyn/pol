@@ -1,0 +1,6 @@
+<%# locals: time — a ModelRun#started_at, or nil %>
+<% if time %>
+  <p class="text-xs text-slate-500" data-testid="as-of"><%= Site::Format.as_of(time) %></p>
+<% else %>
+  <p class="text-xs text-slate-500" data-testid="as-of">No completed forecast run yet</p>
+<% end %>
