@@ -1,6 +1,8 @@
 require "test_helper"
 
 class Admin::SimpleCsvTest < ActiveSupport::TestCase
+  BOM = "\uFEFF".freeze
+
   test "parses a header row and data rows into an array of hashes" do
     rows = Admin::SimpleCsv.parse("a,b,c\n1,2,3\n4,5,6\n")
 
@@ -53,5 +55,35 @@ class Admin::SimpleCsvTest < ActiveSupport::TestCase
   test "an empty field between commas is an empty string, not nil" do
     rows = Admin::SimpleCsv.parse("a,b,c\n1,,3\n")
     assert_equal [ { "a" => "1", "b" => "", "c" => "3" } ], rows
+  end
+
+  # A leading UTF-8 byte-order-mark (Excel's "CSV UTF-8" export prepends
+  # one) must not survive into the first header's name — see SimpleCsv's
+  # own comment for why a corrupted "race_slug" header is a silent data
+  # hazard, not just a cosmetic one.
+  test "a UTF-8 BOM (as a decoded U+FEFF character) prefixed to the file parses identically to the clean file" do
+    clean = "race_slug,pollster\nsenate-fl-2026-special,Beacon\n"
+    bom_prefixed = BOM + clean
+
+    assert_equal Admin::SimpleCsv.parse(clean), Admin::SimpleCsv.parse(bom_prefixed)
+  end
+
+  test "a UTF-8 BOM (as raw undecoded bytes, e.g. straight off a file upload) is stripped the same way" do
+    clean = "race_slug,pollster\nsenate-fl-2026-special,Beacon\n"
+    bom_prefixed = "\xEF\xBB\xBF".b + clean.b
+
+    assert_equal Admin::SimpleCsv.parse(clean), Admin::SimpleCsv.parse(bom_prefixed)
+  end
+
+  test "a BOM-prefixed file's first header is readable under its plain name, not a corrupted one" do
+    rows = Admin::SimpleCsv.parse("#{BOM}race_slug,pollster\nsenate-fl-2026-special,Beacon\n")
+
+    assert_equal "senate-fl-2026-special", rows.first["race_slug"]
+    assert_nil rows.first["#{BOM}race_slug"]
+  end
+
+  test "only a LEADING BOM is stripped — a U+FEFF character elsewhere in the file is left alone" do
+    rows = Admin::SimpleCsv.parse("a,b\n1,val#{BOM}ue\n")
+    assert_equal "val#{BOM}ue", rows.first["b"]
   end
 end

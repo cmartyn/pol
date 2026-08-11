@@ -105,6 +105,13 @@ module Admin
       # enum), each optional: a blank pct means that party has no result on
       # this poll (most races don't have an independent, generic ballot has
       # no candidates at all). Only non-blank rows become results.
+      #
+      # pct goes through Admin::PercentValue rather than a bare #to_f: a
+      # typo like "N/A" must come out the other end of this method as
+      # something Ingest::RecordPoll/Admin::UpdatePoll's own
+      # pct.is_a?(Numeric) check rejects, not as #to_f's silent 0.0 — the
+      # exact hazard Admin::PollCsvImport already guarded against on the CSV
+      # path (see that class), now shared so the two doors can't drift.
       def results_from_params
         rows = params.dig(:poll, :results)
         return [] if rows.blank?
@@ -116,7 +123,10 @@ module Admin
         rows.to_unsafe_h.filter_map do |party, row|
           next if row["pct"].blank?
 
-          { party: party, pct: row["pct"].to_f, candidate: row["candidate_id"].presence && Candidate.find_by(id: row["candidate_id"]) }
+          {
+            party: party, pct: Admin::PercentValue.parse(row["pct"]),
+            candidate: row["candidate_id"].presence && Candidate.find_by(id: row["candidate_id"])
+          }
         end
       end
 

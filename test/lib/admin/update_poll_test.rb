@@ -148,4 +148,18 @@ class Admin::UpdatePollTest < ActiveSupport::TestCase
     result = Admin::UpdatePoll.call(@poll, attributes, results: [ { party: :dem, pct: 140.0 } ])
     assert result.invalid?
   end
+
+  # Finding 2 (review fix): the controller no longer coerces a typed
+  # percentage with #to_f before it reaches here (see Admin::PercentValue),
+  # so a non-numeric value arrives as the original String — this proves
+  # UpdatePoll's own is_a?(Numeric) check rejects that String on its own
+  # terms, independent of what the controller does with it.
+  test "rejects a result whose percentage is a non-numeric String, leaving the poll unchanged" do
+    original_pct = @poll.poll_results.find_by(party: :dem).pct
+
+    result = Admin::UpdatePoll.call(@poll, attributes, results: [ { party: :dem, pct: "N/A" }, { party: :rep, pct: 44.5 } ])
+
+    assert result.invalid?
+    assert_equal original_pct, @poll.reload.poll_results.find_by(party: :dem).pct
+  end
 end

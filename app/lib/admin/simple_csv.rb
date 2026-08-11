@@ -22,12 +22,40 @@ module Admin
   module SimpleCsv
     module_function
 
+    # Excel's "CSV UTF-8" export (the common Windows/Mac path for "save this
+    # spreadsheet as CSV") prepends a UTF-8 byte-order-mark to announce its
+    # own encoding. Left alone, that BOM byte sequence glues itself onto the
+    # start of the first header's name — the header ends up as the U+FEFF
+    # character followed by "race_slug", a string that is never equal to
+    # the plain "race_slug" a CSV row hash is read with again. Every row's
+    # race_slug lookup against that corrupted header then comes back nil,
+    # and PollCsvImport's blank-means-generic-ballot rule (intentional for a
+    # truly blank column) silently reassigns every named race to the
+    # generic ballot instead — reported as "created", not "invalid",
+    # because as far as RecordPoll can tell a generic-ballot poll was
+    # exactly what was asked for.
+    UTF8_BOM_BYTES = "\xEF\xBB\xBF".b.freeze
+
     def parse(text)
-      rows = tokenize(text.to_s)
+      rows = tokenize(strip_bom(text.to_s))
       return [] if rows.empty?
 
       headers = rows.first.map { |header| header.to_s.strip }
       rows.drop(1).map { |row| headers.each_with_index.to_h { |header, index| [ header, row[index] ] } }
+    end
+
+    # Strips a LEADING byte-order-mark only — never touches a BOM character
+    # appearing anywhere else in the file (there is no global replace here,
+    # only a check against the first three bytes). Works whether `text`
+    # arrived already decoded as UTF-8 (the BOM is then a single character,
+    # encoded as those same three bytes once reinterpreted as raw bytes) or
+    # as undecoded bytes tagged ASCII-8BIT straight off an upload — both are
+    # compared at the byte level so one check covers both cases.
+    def strip_bom(text)
+      bytes = text.b
+      return text unless bytes.start_with?(UTF8_BOM_BYTES)
+
+      bytes.byteslice(UTF8_BOM_BYTES.bytesize..).force_encoding(Encoding::UTF_8)
     end
 
     def tokenize(text)

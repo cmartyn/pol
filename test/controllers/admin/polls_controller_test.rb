@@ -134,6 +134,17 @@ class Admin::PollsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='admin-poll-pollster-input'][value='Harbor Analytics']"
   end
 
+  test "create surfaces a validation error for a non-numeric percentage, rather than recording a zero" do
+    assert_no_difference [ "Poll.count", "PollResult.count" ] do
+      post admin_polls_path, params: { poll: valid_poll_params(
+        results: { dem: { pct: "N/A" }, rep: { pct: "44.5" }, ind: { pct: "" }, other: { pct: "" } }
+      ) }
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "[data-testid='admin-flash-alert']", text: /is not a party\/pct pair/
+  end
+
   # --- edit/update -------------------------------------------------------------
 
   test "edit renders the form pre-filled from the existing poll" do
@@ -181,6 +192,23 @@ class Admin::PollsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_select "[data-testid='admin-poll-duplicate-notice'] a[href='#{admin_poll_path(poll_b)}']"
     assert_equal "Harbor Analytics", poll_a.reload.pollster.name
+  end
+
+  test "update surfaces a validation error for a non-numeric percentage, rather than recording a zero" do
+    poll = Ingest::RecordPoll.call(
+      { pollster_name: "Harbor Analytics", race: races(:senate_maine), field_end: Date.new(2026, 8, 4),
+        source_url: "https://example.com/harbor-1" },
+      results: [ { party: :dem, pct: 48.0 }, { party: :rep, pct: 44.5 } ], entry_mode: :manual
+    ).poll
+
+    patch admin_poll_path(poll), params: { poll: valid_poll_params(
+      results: { dem: { pct: "N/A" }, rep: { pct: "44.5" }, ind: { pct: "" }, other: { pct: "" } }
+    ) }
+
+    assert_response :unprocessable_entity
+    assert_select "[data-testid='admin-flash-alert']", text: /is not a party\/pct pair/
+    assert_equal 48.0, poll.reload.poll_results.find_by(party: :dem).pct,
+      "the poll must be left unchanged when the update is rejected"
   end
 
   test "update destroy touches the OLD race when a poll is reassigned to another race" do

@@ -159,4 +159,24 @@ class Admin::PollCsvImportTest < ActiveSupport::TestCase
   test "an empty file produces no rows" do
     assert_equal [], Admin::PollCsvImport.call("")
   end
+
+  # Regression: a UTF-8 BOM (Excel's "CSV UTF-8" export prepends one) used
+  # to glue itself onto the "race_slug" header, so every row's race_slug
+  # read against that corrupted header came back nil — silently landing a
+  # named-race row on the generic ballot instead, reported as "created" (a
+  # generic-ballot poll is a perfectly valid outcome), not "invalid". This
+  # is the exact reproduction: a row naming a real race, in a BOM-prefixed
+  # file, must land ON that race, not on the generic ballot.
+  test "a UTF-8 BOM prefixed to the file does not misattribute a named race to the generic ballot" do
+    row = "#{races(:senate_florida_special).slug},Beacon Polling,,2026-08-04,700,lv,," \
+          "https://example.com/bom-1,48.0,44.5,,,,,"
+    bom_prefixed_file = "\uFEFF" + csv(row)
+
+    result = Admin::PollCsvImport.call(bom_prefixed_file)
+
+    assert_equal 1, result.size
+    assert result.first.created?
+    assert_equal races(:senate_florida_special), result.first.poll.race
+    assert_not_nil result.first.poll.race_id
+  end
 end

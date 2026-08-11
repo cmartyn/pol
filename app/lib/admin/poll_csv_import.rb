@@ -101,12 +101,7 @@ module Admin
             candidate = race.candidates.find_by(name: csv_row[meta[:candidate_column]])
           end
 
-          # Float(..., exception: false) parses a real number; anything else
-          # (e.g. "N/A") is passed through as the original string rather than
-          # silently coerced to 0.0 by #to_f — RecordPoll's own validation
-          # rejects a non-Numeric pct with its own message, so the row comes
-          # back :invalid instead of quietly recording a fake zero result.
-          { party: meta[:party], pct: Float(raw_pct, exception: false) || raw_pct, candidate: candidate }
+          { party: meta[:party], pct: Admin::PercentValue.parse(raw_pct), candidate: candidate }
         end
       end
   end
