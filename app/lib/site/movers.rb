@@ -7,10 +7,9 @@
 # dropped rather than shown as false movement.
 #
 # Three bulk queries total, none of them scaling with the number of races:
-# the two model runs (an in-memory scan of ModelRun.succeeded — "history is
-# short right now, a handful of runs" per BUILD_NOTES, so loading all of them
-# to find the closest is cheap and needs no database-specific date math), and
-# one Forecast query per run.
+# the two model runs (ModelRun.comparison_run, which the newsroom's movement
+# notes also use, so both answer "last week" the same way), and one Forecast
+# query per run.
 module Site
   class Movers
     Mover = Struct.new(:race, :delta_pp, :latest_p_dem_win, :previous_p_dem_win, keyword_init: true) do
@@ -46,11 +45,7 @@ module Site
 
     private
       def comparison_run(latest)
-        target = latest.started_at - @window_days.days
-        candidates = ModelRun.succeeded.where.not(id: latest.id).to_a
-        return nil if candidates.empty?
-
-        candidates.min_by { |run| (run.started_at - target).abs }
+        ModelRun.comparison_run(latest, window_days: @window_days)
       end
 
       def build_movers(latest, previous)

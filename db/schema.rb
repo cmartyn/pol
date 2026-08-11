@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_040001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_050001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -188,6 +188,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_040001) do
     t.index ["status"], name: "index_model_runs_on_single_running", unique: true, where: "(status = 0)"
   end
 
+  create_table "newsroom_skips", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "detail"
+    t.integer "kind", null: false
+    t.string "payload_digest"
+    t.bigint "race_id"
+    t.integer "reason", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_newsroom_skips_on_created_at"
+    t.index ["race_id"], name: "index_newsroom_skips_on_race_id"
+    t.index ["reason", "created_at"], name: "index_newsroom_skips_on_reason_and_created_at"
+  end
+
   create_table "poll_results", force: :cascade do |t|
     t.bigint "candidate_id"
     t.datetime "created_at", null: false
@@ -295,6 +308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_040001) do
   add_foreign_key "dispatches", "races"
   add_foreign_key "forecasts", "model_runs"
   add_foreign_key "forecasts", "races"
+  add_foreign_key "newsroom_skips", "races"
   add_foreign_key "poll_results", "candidates"
   add_foreign_key "poll_results", "polls"
   add_foreign_key "polls", "pollsters"

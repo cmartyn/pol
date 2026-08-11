@@ -43,4 +43,34 @@ class ModelRunTest < ActiveSupport::TestCase
 
     assert_equal [ model_runs(:model_run_one), older_succeeded ], ordered.to_a
   end
+
+  # The one answer to "what did this look like last week", shared by the
+  # dashboard's movers module and the newsroom's movement notes.
+  test "comparison_run picks the succeeded run closest to the window, in either direction" do
+    latest = model_runs(:model_run_one)
+    yesterday = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 1.day.before(latest.started_at))
+    six_days = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 6.days.before(latest.started_at))
+    ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 40.days.before(latest.started_at))
+
+    assert_equal six_days, ModelRun.comparison_run(latest, window_days: 7)
+    assert_equal yesterday, ModelRun.comparison_run(latest, window_days: 0)
+  end
+
+  test "comparison_run ignores failed and running runs, and is nil with no history" do
+    latest = model_runs(:model_run_one)
+    ModelRun.create!(status: :failed, trigger: :cron, started_at: 7.days.before(latest.started_at))
+    ModelRun.create!(status: :running, trigger: :cron, started_at: 7.days.before(latest.started_at))
+
+    assert_nil ModelRun.comparison_run(latest, window_days: 7)
+  end
+
+  test "previous_succeeded is the run immediately before, never the run itself or a later one" do
+    latest = model_runs(:model_run_one)
+    just_before = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 1.hour.before(latest.started_at))
+    ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 3.days.before(latest.started_at))
+    ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 1.hour.after(latest.started_at))
+
+    assert_equal just_before, ModelRun.previous_succeeded(latest)
+    assert_nil ModelRun.previous_succeeded(ModelRun.succeeded.order(:started_at).first)
+  end
 end
