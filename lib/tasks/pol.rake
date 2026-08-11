@@ -29,7 +29,9 @@ namespace :pol do
     outcomes.each do |outcome|
       printf("  %-58s %-10s %6d %5d %5d %5d\n", outcome.source.truncate(58), outcome.status,
              outcome.fetched, outcome.created, outcome.duplicate, outcome.skipped)
-      puts "      #{outcome.error}" if outcome.error.present? && outcome.status != :partial
+      # When rows were skipped the Skip column already says so; anything else
+      # (a missing page, a fetch that failed outright) needs spelling out.
+      puts "      #{outcome.error}" if outcome.error.present? && outcome.skipped.zero?
     end
     puts "  " + "-" * 94
     printf("  %-58s %-10s %6d %5d %5d %5d\n", "TOTAL (#{outcomes.size} sources)", "",

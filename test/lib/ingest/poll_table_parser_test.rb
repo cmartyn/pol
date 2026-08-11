@@ -144,6 +144,45 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
     assert_equal 2, result.reasons[:missing_percentage]
   end
 
+  # Montana's page is the live example: a Libertarian column that most
+  # pollsters did not test, dashed out row after row. Reading those dashes as
+  # "no result" rather than "unparseable" is worth 13 real polls on that page
+  # alone; reading them as zero would be inventing data.
+  test "a dashed column means that candidate was not tested, not that the row is broken" do
+    html = three_way_html(minor: [ "—", "3%" ])
+
+    result = Ingest::PollTableParser.new(html: html, page_url: PAGE_URL).call
+
+    assert_equal 2, result.rows.size
+    assert_equal 0, result.skipped
+    assert_equal %i[dem rep], result.rows.first.results.map(&:party)
+    assert_equal %i[dem rep other], result.rows.second.results.map(&:party)
+  end
+
+  test "a dashed major-party column is a broken row, not an untested candidate" do
+    result = Ingest::PollTableParser.new(html: three_way_html(minor: [ "3%" ], dem: "—"), page_url: PAGE_URL).call
+
+    assert_empty result.rows
+    assert_equal 1, result.reasons[:missing_percentage]
+  end
+
+  def three_way_html(minor:, dem: "48%")
+    rows = minor.map.with_index do |value, index|
+      "<tr><td>Pollster #{index}</td><td>July #{index + 1}–#{index + 3}, 2026</td><td>600 (LV)</td>" \
+        "<td>#{dem}</td><td>44%</td><td>#{value}</td></tr>"
+    end.join
+
+    <<~HTML
+      <html><body><section><h2 id="Polling">Polling</h2>
+        <table class="wikitable"><tbody>
+          <tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th>
+              <th>Alani Bankhead (D)</th><th>Kurt Alme (R)</th><th>Kyle Austin (L)</th></tr>
+          #{rows}
+        </tbody></table>
+      </section></body></html>
+    HTML
+  end
+
   test "a table with fewer than two parties is not a general-election poll" do
     html = poll_page_html(
       dem_column: "Jordan Ellis (D)", rep_column: "Undecided",

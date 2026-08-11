@@ -196,6 +196,213 @@ only *aggregator averages*, not individual polls. The individual generic-ballot
 polls live on `2026 United States elections` § Polling, which is what the
 scraper reads.
 
-## B–F
+## B. Fetcher notes
 
-Filled in as the ingestion code lands (fetcher, seeds, parsers, fixtures, live run).
+`Ingest::WikipediaClient` GETs
+`https://en.wikipedia.org/api/rest_v1/page/html/{title}` as specified. That
+endpoint now answers **301** with a same-host `Location:` of
+`/w/rest.php/v1/page/{title}/html`, so the client follows same-host redirects
+(max 3 hops) rather than hard-coding the new path — the documented URL keeps
+working and a future move is absorbed too. Off-host redirects are refused. The
+User-Agent is descriptive and carries the contact address from
+`model_params.yml`; timeouts are 15 s open and read; a request is attempted 3
+times with exponential backoff on 5xx and transport errors and **never** on
+404; and each client instance paces itself to one request per second, measured
+from the end of the previous request.
+
+Pacing and backoff default to zero under `Rails.env.test?` — the suite never
+reaches a live server (WebMock forbids it), so there is nothing to be polite
+to. The tests that are *about* pacing pass their own values and a fake sleeper.
+
+## C. Seed notes
+
+`bin/rails pol:seed_races` is idempotent: every race is upserted by slug
+(`senate-2026-ga`, `senate-2026-oh-special`, `house-2026-al-01`), so re-running
+after a primary resolves updates in place. A candidate dropped from the
+verified list is deleted unless a poll result already points at them, in which
+case the historical link wins and the task warns.
+
+**Senate `lean`** = mean over 2024 and 2020 of (state margin − national
+margin), D−R points, from the two presidential pages' "Results by state"
+tables. Maine's and Nebraska's statewide rows are flagged with a dagger because
+those states also have per-district rows; the dagger is stripped and the
+district rows ignored. 2020's table includes DC and 2024's does not — no
+consequence here, since DC has neither a Senate seat nor a House district.
+
+**Uncontested in 2026** is left `false` for every race. Nothing in the sources
+reliably establishes a 2026 one-major-party ballot this far from the election;
+Phase 6's admin can set it where it becomes true.
+
+## D. Parser design decisions
+
+1. **Grid normalisation first.** `Ingest::TableGrid` expands `rowspan`/`colspan`
+   into a dense 2-D grid before anything else. Wikipedia's polling tables lean on
+   both heavily (one pollster cell spanning four result rows is routine), and the
+   presidential results tables use two stacked header rows. Cell text drops
+   `<style>` and `<sup>` (reference and footnote markers) and turns `<br>` into a
+   space, so `Jon<br>Husted (R)` reads as `Jon Husted (R)` rather than
+   `JonHusted (R)`.
+2. **Aggregator tables are skipped**, detected by a "source of poll aggregation"
+   or "dates updated" header. They are averages of other people's polls, not
+   polls.
+3. **A table is only ingested when its party columns cover at least two distinct
+   parties, and — for any party where the race has seeded candidates — the column
+   surname matches one of them.** This is what separates real general-election
+   matchups from the two other kinds of table that sit in the same "Polling"
+   section: primary polls (columns are `Buddy Carter` / `Mike Collins` /
+   `Derek Dooley`, no party marker at all → zero party columns → skipped) and
+   hypothetical matchups against non-candidates (`Jon Ossoff (D)` vs
+   `Brad Raffensperger (R)` in Georgia, where the Republican nominee is Mike
+   Collins → skipped). On the Georgia fixture this is the difference between 39
+   rows and the 10 polls of the race that is actually happening. Races with no
+   seeded candidate for a party (the unsettled ones in A1) fall back to
+   party-only matching, which is the best available.
+4. **Dates.** Four shapes occur in the wild and all are handled:
+   `April 16, 2025`; `February 10–12, 2025`; `May 15 – June 21, 2026`;
+   `December 29, 2025 – January 4, 2026`. The separator is always U+2013 in
+   practice; ASCII `-` and em dash are accepted too. Anything else is skipped and
+   counted, never guessed.
+5. **Sample size / population.** `600 (LV)` → 600 + `lv`. The population codes
+   actually present are LV, RV, A and V; `V` maps to `unknown` because "voters"
+   is not one of the model's three defined populations, and v1 does not adjust
+   for population anyway.
+6. **A dashed cell is "not tested", not zero — but only for minor parties.**
+   Montana's page is the case that settled this: its main table carries a
+   Libertarian column that most pollsters left out, dashed row after row.
+   Treating those dashes as unparseable threw away 13 of that page's 22 real
+   polls (and 2 of Mississippi's 3); treating them as 0% would be inventing
+   data. So an `ind` or `other` column that is dashed simply contributes no
+   result, while a dashed Democratic or Republican column still kills the row —
+   a matchup missing a major party is not a matchup. A row must end up with at
+   least two results across at least two parties.
+7. **Pollster names.** Standalone partisan tags are stripped before
+   canonicalisation, so `Tulchin Research (D)` and `Tulchin Research` are the
+   same pollster. The unmodified cell text is preserved in `raw_payload`.
+8. **Provenance.** `source_url` is the article URL plus the enclosing section's
+   anchor (`...#Polling_3`). Those anchors were checked against the *rendered*
+   page, not just Parsoid — `id="Polling_3"` exists on both, so the links land
+   on the right table. `raw_payload` keeps every cell of the row, keyed by
+   column label.
+9. **House baselines.** `2024 United States House of Representatives elections`
+   carries one table per state with a Candidates cell like
+   `▌Y Barry Moore (Republican) 78.5% ▌Tom Holmes (Democratic) 21.5%`.
+   Percentages are summed *by party*, which is what makes Louisiana's jungle
+   primary (three Republicans on one line) come out right. Where a cell spells
+   out ranked-choice rounds, only the deciding round is counted — summing
+   Alaska's first round *and* its instant runoff put that district's two-party
+   total at 195.8%.
+10. **Structural rows.** Blank separator rows and the "Primary elections are
+    held" dividers (one cell stretched across most of the table) are recognised
+    as structure and passed over silently rather than counted as failures.
+
+### Known caveats
+
+- Several states redistricted mid-decade for 2026. A district's
+  `baseline_margin` is its **2024** result on the **2024** lines, which is what
+  the brief specifies and what `baseline_source_url` points at, but for
+  redrawn districts the 2024 number describes different territory. Phase 6's
+  admin can override.
+- Phase 2 seeds no 2026 House incumbency, so Phase 3's `open_seat_adj` has no
+  input for the House yet. Deliberately out of scope here; it needs the 2026
+  House page, not the 2024 one.
+- Independents (Osborn, Achilles, Bodnar, Bengs, Pinkins) are seeded with no
+  `caucus_with`. Osborn has said publicly he would caucus with neither party,
+  and the rest have not said. Phase 3 needs an explicit rule for tallying an
+  independent win rather than a guess made here.
+- Where a page publishes both a three-way and a two-way version of the same
+  matchup (Montana does), both are ingested. They are different published
+  matchups with different digests; Phase 3 keeps one poll per pollster, so this
+  does not double-count.
+
+## E. Fixtures
+
+Real Parsoid HTML, trimmed to the sections the parsers care about. Regenerate
+with:
+
+```
+bin/rails pol:refresh_fixtures
+```
+
+The task fetches each page live and writes the trimmed file, printing its size.
+The trim keeps the `<section>` elements whose heading matches and drops
+everything else — infoboxes, navboxes, references, images — which is what gets
+a 2.8 MB Parsoid document down to tens of kilobytes. Two fixtures are also
+row-capped because they would otherwise dominate: the generic ballot (561 rows)
+keeps 45 rows per table, and the House page keeps four states rather than
+fifty. Total committed fixture weight is about 1.0 MB.
+
+| Fixture | What it is there for |
+|---|---|
+| `senate_georgia.html` | the heavy case: an aggregator table, five primary tables and eight hypothetical matchups around one real one |
+| `senate_ohio_special.html` | a special election, party columns in R-then-D order, a "Primary elections are held" divider row |
+| `senate_iowa.html` | a middling race |
+| `senate_rhode_island.html` | a sparse race (2 polls) |
+| `generic_ballot.html` | party-named columns and heavy rowspan (one pollster over several subsamples) |
+| `house_results_2024.html` | Alabama (rowspan + safe seats), Alaska (ranked choice), Louisiana (jungle primary), Washington (top-two, incl. a race with no Republican) |
+| `presidential_2024.html`, `presidential_2020.html` | two stacked header rows; Maine/Nebraska daggers |
+| `poll_table_malformed.html` | hand-mangled copy of the Rhode Island fixture — gibberish dates, a missing pollster, a non-numeric percentage, a row that stops early, a header-less table and a body-less one. **Not** regenerated by the task. |
+
+No test in the suite touches the network: `WebMock.disable_net_connect!(allow_localhost: true)` is set in `test/test_helper.rb`, and every Wikipedia fetch goes through `WikipediaStubHelper`.
+
+## F. Live run
+
+Run once against live Wikipedia on August 11, 2026 (then a second sweep after
+the parser change described in D6 — see below).
+
+### `bin/rails pol:seed_races`
+
+| | |
+|---|---|
+| Senate races | **35** (33 Class 2 + 2 specials) |
+| Senate races with a presidential lean | 35 |
+| House districts | **435** |
+| Imputed baselines | **45 (10%)** — comfortably under the 15% ceiling |
+| Candidates seeded | 66 |
+| Warnings | none |
+
+The 45 imputed districts: AL-3, AL-4, AL-5, CA-12, CA-16, CA-20, CA-34, CA-37,
+FL-20, IL-15, IL-16, KY-4, KY-5, LA-4, MA-1, MA-2, MA-3, MA-4, MA-5, MA-6,
+MA-7, MN-1, MN-2, MN-3, MN-4, MN-5, MN-6, MN-7, MN-8, MS-3, NV-2, NC-3, NC-6,
+OK-3, PA-3, TX-1, TX-9, TX-11, TX-13, TX-19, TX-20, TX-25, TX-30, WA-4, WA-9.
+Every one is a district where a major party did not field a candidate in 2024 —
+safe seats, plus the California and Washington top-two races that ended with two
+candidates of the same party.
+
+Lean extremes, as a sanity check: WY −46.1, WV −41.9, OK −35.2 at one end;
+MA +27.8, RI +15.8, DE +15.3 at the other.
+
+### `bin/rails pol:scrape`
+
+36 sources (35 Senate pages + the generic ballot). **No source 404'd and none
+failed.**
+
+| Sweep | Rows seen | New | Duplicate | Skipped |
+|---|---|---|---|---|
+| First | 804 | 785 | 4 | 15 |
+| Second (after the D6 fix) | 804 | 15 | 789 | 0 |
+
+Resulting database: **800 polls — 241 Senate and 559 generic ballot** — with
+1,620 poll results across 133 pollsters, comfortably past the targets of ≥10
+Senate and ≥5 generic-ballot polls. Every poll has a
+`https://en.wikipedia.org/wiki/...#Polling...` source URL; 437 Senate results
+are linked to a specific candidate (the rest are the party-fallback races from
+A1 and minor-party columns).
+
+**24 of the 35 Senate races have at least one poll.** The eleven with none —
+CO, DE, IL, LA, NJ, NM, OK, OR, TN, WV, WY — have no polling section content on
+their pages at all, which is what you would expect for uncompetitive or
+late-primary races; nothing was invented to fill them. Best-polled races: NC 26,
+TX 24, MT 22, MI 21, FL-special 21, AK 15, OH-special 15, NH 13.
+
+The 4 duplicates in the first sweep were genuine within-page repeats (the same
+poll listed in two matchup tables on the Minnesota, South Carolina and generic-
+ballot pages). The 15 skips were all the Montana/Mississippi dashed-column rows
+that D6 then recovered — hence the second sweep, which also served as a
+789-row demonstration that the dedup contract holds at scale.
+
+Spot-check against the live rendered page (not the Parsoid copy the scraper
+reads): the newest North Carolina poll is stored as Change Research,
+2026-08-03 → 2026-08-06, n=915 LV, Whatley (R) 43.0, Cooper (D) 50.0, and the
+page's row reads `Change Research (D) | August 3–6, 2026 | 915 (LV) | ± 3.5% |
+43% | 50% | – | 7%`. The partisan tag is stripped from the pollster name; the
+numbers match exactly.

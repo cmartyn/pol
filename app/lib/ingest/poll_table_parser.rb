@@ -56,6 +56,10 @@ module Ingest
       other: /\(\s*(?:L|Lib|Libertarian|G|Green|C|Constitution|WF|Working\s+Families)\s*\)/i
     }.freeze
 
+    # Parties whose column a pollster may reasonably have left out of a given
+    # poll. A missing Democrat or Republican means the row is not a matchup.
+    MINOR_PARTIES = %i[ind other].freeze
+
     BARE_PARTY = {
       dem: /\b(?:Democratic|Democrat|DFL)\b/i,
       rep: /\b(?:Republican|GOP)\b/i,
@@ -180,12 +184,20 @@ module Ingest
 
         results = []
         layout.parties.each do |column, (party, candidate)|
+          # A dashed minor-party cell means the poll did not test that
+          # candidate — routine where a table carries a Libertarian or
+          # independent column that only some pollsters included. That is a
+          # column with no result, not a zero. A dashed *major*-party column is
+          # a different animal: the poll is not a usable matchup, so the row
+          # goes.
+          next if cells[column].blank? && MINOR_PARTIES.include?(party)
+
           match = PCT.match(cells[column].text)
           return :missing_percentage if match.nil?
 
           results << Entry.new(party: party, pct: match[1].to_f, candidate: candidate, column: layout.labels[column])
         end
-        return :missing_percentage if results.size < 2
+        return :missing_percentage if results.size < 2 || results.map(&:party).uniq.size < 2
 
         size, population = SampleSize.parse(layout.sample ? cells[layout.sample].text : "")
 
