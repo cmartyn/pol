@@ -6,6 +6,7 @@ require_relative "test_helpers/session_test_helper"
 require_relative "test_helpers/stub_helper"
 require_relative "test_helpers/wikipedia_stub_helper"
 require_relative "test_helpers/poll_factory"
+require_relative "test_helpers/query_counting"
 
 # Nothing in this suite is allowed to reach the network. Wikipedia is always
 # WebMock-stubbed (see WikipediaStubHelper); localhost stays open for the
@@ -24,5 +25,6 @@ module ActiveSupport
     include WikipediaStubHelper
     include StubHelper
     include PollFactory
+    include QueryCounting
   end
 end

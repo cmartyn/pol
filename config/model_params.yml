@@ -117,3 +117,22 @@ newsroom:
 scrape:
   cadence_hours: 2
   user_agent_contact: "cmartyn@gmail.com"
+site:
+  # Rolling comparison window for the dashboard's "Movers" module: the latest
+  # succeeded model run is compared against the succeeded run closest to this
+  # many days before it (closest, not "within" — history is short right now,
+  # a handful of runs, so the module has to work with whatever exists).
+  movers_window_days: 7
+  # Below this many points of |Δ p_dem_win|, a shift is Monte Carlo noise, not
+  # a mover. Five same-seed reruns of the live board measured ~1.4pp of
+  # run-to-run noise on the Senate control probability at n_sims=10,000; 1.5
+  # sits just above that floor.
+  # citation: docs/BUILD_NOTES.md Phase 3 §8.2 (10,000-sim noise measurement)
+  movers_floor_pp: 1.5
+  # How many races the dashboard's Movers module shows.
+  movers_count: 6
+  # A race whose leading side's win probability is at or under this renders
+  # "Tossup" as its headline descriptor instead of "Favors {Party}". Editorial
+  # language choice, not a model parameter — the underlying probability is
+  # unchanged and still shown.
+  tossup_band_pp: 65.0
