@@ -15,12 +15,23 @@ class Pol::ParamsTest < ActiveSupport::TestCase
     assert_match(/not_a_real_key/, error.message)
   end
 
+  # writer_model is the stand-in for "a param a later phase still has to fill";
+  # it stays null until Phase 5 verifies an OpenRouter slug.
   test "fetch! raises KeyError on a nil value by default" do
-    assert_raises(KeyError) { Pol::Params.fetch!(:fundamentals, :pres_national_margin_2024) }
+    assert_raises(KeyError) { Pol::Params.fetch!(:newsroom, :writer_model) }
   end
 
   test "fetch! returns nil when allow_nil is true" do
-    assert_nil Pol::Params.fetch!(:fundamentals, :pres_national_margin_2024, allow_nil: true)
+    assert_nil Pol::Params.fetch!(:newsroom, :writer_model, allow_nil: true)
+  end
+
+  # Phase 2 verified these three against the sources recorded in
+  # docs/BUILD_NOTES.md; the forecast engine reads them without allow_nil, so a
+  # regression to null has to fail here rather than at model-run time.
+  test "the Phase 2 fundamentals are filled in with verified numbers" do
+    assert_in_delta(-1.5, Pol::Params.fetch!(:fundamentals, :pres_national_margin_2024))
+    assert_in_delta 4.5, Pol::Params.fetch!(:fundamentals, :pres_national_margin_2020)
+    assert_in_delta(-2.6, Pol::Params.fetch!(:fundamentals, :house_national_margin_2024))
   end
 
   test "to_h returns the full deeply-symbolized params tree" do

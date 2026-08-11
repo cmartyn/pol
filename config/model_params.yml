@@ -13,9 +13,17 @@ blend:
 fundamentals:
   incumbency_adj: 1.5
   open_seat_adj: 1.5
-  pres_national_margin_2024: null   # D minus R, pct pts. VERIFY-PHASE-2 + citation
-  pres_national_margin_2020: null   # VERIFY-PHASE-2 + citation
-  house_national_margin_2024: null  # VERIFY-PHASE-2 + citation
+  # D minus R, pct pts. Harris 75,017,613 (48.32%) vs Trump 77,302,580 (49.80%)
+  # of 155,238,302 total (FEC certified).
+  # citation: https://en.wikipedia.org/wiki/2024_United_States_presidential_election
+  pres_national_margin_2024: -1.5
+  # Biden 81,283,501 (51.31%) vs Trump 74,223,975 (46.85%) of 158,429,631 (FEC).
+  # citation: https://en.wikipedia.org/wiki/2020_United_States_presidential_election
+  pres_national_margin_2020: 4.5
+  # National U.S. House popular vote: D 70,571,330 (47.2%) vs R 74,390,864
+  # (49.8%), per the Clerk of the House's official 2024 election statistics.
+  # citation: https://en.wikipedia.org/wiki/2024_United_States_House_of_Representatives_elections
+  house_national_margin_2024: -2.6
   imputed_baseline_margin: 35.0
 error_model:
   # election-day-equivalent sigmas, margin scale; citations VERIFY-PHASE-3
