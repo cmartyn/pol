@@ -256,7 +256,10 @@ Phase 6's admin can set it where it becomes true.
    Collins → skipped). On the Georgia fixture this is the difference between 39
    rows and the 10 polls of the race that is actually happening. Races with no
    seeded candidate for a party (the unsettled ones in A1) fall back to
-   party-only matching, which is the best available.
+   party-only matching, which is the best available. The same rule quietly
+   handles "Generic Democrat" columns (Montana and Mississippi both have one):
+   the label names no real candidate, so the table is refused — a poll against
+   a hypothetical generic opponent is not a poll of the race.
 4. **Dates.** Four shapes occur in the wild and all are handled:
    `April 16, 2025`; `February 10–12, 2025`; `May 15 – June 21, 2026`;
    `December 29, 2025 – January 4, 2026`. The separator is always U+2013 in
@@ -275,15 +278,19 @@ Phase 6's admin can set it where it becomes true.
    result, while a dashed Democratic or Republican column still kills the row —
    a matchup missing a major party is not a matchup. A row must end up with at
    least two results across at least two parties.
-7. **Pollster names.** Standalone partisan tags are stripped before
+7. **Sponsor.** The parser reads a `Sponsor`/`Client` column when a table has
+   one, but no page in this corpus does — Wikipedia writes the sponsor into the
+   poll-source cell instead. So `polls.sponsor` is null across the live run,
+   correctly, rather than for want of trying.
+8. **Pollster names.** Standalone partisan tags are stripped before
    canonicalisation, so `Tulchin Research (D)` and `Tulchin Research` are the
    same pollster. The unmodified cell text is preserved in `raw_payload`.
-8. **Provenance.** `source_url` is the article URL plus the enclosing section's
+9. **Provenance.** `source_url` is the article URL plus the enclosing section's
    anchor (`...#Polling_3`). Those anchors were checked against the *rendered*
    page, not just Parsoid — `id="Polling_3"` exists on both, so the links land
    on the right table. `raw_payload` keeps every cell of the row, keyed by
    column label.
-9. **House baselines.** `2024 United States House of Representatives elections`
+10. **House baselines.** `2024 United States House of Representatives elections`
    carries one table per state with a Candidates cell like
    `▌Y Barry Moore (Republican) 78.5% ▌Tom Holmes (Democratic) 21.5%`.
    Percentages are summed *by party*, which is what makes Louisiana's jungle
@@ -291,7 +298,7 @@ Phase 6's admin can set it where it becomes true.
    out ranked-choice rounds, only the deciding round is counted — summing
    Alaska's first round *and* its instant runoff put that district's two-party
    total at 195.8%.
-10. **Structural rows.** Blank separator rows and the "Primary elections are
+11. **Structural rows.** Blank separator rows and the "Primary elections are
     held" dividers (one cell stretched across most of the table) are recognised
     as structure and passed over silently rather than counted as failures.
 
