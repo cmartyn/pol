@@ -6,7 +6,14 @@ class Candidate < ApplicationRecord
   # rep? methods. Only meaningful when party is ind.
   enum :caucus_with, { dem: 0, rep: 1 }, prefix: :caucus_with
 
-  belongs_to :race
+  # touch: true — a candidate add/edit/remove changes what the race page's
+  # candidate list and the Senate table show, both cached on the race's
+  # updated_at (Phase 4's fragment-cache keys). Covers admin CRUD (Admin::
+  # CandidatesController) and Ingest::SeedRaces' post-primary sync/prune
+  # (#sync_candidates, #prune_candidates) alike: both go through this
+  # association's real AR create/update/destroy, never update_all/
+  # delete_all, so the touch callback fires either way.
+  belongs_to :race, touch: true
 
   # The DB has always enforced NOT NULL on name/party (see db/migrate/
   # ..._create_candidates.rb); nothing needed a matching Rails validation

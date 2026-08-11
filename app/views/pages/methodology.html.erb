@@ -73,7 +73,9 @@
       redrawn district, that describes different territory than the one actually on the 2026 ballot.
     </li>
     <li>
-      <strong class="text-slate-900">Imputed baselines.</strong> 37 of 435 House districts (8.5%) had no
+      <strong class="text-slate-900">Imputed baselines.</strong>
+      <% house_imputed_pct = @house_district_count.zero? ? 0 : (100.0 * @house_imputed_count / @house_district_count) %>
+      <%= @house_imputed_count %> of <%= @house_district_count %> House districts (<%= number_to_percentage(house_imputed_pct, precision: 1) %>) had no
       major-party opponent in 2024 at all, so their baseline is a fixed
       &plusmn;<%= Pol::Params.fetch!(:fundamentals, :imputed_baseline_margin) %>-point assumption signed toward
       the winner, rather than a real two-party result. These carry a small "est." marker on the House table.

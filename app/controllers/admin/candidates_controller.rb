@@ -32,6 +32,13 @@ module Admin
     def destroy
       @race.candidates.find(params[:id]).destroy
       redirect_to edit_admin_race_path(@race), notice: "Candidate removed."
+    rescue ActiveRecord::InvalidForeignKey
+      # A candidate with poll results (poll_results.candidate_id) is protected
+      # by the DB's foreign key with no ON DELETE clause, so #destroy raises
+      # rather than silently orphaning those rows. That is the right outcome —
+      # this is real data, not a bug — but it should not be an unhandled 500.
+      redirect_to edit_admin_race_path(@race),
+                  alert: "Candidate has poll results; reassign or delete those polls first."
     end
 
     private

@@ -54,4 +54,21 @@ class Admin::CandidatesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to edit_admin_race_path(races(:senate_maine))
     assert_not Candidate.exists?(candidate.id)
   end
+
+  # M4: destroying a candidate with poll results violates the DB foreign key
+  # (poll_results.candidate_id has no ON DELETE clause) and used to 500 as an
+  # unhandled ActiveRecord::InvalidForeignKey.
+  test "destroy on a candidate with poll results flashes an error instead of raising" do
+    candidate = candidates(:maine_dem)
+    assert PollResult.exists?(candidate_id: candidate.id), "fixture assumption: maine_dem has poll results"
+
+    assert_no_difference "races(:senate_maine).candidates.count" do
+      delete admin_race_candidate_path(races(:senate_maine), candidate)
+    end
+
+    assert_redirected_to edit_admin_race_path(races(:senate_maine))
+    follow_redirect!
+    assert_select "[data-testid='admin-flash-alert']", text: /poll results/
+    assert Candidate.exists?(candidate.id)
+  end
 end

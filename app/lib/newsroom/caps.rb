@@ -50,12 +50,20 @@ module Newsroom
       [ :cap_reached, "#{count} dispatches already published for #{race.slug} today; the cap is #{limit}" ]
     end
 
-    # A race that drifts a little every day is one story, not seven.
+    # A race that drifts a little every day is one story, not seven. Unlike
+    # the day caps above, this scope is deliberately NOT limited to
+    # .published: a movement note an editor retracted is still the reason the
+    # newsroom should stay quiet about this race's drift for the rest of the
+    # window. Scoping to .published here would let the very next run
+    # regenerate the note the editor just pulled — movement notes carry no
+    # poll_ids, so the duplicate guard below can't catch that the way it
+    # catches a re-scraped poll reaction; this cooldown is the only guard
+    # they have.
     def movement_cooldown(kind, race, now)
       return nil unless kind.to_sym == :movement_note && race
 
       days = Pol::Params.fetch!(:newsroom, :movement_note_cooldown_days)
-      previous = Dispatch.published.movement_note
+      previous = Dispatch.movement_note
                          .where(race_id: race.id)
                          .where(published_at: (now - days.days)..now)
                          .recent_first.first

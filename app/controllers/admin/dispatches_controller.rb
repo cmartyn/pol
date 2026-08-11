@@ -31,6 +31,7 @@ module Admin
     # between the writer's cap and the editor's: it stays live here too.
     def update
       if @dispatch.update(dispatch_params.merge(edited_at: Time.current))
+        touch_race_for_cache
         redirect_to admin_dispatch_path(@dispatch), notice: "Dispatch updated."
       else
         render :edit, status: :unprocessable_entity
@@ -39,12 +40,25 @@ module Admin
 
     def retract
       @dispatch.update!(status: :retracted)
+      touch_race_for_cache
       redirect_to admin_dispatch_path(@dispatch), notice: "Dispatch retracted."
     end
 
     private
       def set_dispatch
         @dispatch = Dispatch.find(params[:id])
+      end
+
+      # The cache-consistency rule (Phase 4), extended to editing/retracting a
+      # dispatch that is NOT the race's current latest published one: the race
+      # page's cache key (app/views/races/show.html.erb) is keyed on
+      # @latest_dispatch, which does not change when an older piece is edited
+      # or pulled, so without this the cached feed would keep rendering
+      # content a `.update` or `.retract` had just changed underneath it —
+      # same failure Admin::UpdatePoll#update! already guards against for
+      # polls. A no-op for a national dispatch, which has no race.
+      def touch_race_for_cache
+        @dispatch.race&.touch
       end
 
       def dispatch_params

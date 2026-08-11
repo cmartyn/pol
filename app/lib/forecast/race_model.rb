@@ -62,8 +62,25 @@ class Forecast::RaceModel
     end
   end
 
+  # M5: a race with no Democrat, no Republican, and only one distinct minor
+  # party among its remaining candidates (two independents and nobody else is
+  # the live shape) would ask the averager to measure a side against itself.
+  # Forecast::Averager#call refuses (ArgumentError: "side_a and side_b must
+  # differ") rather than silently reading a margin of zero — correctly, since
+  # there is no honest margin between a matchup and itself — but one
+  # malformed race raising was taking down the whole model run. Treated
+  # exactly like an unpolled race instead: prior only, no blend, same as if
+  # it simply had no polls. Checked unconditionally, not only when contested:
+  # an uncontested race still computes `average` below (its weight feeds
+  # to_entry even though certain_side overrides mu/sigma), so the guard has
+  # to hold there too, and doing so costs nothing since certain_side already
+  # ignores this value's mu/sigma either way.
   def average
-    @average ||= @averager.for_race(race, side_a: side_a.party, side_b: side_b.party, polls: @polls)
+    @average ||= if degenerate_sides?
+      unpolled_average
+    else
+      @averager.for_race(race, side_a: side_a.party, side_b: side_b.party, polls: @polls)
+    end
   end
 
   def polled?
@@ -144,6 +161,16 @@ class Forecast::RaceModel
   end
 
   private
+    # True when side_a and side_b resolved to the same party — see the
+    # comment on #average above for when and why that happens.
+    def degenerate_sides?
+      side_a.party == side_b.party
+    end
+
+    def unpolled_average
+      Forecast::Averager::Result.new(mean_margin: nil, weight: 0.0, poll_count: 0, window_days: 0, skipped_count: 0)
+    end
+
     def senate_prior
       lean = race.lean || 0.0
       lean + national_env + (Pol::Params.fetch!(:fundamentals, :incumbency_adj) * incumbent_direction)
@@ -203,12 +230,14 @@ class Forecast::RaceModel
       candidates.select { |candidate| candidate.party == party.to_s }.min_by(&:id)
     end
 
-    # The strongest non-major-party candidate, used only when a major party has
-    # nobody on the ballot. `except` keeps side B from picking side A again.
+    # The strongest non-major-party candidate, used only when a major party
+    # has nobody on the ballot. `except` keeps side B from picking side A
+    # again. The tie-break itself lives in Site::RaceSides, which needs the
+    # identical rule to label a margin's sides correctly outside the engine —
+    # extracted so the two cannot silently diverge (see Site::RaceSides for
+    # the shared code and docs/BUILD_NOTES.md Phase 3 §C4).
     def top_minor_candidate(except: nil)
-      candidates
-        .reject { |candidate| MAJOR_PARTIES.include?(candidate.party) || (except && candidate.name == except) }
-        .min_by { |candidate| [ candidate.party == "ind" ? 0 : 1, candidate.id ] }
+      Site::RaceSides.top_minor_candidate(candidates, except: except)
     end
 
     def side_for(candidate)

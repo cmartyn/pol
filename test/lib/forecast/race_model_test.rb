@@ -258,6 +258,43 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     assert_in_delta 5.0, subject.average.mean_margin, 1e-9
   end
 
+  # --- Degenerate sides (M5) -----------------------------------------------
+
+  # Two independents and nobody else: side_a claims the lower-id independent,
+  # and side_b's fallback has no Republican and no OTHER minor candidate left
+  # to exclude its way to — so both sides land on :ind. Forecast::Averager
+  # refuses to average a side against itself; this proves RaceModel absorbs
+  # that instead of raising, so one malformed race cannot fail a whole run.
+  test "two independents and no major-party candidate is treated as unpolled rather than raising" do
+    race = senate_race(lean: 0.0, incumbent_party: :ind, open_seat: false)
+    race.candidates.create!(name: "Ty Loner", party: :ind)
+    race.candidates.create!(name: "Cass Freeman", party: :ind)
+    subject = model(race, national_env: 0.0)
+
+    assert_equal :ind, subject.side_a.party
+    assert_equal :ind, subject.side_b.party
+
+    entry = nil
+    assert_nothing_raised { entry = subject.to_entry }
+
+    refute_predicate subject, :polled?
+    assert_in_delta subject.prior, subject.mu, 1e-9
+    assert_equal :sigma_state_unpolled, subject.sigma_key
+    assert_equal 0.0, entry.weight
+  end
+
+  # A normal two-independent-free race is unaffected: the guard only fires
+  # when side_a and side_b actually collide.
+  test "a normal contested race is unaffected by the degenerate-sides guard" do
+    race = senate_race(lean: 4.0, incumbent_party: :rep, open_seat: true)
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF, sample_size: 1350,
+                results: { dem: 53.0, rep: 43.0 })
+    subject = model(race, national_env: 2.0)
+
+    assert_predicate subject, :polled?
+    assert_in_delta 8.0, subject.mu, 1e-9
+  end
+
   # --- Uncontested --------------------------------------------------------
 
   test "an uncontested race has one certain winner and takes no noise" do

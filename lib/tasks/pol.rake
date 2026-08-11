@@ -186,18 +186,21 @@ end
 
 # The races whose Democratic win probability moved most between two runs,
 # reported in percentage points. Ten is enough to see a wave forming without
-# printing 470 lines.
+# printing 470 lines. The noise floor is site.movers_floor_pp — the same one
+# the dashboard's Movers module uses — so the rake task and the site agree on
+# what "moved" means rather than each carrying its own cutoff.
 def biggest_movers(run, previous, limit: 10)
   before = previous.forecasts.pluck(:race_id, :p_dem_win).to_h
   names = Race.where(id: before.keys).pluck(:id, :state, :district, :office).to_h do |id, state, district, office|
     [ id, office == "house" ? "#{state}-#{format('%02d', district)}" : "#{state} #{office.capitalize}" ]
   end
+  floor_pp = Pol::Params.fetch!(:site, :movers_floor_pp)
 
   run.forecasts
      .where(race_id: before.keys)
      .pluck(:race_id, :p_dem_win)
      .map { |race_id, now| [ names[race_id], 100 * (now - before[race_id]), now ] }
-     .reject { |_, change, _| change.abs < 0.05 }
+     .reject { |_, change, _| change.abs < floor_pp }
      .sort_by { |_, change, _| -change.abs }
      .first(limit)
 end

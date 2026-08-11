@@ -6,9 +6,12 @@ module Admin
   # colliding with a DIFFERENT poll while leaving the row being edited alone
   # (its own current digest is not a collision with itself). Status is
   # :updated, :duplicate or :invalid — the same never-raises contract as
-  # RecordPoll, and validation reuses the exact same rules (pollster name,
-  # source_url, field_end, at least one well-formed result) by delegating to
-  # a throwaway RecordPoll-shaped check rather than re-encoding them here.
+  # RecordPoll. Validation (pollster name, source_url, field_end, at least
+  # one well-formed result) is the exact same rules as RecordPoll's, kept as
+  # its own copy here rather than a shared extraction — the two doors are
+  # independent call sites, each with its own test coverage (test/lib/
+  # ingest/record_poll_test.rb, test/lib/admin/update_poll_test.rb), and
+  # four blank/format checks are cheaper to duplicate than to indirect.
   class UpdatePoll
     STATUSES = %i[updated duplicate invalid].freeze
 

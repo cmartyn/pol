@@ -105,10 +105,18 @@ class Newsroom::CapsTest < ActiveSupport::TestCase
     end
   end
 
-  test "a retracted movement note does not extend its own cooldown" do
-    publish(kind: :movement_note, at: 1.day.ago).update!(status: :retracted)
+  # F3 fix: a retracted movement note used to fall out of the cooldown scope
+  # entirely (it was `Dispatch.published.movement_note`), so the very next
+  # 2-hourly run would regenerate the piece an editor had just pulled — the
+  # delta that prompted it hadn't gone anywhere. The cooldown must survive
+  # retraction even though the day caps above deliberately do not.
+  test "a retracted movement note still holds its cooldown, so a later run does not regenerate it" do
+    retracted = publish(kind: :movement_note, at: 1.day.ago)
+    retracted.update!(status: :retracted)
 
-    assert_nil Newsroom::Caps.blocking(kind: :movement_note, race: @race)
+    reason, detail = Newsroom::Caps.blocking(kind: :movement_note, race: @race)
+    assert_equal :cap_reached, reason
+    assert_match(/##{retracted.id}/, detail)
   end
 
   test "movement notes are capped to one per race per cooldown window" do

@@ -46,6 +46,23 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # M1: the imputed-baseline sentence used to hardcode "37 of 435 (8.5%)" —
+  # this proves it now reads live data instead, by changing the live data and
+  # checking the sentence follows.
+  test "methodology's imputed-baseline count reflects the live House data, not a hardcoded figure" do
+    # The fixture board already carries 1 House district (house_ny_17, not
+    # imputed); adding 3 imputed ones makes 3 of 4 (75.0%) — a figure only a
+    # live query, not a hardcoded string, could produce.
+    3.times do |n|
+      Race.create!(office: :house, state: "OH", district: 90 + n, cycle: 2026,
+                   slug: "house-oh-#{90 + n}-imputed-test", baseline_margin: 35.0, baseline_imputed: true)
+    end
+
+    get methodology_path
+
+    assert_select "[data-testid='limitations'] li", text: /3 of 4 House districts \(75\.0%\)/
+  end
+
   test "methodology's How the forecast works section is present with an anchor" do
     get methodology_path
     assert_select "#how-it-works"

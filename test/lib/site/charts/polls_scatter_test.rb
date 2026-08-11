@@ -35,6 +35,37 @@ class Site::Charts::PollsScatterTest < ActiveSupport::TestCase
     assert_in_delta 1.0, two[:margin]
   end
 
+  # F1 (integration-lite): the old `side_b = rep ? "rep" : "rep"` bug meant a
+  # race with no Republican candidate still asked every poll for a "rep"
+  # result, found none, and dropped every point — so a genuinely polled race
+  # rendered "No public polling" on the race page (app/views/races/
+  # show.html.erb renders the poll table only `if polls_scatter`). This race
+  # has a Democrat and an independent, no Republican, and a poll that
+  # measures exactly that matchup: the scatter must still build.
+  test "no Republican on the ballot: the scatter still builds against whichever two sides are actually polled" do
+    race = Race.create!(office: :senate, state: "OH", cycle: 2026, slug: "senate-oh-2026-no-rep-scatter-test", lean: 0.0)
+    dem = race.candidates.create!(name: "Ada Dean", party: :dem)
+    ind = race.candidates.create!(name: "Ty Loner", party: :ind)
+    poll = Poll.create!(
+      pollster: pollsters(:beacon_polling), race: race,
+      field_end: Date.new(2026, 7, 29), sample_size: 600, population: :lv,
+      source_url: "https://example.com/polls/oh-no-rep", dedup_digest: "test-no-rep-race",
+      entry_mode: :manual
+    )
+    poll.poll_results.create!(party: :dem, pct: 42.0, candidate: dem)
+    poll.poll_results.create!(party: :ind, pct: 39.0, candidate: ind)
+
+    payload = Site::Charts::PollsScatter.build(
+      race: race, polls: race.polls.includes(:poll_results, :pollster), as_of: AS_OF
+    )
+
+    assert_not_nil payload, "a polled race with no Republican must not be treated as unpolled"
+    assert_equal "dem", payload[:side_a_party]
+    assert_equal "ind", payload[:side_b_party]
+    assert_equal 1, payload[:points].size
+    assert_in_delta 3.0, payload[:points].first[:margin]
+  end
+
   test "a poll missing one side's result is left off the scatter, not crashed on" do
     race = races(:senate_maine)
     dem_only_poll = Poll.create!(

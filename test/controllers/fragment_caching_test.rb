@@ -95,4 +95,46 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
       assert_select "[data-testid='dispatch-card']", count: 2
     end
   end
+
+  # F4a: Candidate belongs_to :race, touch: true — an admin candidate edit (or
+  # the post-primary pol:seed_races re-run) must bust the race page's cache
+  # entry, since the candidate list rendered there is built inside the
+  # `<% cache %>` block keyed on [race, latest_run, latest_dispatch].
+  test "a candidate change busts a race page's cache entry" do
+    with_fragment_caching do
+      get race_path(races(:senate_maine).slug)
+      assert_select "li", text: /Sam Winter/
+
+      candidates(:maine_ind).update!(name: "Alex Renamed")
+
+      get race_path(races(:senate_maine).slug)
+      assert_select "li", text: /Sam Winter/, count: 0
+      assert_select "li", text: /Alex Renamed/
+    end
+  end
+
+  # F4b: retracting (or editing) a dispatch that is NOT the race's current
+  # latest published one does not change @latest_dispatch, so without
+  # Admin::DispatchesController touching the race explicitly, the cache key
+  # would stay identical and the retracted piece would keep rendering in the
+  # cached feed until something else happened to bust it.
+  test "retracting an older, non-latest dispatch busts a race page's cache entry" do
+    with_fragment_caching do
+      older = dispatches(:maine_poll_reaction)
+      Dispatch.create!(
+        race: races(:senate_maine), kind: :movement_note, headline: "A newer dispatch lands",
+        body_markdown: "More words about the Maine Senate race.", model_slug: "fixture/writer-model",
+        status: :published, published_at: older.published_at + 1.day
+      )
+
+      get race_path(races(:senate_maine).slug)
+      assert_select "[data-testid='dispatch-card']", count: 2
+
+      sign_in_as users(:one)
+      post retract_admin_dispatch_path(older)
+
+      get race_path(races(:senate_maine).slug)
+      assert_select "[data-testid='dispatch-card']", count: 1
+    end
+  end
 end

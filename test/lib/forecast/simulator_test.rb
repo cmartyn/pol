@@ -96,6 +96,24 @@ class Forecast::SimulatorTest < ActiveSupport::TestCase
     assert_equal [ "34", "36" ], senate.seat_histogram.keys
   end
 
+  # F2: the test above only proves sharing *within* a chamber (both entries
+  # are Senate) — a refactor that drew `national` once per chamber loop,
+  # instead of once for the whole call, would leave every test above green
+  # while quietly severing the House-Senate correlation. One Senate entry and
+  # one House entry, both mu 0 with race-level sigma ~0, isolate the shared
+  # national draw as (almost) the only thing deciding either: with the same
+  # national array, side_a wins the identical set of simulated worlds in both
+  # chambers, so the two win counts match exactly, not just approximately.
+  # (Verified against a hand-rolled per-chamber-loop mutation: every seed
+  # tried decorrelates this pair's counts by several out of 2000.)
+  test "the national error is shared across chambers too, not just within one" do
+    entries = [ entry(1, chamber: :senate, mu: 0.0, sigma: 0.001), entry(2, chamber: :house, mu: 0.0, sigma: 0.001) ]
+    result = simulate(entries, seed: 11, n_sims: 2000)
+    senate_race, house_race = result.races
+
+    assert_equal senate_race.p_dem_win, house_race.p_dem_win
+  end
+
   test "independent error alone would give the middle outcome most of the time" do
     entries = [ entry(1, mu: 0.0, sigma: 50.0), entry(2, mu: 0.0, sigma: 50.0) ]
     senate = chamber(simulate(entries, seed: 11, n_sims: 2000), :senate)
