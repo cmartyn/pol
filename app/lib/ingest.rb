@@ -3,11 +3,11 @@
 # csv — all converge on Ingest::RecordPoll.
 module Ingest
   # Called once at the end of a full scrape sweep, with the number of polls
-  # that were actually created. Phase 3 hangs the forecast run off this seam so
-  # that ingestion never has to know what a model run is.
+  # that were actually created. The forecast hangs off this seam so that
+  # ingestion never has to know what a model run is: new polls go in, a run is
+  # queued, and the scraper's job is done.
   def self.after_new_polls!(count)
-    # TODO-PHASE-3: enqueue model run
-    Rails.logger.info("Ingest: #{count} new poll(s); no downstream consumer wired up yet")
-    nil
+    Rails.logger.info("Ingest: #{count} new poll(s); queueing a forecast run")
+    Forecast::RunJob.perform_later(trigger: :ingest)
   end
 end

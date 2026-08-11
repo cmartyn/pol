@@ -41,6 +41,52 @@ namespace :pol do
     puts
   end
 
+  desc "Run the forecast model once and print the headline numbers"
+  task model: :environment do
+    previous = ModelRun.succeeded.latest.first
+    runner = Forecast::Runner.new(trigger: :manual)
+
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    run = runner.call
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+
+    puts
+    printf("  Model run %d — %s in %.1fs (seed %d)\n", run.id, run.status, elapsed, run.rng_seed)
+    puts "  " + "-" * 62
+    printf("  %-30s %+30.2f\n", "Generic ballot (D−R)", runner.national_env)
+    printf("  %-30s %30s\n", "  from", "#{runner.generic_ballot.poll_count} polls, W = " \
+                                       "#{runner.generic_ballot.weight.round(2)}, " \
+                                       "#{runner.generic_ballot.window_days}-day window")
+    printf("  %-30s %30s\n", "Races forecast", "#{run.forecasts.count} " \
+                                               "(#{Race.senate.count} senate, #{Race.house.count} house)")
+    printf("  %-30s %30.4f\n", "Error inflation (t)", runner.simulation.time_multiplier)
+    puts "  " + "-" * 62
+
+    run.chamber_forecasts.order(:chamber).each do |chamber|
+      neither = 1.0 - chamber.p_dem_control - chamber.p_rep_control
+      printf("  %-10s D %5.1f%%   R %5.1f%%%s   mean D seats %6.1f\n",
+             chamber.chamber.capitalize, 100 * chamber.p_dem_control, 100 * chamber.p_rep_control,
+             neither > 0.0005 ? format("   neither %4.1f%%", 100 * neither) : " " * 16,
+             chamber.mean_dem_seats)
+    end
+    puts "  " + "-" * 62
+
+    if previous
+      movers = biggest_movers(run, previous)
+      puts "  Biggest movers vs run #{previous.id} (#{previous.started_at.to_fs(:short)})"
+      if movers.empty?
+        puts "    nothing moved"
+      else
+        movers.each do |name, change, now|
+          printf("    %-24s %+6.1f pts  →  D %5.1f%%\n", name, change, 100 * now)
+        end
+      end
+    else
+      puts "  No earlier run to compare against"
+    end
+    puts
+  end
+
   # Build-time only: the parser tests run entirely off the committed fixtures,
   # and nothing in the suite touches the network.
   desc "Re-download the trimmed Wikipedia HTML fixtures the parser tests run against"
@@ -80,6 +126,24 @@ namespace :pol do
     printf("  %-30s %8.1f KB\n", "total", total / 1024.0)
     puts "  (poll_table_malformed.html is hand-edited and is not refreshed here)"
   end
+end
+
+# The races whose Democratic win probability moved most between two runs,
+# reported in percentage points. Ten is enough to see a wave forming without
+# printing 470 lines.
+def biggest_movers(run, previous, limit: 10)
+  before = previous.forecasts.pluck(:race_id, :p_dem_win).to_h
+  names = Race.where(id: before.keys).pluck(:id, :state, :district, :office).to_h do |id, state, district, office|
+    [ id, office == "house" ? "#{state}-#{format('%02d', district)}" : "#{state} #{office.capitalize}" ]
+  end
+
+  run.forecasts
+     .where(race_id: before.keys)
+     .pluck(:race_id, :p_dem_win)
+     .map { |race_id, now| [ names[race_id], 100 * (now - before[race_id]), now ] }
+     .reject { |_, change, _| change.abs < 0.05 }
+     .sort_by { |_, change, _| -change.abs }
+     .first(limit)
 end
 
 # Keeps only the <section> elements whose heading matches, which is what turns a

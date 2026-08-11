@@ -13,6 +13,11 @@ module StubHelper
     replacing(object, name, ->(*args, **) { calls << args }) { yield calls }
   end
 
+  # raising(ChamberForecast, :insert_all!, "database is on fire") { ... }
+  def raising(object, name, message, &block)
+    replacing(object, name, ->(*, **) { raise message }, &block)
+  end
+
   private
     def replacing(object, name, implementation)
       singleton = object.singleton_class

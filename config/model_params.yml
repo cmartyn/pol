@@ -26,11 +26,48 @@ fundamentals:
   house_national_margin_2024: -2.6
   imputed_baseline_margin: 35.0
 error_model:
-  # election-day-equivalent sigmas, margin scale; citations VERIFY-PHASE-3
+  # Election-day-equivalent standard deviations, on the D−R margin scale. Each
+  # race's total error is sigma_national (shared by every race in a simulated
+  # world) and the race's own sigma, combined in quadrature. Anchors verified
+  # against the published literature in Phase 3; the full reasoning, including
+  # the one value that moved, is in docs/BUILD_NOTES.md Phase 3 §A.
+  #
+  # Signed national polling error on the margin, final two weeks, all offices:
+  # 2016 +3.1, 2018 +0.1, 2020 +4.6, 2022 −0.6, 2024 +2.7 → RMS about zero 2.8,
+  # sample SD 2.2. The 2020 task force's presidential series (−1.1, +1.4, +0.7,
+  # −2.4, +1.3, +3.9 from 2000) gives RMS 2.1. 2.5 sits in the middle.
+  # citation: https://aapor.org/wp-content/uploads/2025/10/Task-Force-on-2024-Pre-Election-Polling-Report-Executive-Summary.pdf
+  # citation: https://aapor.org/wp-content/uploads/2022/11/AAPOR-Task-Force-on-2020-Pre-Election-Polling_Report-FNL.pdf
   sigma_national: 2.5
-  sigma_state_polled: 3.5
+  # Raised from 3.5 in Phase 3 — see BUILD_NOTES Phase 3 §A2. 538's 2024
+  # presidential model expects "a hair over 2 points" of share error in a
+  # competitive state, "around 3.8 points on the margin" (MAE 3.8 → sigma
+  # ≈ 4.75); Shirani-Mehr et al. put election-level Senate bias at 2.0% of
+  # share on election day, ~4.0 points of margin MAE → sigma ≈ 5.0. With
+  # sigma_national 2.5, a 4.0 here totals 4.72; 3.5 totalled 4.30, below every
+  # anchor found.
+  # citation: https://abcnews.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753
+  # citation: https://sites.stat.columbia.edu/gelman/research/published/polling-errors.pdf
+  sigma_state_polled: 4.0
+  # A race with no polls is a fundamentals estimate. 538 on their own: "we
+  # would expect our fundamentals model to miss the vote margin in the average
+  # state by about 6.5 points" — MAE 6.5 → sigma ≈ 8.15.
+  # citation: https://abcnews.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753
   sigma_state_unpolled: 8.0
+  # 538's 2024 House model decomposes seat-level error exactly this way: "about
+  # 3 points of error at the national level, 2 each at the regional and state
+  # levels, 2 at the demographic-cluster level, and 6 at the district level",
+  # combined in quadrature. Our district term matches theirs; our single
+  # national term is narrower than their four correlated ones, which is a
+  # known and recorded limitation (BUILD_NOTES Phase 3 §A4).
+  # citation: https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291
   sigma_district: 6.0
+  # Time inflation: t = min(time_mult_cap, 1 + days_to_election/time_scale_days).
+  # Shirani-Mehr et al. Figure 2 (7,040 polls) shows Senate poll error about
+  # 1.7x its election-day level three months out, and AAPOR 2020 found error
+  # "stable throughout the campaign" over the final weeks — which is the flat
+  # region this formula produces (1.12x at three weeks).
+  # citation: https://sites.stat.columbia.edu/gelman/research/published/polling-errors.pdf
   time_scale_days: 180
   time_mult_cap: 1.75
 chambers:
