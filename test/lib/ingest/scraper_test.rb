@@ -98,10 +98,16 @@ class Ingest::ScraperTest < ActiveSupport::TestCase
     assert_equal 0, maine.new_count
   end
 
-  test "the model-run seam is called once with the sweep's new-poll total" do
+  # The ids rather than the count: downstream of the run, the newsroom writes
+  # about the polls this sweep created, and nothing else can tell which ones
+  # those were.
+  test "the model-run seam is called once with the ids of the polls the sweep created" do
     recording(Ingest, :after_new_polls!) do |calls|
-      scrape
-      assert_equal [ [ 92 ] ], calls
+      assert_difference "Poll.count", 92 do
+        scrape
+      end
+
+      assert_equal Poll.order(:id).last(92).map(&:id), calls.sole.sole
     end
   end
 

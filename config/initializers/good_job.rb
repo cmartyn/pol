@@ -1,8 +1,6 @@
 # GoodJob is our Postgres-backed Active Job backend (queue_adapter is set in
 # config/application.rb). No Redis, no Solid Queue, no additional services.
 Rails.application.configure do
-  # Phase 5 (agent newsroom) adds its entries to this hash.
-  #
   # The cadence is the one in config/model_params.yml, read straight from the
   # file rather than through Pol::Params: config initializers run before Rails
   # adds app/ to the autoload paths, so no application constant is reachable
@@ -10,12 +8,35 @@ Rails.application.configure do
   # cannot drift.
   cadence_hours = YAML.safe_load_file(Rails.root.join("config/model_params.yml")).fetch("scrape").fetch("cadence_hours")
 
+  # The two daily entries carry an explicit timezone as fugit's sixth cron
+  # field (good_job parses cron with fugit, which reads a trailing zone name
+  # and resolves DST for it). Without it the schedule would follow the
+  # server's clock, and an election site whose morning brief lands at 3am
+  # half the year is a bug that only shows up after a deploy to a UTC box.
+  # These are publication times rather than model parameters, so unlike the
+  # scrape cadence they are literals here — with a test pinning both.
   config.good_job.enable_cron = true
   config.good_job.cron = {
     pol_scrape: {
       cron: "0 */#{cadence_hours} * * *",
       class: "Ingest::ScrapeAllJob",
       description: "Sweep every Wikipedia poll source and ingest new polls"
+    },
+    # Ingestion queues a run whenever it finds new polls, so on a busy day the
+    # model runs often — but on a quiet day nothing re-ran it at all, and the
+    # site's "as of" timestamp aged while the forecast sat still. This is the
+    # floor: one run every morning, half an hour before the brief is written,
+    # so the brief always has same-day numbers to work from.
+    pol_daily_model: {
+      cron: "30 6 * * * America/New_York",
+      class: "Forecast::RunJob",
+      kwargs: { trigger: :cron },
+      description: "Daily forecast run — the floor under ingest-triggered runs"
+    },
+    pol_daily_brief: {
+      cron: "0 7 * * * America/New_York",
+      class: "Newsroom::DailyBriefJob",
+      description: "Write the morning national brief"
     }
   }
 

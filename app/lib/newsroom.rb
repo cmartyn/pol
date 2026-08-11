@@ -14,6 +14,22 @@ module Newsroom
   ZONE = "America/New_York"
 
   class << self
+    # The seam Forecast::RunJob calls after a run succeeds — the newsroom's
+    # equivalent of Ingest.after_new_polls!. Reactions only happen when the run
+    # was triggered by polls arriving (poll_ids present); the movement check
+    # runs after every successful run, including the 06:30 cron one, because a
+    # quiet day is exactly when a slow drift becomes visible.
+    def after_model_run!(model_run, poll_ids: [])
+      poll_ids = Array(poll_ids)
+
+      if poll_ids.any?
+        Rails.logger.info("Newsroom: run #{model_run.id} brought #{poll_ids.size} new poll(s); queueing reactions")
+        PollReactionsJob.perform_later(model_run_id: model_run.id, poll_ids: poll_ids)
+      end
+
+      MovementNotesJob.perform_later(model_run_id: model_run.id)
+    end
+
     # Called at the top of every newsroom job. Returns true when the newsroom
     # may write; otherwise records the skip (so the admin can see the newsroom
     # went quiet on purpose) and returns false.

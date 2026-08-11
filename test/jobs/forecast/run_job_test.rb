@@ -79,12 +79,80 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     end
   end
 
-  test "the ingest seam queues a run rather than running one inline" do
+  test "the cron schedule runs the model every morning half an hour before the brief" do
+    entry = Rails.application.config.good_job.cron.fetch(:pol_daily_model)
+
+    assert_equal "Forecast::RunJob", entry[:class]
+    assert_equal "30 6 * * * America/New_York", entry[:cron]
+    assert_equal({ trigger: :cron }, entry[:kwargs])
+    assert entry[:description].present?
+  end
+
+  # Ingest queues a run whenever polls arrive, so before this entry existed a
+  # day with no new polling was a day the forecast never re-ran — the numbers
+  # sat still while their "as of" timestamp aged.
+  test "the daily model run is scheduled before the daily brief, so the brief has fresh numbers" do
+    cron = Rails.application.config.good_job.cron
+    model = Fugit.parse_cron(cron.fetch(:pol_daily_model)[:cron])
+    brief = Fugit.parse_cron(cron.fetch(:pol_daily_brief)[:cron])
+
+    assert_equal "America/New_York", model.zone
+    from = Time.utc(2026, 8, 11)
+    assert_operator model.next_time(from).to_utc_time, :<, brief.next_time(from).to_utc_time
+  end
+
+  test "the ingest seam queues a run rather than running one inline, carrying the new poll ids" do
     assert_no_difference "ModelRun.count" do
-      assert_enqueued_with(job: Forecast::RunJob, args: [ { trigger: :ingest } ]) do
-        Ingest.after_new_polls!(7)
+      assert_enqueued_with(job: Forecast::RunJob, args: [ { trigger: :ingest, poll_ids: [ 7, 9 ] } ]) do
+        Ingest.after_new_polls!([ 7, 9 ])
       end
     end
+  end
+
+  test "a sweep that created nothing queues nothing" do
+    assert_no_enqueued_jobs do
+      Ingest.after_new_polls!([])
+    end
+  end
+
+  # The handoff the newsroom depends on: the polls that triggered the run reach
+  # the reaction job, and only after the run they caused has actually succeeded.
+  test "a successful run hands its poll ids to the newsroom" do
+    poll_ids = [ polls(:maine_poll_one).id, polls(:maine_poll_two).id ]
+
+    assert_enqueued_with(job: Newsroom::PollReactionsJob) do
+      assert_enqueued_with(job: Newsroom::MovementNotesJob) do
+        Forecast::RunJob.perform_now(trigger: :ingest, poll_ids: poll_ids)
+      end
+    end
+
+    run = ModelRun.succeeded.latest.first
+    reactions = enqueued_jobs.find { |job| job[:job] == Newsroom::PollReactionsJob }
+    assert_equal({ "model_run_id" => run.id, "poll_ids" => poll_ids },
+                 reactions[:args].sole.except("_aj_ruby2_keywords", "_aj_symbol_keys"))
+  end
+
+  test "a cron run has no new polls to react to, but is still checked for movement" do
+    Forecast::RunJob.perform_now(trigger: :cron)
+
+    assert_enqueued_jobs 1, only: Newsroom::MovementNotesJob
+    assert_enqueued_jobs 0, only: Newsroom::PollReactionsJob
+  end
+
+  test "a run that failed is not something to write about" do
+    raising(ChamberForecast, :insert_all!, "the database is on fire") do
+      assert_raises(StandardError) { Forecast::RunJob.perform_now(trigger: :ingest, poll_ids: [ 1 ]) }
+    end
+
+    assert_enqueued_jobs 0, only: [ Newsroom::PollReactionsJob, Newsroom::MovementNotesJob ]
+  end
+
+  test "a run that stepped aside writes nothing" do
+    ModelRun.create!(status: :running, trigger: :cron, started_at: 1.minute.ago)
+
+    Forecast::RunJob.perform_now(trigger: :ingest, poll_ids: [ 1 ])
+
+    assert_enqueued_jobs 0, only: [ Newsroom::PollReactionsJob, Newsroom::MovementNotesJob ]
   end
 
   test "a scrape that found new polls ends with a forecast queued" do

@@ -4,8 +4,11 @@ module Ingest
   # source never takes the sweep down — its failure is recorded and the sweep
   # moves on.
   class Scraper
+    # poll_ids are the polls this source actually created, which is what the
+    # newsroom reacts to downstream; `created` stays as the count the sweep
+    # report and the ScrapeRun row are written from.
     Outcome = Struct.new(
-      :source, :status, :fetched, :created, :duplicate, :skipped, :invalid, :error,
+      :source, :status, :fetched, :created, :duplicate, :skipped, :invalid, :error, :poll_ids,
       keyword_init: true
     )
 
@@ -19,8 +22,8 @@ module Ingest
       outcomes = senate_races.map { |race| scrape(Sources.senate_title(race), race: race) }
       outcomes << scrape(Sources.generic_ballot_title, race: nil)
 
-      created = outcomes.sum(&:created)
-      Ingest.after_new_polls!(created) if created.positive?
+      created_poll_ids = outcomes.flat_map(&:poll_ids)
+      Ingest.after_new_polls!(created_poll_ids) if created_poll_ids.any?
 
       outcomes
     end
@@ -32,7 +35,7 @@ module Ingest
 
       def scrape(title, race:)
         started_at = Time.current
-        tally = { fetched: 0, created: 0, duplicate: 0, skipped: 0, invalid: 0 }
+        tally = { fetched: 0, created: 0, duplicate: 0, skipped: 0, invalid: 0, poll_ids: [] }
         status = :succeeded
         error = nil
 
@@ -68,6 +71,7 @@ module Ingest
         result.rows.each do |row|
           outcome = RecordPoll.call(attributes_for(row, race), results: results_for(row), entry_mode: :scraped)
           tally[outcome.status == :created ? :created : outcome.status] += 1
+          tally[:poll_ids] << outcome.poll.id if outcome.created?
           @logger.warn("Ingest::Scraper #{title}: rejected row — #{outcome.message}") if outcome.invalid?
         end
       end
@@ -104,7 +108,8 @@ module Ingest
 
         Outcome.new(
           source: title, status: status, fetched: tally[:fetched], created: tally[:created],
-          duplicate: tally[:duplicate], skipped: tally[:skipped], invalid: tally[:invalid], error: error
+          duplicate: tally[:duplicate], skipped: tally[:skipped], invalid: tally[:invalid], error: error,
+          poll_ids: tally[:poll_ids]
         )
       end
   end

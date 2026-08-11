@@ -117,6 +117,32 @@ namespace :pol do
     puts
   end
 
+  desc "Write today's national brief now — the same code path the 07:00 cron runs"
+  task brief: :environment do
+    before = Dispatch.published.daily_brief.recent_first.first
+    skips_before = NewsroomSkip.maximum(:id).to_i
+
+    Newsroom::DailyBriefJob.perform_now
+
+    dispatch = Dispatch.published.daily_brief.recent_first.first
+    puts
+    if dispatch && dispatch != before
+      puts "  #{dispatch.headline}"
+      puts "  #{dispatch.dek}"
+      puts "  " + "-" * 74
+      puts dispatch.body_markdown.each_line.map { |line| "  #{line}" }.join
+      puts "  " + "-" * 74
+      printf("  %-14s %s\n", "dispatch", "##{dispatch.id}")
+      printf("  %-14s %s\n", "model", dispatch.model_slug)
+      printf("  %-14s %s\n", "cited polls", dispatch.cited_poll_ids.inspect)
+      printf("  %-14s %s\n", "words", dispatch.body_markdown.split(/\s+/).size)
+    else
+      skip = NewsroomSkip.where(id: (skips_before + 1)..).recent_first.first
+      puts skip ? "  No brief written — #{skip.reason}: #{skip.detail}" : "  No brief written; see the log."
+    end
+    puts
+  end
+
   # Build-time only: the parser tests run entirely off the committed fixtures,
   # and nothing in the suite touches the network.
   desc "Re-download the trimmed Wikipedia HTML fixtures the parser tests run against"

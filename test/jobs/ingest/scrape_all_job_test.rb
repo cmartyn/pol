@@ -32,7 +32,9 @@ class Ingest::ScrapeAllJobTest < ActiveJob::TestCase
     assert_equal [ 1, 1, 1 ], ScrapeRun.order(:id).last(3).map(&:new_count)
   end
 
-  test "the job hands the new-poll total to the model-run seam" do
+  # The ids, not just the count: the newsroom reacts to the polls this sweep
+  # created, and nothing downstream can work out which ones those were.
+  test "the job hands the ids of the polls it created to the model-run seam" do
     stub_wikipedia_page("2026 United States Senate election in Maine", body: poll_page_html(rows: [
       { pollster: "Harbor Analytics", dates: "July 8–10, 2026", sample: "600 (LV)", dem: "48%", rep: "44%" }
     ]))
@@ -41,7 +43,9 @@ class Ingest::ScrapeAllJobTest < ActiveJob::TestCase
 
     recording(Ingest, :after_new_polls!) do |calls|
       Ingest::ScrapeAllJob.perform_now
-      assert_equal [ [ 1 ] ], calls
+
+      assert_equal [ [ [ Poll.order(:id).last.id ] ] ], calls
+      assert_equal races(:senate_maine), Poll.order(:id).last.race
     end
   end
 

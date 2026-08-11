@@ -87,6 +87,35 @@ class DispatchTest < ActiveSupport::TestCase
     assert_includes dispatch.cited_poll_ids, polls(:maine_poll_two).id
   end
 
+  test "citing_any finds the dispatches that already cite a poll" do
+    other = Dispatch.create!(headline: "Elsewhere", body_markdown: "body", kind: :poll_reaction,
+                             status: :published, published_at: Time.current, cited_poll_ids: [ 4242 ])
+
+    assert_equal [ dispatches(:maine_poll_reaction) ], Dispatch.citing_any([ polls(:maine_poll_one).id ]).to_a
+    assert_equal [ other ], Dispatch.citing_any([ 4242 ]).to_a
+    assert_equal 2, Dispatch.citing_any([ polls(:maine_poll_two).id, 4242 ]).count
+  end
+
+  test "citing_any matches whole ids, not digits inside them" do
+    Dispatch.create!(headline: "Elsewhere", body_markdown: "body", kind: :poll_reaction,
+                     status: :published, published_at: Time.current, cited_poll_ids: [ 12_345 ])
+
+    assert_empty Dispatch.citing_any([ 123 ])
+    assert_empty Dispatch.citing_any([ 2345 ])
+    assert_equal 1, Dispatch.citing_any([ 12_345 ]).count
+  end
+
+  test "citing_any of nothing matches nothing, rather than everything" do
+    assert_empty Dispatch.citing_any([])
+    assert_empty Dispatch.citing_any(nil)
+  end
+
+  test "a dispatch that cites nothing is not caught by the duplicate guard" do
+    dispatches(:maine_poll_reaction).update!(cited_poll_ids: [])
+
+    assert_empty Dispatch.citing_any([ polls(:maine_poll_one).id ])
+  end
+
   private
     # Minitest 6 no longer bundles Object#stub (it moved to a separate
     # minitest-mock gem we don't depend on), so this replaces

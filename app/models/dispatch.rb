@@ -11,6 +11,20 @@ class Dispatch < ApplicationRecord
 
   scope :recent_first, -> { order(published_at: :desc, id: :desc) }
 
+  # Dispatches citing any of the given poll ids — the newsroom's duplicate
+  # guard, so the same poll is never reacted to twice.
+  #
+  # One containment test per id, OR'd: `@>` is the jsonb operator a GIN index
+  # on cited_poll_ids can serve, and `[7] @> [7]` is true. The tidier-looking
+  # `?|` is not an option — it only matches string elements, and these are
+  # stored as JSON numbers.
+  scope :citing_any, ->(poll_ids) {
+    ids = Array(poll_ids).map(&:to_i).uniq
+    next none if ids.empty?
+
+    where(Array.new(ids.size, "cited_poll_ids @> ?").join(" OR "), *ids.map { |id| [ id ].to_json })
+  }
+
   private
     # Reads the cap from Pol::Params on every validation run rather than
     # caching it in a constant, so editing config/model_params.yml takes
