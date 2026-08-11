@@ -80,6 +80,12 @@ module Newsroom
         candidates — if it is not in the payload, it does not go in the piece. Invent nothing. If the payload
         is thin, write a thinner piece.
 
+        WHAT THE PAYLOAD DOES NOT TELL YOU
+        It does not say which party currently controls either chamber, so neither do you. Write about the
+        chance of winning control or a majority — never holding, keeping, defending, losing or flipping one.
+        The seat thresholds for control are in the payload; do not use any others, and do not describe a
+        chamber's rules beyond what it gives you.
+
         UNCERTAINTY
         A probability is not a prediction. Write probabilities as our estimate of a chance, never as a
         forecast of a result: "our model gives the Democrat a 62 in 100 chance" rather than "the Democrat will

@@ -96,9 +96,30 @@ module Newsroom
         {
           numbers_as_of: run_time(model_run),
           generic_ballot: generic_ballot,
-          senate: senate && chamber_section(senate),
-          house: house && chamber_section(house).merge(must_say: Prompts::HOUSE_CAVEAT)
+          senate: senate && chamber_section(senate).merge(seats_needed_for_control),
+          house: house && chamber_section(house).merge(
+            seats_needed: Pol::Params.fetch!(:chambers, :house_majority_seats),
+            must_say: Prompts::HOUSE_CAVEAT
+          )
         }.compact
+      end
+
+      # The thresholds the simulator counted against, in the payload because a
+      # model without them reaches for its own. The first live brief written
+      # from this context said Democrats were "short of the 50 needed" in the
+      # Senate — 50 is the Republicans' number, not theirs, because the vice
+      # president is a Republican. Derived here exactly as
+      # Forecast::Simulator#senate_outcome derives them.
+      def seats_needed_for_control
+        vp_party = Pol::Params.fetch!(:chambers, :vp_party)
+        tie = Pol::Params.fetch!(:chambers, :senate_total_seats) / 2
+
+        {
+          dem_seats_needed: vp_party == "dem" ? tie : tie + 1,
+          rep_seats_needed: vp_party == "rep" ? tie : tie + 1,
+          tiebreak: "the vice president is a #{PARTY_NAMES.fetch(vp_party)}, so a #{tie}-#{tie} tie " \
+                    "goes to the #{PARTY_NAMES.fetch(vp_party)}s"
+        }
       end
 
       def generic_ballot

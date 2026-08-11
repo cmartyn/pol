@@ -148,6 +148,10 @@ class Newsroom::WriterTest < ActiveSupport::TestCase
         assert_equal "system", messages.first["role"]
         assert_match(/you have no other information/i, messages.first["content"])
         assert_match(/overstates certainty/, messages.first["content"])
+        # The gap the first live brief fell into: it wrote that Democrats had
+        # a 96 in 100 chance of "holding" the House, which the payload never
+        # said and which is not true.
+        assert_match(/never holding, keeping, defending, losing or flipping/, messages.first["content"])
         assert_includes messages.last["content"], JSON.pretty_generate(@payload)
       end
     end

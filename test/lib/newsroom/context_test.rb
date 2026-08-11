@@ -60,6 +60,29 @@ class Newsroom::ContextTest < ActiveSupport::TestCase
     assert_equal 1, national.dig(:generic_ballot, :polls_in_average)
   end
 
+  # The first live brief written from this payload said Democrats were "short
+  # of the 50 needed" in the Senate. 50 is the Republicans' number: the vice
+  # president is a Republican, so a tie goes to them and Democrats need 51.
+  # A model not given the thresholds reaches for its own.
+  test "the seat thresholds the simulator counted against travel with the numbers" do
+    payload = Newsroom::Context.daily_brief(model_run: @run)
+
+    assert_equal 51, payload.dig(:national, :senate, :dem_seats_needed)
+    assert_equal 50, payload.dig(:national, :senate, :rep_seats_needed)
+    assert_match(/vice president is a Republican/, payload.dig(:national, :senate, :tiebreak))
+    assert_equal 218, payload.dig(:national, :house, :seats_needed)
+  end
+
+  test "flipping the tiebreak in the params file flips whose number is which" do
+    with_params(chambers: { vp_party: "dem" }) do
+      senate = Newsroom::Context.daily_brief(model_run: @run).dig(:national, :senate)
+
+      assert_equal 50, senate[:dem_seats_needed]
+      assert_equal 51, senate[:rep_seats_needed]
+      assert_match(/vice president is a Democrat/, senate[:tiebreak])
+    end
+  end
+
   test "with no generic-ballot polls the payload says so instead of inventing a number" do
     Poll.for_generic_ballot.destroy_all
 

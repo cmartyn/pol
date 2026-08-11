@@ -816,3 +816,358 @@ nothing touches the network. The load-bearing ones:
   widening are tested by *moving* them: flipping `vp_party` turns 50 Democratic
   seats from no control into control, and raising `min_polls_in_window` widens
   a window that two polls had held.
+
+---
+
+# Phase 5 — Agent newsroom
+
+Research date: **August 11, 2026**. The model slugs, the ruby_llm API and the
+cron timezone syntax below were each checked against a live source or the
+installed gem on that date; nothing here is from model memory.
+
+This is the phase where the site starts publishing on its own. There is no
+approval queue and there is not going to be one. What stands in its place:
+
+- a context payload built only from our own tables, and a system prompt that
+  says the payload is the whole world (§B1);
+- validation on **our** side of every draft, applied regardless of what the
+  model returned, with one retry and then silence (§B2);
+- caps per race per day, per day overall, and per race per week for movement
+  notes, all counted against what is actually published (§B3);
+- a kill switch checked at the top of every job;
+- a `newsroom_skips` row for every piece that did not get written (§B4).
+
+## A. Verified facts
+
+### A1. The OpenRouter model slugs
+
+`GET https://openrouter.ai/api/v1/models` (public, no key), retrieved
+2026-08-11: 402 models, 28 of them Anthropic. The current Sonnet-tier entry:
+
+| field | value |
+| --- | --- |
+| id | `anthropic/claude-sonnet-5` |
+| canonical_slug | `anthropic/claude-sonnet-5-20260630` |
+| context / max completion | 1,000,000 / 128,000 |
+| pricing | $2.00 per M input, $10.00 per M output |
+| supported_parameters | includes `response_format`, `structured_outputs`, `max_tokens` |
+
+Those three parameters are exactly what `Newsroom::Client` depends on, which is
+why the check was worth making rather than assuming. Both `newsroom.writer_model`
+and `newsroom.brief_model` are set to it. Note what is **not** in that list:
+`temperature`. ruby_llm only sends the field if asked, and we do not ask.
+
+`anthropic/claude-sonnet-4.6` is still listed (and cheaper per token than it
+was) but is the previous generation; the two slugs are interchangeable in
+`config/model_params.yml` with no code change, which is the point of keeping
+them there.
+
+citation: https://openrouter.ai/api/v1/models (retrieved 2026-08-11)
+
+### A2. ruby_llm 1.16.0 — the API this actually uses
+
+Read out of the installed gem at
+`~/.gem/ruby/4.0.0/gems/ruby_llm-1.16.0`, not from memory. The mechanisms
+`Newsroom::Client` relies on, with where each one lives:
+
+- **`RubyLLM.chat(model:, provider: :openrouter, assume_model_exists: true)`** —
+  `Models.resolve` (lib/ruby_llm/models.rb:154) skips the bundled registry when
+  `assume_exists` is set and builds a `Model::Info.default`. Necessary: the
+  bundled `models.json` does not carry OpenRouter's catalogue, so resolving
+  `anthropic/claude-sonnet-5` without it raises `ModelNotFoundError`.
+- **`#with_schema(hash)`** — `Chat#normalize_schema_payload` (chat.rb:182) takes
+  `{name:, strict:, schema:}`, and `Providers::OpenRouter::Chat#render_payload`
+  turns it into `response_format: {type: "json_schema", json_schema: {...}}`.
+  On the way back, `Chat#normalize_schema_response` JSON-parses the reply, so
+  `message.content` arrives as a Hash with **string** keys.
+- **`#with_params(max_tokens:)`** — `Provider#complete` (provider.rb:48)
+  deep-merges `params` into the rendered payload. This is how the output bound
+  is applied; there is no first-class max-tokens setter.
+- **`message.model_id`** — OpenRouter's own `model` field from the response
+  body (openrouter/chat.rb:77), i.e. the model that actually served the
+  request. That is what the byline says, falling back to the configured slug.
+- **`message.input_tokens` / `#output_tokens`** — from the response `usage`.
+- **Errors** — `ErrorMiddleware.parse_error` maps status codes to
+  `RubyLLM::UnauthorizedError` (401), `PaymentRequiredError` (402),
+  `RateLimitError` (429), `ServerError` (500), `ServiceUnavailableError`
+  (502–504), `OverloadedError` (529). `Connection#setup_retry` retries 429s,
+  5xxs, timeouts and connection failures `config.max_retries` (3) times with
+  backoff **including on POST**, so a transient failure has already been
+  retried three times before `Newsroom::Client` ever sees it.
+- **`config.openai_use_system_role`** — found by asserting on the request in a
+  test: without it, ruby_llm's OpenAI-compatible providers send the system
+  prompt with `role: "developer"` (openrouter/chat.rb:125), OpenAI's newer
+  name for it. We talk to an Anthropic model through OpenRouter, where
+  `"system"` is the role every hop understands, so the initializer sets it.
+
+### A3. Cron with a timezone
+
+good_job 4.19.2 parses cron strings with fugit (README §"Cron-style
+repeating/recurring jobs"), and fugit 1.13.0 reads a **sixth field** as a
+timezone name:
+
+```
+Fugit.parse_cron("0 7 * * * America/New_York").zone  # => "America/New_York"
+```
+
+Verified against the installed gems, and asserted in the suite on both sides
+of a DST boundary: the 07:00 brief resolves to 11:00 UTC in July and 12:00 UTC
+in December. A schedule without the zone would follow the server's clock, and
+"07:00" on a UTC box is 3am Eastern for half the year — a bug that appears
+only after a deploy, in production, to readers.
+
+## B. How the newsroom works
+
+### B1. The payload is the world
+
+`Newsroom::Context` builds one hash per piece, entirely from our tables: the
+race and its candidates, the current forecast and the prior one, the new polls
+(pollster, field dates, sample size, population, source domain, per-candidate
+results), the national picture, recent headlines to avoid repeating, today's
+date and the days to the election. Probabilities and margins are pre-formatted
+through `Site::Format`, so a dispatch and the race page it links to cannot
+disagree about what the same number is called.
+
+It also carries `citable_poll_ids` — the exact set a citation may name, which
+is what the validator holds the model to.
+
+### B2. Validation is ours, not the model's
+
+`Newsroom::Validation` runs against the parsed reply and assumes nothing about
+the schema having been honoured: the headline, dek and body caps from
+`config/model_params.yml`; no markdown structure the site cannot render
+(headings, bullet or numbered lists, block quotes, code fences, tables — the
+view uses `simple_format`, so a heading would publish as a literal `## `); and
+strictly no cited id outside `citable_poll_ids`. A poll reaction that cites
+none of the polls it is reacting to is also rejected: nothing in it could be
+traced to a source.
+
+A rejected draft gets exactly one more turn, in the same conversation, with the
+validator's own messages appended. A second failure publishes nothing and
+writes a `validation_failed` skip. Nothing invalid reaches the page.
+
+### B3. Caps
+
+Counted immediately before each piece, against rows in `dispatches` rather than
+an in-process counter, on **America/New_York** days — the clock the readers and
+the 07:00 brief are on. `max_dispatches_per_race_per_day` counts every
+published dispatch for that race today, not only the kind being written: the
+parameter is a budget for how much this site may say about one race in a day,
+and three poll reactions plus a movement note is four pieces about the same
+race whatever they are called.
+
+The duplicate guard is a jsonb containment query (`cited_poll_ids @> '[42]'`,
+OR'd per id — the tidier `?|` only matches *string* elements, and these are
+stored as JSON numbers), so a poll that any published dispatch already cites is
+not news twice.
+
+### B4. Every silence is recorded
+
+`newsroom_skips` — kind, race, reason (`validation_failed`, `cap_reached`,
+`duplicate`, `agents_disabled`, `no_api_key`, `llm_error`), detail, and a
+SHA256 digest of the payload. `NewsroomSkip.record!` is the only way one gets
+written and it always logs. The API key cannot travel into a detail:
+`Newsroom::Client.sanitize` strips it and truncates, and a test proves it with
+a 401 whose message contains the key.
+
+## C. Decisions this phase had to make
+
+### C1. Poll ids travel with the run
+
+`Ingest.after_new_polls!` used to take a count. It now takes ids, because by
+the time a reaction is written, a poll created two minutes ago and one created
+two hours ago are indistinguishable in the table — only the sweep knows which
+ones it created. They flow scrape → `Forecast::RunJob` → `Newsroom.after_model_run!`,
+and reactions are only queued after the run those polls caused has **succeeded**,
+so the piece can quote a forecast that includes them.
+
+**Known cost:** a run refused by the concurrency guard (`AlreadyRunning`) drops
+its poll ids. The run that won will publish the numbers, but nothing reacts to
+those particular polls. Two sweeps would have to overlap for it to happen, and
+the alternative — reacting against a run that may not have included them — is
+worse than a missing piece.
+
+### C2. `movement_note_cooldown_days` is a new parameter
+
+"Max one movement note per race per rolling seven days" needed a seven from
+somewhere. Reusing `site.movers_window_days` would conflate two different
+questions — how far back movement is measured, and how often the same race may
+be written up — so it is its own parameter. House rule: if a constant is not in
+`config/model_params.yml`, it does not exist.
+
+### C3. Comparison-run selection is now shared
+
+`Site::Movers#comparison_run` moved to `ModelRun.comparison_run`, so the
+dashboard's movers module and the newsroom's movement notes answer "what did
+this look like last week" with the same run. The newsroom's threshold
+(`newsroom.movement_threshold`, 0.08 of win probability) is deliberately far
+above the dashboard's noise floor of 1.5 points: a table can afford to show a
+small shift, a paragraph of prose about one cannot.
+
+The comparison rounds the delta to four decimal places before testing it
+(`Movement::PROBABILITY_PLACES`). Win probabilities are counts over
+`simulation.n_sims` draws, so at 10,000 sims four places is all the resolution
+there is — and `0.62 - 0.54` is `0.07999999999999996` in binary floating point,
+which would otherwise make a race that moved exactly eight points a
+non-mover.
+
+### C4. The 06:30 model run
+
+`pol_daily_model` closes a gap that was real before this phase and easy to miss:
+the only thing that ran the model was ingestion finding new polls. On a quiet
+day nothing re-ran it, so the numbers sat still while the "as of" timestamp on
+every page aged. Now the floor is one run every morning at 06:30 Eastern, half
+an hour before the brief, which also means the brief is always written from
+same-day numbers.
+
+Both daily times are literals in the initializer rather than parameters: they
+are publication times, not model constants. Tests pin them.
+
+### C5. What the payload deliberately does not say — and what that cost
+
+See §D. The payload does not carry which party currently controls either
+chamber, because that fact is not in our tables and this project does not
+publish facts it has not verified. The first live brief filled the gap by
+itself and got it wrong. The fix was two-sided: give the model the thresholds
+we **do** have verified (`chambers.house_majority_seats`,
+`senate_total_seats`, `vp_party`, derived exactly as
+`Forecast::Simulator#senate_outcome` derives them), and tell it plainly that
+current control is not something it knows.
+
+## D. Live run
+
+One live daily brief was the acceptance test for the whole phase:
+`bin/rails pol:brief`, real credential, real OpenRouter, real publication.
+It ran twice — once as the proof, and once more after the proof found a defect.
+
+### D1. First call — published, and wrong in one sentence
+
+`anthropic/claude-sonnet-5`, 4,245 input / 1,139 output tokens, about **2.0
+cents** at the published $2/$10 per M. Headline: *"Generic ballot sits at D+6.4
+as House and Senate outlooks diverge."* Every poll number in it was correct,
+every one attributed to a pollster with field dates and sample frame, and the
+House caveat was carried in full.
+
+Two sentences were not defensible:
+
+> "Our model gives Democrats a **96 in 100 chance of holding the House**" —
+> the payload never said who holds the House, and Democrats do not.
+
+> "a mean of 49.2 seats — **short of the 50 needed** with the chamber's
+> tiebreak structure" — 50 is the Republicans' number. The vice president is a
+> Republican, so a tie goes to them and Democrats need 51. The payload gave
+> neither figure, so the model supplied its own.
+
+Both are the same failure: a gap in the payload filled from outside it. That is
+the exact failure mode the whole design is meant to prevent, and it took a live
+call to find, because a stubbed test can only assert what we thought to stub.
+
+### D2. The fix
+
+- `Newsroom::Context` now puts the control thresholds in the payload —
+  `dem_seats_needed: 51`, `rep_seats_needed: 50`, and the tiebreak in words —
+  derived from the same parameters the simulator counts against, plus the
+  House's 218.
+- The system prompt gained a "WHAT THE PAYLOAD DOES NOT TELL YOU" section:
+  current control is not known, so write about *winning* control, never
+  holding, keeping, defending, losing or flipping it; and use no seat
+  thresholds but the ones given.
+- Two context tests and one writer test pin both.
+
+### D3. Second call — the one on the page
+
+`anthropic/claude-sonnet-5`, 4,453 input / 1,415 output tokens, about **2.3
+cents**. Total live spend for the phase: **4.3 cents**.
+
+> **Democrats hold generic ballot edge as Senate battle stays close**
+> *Our average puts Democrats up 6.4 points nationally, but the Senate math and
+> a cluster of new state polls show a tighter contest underneath.*
+
+349 words, four paragraphs, 12 polls cited, all 12 in the payload. Checked line
+by line against the rows: Quantus 1,048 LV Aug 3-4 D+49-43; Reuters/Ipsos
+July 29–Aug 3 at 36-30 among 4,505 adults and 42-37 among 3,542 RV;
+Economist/YouGov July 31–Aug 3 at 41-33 among 1,607 adults and 46-42 among
+1,472 RV; Morning Consult 24,000 RV 46-42; Change Research Aug 3-6 Cooper 50
+Whatley 43; Hart Research Jackson 49 Collins 45; YouGov Blue and Wedgewood in
+Texas; Emerson in Iowa. Every figure, sample size, population and field window
+matches the database exactly. The Senate arithmetic reads correctly now: "a 31
+in 100 chance of winning Senate control … 49.2 seats against the 51 needed;
+Republicans need only 50 because the vice president, a Republican, breaks a
+50-50 tie." The House caveat is in the model's own words, with the 84% figure.
+
+It renders on `/dispatches` under "Written autonomously by
+anthropic/claude-sonnet-5". The first brief was retracted rather than deleted —
+it is the honest record of what the system did before the fix, and retracting
+it is what the Phase 6 admin would do.
+
+### D4. Rough edges seen live
+
+- **Output budget.** 1,415 output tokens for a 349-word brief; the cap is
+  2,000. A model that ran long would be truncated mid-JSON, which is a
+  validation failure and a retry rather than a bad publication — but the margin
+  is only about 1.4x, and `newsroom.max_output_tokens` is the dial if briefs
+  start getting cut off.
+- **Cost at the cap.** 40 dispatches a day at ~2.3 cents is under a dollar a
+  day. The caps bound spend as well as volume.
+- **Prompt weight.** ~4.3k input tokens per call, of which the payload is about
+  1.8k. Nothing to fix yet; worth watching if the brief's poll list grows.
+
+## E. Tests
+
+136 new tests (the suite goes 412 → 548). Every LLM call in the suite is
+WebMock-stubbed against `https://openrouter.ai/api/v1/chat/completions`;
+nothing reaches the network, and the API key is forced to a literal for the
+duration of each test so the suite behaves identically on a machine with the
+real credential and one without. The load-bearing ones:
+
+- **Client** — the request shape as OpenRouter receives it: the slug from
+  params (and a params override proving a model swap needs nothing else), the
+  max-tokens bound, a strict `json_schema` response format, the system message
+  under the `system` role, and an `Authorization` header asserted **present**,
+  never compared. Parsed structured output, the served model id and its
+  fallback, a non-JSON reply becoming nil data rather than an exception, the
+  conversation surviving a second `ask`, and 401/429/500/503/timeout all
+  arriving as one `Client::Error`.
+- **Validation** — every cap moved through `with_params` to prove it is read
+  and not hardcoded; six kinds of markdown structure rejected, and a
+  hyphenated aside *not* mistaken for a bullet list; an excess cited id
+  rejected; a numeric-string id accepted; and all four problems with a badly
+  broken draft reported at once, because the retry gets one turn to fix them.
+- **Writer** — a valid draft published with the served model as its byline; an
+  over-cited draft producing a second request whose body contains the
+  validator's complaint, then publishing; two bad drafts publishing nothing and
+  leaving one `validation_failed` skip with a payload digest; a 401 whose
+  message contains the key proving the key cannot reach the skip log.
+- **Caps** — the Eastern day boundary tested with two dispatches an hour apart
+  across 04:00 UTC, one inside the cap and one outside it; the duplicate guard;
+  the movement cooldown on both sides.
+- **Triggers** — the kill switch (stored and `AGENTS_DISABLED`) and the missing
+  key each producing a skip row and *no* HTTP request; the pipeline handoff
+  asserted end to end (sweep → poll ids → run → the reaction job's arguments);
+  a failed run and a run that stepped aside queueing nothing.
+- **Cron** — both new entries, and their parsed fugit schedules, including that
+  the model run comes before the brief and that 07:00 Eastern is 11:00 UTC in
+  July and 12:00 UTC in December.
+
+## F. Known gaps
+
+- **Current chamber control is not in the data model** (§C5). The newsroom now
+  writes around it. Adding it properly — a verified fact with a citation, the
+  way Phase 2 added the holdover counts — would let a brief say "flip" and
+  "defend", which is how these races are actually discussed.
+- **Poll ids are dropped by a refused run** (§C1).
+- **The daily brief does not know about races it is not shown.** It sees the 12
+  most recent polls and the movers; a race that is quietly extraordinary but
+  unpolled this week is invisible to it.
+- **One retry, one model.** If the writer model is down, the piece is skipped
+  rather than tried on a second model. `newsroom.writer_model` is a one-string
+  swap, but nothing does it automatically.
+- **The caps are read-then-write, not atomic.** Two newsroom jobs running
+  concurrently could each see room under a cap and both publish. The database
+  guard that makes forecast runs safe (a partial unique index) has no clean
+  equivalent here, because "three a day" is a count and not a uniqueness
+  constraint. In practice the window is the length of one LLM call and needs
+  two model runs to finish inside it, which the 2-hour scrape cadence makes
+  unlikely; the damage is bounded by the caps themselves — a duplicate piece,
+  not an unbounded one. If it ever happens, good_job's concurrency extension
+  (`perform_limit: 1` keyed on the newsroom) would serialise the jobs.
