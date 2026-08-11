@@ -14,6 +14,19 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
                   text: /en.wikipedia.org\/wiki\/2024_United_States_House_of_Representatives_elections/
   end
 
+  # Found by the Phase 7 acceptance sweep: newsroom.writer_model's citation is
+  # a URL followed by a retrieval date, and linking the whole string put a
+  # space inside the href — a source link that 404s on the page that exists to
+  # make every number checkable.
+  test "a citation with a trailing note links only the URL, and keeps the note as text" do
+    get methodology_path
+
+    assert_select "[data-testid='param-table-newsroom'] a[href='https://openrouter.ai/api/v1/models']"
+    assert_select "[data-testid='param-table-newsroom'] [data-testid='param-citation']",
+                  text: /retrieved 2026-08-11/
+    assert_select "a[href*=' ']", false, "no citation link should have whitespace in its href"
+  end
+
   test "methodology includes the site.* params this phase added" do
     get methodology_path
     assert_select "[data-testid='param-table-site'] [data-testid='param-row']", text: /tossup_band_pp/
