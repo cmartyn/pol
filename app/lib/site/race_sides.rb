@@ -28,10 +28,19 @@ module Site
       [ side_a, side_b ]
     end
 
+    # Tie-break must stay byte-for-byte identical to Forecast::RaceModel
+    # #top_minor_candidate's sort key (app/lib/forecast/race_model.rb): an
+    # independent always outranks another minor party, id only breaking ties
+    # within the same tier. A plain `.min_by(&:id)` here once diverged from
+    # that — dormant while no live race runs two minor candidates, but a real
+    # mislabel waiting to happen, since this value picks which candidate a
+    # displayed margin is credited to while the engine's matching pick
+    # decides what the forecast numbers actually measure. If the engine's
+    # sort key ever changes, this one must change with it.
     def top_minor_party(candidates)
       candidates
         .reject { |candidate| MAJOR_PARTIES.include?(candidate.party) }
-        .min_by(&:id)
+        .min_by { |candidate| [ candidate.party == "ind" ? 0 : 1, candidate.id ] }
         &.party
     end
   end

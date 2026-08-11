@@ -4,13 +4,9 @@ class HomeController < PublicController
   def index
     @latest_run = ModelRun.succeeded.latest.first
 
-    if @latest_run
-      chamber_forecasts = ChamberForecast.where(model_run_id: @latest_run.id).index_by(&:chamber)
-      @senate_chamber_forecast = chamber_forecasts["senate"]
-      @house_chamber_forecast = chamber_forecasts["house"]
-      @senate_histogram = @senate_chamber_forecast && Site::Charts::SeatHistogram.build(@senate_chamber_forecast)
-      @house_histogram = @house_chamber_forecast && Site::Charts::SeatHistogram.build(@house_chamber_forecast)
-    end
+    # Each chamber card looks up its own ChamberForecast/histogram, wrapped
+    # in its own `<% cache %>` block — see app/views/home/_chamber_card.html.erb —
+    # so a cache hit skips that query rather than paying it here unconditionally.
 
     # The current poll average, not anything tied to @latest_run — see
     # Site::Charts::PollsScatter for why a live Averager call and a stored

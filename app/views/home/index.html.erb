@@ -9,10 +9,8 @@
   </p>
 <% else %>
   <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
-    <%= render "home/chamber_card", chamber_forecast: @senate_chamber_forecast, histogram: @senate_histogram,
-                                     title: "Senate", house: false %>
-    <%= render "home/chamber_card", chamber_forecast: @house_chamber_forecast, histogram: @house_histogram,
-                                     title: "House", house: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true %>
   </div>
 <% end %>
 

@@ -42,6 +42,23 @@ class Site::RaceSidesTest < ActiveSupport::TestCase
     assert_equal "ind", side_a
   end
 
+  test "an independent beats a lower-id minor-party candidate for side_a, matching the engine's tie-break" do
+    # Forecast::RaceModel#top_minor_candidate sorts minor candidates by
+    # [party == "ind" ? 0 : 1, id] — an independent always wins the slot over
+    # another minor party regardless of id. The previous test above doesn't
+    # discriminate this rule from a plain `.min_by(&:id)` (its independent
+    # already has the lower id); this one does: "other" has the lower id and
+    # must still lose to "ind".
+    candidates = [
+      Candidate.new(id: 1, party: "other", name: "Minor Party Candidate"),
+      Candidate.new(id: 2, party: "ind", name: "Independent Candidate")
+    ]
+
+    side_a, _side_b = Site::RaceSides.for(candidates)
+
+    assert_equal "ind", side_a
+  end
+
   test "no candidates at all falls back to the generic dem/rep pair (unsettled or unseeded House races)" do
     side_a, side_b = Site::RaceSides.for([])
 
