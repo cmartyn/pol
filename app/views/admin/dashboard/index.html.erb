@@ -1,0 +1,98 @@
+<% content_for :title, "Dashboard · Admin · Pol" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">Dashboard</h1>
+<p class="mt-1 text-sm text-slate-600">What the autonomous pipeline has done, at a glance.</p>
+
+<div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <section class="rounded-lg border border-slate-200 bg-white p-4" data-testid="admin-card-last-scrape">
+    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last scrape</h2>
+    <% if @last_scrape %>
+      <p class="mt-2 text-sm font-medium text-slate-900"><%= @last_scrape.source %></p>
+      <p class="text-xs text-slate-500"><%= @last_scrape.finished_at&.strftime("%b %-d, %Y %-I:%M %p") %></p>
+      <p class="mt-2 text-sm">
+        <span class="font-semibold <%= @last_scrape.succeeded? ? "text-green-700" : (@last_scrape.failed? ? "text-red-700" : "text-amber-700") %>" data-testid="admin-last-scrape-status">
+          <%= @last_scrape.status.capitalize %>
+        </span>
+        <span class="text-slate-500">&middot; <%= @last_scrape.new_count %> new, <%= @last_scrape.duplicate_count %> dup, <%= @last_scrape.fetched_count %> fetched</span>
+      </p>
+      <% if @last_scrape.error_message.present? %>
+        <p class="mt-1 text-xs text-red-600"><%= @last_scrape.error_message %></p>
+      <% end %>
+    <% else %>
+      <p class="mt-2 text-sm text-slate-500" data-testid="admin-last-scrape-empty">No scrape has run yet.</p>
+    <% end %>
+    <%= link_to "All scrape runs →", admin_scrape_runs_path, class: "mt-3 inline-block text-sm font-medium text-amber-700 hover:text-amber-800" %>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4" data-testid="admin-card-last-run">
+    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last model run</h2>
+    <% if @last_run %>
+      <p class="mt-2 text-xs text-slate-500"><%= @last_run.started_at&.strftime("%b %-d, %Y %-I:%M %p") %> &middot; <%= @last_run.trigger %></p>
+      <p class="mt-1 text-sm">
+        <span class="font-semibold <%= @last_run.succeeded? ? "text-green-700" : (@last_run.failed? ? "text-red-700" : "text-amber-700") %>" data-testid="admin-last-run-status">
+          <%= @last_run.status.capitalize %>
+        </span>
+      </p>
+      <% if @last_run.succeeded? %>
+        <dl class="mt-2 space-y-0.5 text-sm text-slate-700">
+          <% if (senate = @last_run_chamber_forecasts["senate"]) %>
+            <div class="flex justify-between"><dt>Senate D control</dt><dd class="font-semibold" data-testid="admin-senate-control"><%= Site::Format.percent(senate.p_dem_control) %></dd></div>
+          <% end %>
+          <% if (house = @last_run_chamber_forecasts["house"]) %>
+            <div class="flex justify-between"><dt>House D control</dt><dd class="font-semibold" data-testid="admin-house-control"><%= Site::Format.percent(house.p_dem_control) %></dd></div>
+          <% end %>
+        </dl>
+      <% elsif @last_run.error_message.present? %>
+        <p class="mt-1 text-xs text-red-600"><%= @last_run.error_message %></p>
+      <% end %>
+    <% else %>
+      <p class="mt-2 text-sm text-slate-500" data-testid="admin-last-run-empty">No model run yet.</p>
+    <% end %>
+    <%= link_to "All model runs →", admin_model_runs_path, class: "mt-3 inline-block text-sm font-medium text-amber-700 hover:text-amber-800" %>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4" data-testid="admin-card-publishing-today">
+    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Published today (ET)</h2>
+    <p class="mt-2 text-3xl font-semibold text-slate-900" data-testid="admin-dispatches-today-count"><%= @dispatches_today %></p>
+    <p class="text-sm text-slate-500">dispatch<%= "es" unless @dispatches_today == 1 %> published</p>
+    <%= link_to "All dispatches →", admin_dispatches_path, class: "mt-3 inline-block text-sm font-medium text-amber-700 hover:text-amber-800" %>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4" data-testid="admin-card-skips-today">
+    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Skips today by reason (ET)</h2>
+    <% if @skips_today_by_reason.any? %>
+      <dl class="mt-2 space-y-0.5 text-sm text-slate-700">
+        <% @skips_today_by_reason.sort_by { |_, count| -count }.each do |reason, count| %>
+          <div class="flex justify-between" data-testid="admin-skip-reason-row">
+            <dt><%= reason.humanize %></dt>
+            <dd class="font-semibold"><%= count %></dd>
+          </div>
+        <% end %>
+      </dl>
+    <% else %>
+      <p class="mt-2 text-sm text-slate-500" data-testid="admin-skips-today-empty">No skips today.</p>
+    <% end %>
+    <%= link_to "Skip log →", admin_newsroom_skips_path, class: "mt-3 inline-block text-sm font-medium text-amber-700 hover:text-amber-800" %>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4" data-testid="admin-card-kill-switch">
+    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Agents kill switch</h2>
+    <p class="mt-2 text-lg font-semibold <%= @kill_switch.effective? ? "text-green-700" : "text-red-700" %>" data-testid="admin-kill-switch-effective">
+      <%= @kill_switch.effective? ? "Agents ON" : "Agents OFF" %>
+    </p>
+    <p class="text-xs text-slate-500">
+      stored: <%= @kill_switch.stored_label %><% if @kill_switch.env_override? %> &middot; <span class="text-red-600">ENV override present</span><% end %>
+    </p>
+    <%= link_to "Settings →", admin_settings_path, class: "mt-3 inline-block text-sm font-medium text-amber-700 hover:text-amber-800" %>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4" data-testid="admin-card-quick-links">
+    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Quick links</h2>
+    <ul class="mt-2 space-y-1 text-sm">
+      <li><%= link_to "New poll (manual entry)", new_admin_poll_path, class: "font-medium text-amber-700 hover:text-amber-800" %></li>
+      <li><%= link_to "Import polls from CSV", new_admin_poll_import_path, class: "font-medium text-amber-700 hover:text-amber-800" %></li>
+      <li><%= link_to "Races & candidates", admin_races_path, class: "font-medium text-amber-700 hover:text-amber-800" %></li>
+      <li><%= link_to "GoodJob dashboard", admin_good_job_path, class: "font-medium text-amber-700 hover:text-amber-800" %></li>
+    </ul>
+  </section>
+</div>

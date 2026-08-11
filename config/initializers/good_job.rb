@@ -45,6 +45,25 @@ Rails.application.configure do
   # (`bundle exec good_job start`), started as its own process/service.
   config.good_job.execution_mode = :async if Rails.env.development?
 
-  # The dashboard (mountable engine) is intentionally not wired up yet;
-  # it arrives with the admin namespace in Phase 6.
+  # The dashboard is mounted at /admin/good_job (config/routes.rb) and must
+  # be gated by the exact same session cookie the rest of /admin uses, not a
+  # second auth system bolted on beside it. GoodJob's own README documents
+  # this `ActiveSupport.on_load(:good_job_application_controller)` hook as
+  # the supported extension point for custom authentication — GoodJob::
+  # ApplicationController is a plain ActionController::Base subclass, so
+  # `cookies` and the app's own signed session cookie are both right here.
+  #
+  # Session.from_signed_cookie is the exact lookup Authentication#
+  # find_session_by_cookie uses, so a request the rest of /admin would
+  # accept is accepted here too, and nothing else is. An unauthenticated
+  # request gets a plain 404 (matching the README's own suggested
+  # ActionController::RoutingError-as-"Not Found" behavior) rather than a
+  # redirect: this mount has no route helpers of its own reaching back into
+  # the host app's session routes, and "the page doesn't exist" is a safer
+  # default for an internal ops dashboard than hinting at where to sign in.
+  ActiveSupport.on_load(:good_job_application_controller) do
+    before_action do
+      head :not_found unless Session.from_signed_cookie(cookies)&.user
+    end
+  end
 end

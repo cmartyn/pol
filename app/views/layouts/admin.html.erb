@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Admin · Pol" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="min-h-screen bg-slate-100 text-slate-900 antialiased [font-variant-numeric:tabular-nums]">
+    <a href="#main" class="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-3 focus-visible:top-3 focus-visible:z-50 focus-visible:rounded focus-visible:bg-slate-900 focus-visible:px-3 focus-visible:py-2 focus-visible:text-white">
+      Skip to content
+    </a>
+
+    <header class="bg-slate-900 text-white">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-2 px-5 py-3">
+        <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <%= link_to admin_root_path, class: "flex items-baseline gap-2 shrink-0" do %>
+            <span class="font-serif text-xl font-semibold tracking-tight">pol</span>
+            <span class="text-xs font-medium uppercase tracking-wide text-slate-400">admin</span>
+          <% end %>
+
+          <nav class="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm font-medium" aria-label="Admin" data-testid="admin-nav">
+            <%= admin_nav_link "Dashboard", admin_root_path %>
+            <%= admin_nav_link "Polls", admin_polls_path %>
+            <%= admin_nav_link "Scrapes", admin_scrape_runs_path %>
+            <%= admin_nav_link "Model runs", admin_model_runs_path %>
+            <%= admin_nav_link "Dispatches", admin_dispatches_path %>
+            <%= admin_nav_link "Skip log", admin_newsroom_skips_path %>
+            <%= admin_nav_link "Races", admin_races_path %>
+            <%= admin_nav_link "Settings", admin_settings_path %>
+            <%= admin_nav_link "Jobs", admin_good_job_path %>
+          </nav>
+        </div>
+
+        <div class="flex items-center gap-3 text-sm text-slate-300">
+          <span data-testid="admin-current-user"><%= Current.user&.email_address %></span>
+          <%= button_to "Sign out", session_path, method: :delete,
+                class: "rounded px-2 py-1 font-medium text-slate-300 hover:bg-slate-800 hover:text-white" %>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="mx-auto max-w-6xl px-5 py-8">
+      <% if notice = flash[:notice] %>
+        <p class="mb-5 inline-block rounded-lg bg-green-50 px-3 py-2 font-medium text-green-700" data-testid="admin-flash-notice"><%= notice %></p>
+      <% end %>
+      <% if alert = flash[:alert] %>
+        <p class="mb-5 inline-block rounded-lg bg-red-50 px-3 py-2 font-medium text-red-700" data-testid="admin-flash-alert"><%= alert %></p>
+      <% end %>
+
+      <%= yield %>
+    </main>
+  </body>
+</html>

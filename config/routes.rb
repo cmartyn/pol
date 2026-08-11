@@ -24,4 +24,36 @@ Rails.application.routes.draw do
 
   get "methodology", to: "pages#methodology"
   get "about", to: "pages#about"
+
+  # Phase 6: the editor's cockpit. Every controller under this namespace
+  # inherits Admin::BaseController < ApplicationController and does NOT call
+  # allow_unauthenticated_access, so Authentication's default
+  # before_action :require_authentication stays in force — see
+  # app/controllers/admin/base_controller.rb.
+  namespace :admin do
+    root to: "dashboard#index"
+
+    resources :polls
+    resources :poll_imports, only: [ :new, :create ]
+
+    resources :scrape_runs, only: [ :index, :create ]
+    resources :model_runs, only: [ :index, :show, :create ]
+
+    resources :dispatches, only: [ :index, :show, :edit, :update ] do
+      member { post :retract }
+    end
+
+    resources :newsroom_skips, only: [ :index ]
+
+    resources :races, only: [ :index, :edit, :update ] do
+      resources :candidates, only: [ :create, :update, :destroy ]
+    end
+
+    resource :settings, only: [ :show, :update ]
+
+    # Gated by the SAME session cookie as the rest of /admin — see the
+    # ActiveSupport.on_load(:good_job_application_controller) hook in
+    # config/initializers/good_job.rb for how.
+    mount GoodJob::Engine => "good_job"
+  end
 end
