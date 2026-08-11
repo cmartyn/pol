@@ -10,14 +10,21 @@ module Ingest
     DASH = "[-–—]".freeze
     MONTH = "[A-Z][a-z]+\\.?".freeze
 
+    # The comma before the year is optional throughout: "July 8–10 2026" is a
+    # typo on the page rather than a different date, and Washington's third
+    # district costs three real polls to that one missing character. A month
+    # with no day at all ("June 2026", "Late July 2025") is a different
+    # animal — information the page does not carry — and still returns nil.
+    COMMA = ",?".freeze
+
     # "December 29, 2025 – January 4, 2026"
-    CROSS_YEAR = /\A(#{MONTH}) (\d{1,2}), (\d{4})\s*#{DASH}\s*(#{MONTH}) (\d{1,2}), (\d{4})\z/o
+    CROSS_YEAR = /\A(#{MONTH}) (\d{1,2})#{COMMA} (\d{4})\s*#{DASH}\s*(#{MONTH}) (\d{1,2})#{COMMA} (\d{4})\z/o
     # "May 15 – June 21, 2026"
-    CROSS_MONTH = /\A(#{MONTH}) (\d{1,2})\s*#{DASH}\s*(#{MONTH}) (\d{1,2}), (\d{4})\z/o
+    CROSS_MONTH = /\A(#{MONTH}) (\d{1,2})\s*#{DASH}\s*(#{MONTH}) (\d{1,2})#{COMMA} (\d{4})\z/o
     # "February 10–12, 2025"
-    SAME_MONTH = /\A(#{MONTH}) (\d{1,2})\s*#{DASH}\s*(\d{1,2}), (\d{4})\z/o
+    SAME_MONTH = /\A(#{MONTH}) (\d{1,2})\s*#{DASH}\s*(\d{1,2})#{COMMA} (\d{4})\z/o
     # "April 16, 2025"
-    SINGLE = /\A(#{MONTH}) (\d{1,2}), (\d{4})\z/o
+    SINGLE = /\A(#{MONTH}) (\d{1,2})#{COMMA} (\d{4})\z/o
 
     MONTHS = (Date::MONTHNAMES.compact + Date::ABBR_MONTHNAMES.compact)
       .each_with_object({}) { |name, map| map[name.downcase] = Date::MONTHNAMES.index(name) || Date::ABBR_MONTHNAMES.index(name) }

@@ -29,8 +29,21 @@ class Ingest::DateRangeTest < ActiveSupport::TestCase
     assert_equal [ Date.new(2026, 7, 8), Date.new(2026, 7, 10) ], Ingest::DateRange.parse("  Jul 8–10,  2026 ")
   end
 
+  # Washington's third district writes one of its Emerson polls without the
+  # comma. That is a typo in an otherwise exact date, not a different date, and
+  # three real polls hang on it.
+  test "the comma before the year is optional" do
+    assert_equal [ Date.new(2026, 7, 8), Date.new(2026, 7, 10) ], Ingest::DateRange.parse("July 8–10 2026")
+    assert_equal [ Date.new(2026, 7, 30), Date.new(2026, 8, 2) ], Ingest::DateRange.parse("July 30 – August 2 2026")
+    assert_equal [ Date.new(2025, 4, 16), Date.new(2025, 4, 16) ], Ingest::DateRange.parse("April 16 2025")
+  end
+
   test "returns nil rather than guessing at anything else" do
-    [ "", "  ", "sometime last spring", "through July 1, 2026", "2026", "Smarch 4, 2026", "July 32, 2026" ].each do |text|
+    [ "", "  ", "sometime last spring", "through July 1, 2026", "2026", "Smarch 4, 2026", "July 32, 2026",
+      # A month with no day is information the page does not carry. Widening it
+      # to the whole month would move a poll's end date by up to thirty days,
+      # which the recency weighting would believe.
+      "June 2026", "Late July 2025" ].each do |text|
       assert_nil Ingest::DateRange.parse(text), "expected #{text.inspect} to be unparseable"
     end
   end
