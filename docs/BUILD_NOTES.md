@@ -445,3 +445,331 @@ reads): the newest North Carolina poll is stored as Change Research,
 page's row reads `Change Research (D) | August 3–6, 2026 | 915 (LV) | ± 3.5% |
 43% | 50% | – | 7%`. The partisan tag is stripped from the pollster name; the
 numbers match exactly.
+
+---
+
+# Phase 3 — Forecast engine
+
+Research date: **August 11, 2026.** The sigma anchors below were checked against
+live pages on that date; nothing is from model memory. Margins throughout are
+**side A minus side B in percentage points**, which for all but three races is
+Democrat minus Republican.
+
+## A. Error-model constants
+
+Phase 0 wrote four sigmas into `config/model_params.yml` marked
+`VERIFY-PHASE-3`. Each is now cited in that file. The reasoning, and the one
+value that moved, are here.
+
+A note on units, because it decides everything: these are standard deviations
+of the **election-day-equivalent error on the margin**. Published research
+usually reports *mean absolute error*, and often on a candidate's *share*
+rather than the margin. Margin error is about twice share error, and for a
+normal distribution `sigma ≈ 1.25 × MAE`. Both conversions are applied below.
+A second caveat: most headline "average error" figures describe *individual
+polls*, which carry sampling noise and house effects that partly wash out in an
+average — so they are upper bounds on what an average's error should be.
+
+### A1. `sigma_national: 2.5` — kept
+
+The right target is the standard deviation of the **signed** national error,
+because that is the thing a shared national shock represents.
+
+- AAPOR's 2024 task force gives the signed national error across all offices in
+  the final two weeks: 2016 +3.1, 2018 +0.1, 2020 +4.6, 2022 −0.6, 2024 +2.7.
+  Root-mean-square about zero = **2.8**; sample SD = 2.2.
+  <https://aapor.org/wp-content/uploads/2025/10/Task-Force-on-2024-Pre-Election-Polling-Report-Executive-Summary.pdf>
+- AAPOR's 2020 task force (Table 3) gives the presidential series back to 2000:
+  −1.1, +1.4, +0.7, −2.4, +1.3, +3.9. RMS about zero = **2.1**.
+  <https://aapor.org/wp-content/uploads/2022/11/AAPOR-Task-Force-on-2020-Pre-Election-Polling_Report-FNL.pdf>
+- 538's 2024 House model uses "about 3 points of error at the national level".
+  <https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291>
+
+2.5 sits in the middle of 2.1–2.8 and just under 538's 3.0. **Kept unchanged.**
+
+### A2. `sigma_state_polled: 3.5 → 4.0` — the one value that moved
+
+Two independent anchors put a polled state's *total* error higher than 3.5
+implied:
+
+- 538's 2024 presidential model: "the average polling miss for each party's
+  vote share in a competitive state is a hair over 2 points, or around 3.8
+  points on the margin between the candidates". MAE 3.8 → **sigma ≈ 4.75**.
+  <https://abcnews.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753>
+- Shirani-Mehr, Rothschild, Goel & Gelman (2018, *JASA*), Table 1: average
+  election-level absolute bias for Senate races on election day is 2.0% of
+  two-party *share* — about 4.0 points of margin MAE → **sigma ≈ 5.0**. This is
+  the decisive number, because election-level bias is precisely the component
+  that does **not** average away over more polls: "shared election-level poll
+  bias persists unchanged, even when averaging over a large number of surveys."
+  <https://sites.stat.columbia.edu/gelman/research/published/polling-errors.pdf>
+
+A race's total error here is `sqrt(sigma_national² + sigma_state²)`. At 3.5 that
+is **4.30**, below every anchor found. At 4.0 it is **4.72**, matching 538's
+4.75 and near Shirani-Mehr's 5.0. Keeping 3.5 would have been a bet that a
+modern house-effect-corrected average beats the 1998–2014 record; 2024 supports
+that bet (Silver Bulletin: "The 4.1-point average polling error in Senate races
+this cycle is the lowest in our records"), 2020 does not (AAPOR: Senate and
+governor absolute error 6.7). **Raised to 4.0** as the robust choice. This is
+the only constant Phase 3 changed.
+
+### A3. `sigma_state_unpolled: 8.0` — kept
+
+An unpolled race is a fundamentals estimate, and 538 published the error of
+theirs: "we would expect our fundamentals model to miss the vote margin in the
+average state by about 6.5 points". MAE 6.5 → **sigma ≈ 8.15**, against our
+total of `sqrt(2.5² + 8.0²) = 8.38`. Their Senate model reaches the same place
+from the other direction, inflating state error for seats with no polls above
+its ~7-point baseline.
+<https://abcnews.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753>,
+<https://abcnews.com/538/538s-2024-senate-election-forecast-works/story?id=114997770>
+
+### A4. `sigma_district: 6.0` — kept, with a structural caveat recorded
+
+538's 2024 House model states the number outright: "There are about 3 points of
+error at the national level, 2 each at the regional and state levels, 2 at the
+demographic-cluster level, and 6 at the district level," combined in quadrature
+("These numbers don't add up to 8 points because uncorrelated errors are not
+additive"). Same scale, same construction, same value.
+<https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291>
+
+**The caveat is not about this constant, it is about the ones next to it.**
+538's *correlated* error outside the district is `sqrt(3² + 2² + 2² + 2²) =
+4.58`; ours is a single national term of 2.5. Per district that barely matters
+(our 6.50 against their 7.55), but the missing 4-odd points are *correlated
+across districts* and therefore do not wash out over 435 seats. **Our House
+seat-count distribution is narrower than it should be, and the House control
+probability is correspondingly more confident than it should be.** Inflating
+`sigma_district` would not fix this — it would add the variance as independent
+noise, which is exactly what does wash out. The fix is a regional or state-level
+shared term, which is a change to the model's structure rather than to a
+number, and is left for a later phase. Recorded here so the number is read with
+its limits known.
+
+### A5. Time inflation `t = min(1.75, 1 + days/180)` — kept
+
+No published source states a 1.75 cap or a 180-day scale; what the literature
+supports is the shape.
+
+- Shirani-Mehr et al. Figure 2 (7,040 polls, final 100 days) shows Senate poll
+  error running about **1.7×** its election-day level three months out, once the
+  sampling floor is netted out — close to the 1.75 cap. (Read off the published
+  figure; the paper prints no table for it.)
+- The same paper on the flat region this formula produces near the end: "Average
+  error... appears to stabilize in the final weeks, with little difference in
+  RMSE one month before the election versus one week before." AAPOR 2020 agrees:
+  "The polling error for the presidential election was stable throughout the
+  campaign." Our formula gives 1.12× at three weeks.
+- The one source that argues for more is 538's presidential drift estimate ("the
+  polling margin in the average state tends to move by 12 points over the entire
+  course of the election... From 75 days out... closer to 6 points"), which
+  implies roughly 1.9× at 75 days where ours gives 1.42×. Down-ballot races
+  anchored on partisan lean move far less than a presidential topline, and 2024
+  had a mid-race candidate swap inflating that figure.
+
+**Kept.** If a later phase wants to hedge toward the presidential evidence, the
+lever is shortening `time_scale_days` to 120, not raising the cap.
+
+### A6. `chambers:` — new in Phase 3
+
+`senate_holdover_dem_caucus: 34`, `senate_holdover_rep: 31`, `vp_party: "rep"`
+and `house_majority_seats: 218`, all from the Phase 2 arithmetic in §A2 above
+(31 + 34 + 35 = 100). The VP's party is what makes the two Senate thresholds
+asymmetric: Republicans control at 50, Democrats need 51.
+
+## B. What the engine computes
+
+Four objects, each with one job.
+
+**`Forecast::Averager`** — a weighted mean margin for a race or the generic
+ballot, as of a date. Polls inside `window_days` (45), widening to
+`extended_window_days` (120) when fewer than two qualify; one poll per pollster
+(latest `field_end`, then latest `field_start`, then highest id); weight
+`exp(-ln2 × age_days / 14) × sqrt(min(n, 1500) / 600)`, with a missing sample
+size treated as 400. Returns the mean, `W` (the sum of weights), the poll count,
+the window used, and the number of polls skipped.
+
+**`Forecast::RaceModel`** — the central estimate.
+Senate prior `lean + national_env + 1.5 × incumbent_direction`;
+House prior `baseline_margin + (national_env − house_national_margin_2024) +
+open_seat_term`; blended with the poll average at `w = min(1, W / 3.0)`,
+`mu = w × average + (1 − w) × prior`.
+
+**`Forecast::Simulator`** — 10,000 worlds. One national error per world, shared
+by every race in both chambers, plus one independent error per race, every sigma
+multiplied by `t`. Winner is side A when the margin is ≥ 0.
+
+**`Forecast::Runner`** — opens the `ModelRun`, records `Pol::Params.to_h` and the
+seed on it, writes 470 forecasts and two chamber rows in a single transaction,
+closes the run. A run can be reproduced exactly from its own row.
+
+## C. Decisions this phase had to make
+
+1. **Polls that do not measure the modelled matchup are dropped before the
+   one-per-pollster cut, not after.** The specification listed the window and
+   the per-pollster rule first, but the live data settles the order. Wikipedia
+   pages publish several matchup tables per race, so Tavern Research has four
+   Nebraska rows fielded on the same days, of which exactly one is the
+   Osborn-vs-Ricketts contest the model is forecasting; Montana's page carries
+   both a three-way and a two-way version of the same poll. Deduplicating first
+   keeps whichever row has the highest id and then discards that pollster for
+   "missing a side" — losing the poll that actually measures the race. The
+   widening test counts usable polls for the same reason. `skipped_count`
+   reports the dropped rows rather than hiding them (Nebraska: 3 skipped, 1
+   kept).
+
+2. **Incumbency is read from `open_seat`, not from the candidate flag.** Phase 2
+   defines `open_seat` as true exactly when the sitting senator is not on the
+   November ballot, which is the only signal that covers **South Carolina**:
+   the appointed incumbent (Darline Graham) is running, but the Republican
+   nomination is unsettled, so no candidate row carries the incumbent flag. Read
+   from candidates alone, South Carolina would silently lose its −1.5. An
+   appointed incumbent seeking the seat counts as an incumbent (FL, OH, SC); an
+   appointee who cannot run does not (OK, where `open_seat` is true).
+
+3. **The House open-seat term is written out and inert.** Phase 2 seeds no 2026
+   House incumbency or retirements — it read the 2024 results page, which
+   carries neither — so `race.open_seat` is false for all 435 districts and
+   `open_seat_term` is 0 everywhere today. It is implemented in full
+   (`−open_seat_adj × incumbent_party_direction`, so an open seat docks the
+   retiring party's advantage) so the formula self-activates the day a Phase 6
+   admin or a later scraper marks a district open. Both halves are tested.
+   Senate open seats never come through this path: they are already handled by
+   `incumbent_direction` going to zero.
+
+4. **A race with no Democrat is modelled on the same prior as one with a
+   Democrat.** Idaho, Nebraska and South Dakota each field a Republican and an
+   independent with no Democrat on the ballot. Side A becomes the independent
+   and the margin scale becomes side A minus side B, but the prior is still
+   `lean + national_env + incumbency` — the state's Democratic lean standing in
+   as a proxy for the anti-Republican vote. This is an approximation and is
+   flagged as one in the code. An independent-specific prior would be a number
+   with nothing behind it, and the alternative (no forecast for those three
+   seats) is worse.
+
+5. **Party and caucus are different questions, deliberately.** `p_dem_win` is
+   the probability a **Democratic-party** candidate wins, so an independent's
+   chances land in `p_other_win` however they intend to caucus. Chamber control
+   reads the **caucus** instead: dem/rep by party, an independent's declared
+   `caucus_with` where there is one, and `uncommitted` where there is not. All
+   five 2026 independents are uncommitted (Phase 2 §D, known caveats).
+
+6. **Worlds where an uncommitted independent holds the balance count for
+   neither party.** With `vp_party: rep`, Democrats control at 51 and
+   Republicans at 50; a simulation where neither threshold is met is counted for
+   neither, so `p_dem_control + p_rep_control` sums to **less than 1** by design.
+   In the live run that remainder is 0.07% of Senate simulations. It is small
+   because Osborn wins Nebraska in only 0.9% of worlds and is pivotal in fewer
+   still — but it is the honest number, and the test suite constructs the case
+   where it is 50.7%.
+
+7. **Uncontested races are certain and take no noise**, contributing a fixed
+   seat rather than 10,000 identical draws. `uncontested` is false for every
+   race today (Phase 2 §C). A race flagged uncontested with **no**
+   `uncontested_party` recorded is treated as contested: an incomplete flag is
+   not a certainty, and inventing the winner would be worse than simulating it.
+
+8. **With no generic-ballot polls at all, the national environment falls back to
+   `house_national_margin_2024` (−2.6), not to zero.** Zero would assume a tied
+   national vote and shove every district 2.6 points toward the Democrats for
+   want of data; the 2024 result leaves every district exactly at its baseline,
+   which is the genuinely neutral starting point. Logged as a warning when it
+   happens; it does not happen with 559 generic-ballot polls in hand.
+
+9. **Percentiles are nearest-rank, not interpolated** — the reported 5th
+   percentile is a margin the simulation actually produced. **A margin of
+   exactly zero goes to side A**; it is a measure-zero event on a continuous
+   distribution and the rule exists only so the code has no undefined case.
+   **The time multiplier is floored at 1.0** on and after election day, so a
+   back-dated or late run cannot shrink the error below its election-day value
+   or invert it.
+
+10. **Race order is part of the seed.** Draws come off one Box–Muller stream, so
+    the runner always orders races by id; the same seed with the races in a
+    different order is a different (still valid, still reproducible) run.
+
+## D. Performance
+
+The budget was 60 seconds for a full run. Measured on the live board (470 races
+× 10,000 simulations = 4.71 million race draws plus 10,000 national draws):
+
+| | |
+|---|---|
+| Full `bin/rails pol:model` | **1.6 s** (2.2 s including Rails boot) |
+| Simulation only, mean of 5 | **1.41 s** |
+| Everything else (queries, averaging, 472 inserts) | ~0.2 s |
+
+No optimisation was needed and no dependency was added. Three things keep it
+cheap: the per-sim national errors are drawn once into an array and reused by
+every race; each race loops over simulations rather than the other way round, so
+its `mu` and sigma are read once; and Box–Muller's second normal is kept rather
+than discarded, halving the transcendental work.
+
+There is roughly 35× headroom against the budget, which is worth knowing because
+**10,000 simulations is not free of noise**. Across five seeds on identical
+inputs, the Senate control probability ranged 30.0%–31.5% (spread 1.4 points)
+and the House 95.9%–96.2% (spread 0.4 points). The Senate is noisier because
+control is a threshold statistic. Two consequences: run-to-run "movement" below
+about 1.5 points is simulation noise, not news — comfortably below Phase 5's
+`movement_threshold` of 8 points — and if a later phase wants tighter headline
+numbers, `simulation.n_sims` is the lever and the budget can afford it.
+
+## E. Live run
+
+`bin/rails pol:model`, August 11, 2026, against the full seeded board (35 Senate
+races, 435 districts, 800 polls). Run 4, seed 2426173658350254384, 1.56 s.
+
+| | |
+|---|---|
+| Generic ballot (D−R) | **+6.43** from 30 polls (W = 14.68, 45-day window) |
+| Implied House swing since 2024 | +9.03 |
+| Error inflation `t` | 1.4667 (84 days out) |
+| **Senate** | **D 30.6% / R 69.3% / neither 0.1%**, mean 49.3 D-caucus seats (range 40–59, mode 49) |
+| **House** | **D 96.1% / R 3.9%**, mean 240.5 D seats (range 189–307, mode 240) |
+
+Senate detail: 22 of 35 races polled, 13 unpolled (carrying `sigma_state_unpolled`);
+19 races between 5% and 95%; 15 Democratic favourites, 20 Republican. The
+closest are MI (D 45.4%), TX (D 66.4%), IA (D 25.8%), NC (D 79.2%), OH-special
+(D 20.7%) and FL-special (D 20.2%). In the House, 236 seats are Democratic
+favourites and 114 are between 5% and 95%.
+
+The three independent-side races behave as designed: Nebraska is
+`p_dem_win 0.0000 / p_rep_win 0.9909 / p_other_win 0.0091` — no Democrat is on
+the ballot, so the Democratic probability is a true zero rather than a missing
+value, and Osborn's 0.9% sits in `p_other_win` while his caucus stays
+uncommitted for the chamber count. Idaho and South Dakota are the same shape at
+longer odds.
+
+**Read the House number with §A4 in mind.** A 96% probability is more confident
+than this model has earned: with one correlated error term instead of four, the
+seat distribution is too narrow. The Senate figure is less exposed, because 35
+races cannot average away as much as 435.
+
+## F. Tests
+
+94 new tests (the suite goes 191 → 285), all off fixtures and hand arithmetic;
+nothing touches the network. The load-bearing ones:
+
+- **Averager** — every weighted mean is a literal worked out from the published
+  formula and written into the test with its derivation, so the implementation
+  cannot move the goalposts. Window widening, the boundary day, one-per-pollster
+  and its two tie-breaks, the default sample size, the sample-size cap, the
+  top-result-per-party rule, and the independent-sides case.
+- **RaceModel** — the four incumbency signs including the South Carolina case
+  with no candidate row; House swing arithmetic in both directions; the
+  open-seat term inert and active; blend goldens at w = 0, 0.5 and 1 (built from
+  polls whose weights are exactly 1.0 and 1.5); sigma selection; six
+  side-resolution cases; four uncontested cases.
+- **Simulator** — a fixed-seed golden (2 races, 100 sims) asserting exact win
+  counts, percentiles and seat histogram, **plus** a 200,000-draw run checked
+  against the closed-form normal, so the golden is a record of correct behaviour
+  and not of a bug. Determinism, seed sensitivity, order sensitivity. The shared
+  national error demonstrated two ways: near-zero independent error makes the
+  seat histogram bimodal, huge independent error makes it centred. The
+  uncommitted-independent rule as a matched pair — the same race and the same
+  draws, differing only in the caucus flag, gives `p_dem + p_rep = 0.493` or
+  exactly 1.0. Sigmas shown to scale exactly with `t`.
+- **Runner** — a full-scenario fixed-seed golden over the fixture world, with
+  Maine's `mu` cross-checked by hand; reproducibility; the 2024 fallback; the
+  governor exclusion; and three failure paths, including one that proves a
+  half-written run rolls back and leaves the previous succeeded run showing.

@@ -270,6 +270,12 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     assert_equal :rep, certain.caucus
   end
 
+  test "uncontested with no party recorded is treated as contested, not as a certainty" do
+    race = senate_race(lean: 4.0, incumbent_party: :dem, open_seat: false, uncontested: true, uncontested_party: nil)
+
+    assert_nil model(race, national_env: 0.0).certain_side
+  end
+
   test "a contested race has no certain winner" do
     race = senate_race(lean: 0.0, incumbent_party: :rep, open_seat: false)
 

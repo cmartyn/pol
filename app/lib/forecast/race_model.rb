@@ -114,8 +114,12 @@ class Forecast::RaceModel
   def certain_side
     return nil unless race.uncontested?
 
+    # Flagged uncontested with no party recorded is an incomplete flag, not a
+    # certainty. Simulating the race is the safe reading; inventing a winner
+    # is not.
     party = race.uncontested_party
-    return side_a if party.nil? || party == side_a.party.to_s
+    return nil if party.blank?
+    return side_a if party == side_a.party.to_s
     return side_b if party == side_b.party.to_s
 
     candidate = top_candidate(party)
