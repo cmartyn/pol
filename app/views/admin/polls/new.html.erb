@@ -1,0 +1,8 @@
+<% content_for :title, "New poll · Admin · Pol" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">New poll</h1>
+<p class="mt-1 text-sm text-slate-600">Goes through the same digest/dedup door as the scraper — <code>Ingest::RecordPoll</code>, entry mode "manual".</p>
+
+<div class="mt-6">
+  <%= render "form", url: admin_polls_path, method: :post, values: @values, duplicate_of: @duplicate_of %>
+</div>

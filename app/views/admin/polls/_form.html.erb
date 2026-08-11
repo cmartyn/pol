@@ -1,0 +1,88 @@
+<%# locals: url, method ("post"/"patch"), values (indifferent-access hash — pollster_name,
+    race_id, field_start, field_end, sample_size, population, sponsor, source_url, and
+    results: {"dem"|"rep"|"ind"|"other" => {"pct" =>, "candidate_id" =>}}), duplicate_of
+    (a colliding Poll to link to, or nil) %>
+<% duplicate_of = local_assigns[:duplicate_of] %>
+
+<% if duplicate_of %>
+  <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" data-testid="admin-poll-duplicate-notice">
+    Matches an existing poll:
+    <%= link_to "#{duplicate_of.pollster.name} — #{duplicate_of.field_end.strftime('%b %-d, %Y')}",
+          admin_poll_path(duplicate_of), class: "font-semibold underline" %>
+  </div>
+<% end %>
+
+<%= form_with url: url, method: method, class: "space-y-6", data: { testid: "admin-poll-form" } do %>
+  <div class="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_race_id">Race</label>
+      <select name="poll[race_id]" id="poll_race_id" class="mt-1 w-full rounded-md border-slate-300 text-sm" data-testid="admin-poll-race-select">
+        <%= admin_race_select_options(values[:race_id].presence&.to_s) %>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_pollster_name">Pollster</label>
+      <input type="text" name="poll[pollster_name]" id="poll_pollster_name" value="<%= values[:pollster_name] %>" required
+             class="mt-1 w-full rounded-md border-slate-300 text-sm" data-testid="admin-poll-pollster-input">
+      <p class="mt-1 text-xs text-slate-500">Matched to an existing pollster by canonicalized name — "Data for Progress" and "data for progress!" are the same pollster.</p>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_field_start">Field start (optional)</label>
+      <input type="date" name="poll[field_start]" id="poll_field_start" value="<%= values[:field_start] %>" class="mt-1 w-full rounded-md border-slate-300 text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_field_end">Field end</label>
+      <input type="date" name="poll[field_end]" id="poll_field_end" value="<%= values[:field_end] %>" required class="mt-1 w-full rounded-md border-slate-300 text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_sample_size">Sample size (n)</label>
+      <input type="number" name="poll[sample_size]" id="poll_sample_size" value="<%= values[:sample_size] %>" class="mt-1 w-full rounded-md border-slate-300 text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_population">Population</label>
+      <select name="poll[population]" id="poll_population" class="mt-1 w-full rounded-md border-slate-300 text-sm">
+        <%= admin_population_select_options(values[:population]) %>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_sponsor">Sponsor</label>
+      <input type="text" name="poll[sponsor]" id="poll_sponsor" value="<%= values[:sponsor] %>" class="mt-1 w-full rounded-md border-slate-300 text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_source_url">Source URL</label>
+      <input type="url" name="poll[source_url]" id="poll_source_url" value="<%= values[:source_url] %>" required class="mt-1 w-full rounded-md border-slate-300 text-sm">
+    </div>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-5">
+    <h2 class="text-sm font-medium text-slate-700">Results</h2>
+    <p class="mt-0.5 text-xs text-slate-500">Leave a party's percentage blank if this poll reports no result for it.</p>
+    <table class="mt-3 w-full max-w-2xl text-left text-sm">
+      <thead class="text-xs uppercase tracking-wide text-slate-500">
+        <tr><th class="py-1 pr-3 font-medium">Party</th><th class="py-1 pr-3 font-medium">Candidate (optional)</th><th class="py-1 font-medium">Pct</th></tr>
+      </thead>
+      <tbody>
+        <% %w[dem rep ind other].each do |party| %>
+          <tr data-testid="admin-poll-result-row-<%= party %>">
+            <td class="py-1.5 pr-3 font-medium <%= party_text_color(party) %>"><%= party.capitalize %></td>
+            <td class="py-1.5 pr-3">
+              <select name="poll[results][<%= party %>][candidate_id]" class="w-full rounded-md border-slate-300 text-sm">
+                <%= admin_candidate_options(values.dig(:results, party, :candidate_id).presence&.to_s) %>
+              </select>
+            </td>
+            <td class="py-1.5">
+              <input type="number" step="0.1" min="0" max="100" name="poll[results][<%= party %>][pct]"
+                     value="<%= values.dig(:results, party, :pct) %>" class="w-24 rounded-md border-slate-300 text-sm"
+                     data-testid="admin-poll-result-pct-<%= party %>">
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex gap-2">
+    <%= submit_tag "Save poll", class: "cursor-pointer rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700", data: { testid: "admin-poll-submit" } %>
+    <%= link_to "Cancel", admin_polls_path, class: "rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" %>
+  </div>
+<% end %>

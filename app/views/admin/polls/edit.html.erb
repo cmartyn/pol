@@ -1,0 +1,8 @@
+<% content_for :title, "Edit poll · Admin · Pol" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">Edit poll</h1>
+<p class="mt-1 text-sm text-slate-600"><%= @poll.pollster.name %> &middot; <%= @poll.field_end.strftime("%b %-d, %Y") %></p>
+
+<div class="mt-6">
+  <%= render "form", url: admin_poll_path(@poll), method: :patch, values: @values, duplicate_of: @duplicate_of %>
+</div>

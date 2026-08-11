@@ -1,0 +1,91 @@
+<% content_for :title, "Polls · Admin · Pol" %>
+
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <h1 class="font-serif text-2xl font-semibold text-slate-900">Polls</h1>
+    <p class="mt-1 text-sm text-slate-600"><%= @polls.count %> poll<%= "s" unless @polls.count == 1 %></p>
+  </div>
+  <div class="flex gap-2">
+    <%= link_to "Import CSV", new_admin_poll_import_path, class: "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" %>
+    <%= link_to "New poll", new_admin_poll_path, class: "rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700", data: { testid: "new-poll-link" } %>
+  </div>
+</div>
+
+<%= form_with url: admin_polls_path, method: :get, class: "mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4", data: { testid: "admin-poll-filters" } do %>
+  <div>
+    <label class="block text-xs font-medium text-slate-500" for="race_id">Race</label>
+    <select name="race_id" id="race_id" class="mt-1 rounded-md border-slate-300 text-sm">
+      <%= options_for_select([ [ "All races", "" ] ], params[:race_id].presence) %>
+      <%= options_from_collection_for_select(@races, :id, :name, params[:race_id]) %>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500" for="pollster_id">Pollster</label>
+    <select name="pollster_id" id="pollster_id" class="mt-1 rounded-md border-slate-300 text-sm">
+      <%= options_for_select([ [ "All pollsters", "" ] ], params[:pollster_id].presence) %>
+      <%= options_from_collection_for_select(@pollsters, :id, :name, params[:pollster_id]) %>
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-slate-500" for="entry_mode">Entry mode</label>
+    <select name="entry_mode" id="entry_mode" class="mt-1 rounded-md border-slate-300 text-sm">
+      <%= options_for_select([ [ "All modes", "" ] ] + Poll.entry_modes.keys.map { |mode| [ mode.capitalize, mode ] }, params[:entry_mode]) %>
+    </select>
+  </div>
+  <label class="flex items-center gap-2 pb-2 text-sm text-slate-700">
+    <%= check_box_tag :generic_ballot_only, "1", params[:generic_ballot_only] == "1", class: "rounded border-slate-300" %>
+    Generic ballot only
+  </label>
+  <button type="submit" class="rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">Filter</button>
+  <%= link_to "Reset", admin_polls_path, class: "px-1 text-sm text-slate-500 hover:text-slate-700" %>
+<% end %>
+
+<div class="mt-6 overflow-x-auto">
+  <table class="w-full min-w-[900px] text-left text-sm" data-testid="admin-polls-table">
+    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="py-2 pr-3 font-medium">Pollster</th>
+        <th class="py-2 pr-3 font-medium">Race</th>
+        <th class="py-2 pr-3 font-medium">Dates</th>
+        <th class="py-2 pr-3 font-medium">N</th>
+        <th class="py-2 pr-3 font-medium">Pop.</th>
+        <th class="py-2 pr-3 font-medium">Margin</th>
+        <th class="py-2 pr-3 font-medium">Entry</th>
+        <th class="py-2 font-medium">Source</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @polls.each do |poll| %>
+        <tr data-testid="admin-poll-row">
+          <td class="py-2 pr-3">
+            <%= link_to poll.pollster.name, admin_poll_path(poll), class: "font-medium text-slate-900 hover:text-amber-700" %>
+          </td>
+          <td class="py-2 pr-3 text-slate-700">
+            <% if poll.race %>
+              <%= link_to poll.race.name, race_path(poll.race.slug), class: "text-slate-700 hover:text-amber-700" %>
+            <% else %>
+              <span class="text-slate-500">Generic ballot</span>
+            <% end %>
+          </td>
+          <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
+            <%= poll.field_start&.strftime("%b %-d") %><%= "–" if poll.field_start %><%= poll.field_end.strftime("%b %-d, %Y") %>
+          </td>
+          <td class="py-2 pr-3 text-slate-600"><%= poll.sample_size || "—" %></td>
+          <td class="py-2 pr-3 uppercase text-slate-500"><%= poll.population %></td>
+          <td class="py-2 pr-3 font-semibold text-slate-700"><%= admin_poll_margin(poll) || "—" %></td>
+          <td class="py-2 pr-3">
+            <span class="rounded-full px-2 py-0.5 text-xs font-medium <%= admin_entry_mode_badge_color(poll.entry_mode) %>" data-testid="admin-poll-entry-mode">
+              <%= poll.entry_mode %>
+            </span>
+          </td>
+          <td class="py-2">
+            <%= link_to "Source", poll.source_url, class: "text-amber-700 hover:text-amber-800", target: "_blank", rel: "noopener nofollow" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @polls.empty? %>
+    <p class="mt-4 text-sm text-slate-500" data-testid="admin-polls-empty">No polls match this filter.</p>
+  <% end %>
+</div>

@@ -1,0 +1,43 @@
+<% content_for :title, "Import results · Admin · Pol" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">Import results</h1>
+
+<div class="mt-4 flex flex-wrap gap-4 text-sm" data-testid="admin-poll-import-summary">
+  <p class="rounded-md bg-green-50 px-3 py-2 font-medium text-green-700" data-testid="admin-poll-import-created-count"><%= @created.size %> created</p>
+  <p class="rounded-md bg-amber-50 px-3 py-2 font-medium text-amber-700" data-testid="admin-poll-import-duplicate-count"><%= @duplicates.size %> duplicate</p>
+  <p class="rounded-md bg-red-50 px-3 py-2 font-medium text-red-700" data-testid="admin-poll-import-invalid-count"><%= @invalids.size %> invalid</p>
+</div>
+
+<div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+  <table class="w-full min-w-[600px] text-left text-sm" data-testid="admin-poll-import-results-table">
+    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+      <tr><th class="py-2 pl-4 pr-3 font-medium">Line</th><th class="py-2 pr-3 font-medium">Status</th><th class="py-2 pr-4 font-medium">Detail</th></tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @results.each do |row| %>
+        <tr data-testid="admin-poll-import-row">
+          <td class="py-2 pl-4 pr-3 text-slate-500"><%= row.line_number %></td>
+          <td class="py-2 pr-3">
+            <span class="rounded-full px-2 py-0.5 text-xs font-medium
+              <%= { "created" => "bg-green-50 text-green-700", "duplicate" => "bg-amber-50 text-amber-700", "invalid" => "bg-red-50 text-red-700" }.fetch(row.status.to_s) %>"
+              data-testid="admin-poll-import-row-status">
+              <%= row.status %>
+            </span>
+          </td>
+          <td class="py-2 pr-4 text-slate-700">
+            <% if row.created? %>
+              <%= link_to "#{row.poll.pollster.name} — #{row.poll.field_end.strftime('%b %-d, %Y')}", admin_poll_path(row.poll), class: "font-medium text-amber-700 hover:text-amber-800" %>
+            <% else %>
+              <%= row.message %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @results.empty? %>
+    <p class="p-4 text-sm text-slate-500" data-testid="admin-poll-import-empty">The file had no data rows.</p>
+  <% end %>
+</div>
+
+<%= link_to "Import another file", new_admin_poll_import_path, class: "mt-6 inline-block text-sm font-medium text-amber-700 hover:text-amber-800" %>
