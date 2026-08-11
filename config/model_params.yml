@@ -1,0 +1,43 @@
+# Every forecast/newsroom constant lives in this file. The public methodology
+# page renders from it — if a parameter is not here, it does not exist.
+# citation fields marked VERIFY-PHASE-N are filled during that phase.
+averaging:
+  window_days: 45
+  extended_window_days: 120
+  half_life_days: 14
+  default_sample_size: 400
+  sample_size_cap: 1500
+  sample_size_pivot: 600
+blend:
+  weight_saturation: 3.0
+fundamentals:
+  incumbency_adj: 1.5
+  open_seat_adj: 1.5
+  pres_national_margin_2024: null   # D minus R, pct pts. VERIFY-PHASE-2 + citation
+  pres_national_margin_2020: null   # VERIFY-PHASE-2 + citation
+  house_national_margin_2024: null  # VERIFY-PHASE-2 + citation
+  imputed_baseline_margin: 35.0
+error_model:
+  # election-day-equivalent sigmas, margin scale; citations VERIFY-PHASE-3
+  sigma_national: 2.5
+  sigma_state_polled: 3.5
+  sigma_state_unpolled: 8.0
+  sigma_district: 6.0
+  time_scale_days: 180
+  time_mult_cap: 1.75
+simulation:
+  n_sims: 10000
+election:
+  date: "2026-11-03"
+newsroom:
+  writer_model: null   # OpenRouter slug. VERIFY-PHASE-5 via GET /api/v1/models
+  brief_model: null    # VERIFY-PHASE-5
+  max_dispatches_per_race_per_day: 3
+  max_dispatches_per_day: 40
+  movement_threshold: 0.08
+  headline_max_chars: 90
+  dek_max_chars: 200
+  body_max_words: 450
+scrape:
+  cadence_hours: 2
+  user_agent_contact: "cmartyn@gmail.com"

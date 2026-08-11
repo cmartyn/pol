@@ -6,6 +6,14 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # Use Active Job's TestAdapter instead of GoodJob so assert_enqueued_with /
+  # assert_enqueued_jobs / assert_enqueued_email_with work. Explicitly
+  # configuring a queue_adapter in config/application.rb (as we do, for
+  # good_job) disables ActiveJob's automatic test-adapter swap — see
+  # https://github.com/rails/rails/issues/37270 and the GoodJob README's
+  # "Testing" notes — so it must be set back explicitly here.
+  config.active_job.queue_adapter = :test
+
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
 
