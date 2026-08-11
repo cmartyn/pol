@@ -5,6 +5,119 @@ source at build time and recorded here with its URL. Organised by phase.
 
 ---
 
+# Phase 0 — Foundations
+
+No real-world facts are baked in by this phase; what follows is the decision
+record. Everything here was verified by running it, not by recalling it.
+
+## A. What was added
+
+| Piece | Where | Note |
+|---|---|---|
+| Rails 8.1 skeleton | whole tree | `rails new` output, committed unmodified first so every later diff is ours |
+| Postgres | `config/database.yml` | `pol_development` / `pol_test`; no other service (no Redis) |
+| `good_job` 4.19.2 | `config/initializers/good_job.rb` | Postgres-backed Active Job; cron enabled, entries added in Phases 2 and 5 |
+| `ruby_llm` 1.16.0 | `config/initializers/ruby_llm.rb` | the only outbound AI dependency, pointed at OpenRouter |
+| `nokogiri` 1.19.4 | — | Wikipedia parsing (Phase 2) |
+| `webmock` 3.26.2 | `test/test_helper.rb` | `WebMock.disable_net_connect!(allow_localhost: true)` — the suite cannot reach the network |
+| `bcrypt` 3.1.22 | `app/models/user.rb` | uncommented from the generated Gemfile, for `has_secure_password` |
+| Auth | `app/controllers/concerns/authentication.rb` | `bin/rails generate authentication` — sessions and password reset only |
+
+`bundle install` resolved cleanly on Ruby 4.0.2 and the `Gemfile.lock` diff was
+purely additive.
+
+## B. Decisions worth keeping
+
+- **Authentication is deny-by-default.** The generator's concern adds
+  `before_action :require_authentication` in its `included do`, so
+  `ApplicationController` requires a session and it is `PublicController`
+  (Phase 4) that opts out with `allow_unauthenticated_access`. Phase 6's
+  `Admin::BaseController` therefore gates the whole admin by doing *nothing* —
+  the safe posture is inherited, not re-asserted per controller.
+- **No sign-up.** The generator produces `SessionsController` and
+  `PasswordsController` and no `UsersController`; nothing was added. This is a
+  single-editor site and the account comes from `db/seeds.rb`.
+- **Every model/newsroom constant lives in `config/model_params.yml`.**
+  `Pol::Params.fetch!(*keys)` raises a `KeyError` naming the path and the file
+  on a missing key or a nil value, so a typo is a loud failure rather than a
+  silent `nil` propagating into a probability. `reload!` re-reads from disk,
+  which is what lets tests prove a number is genuinely read from the file.
+- **The kill switch is a database row with an environment override.**
+  `Setting.agents_enabled?` is true when unset, respects a stored
+  `"true"`/`"false"`, and is forced false whenever `ENV["AGENTS_DISABLED"]` is
+  *present* (any value) — so an operator can stop the newsroom without a
+  database write, and the admin toggle (Phase 6) writes the same key,
+  `Setting::AGENTS_ENABLED_KEY`.
+- **GoodJob runs `execution_mode: :async` in development only**, so `bin/dev`
+  needs no second process; production runs a dedicated worker. The test
+  environment sets `config.active_job.queue_adapter = :test` explicitly,
+  because naming an adapter in `config/application.rb` disables Rails'
+  automatic test-adapter swap — see
+  https://github.com/rails/rails/issues/37270.
+
+## C. Process incident — credential exposure (local only)
+
+The OpenRouter API key was printed to a local terminal twice during this build:
+once by a `credentials:show` invocation, and once when a review diff was
+rendered through git's `rails_credentials` textconv filter, which decrypts.
+Neither value left the machine or entered a commit; the tainted diff file was
+deleted and a repo-local `git config diff.rails_credentials.textconv cat` was
+set so review diffs no longer decrypt. **Rotating the key is still recommended**
+— it is on the Phase 7 handoff list below.
+
+---
+
+# Phase 1 — Domain model
+
+Eleven application tables plus GoodJob's five. Schema version
+`2026_08_11_050001`. Again no external facts — this section records the
+judgment calls, because several of them are load-bearing later.
+
+## A. The tables
+
+`races`, `candidates`, `pollsters`, `polls`, `poll_results`, `model_runs`,
+`forecasts`, `chamber_forecasts`, `dispatches`, `scrape_runs`, plus Phase 0's
+`users`/`sessions`/`settings` and Phase 5's `newsroom_skips`.
+
+## B. Decisions where the design admitted more than one reading
+
+1. **`model_runs.started_at`/`finished_at` are both nullable; `scrape_runs`'
+   are both `null: false`.** A model run has a `running` status — a live row
+   with a start and no finish is a legitimate state. A scrape run has no
+   `running` status (`succeeded`/`failed`/`partial`), so the row is written
+   once, after the fact, with both timestamps known.
+2. **`polls.dedup_digest`: presence validated in the model, uniqueness enforced
+   only by the database.** A duplicate raises `ActiveRecord::RecordNotUnique`
+   rather than failing `valid?`, which is what `Ingest::RecordPoll` wants: it
+   checks `Poll.exists?(dedup_digest:)` first for a clean answer and rescues
+   the index violation as the real guarantee. Both paths are tested.
+3. **`poll_results.party` is always set, even when a candidate is attached.**
+   Party is how every downstream reader (averager, charts, poll table) groups
+   results; a candidate is a nicety that may be absent.
+4. **`dependent: :destroy` only from `Poll → poll_results` and
+   `ModelRun → forecasts`/`chamber_forecasts`.** Destroying a `Race` with polls
+   or dispatches raises `ActiveRecord::InvalidForeignKey` instead of silently
+   deleting history — the safer default for the data the site's premise rests
+   on.
+5. **`Dispatch` validates headline presence and the headline cap only.** The
+   dek and body caps are the writer's business (Phase 5's
+   `Newsroom::Validation`), and the headline cap is read from `Pol::Params` on
+   every validation rather than frozen into a constant, so editing the YAML
+   takes effect without a restart.
+
+## C. Fixtures
+
+`test/fixtures/` carries one small coherent world used by every later phase:
+two Senate races (Maine, polled; a Florida special, unpolled), one House
+district with a 2024 baseline (NY-17), three candidates in Maine including an
+independent who caucuses with the Democrats, two Maine polls and one
+generic-ballot poll, one succeeded model run with a Maine forecast, and one
+published poll-reaction dispatch citing both Maine polls. The independent and
+the unpolled race are there on purpose: they are the two shapes that break
+naive dem-vs-rep code, and they have caught real bugs in Phases 3, 4 and 7.
+
+---
+
 # Phase 2 — Wikipedia ingestion + seeds
 
 Research date: **August 11, 2026** (all "as of today" statements below mean that
@@ -819,6 +932,84 @@ nothing touches the network. The load-bearing ones:
 
 ---
 
+# Phase 4 — Public site
+
+Eight routes, all unauthenticated, all served by subclasses of
+`PublicController` (which is the one place `allow_unauthenticated_access` is
+called). No external facts; the numbers below are measurements.
+
+## A. The routes
+
+| Route | What it shows |
+|---|---|
+| `GET /` | Two chamber cards with compact seat histograms and the House caveat, the generic-ballot environment, Movers, the five latest dispatches |
+| `GET /senate` | All 35 races, sortable by state / rating / probability / margin / poll count / last poll, both directions |
+| `GET /house` | Chamber summary, full seat histogram, caveat, all 435 districts, client-side search |
+| `GET /races/:slug` | Header and candidates, lead sentence, forecast detail with percentile interval, win-probability timeline, polls scatter and table, this race's dispatches; 404 on an unknown slug |
+| `GET /dispatches` | Every published dispatch, reverse chronological |
+| `GET /methodology` | Every `config/model_params.yml` value with its citation, the formulas in prose, known limitations |
+| `GET /about` | The no-secret-sauce thesis, the editor model, contact |
+
+## B. `site:` params added
+
+`movers_window_days: 7`, `movers_count: 6` and `tossup_band_pp: 65.0` are
+editorial choices with no external source, and the methodology page correctly
+shows them with no citation. `movers_floor_pp: 1.5` is the one with a source,
+and the source is our own engine: Phase 3 measured ~1.4pp of run-to-run Monte
+Carlo noise on Senate control at `n_sims = 10,000`, so the floor sits just
+above the model's own noise rather than being picked from nowhere.
+
+## C. Charts — one decision per chart
+
+- **Seat histograms (dashboard, `/house`)** — server-rendered SVG. A static bar
+  chart over a few dozen known bins, needed at two sizes, with no interaction:
+  a fixed-`viewBox` SVG does that with zero JavaScript. Bins are shaded on one
+  axis only (meets the Democratic-control threshold or does not) because the
+  histogram counts Democratic-caucus seats per simulated world, and for the
+  Senate that single number cannot distinguish "Republicans control" from "an
+  independent holds the balance". The exact `p_dem_control` / `p_rep_control`
+  are printed as text beside the chart, not read off it.
+- **Win-probability timeline and polls scatter (race pages)** — D3 in Stimulus
+  controllers, reading a sibling `<script type="application/json">` payload
+  built server-side. The timeline handles 0, 1 and many runs without template
+  branching (one run renders as two dots and no line, which is the common case
+  today). The scatter's reference line is the *live* weighted average from
+  `Forecast::Averager`, deliberately not the forecast's stored `mean_margin` —
+  that is the simulator's blended output, a different number by design.
+- **Senate-table trend cell** — a plain diverging CSS bar, capped at ±30pp. 35
+  D3 initialisations for a decorative cell is the clunkiness this site is
+  trying to avoid.
+
+D3 is vendored through importmap as six used modules plus their direct
+dependencies (12 files, ~160KB) rather than the `d3` meta-package (37 files,
+~830KB). `bin/importmap audit` is clean.
+
+## D. Performance — bounded queries and real fragment caching
+
+Query counts are asserted at the *controller* level, with extra ad-hoc rows
+added, so the test fails if the count starts scaling with the number of races:
+
+| Page | Queries, warm |
+|---|---|
+| `GET /house` (435 districts) | 5 |
+| `GET /senate` (35 races) | 5 |
+| `GET /` | 8 |
+
+That test exists because a real N+1 got through the builder-level test: the
+first `/house` template called `formatted_margin`, which routes through
+`Site::RaceSides.for(race.candidates)` and lazy-loaded candidates once per row
+(6 queries at 1 district, 11 at 6). House races structurally have no candidates
+seeded, so the fix was House-specific `house_margin` helpers that never ask.
+
+Every heavy surface is wrapped in a `cache` block keyed on the run its numbers
+come from, plus whatever else can change it (sort order, the race, the race's
+latest dispatch, a collection-freshness key). The suite runs with
+`:null_store`, so a dedicated test (`test/controllers/fragment_caching_test.rb`)
+swaps in a real `MemoryStore` on the controller class to prove reuse and
+invalidation actually happen rather than assuming the key is right.
+
+---
+
 # Phase 5 — Agent newsroom
 
 Research date: **August 11, 2026**. The model slugs, the ruby_llm API and the
@@ -1171,3 +1362,385 @@ real credential and one without. The load-bearing ones:
   unlikely; the damage is bounded by the caps themselves — a duplicate piece,
   not an unbounded one. If it ever happens, good_job's concurrency extension
   (`perform_limit: 1` keyed on the newsroom) would serialise the jobs.
+
+---
+
+# Phase 6 — Admin
+
+The editor's cockpit at `/admin`: eleven controllers, the GoodJob dashboard,
+and the two levers a human has over an autonomous newsroom (retract, and the
+kill switch). No external facts; two environment facts were verified by
+running them, and both are recorded below.
+
+## A. Gating
+
+`Admin::BaseController < ApplicationController` is empty. That is the point:
+`ApplicationController` requires authentication by default (Phase 0 §B), so an
+admin controller is gated by *not* opting out, and a new action added later is
+covered without anyone remembering to add a filter.
+
+The proof asks the router rather than a hand-written list.
+`Admin::AuthenticationTest` walks `Rails.application.routes.routes`, filters to
+controllers under `admin/`, asserts there are at least 25 of them (so the test
+itself fails loudly if `routes.rb` changes shape), fills in dynamic segments,
+issues each route with its real verb, and asserts a redirect to sign-in.
+
+The GoodJob dashboard is a mounted engine whose controller is not in this app's
+hierarchy, so it is gated through the extension point GoodJob's README
+documents for exactly this — `ActiveSupport.on_load(:good_job_application_controller)`
+(see https://github.com/bensheldon/good_job#authentication) — using
+`Session.from_signed_cookie(cookies)`, the same lookup
+`Authentication#find_session_by_cookie` uses, extracted so there are not two
+independent definitions of "signed in" to drift apart. An unauthenticated
+request gets a plain 404, matching GoodJob's own suggested behaviour; a forged
+cookie value gets the same, which is a separate test (the gate verifies the
+signature, not the presence of a cookie).
+
+## B. CSV import, and why there is a hand-rolled parser
+
+**Verified, not assumed:** `bundle exec ruby -e 'require "csv"'` fails with
+`LoadError` on this Ruby. As of Ruby 3.4 `csv` is a *bundled* gem rather than a
+default one — installed with Ruby but off the load path unless it is in the
+Gemfile — and it is not in `Gemfile.lock`. Adding it would be a new dependency,
+which the house rules rule out.
+
+So `Admin::SimpleCsv` is a character-by-character parser covering the RFC 4180
+subset a spreadsheet export actually produces: commas, quoted fields containing
+commas or newlines, CRLF or LF, blank lines skipped, short rows filled with
+`nil`. Documented gap: `""` as an escaped literal quote inside a quoted field is
+not supported — the outcome is a garbled-but-contained field, not an exception.
+Swapping in the real gem later is a one-line Gemfile change plus deleting the
+file: `Admin::PollCsvImport` only calls `Admin::SimpleCsv.parse(text)`.
+
+Two guards the import needs that the poll recorder cannot provide:
+`population` is checked against `Poll.populations.keys` before assignment
+(Rails enums raise `ArgumentError` on an unknown value, which is not something
+`Ingest::RecordPoll` could turn into a graceful `:invalid` row), and a
+non-numeric percentage is passed through as the original string rather than
+`to_f`'s silent `0.0`, so `RecordPoll` rejects the row instead of recording a
+fake zero.
+
+A UTF-8 byte-order mark was found (in review) to make the first header cell
+`"﻿race_slug"`, which silently filed every imported poll under the generic
+ballot. The strip is now at the byte level, before decoding.
+
+## C. One door in, two doors out
+
+All three entry modes go through `Ingest::RecordPoll` — the scraper with
+`entry_mode: :scraped`, the manual form with `:manual`, the importer with
+`:csv`. **Editing** does not, deliberately: `RecordPoll` is create-or-report-
+duplicate and its dedup check assumes it is comparing against *other* rows.
+`Admin::UpdatePoll` recomputes the digest with the same public functions
+(`Pollster.canonicalize`, `Poll.compute_digest`) and excludes the row being
+edited from the collision check.
+
+Poll create, edit and destroy call `race.touch`, which is what keeps Phase 4's
+fragment caches honest — a poll edit that did not touch the race would leave
+the race page's cached fragment showing the old poll table. An edit that moves
+a poll between races touches both.
+
+---
+
+# Phase 7 — Hardening + acceptance
+
+Closing phase: the end-to-end proof, the acceptance run, the README, and the
+handoff. Executed **August 11, 2026**; every number below is from a command run
+that day against this checkout and the live development database.
+
+## A. The end-to-end test
+
+`test/system/full_pipeline_test.rb` — one Capybara/headless-Chrome test that
+drives the whole loop with no network:
+
+1. The race page is read *before*: Maine Senate at Tossup, `D 62%`, "62 in 100".
+2. A poll is recorded through `Ingest::RecordPoll` — the same door the scraper
+   uses for a parsed row — at D 62.0 / R 33.0, n=1,500 LV.
+3. `Ingest.after_new_polls!` is called, exactly as the end of a sweep calls it,
+   inside `perform_enqueued_jobs`. `Forecast::RunJob` re-runs the model;
+   `Newsroom::PollReactionsJob` writes a reaction citing that poll;
+   `Newsroom::MovementNotesJob` writes up the swing it caused.
+4. The race page is read *again*: Favors Dem, `D 99%`, "99 in 100", the mean
+   margin, the new run's "as of" timestamp, the poll's own row at `D+29.0`, and
+   both new dispatch cards. Then the dashboard, then the Senate table — a
+   different query object (`Site::SenateTable`) over the same forecast.
+
+OpenRouter is WebMock-stubbed with a reply shaped like the live API's, keyed on
+the assignment line in the system prompt and echoing back the payload's own
+`citable_poll_ids`, so `Newsroom::Validation` genuinely decides whether the
+drafts publish rather than being bypassed. The RNG seed (`20260811`) and
+`n_sims` (2,000) are pinned, so the page shows the same numbers every run:
+`p_dem_win` 0.62 → **0.9935**, mean margin 3.2 → **16.58**. 34 assertions,
+1.5s, run four times with identical results.
+
+Rails excludes `test/system` from `bin/rails test` by design, so the previously
+commented-out system-test step in `config/ci.rb` is now enabled;
+`.github/workflows/ci.yml` already ran `test:system` as its own job.
+
+## B. Acceptance — commands and what they printed
+
+### 1. `bin/setup` runs clean and non-destructively
+
+`bin/setup` uses `bin/rails db:prepare`, and reaches `db:reset` only behind an
+explicit `--reset` flag it was not given. Verified before running.
+
+```
+$ bin/setup --skip-server        # 1.57s
+== Installing dependencies ==      The Gemfile's dependencies are satisfied
+== Preparing database ==           (no output — 16/16 migrations already up)
+== Removing old logs and tempfiles ==
+```
+
+Development database before and after, unchanged: **800 polls, 470 races, 470
+forecasts, 2 model runs, 2 dispatches, 1 user, 72 scrape runs**, 16/16
+migrations up. `--skip-server` is used because the bare command `exec`s into
+`bin/dev`, which never returns.
+
+### 2. Suite, style, and the security scans
+
+| Command | Result |
+|---|---|
+| `bin/rails test` | **713 runs, 2,406 assertions, 0 failures, 0 errors, 0 skips** (1.9s, 16 parallel workers) |
+| `bin/rails test:system` | **1 run, 34 assertions, 0 failures** |
+| `bin/rubocop` | 216 files inspected, no offenses |
+| `bin/bundler-audit` | No vulnerabilities found |
+| `bin/importmap audit` | No vulnerable packages found |
+| `bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error` | **Errors 0, Security Warnings 0** — exit 0 |
+
+Suite by area: models 92, jobs 55, lib 427, controllers 139, system 1.
+
+**The one brakeman warning, and why it is gone.** Phase 5 left a medium-
+confidence SQL Injection warning on `app/models/dispatch.rb:25`, the
+`citing_any` scope — the newsroom's duplicate guard. It was a false positive:
+the scope joined the frozen literal `"cited_poll_ids @> ?"` *n* times and bound
+`to_i`'d values, so nothing but literal text ever reached the SQL string.
+Brakeman cannot see that a string assembled at runtime holds only literal text,
+and reports the assembly itself.
+
+It could have been suppressed with a written justification. It was rewritten
+instead, because a suppression has to be re-argued by every future reader while
+a structural fix argues itself: the OR is now built by Active Record
+(`ids.map { |id| where("cited_poll_ids @> ?", [ id ].to_json) }.reduce(:or)`),
+which leaves no runtime-assembled fragment to flag. The generated SQL is
+identical, including under chaining — Active Record factors the shared
+conditions out, so `Dispatch.published.poll_reaction.citing_any([7,9]).where(race_id: 3)`
+still produces `status = 0 AND kind = 0 AND ((cited_poll_ids @> '[7]') OR
+(cited_poll_ids @> '[9]')) AND race_id = 3`. A regression test pins exactly
+that: the scope must *narrow* the relation it is chained onto, which is how
+`Newsroom::Caps#duplicate` uses it.
+
+### 3. Database integrity
+
+`bin/rails runner` against the development database, read-only:
+
+| Check | Expected | Observed |
+|---|---|---|
+| Senate races | 35 | **35** (33 regular + **2** specials) |
+| Senate races missing a presidential lean | 0 | **0** |
+| House districts | 435 | **435** (435 distinct state+district) |
+| Districts missing a 2024 baseline | 0 | **0** (and 0 missing a baseline source URL) |
+| `baseline_imputed` districts | 37 | **37** |
+| Senate polls / generic-ballot polls | ≥10 / ≥5 | **241 / 559** (800 total, 0 House) |
+| Senate races with at least one poll | — | 24 of 35 |
+| Poll results | — | 1,620 across 134 pollsters; 437 linked to a candidate |
+| Orphan `poll_results` | 0 | **0** |
+| Duplicate `dedup_digest`s | 0 | **0** (and 0 polls missing a digest or source URL) |
+| Orphan forecasts | 0 | **0** |
+| Races with no forecast on the latest run | 0 | **0** (470 of 470) |
+
+134 pollsters, not the 133 recorded in Phase 2 §F: one more arrived with a
+later poll. Nothing else moved.
+
+### 4. A live scrape sweep
+
+```
+$ bin/rails pol:scrape        # 79.9s wall, ~2.2s per source
+TOTAL (36 sources)   Rows 804   New 0   Dup 804   Skip 0
+0 source(s) failed outright
+```
+
+Every one of the 35 Senate pages and the generic-ballot page fetched and parsed;
+nothing 404'd, nothing failed, nothing was skipped. Pacing is ~2.2s per request,
+against a 2-hour cadence and a sweep six hours after the last one.
+
+Because the sweep created **no** new polls, `Ingest.after_new_polls!` was not
+called and nothing downstream fired — no model run, no reaction, no LLM call,
+no spend. That is the correct behaviour and it also re-demonstrates the dedup
+contract at 804 rows. The ingest→forecast→newsroom chain under live conditions
+is evidenced instead by Phase 5 §D (two real dispatches, one retracted) and,
+deterministically, by the system test in §A. `scrape_runs` went 72 → 108.
+
+### 5. A model run
+
+```
+$ bin/rails pol:model         # 2.0s wall including boot
+Model run 11 — succeeded in 1.5s (seed 4541931192453565572)
+Generic ballot (D−R)   +6.43   from 30 polls, W = 14.68, 45-day window
+Races forecast         470 (35 senate, 435 house)
+Error inflation (t)    1.4667
+Senate   D 31.4%  R 68.4%  neither 0.1%   mean D seats  49.3
+House    D 96.1%  R  3.9%                 mean D seats 240.6
+```
+
+Well inside the 60-second bar. The House caveat printed with the number, as it
+must. Sanity checks on the run's own rows:
+
+- **`p_dem_win + p_rep_win + p_other_win`** — exactly 1.0 for all 470 forecasts
+  (0 rows differing by more than 1e-9).
+- **Senate seats** — histogram sums to `n_sims` (10,000) over support 40..59,
+  which lies inside the only possible range, 34..69 (34 Democratic-caucus
+  holdovers, 35 seats up). The holdover arithmetic in `config/model_params.yml`
+  is 34 + 31 + 35 = 100. `p_dem_control + p_rep_control` = 0.9987; the missing
+  0.13% is the documented "neither" case, worlds where an independent holds the
+  balance (Phase 3 §6, `Forecast::Simulator`).
+- **House seats** — histogram sums to 10,000 over support 190..302, all inside
+  0..435, and `p_dem_control + p_rep_control` = 1.0.
+
+### 6. No API key — graceful, not fatal
+
+Covered by tests: `Newsroom::ClientTest` "configured? follows the OpenRouter
+key" and "a missing key fails as a Client::Error rather than taking the job
+down"; `Newsroom::PollReactionsJobTest` and `MovementNotesJobTest` both assert
+that a keyless run publishes nothing, makes no HTTP request, and leaves a
+single `no_api_key` skip row.
+
+Verified live without touching the real credentials, by adding a detached git
+worktree of this commit — `config/master.key` is gitignored, so a worktree
+genuinely has no key, which is the same situation as a container without one:
+
+```
+booted:                        true          # the app starts
+master.key present:            false
+credentials readable:          false
+openrouter credential nil:     true
+Newsroom::Client.configured?:  false
+Newsroom.blocked:              [:no_api_key, "no OpenRouter API key is configured"]
+```
+
+With `OPENROUTER_API_KEY` set in the environment and still no key file,
+`configured?` is `true` and `Newsroom.blocked` is `[nil, nil]` — the ENV
+fallback in `config/initializers/ruby_llm.rb` is a real path, not a comment.
+With `AGENTS_DISABLED=1`, `Newsroom.blocked` is
+`[:agents_disabled, ...]` regardless. The worktree was removed afterwards.
+
+### 7. Every public page renders
+
+The integration suite covers this first: `bin/rails test test/controllers` —
+**139 runs, 668 assertions, 0 failures**, of which the five public-page files
+(`home`, `races`, `pages`, `dispatches`, `fragment_caching`) are 44 runs / 158
+assertions.
+
+Then a curl pass against a transiently booted development server on port 3111
+(started with `AGENTS_DISABLED=1`, killed afterwards, port confirmed closed):
+
+| Path | Status | Time | Bytes | Marker found |
+|---|---|---|---|---|
+| `/` | 200 | 0.157s | 33,789 | "Latest dispatches" |
+| `/senate` | 200 | 0.028s | 53,385 | "All 35 seats" |
+| `/house` | 200 | 0.049s | 400,777 | `data-testid="house-table"` |
+| `/dispatches` | 200 | 0.008s | 10,245 | `data-testid="dispatch-card"` |
+| `/methodology` | 200 | 0.007s | 40,784 | `sigma_state_polled` |
+| `/about` | 200 | 0.005s | 8,334 | `<h1>` |
+| `/up` | 200 | 0.004s | 73 | — |
+| `/races/senate-2026-nc` (best-polled, 26 polls) | 200 | 0.038s | 50,340 | poll table |
+| `/races/senate-2026-fl-special` (special, 21 polls) | 200 | 0.027s | 42,884 | "Special election" |
+| `/races/senate-2026-wy` (unpolled) | 200 | 0.011s | 11,084 | unpolled empty state |
+| `/races/house-2026-al-03` (imputed baseline) | 200 | 0.011s | 10,800 | forecast detail |
+| `/races/house-2026-ak-01` (real baseline) | 200 | 0.010s | 10,811 | forecast detail |
+| `/races/house-2026-ny-17` | 200 | 0.011s | 10,806 | forecast detail |
+| `/races/no-such-race-2026` | **404** | 0.006s | 7,477 | "Not found · Pol" |
+| `/admin` | **302** → `/session/new` | | | |
+| `/admin/good_job` | **404** (unauthenticated) | | | |
+| `/session/new` | 200 | | | |
+
+Two substitutions from the checklist's wish list, both because the live data
+has no such row: there is **no unpolled Senate special** (both specials, FL and
+OH, are polled — 21 and 15 polls), so an unpolled regular Senate race stands in
+alongside a polled special; and there are **no House district polls at all**
+(0 in 800), so no House race page can show a poll table. The server log for the
+whole pass contains no exception other than the deliberate `RecordNotFound`,
+which rendered `errors/not_found.html.erb` as designed.
+
+### 8. Methodology page — every parameter, every citation
+
+Covered by `PagesControllerTest` ("methodology renders every params section
+with a spot-checked value and its citation", plus the `site.*` and Known-
+limitations tests) and `Site::ParamCitationsTest`.
+
+Spot-checked against the rendered page: all **46** leaf keys in
+`config/model_params.yml` appear on `/methodology`; `sigma_state_polled` renders
+its value `4` next to both of its citations (538's presidential-model
+explainer and Shirani-Mehr et al.), as live links.
+
+**One defect found and fixed here.** `newsroom.writer_model`'s citation is a URL
+followed by a retrieval date, and `citation_link` linked the entire string —
+producing `href="https://openrouter.ai/api/v1/models (retrieved 2026-08-11)"`,
+which a browser percent-encodes into a 404. A dead source link on the page
+whose whole promise is that every number can be checked. `citation_link` now
+links only the first whitespace-delimited token and renders the rest as text
+beside it; a test asserts the href and that no link on the page has whitespace
+in its address.
+
+### 9. Git history
+
+35 commits on `build/mvp` from `main` (this phase's four included), working
+tree clean at the end of the phase. The history is
+organised by phase but is **not** one commit per phase: each phase landed as
+two to six commits (a build, sometimes split into readable stages, then a
+reviewed fix commit), e.g. Phase 3 as `1bd98f0 → b21afa9 → b17fb7d → aa69f6d`
+followed by `967a742 Phase 3 fix: atomic run guard, stale recovery, params
+purity, House caveat`. Every commit subject names its phase and the fix commits
+name what the review found. This is read as satisfying "logical commits per
+phase": the intent is a history that can be read phase by phase, and squashing
+the fix commits into their builds would *lose* the record of what review caught.
+History was not rewritten.
+
+### 10. These build notes
+
+Now carry a section per phase, 0 through 7. Phases 0, 1, 4, 6 and 7 were
+written in this phase; 2, 3 and 5 are as their phases left them. Every
+real-world fact still carries its URL — the Senate map and holdover arithmetic
+(§Phase 2 A1–A5), the sigma anchors (§Phase 3 A), the OpenRouter model slugs
+(§Phase 5 A1) — and the known-limitations lists in Phase 3 §C, Phase 5 §F and
+`/methodology` are current as of this run.
+
+## C. Handoff — what the editor should know
+
+1. **Re-run `bin/rails pol:seed_races` after the remaining primaries.** About
+   ten Senate nominations were still unsettled when the board was seeded, so
+   some races carry no candidate or a placeholder. The task is idempotent and
+   re-running it is the intended way to pick them up. Candidate names matter to
+   more than the header: they set which side is "A" in three no-Democrat races
+   (Phase 3 §C4) and they are what a poll result gets attributed to.
+2. **Current chamber control is not in the data model.** Nothing anywhere knows
+   which party holds the Senate or the House today, which is why the newsroom
+   prompt forbids "hold", "keep", "defend", "flip" and "lose" — the model would
+   have to invent the premise. The proper fix is a verified fact with a
+   citation, the way Phase 2 added the holdover counts, not a prompt tweak.
+   Until then a brief can say who is *likely to win control* and nothing about
+   who has it.
+3. **The regional error term is the top modelling item.** v1 correlates every
+   race through one national error where fuller models use several, so the
+   House seat distribution is too narrow and its control probability too
+   confident in whichever direction it leans (~96% here reads ~84% at a
+   correlated total; the Senate is off by roughly 7 points). It is a structural
+   change, not a constant, and it is what would let the caveat come off the
+   page. See Phase 3 §A4.
+4. **`n_sims` is tunable, and the noise floor moves with it.**
+   `simulation.n_sims` is 10,000, where run-to-run Monte Carlo noise on Senate
+   control measures ~1.4pp. Raising it costs run time roughly linearly (a full
+   470-race run is ~1.5s today) and shrinks the noise as 1/√n. Anything that
+   reads a *difference* between runs has to stay above that floor:
+   `site.movers_floor_pp` (1.5) does, and `newsroom.movement_threshold` (0.08 =
+   8 points) does comfortably. The mover list printed by `bin/rails pol:model`
+   does not — its 0.05pp cutoff reports noise as news, which is cosmetic but
+   misleading if read as signal.
+5. **Rotate the OpenRouter API key.** It was printed in plaintext twice on this
+   machine during the build (Phase 0 §C). Nothing left the machine and nothing
+   is in the repository, but the cheap, correct response to a key that has been
+   on a terminal is to rotate it. `newsroom.writer_model` and the credential are
+   the only two places the newsroom is configured; a rotated key goes in
+   `bin/rails credentials:edit` (or `OPENROUTER_API_KEY`) and needs no code
+   change.
+6. **Deployment is deliberately not done.** The app is 12-factor-ready and the
+   generated Kamal config is present but unused; nothing has been deployed and
+   no production database exists. See the README's "Deploy posture".

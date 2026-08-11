@@ -7,7 +7,7 @@ require "application_system_test_case"
 # Every other test in this suite proves one link of that chain in isolation.
 # This one exists because a chain of green links is not a working chain: the
 # job that hands poll ids to the newsroom, the cache key that has to change
-# when a new run lands, the helper that turns 0.9915 into "D 99%" and the ERB
+# when a new run lands, the helper that turns 0.9935 into "D 99%" and the ERB
 # that prints it are each somebody else's tested unit, and the only way to find
 # out whether they add up to a page is to render one.
 #
@@ -68,8 +68,8 @@ class FullPipelineTest < ApplicationSystemTestCase
                     "a D+29 poll should move the forecast far past Monte Carlo noise"
     assert_operator after.mean_margin, :>, before.mean_margin
 
-    reactions = Dispatch.published.poll_reaction.where(race: @race, model_run: run)
-    reaction = reactions.sole
+    # .sole, not .first: exactly one reaction per race per run is the contract.
+    reaction = Dispatch.published.poll_reaction.where(race: @race, model_run: run).sole
     assert_equal [ poll.id ], reaction.cited_poll_ids, "the reaction should cite the poll that caused the run"
     assert_equal REACTION_HEADLINE, reaction.headline
     assert_empty NewsroomSkip.all, "nothing should have been suppressed on this run"
