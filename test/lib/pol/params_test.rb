@@ -15,14 +15,38 @@ class Pol::ParamsTest < ActiveSupport::TestCase
     assert_match(/not_a_real_key/, error.message)
   end
 
-  # writer_model is the stand-in for "a param a later phase still has to fill";
-  # it stays null until Phase 5 verifies an OpenRouter slug.
+  # Every parameter in the file is filled in as of Phase 5, so the nil rules
+  # are exercised against a deliberately emptied one. A later phase that adds
+  # a "fill this in next time" null gets the behaviour these two describe.
   test "fetch! raises KeyError on a nil value by default" do
-    assert_raises(KeyError) { Pol::Params.fetch!(:newsroom, :writer_model) }
+    with_params(newsroom: { writer_model: nil }) do
+      assert_raises(KeyError) { Pol::Params.fetch!(:newsroom, :writer_model) }
+    end
   end
 
   test "fetch! returns nil when allow_nil is true" do
-    assert_nil Pol::Params.fetch!(:newsroom, :writer_model, allow_nil: true)
+    with_params(newsroom: { writer_model: nil }) do
+      assert_nil Pol::Params.fetch!(:newsroom, :writer_model, allow_nil: true)
+    end
+  end
+
+  # Phase 5 verified both slugs against OpenRouter's live model list; the
+  # newsroom reads them without allow_nil, so a regression to null has to fail
+  # here rather than at publication time.
+  test "the Phase 5 newsroom model slugs are filled in with verified slugs" do
+    %i[writer_model brief_model].each do |key|
+      slug = Pol::Params.fetch!(:newsroom, key)
+      assert_kind_of String, slug
+      assert_match(%r{\A[\w.-]+/[\w.:-]+\z}, slug, "#{key} should be an OpenRouter vendor/model slug")
+    end
+  end
+
+  test "the newsroom's caps and bounds are all present and positive" do
+    %i[max_output_tokens max_dispatches_per_race_per_day max_dispatches_per_day movement_threshold
+       movement_note_cooldown_days brief_poll_count recent_headline_count headline_max_chars
+       dek_max_chars body_max_words].each do |key|
+      assert_operator Pol::Params.fetch!(:newsroom, key), :>, 0, "newsroom.#{key}"
+    end
   end
 
   # Phase 2 verified these three against the sources recorded in

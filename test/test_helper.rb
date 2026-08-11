@@ -6,6 +6,7 @@ require_relative "test_helpers/session_test_helper"
 require_relative "test_helpers/stub_helper"
 require_relative "test_helpers/wikipedia_stub_helper"
 require_relative "test_helpers/poll_factory"
+require_relative "test_helpers/newsroom_stub_helper"
 require_relative "test_helpers/query_counting"
 require_relative "test_helpers/fragment_caching_helper"
 
@@ -26,6 +27,7 @@ module ActiveSupport
     include WikipediaStubHelper
     include StubHelper
     include PollFactory
+    include NewsroomStubHelper
     include QueryCounting
     include FragmentCachingHelper
   end
