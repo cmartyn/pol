@@ -11,8 +11,11 @@ CI.run do
   step "Tests: Rails", "bin/rails test"
   step "Tests: Seeds", "env RAILS_ENV=test bin/rails db:seed:replant"
 
-  # Optional: Run system tests
-  # step "Tests: System", "bin/rails test:system"
+  # `bin/rails test` deliberately excludes test/system, so without this step
+  # the end-to-end proof (test/system/full_pipeline_test.rb — poll in, forecast
+  # re-run, dispatch published, page rendered) would never run locally. Needs a
+  # Chrome on the machine; .github/workflows/ci.yml runs it as its own job.
+  step "Tests: System", "bin/rails test:system"
 
   # Optional: set a green GitHub commit status to unblock PR merge.
   # Requires the `gh` CLI and `gh extension install basecamp/gh-signoff`.
