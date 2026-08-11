@@ -22,9 +22,9 @@ The editor (Chase) is a former political journalist and high-level political ana
 ## Non-negotiable decisions (already made — do not relitigate)
 
 1. **All LLM calls go through the `ruby_llm` gem configured for OpenRouter.** Never call a provider SDK directly. Model slugs are config values, not code, so models/providers can be swapped by editing one string.
-2. **Secrets live in Rails credentials**, read as `Rails.application.credentials.dig(...) || ENV[...]` (ENV fallback for dev/test). Chase will add the OpenRouter key after the build — never block on it, never fake it.
+2. **Secrets live in Rails credentials**, read as `Rails.application.credentials.openrouter_api_key || ENV["OPENROUTER_API_KEY"]`. The key already exists as the top-level credential `openrouter_api_key` — verify its presence (never print it, never run `credentials:edit`).
 3. **Background and scheduled jobs use `good_job`** (Postgres-backed, cron built in). No Redis, no Solid Queue, no extra services. Postgres is the only infrastructure.
-4. **Charts use a modern, lower-level JS library — D3, pinned through importmap** (vendored pins, no Node build step). Wrap charts in Stimulus controllers.
+4. **Charts are a per-chart engineering choice: D3 pinned through importmap (vendored, no Node build step) or hand-rolled server-rendered SVG — whichever genuinely serves that chart.** Wrap any JS charts in Stimulus controllers. Nothing clunky or old either way.
 5. **Live data comes from Wikipedia scrapers** with full provenance (source URL stored on every poll). No hand-entered data, no fabricated data, ever.
 6. **Agents publish autonomously** — no approval queue. Safety comes from data-grounding validation, publication caps, a kill switch, and admin edit/retract.
 7. **Forecasts come from a correlated Monte Carlo simulation** (shared national error + per-race error). Independent per-race probabilities are not acceptable — correlated polling error is the whole story of seat-total uncertainty.
@@ -56,7 +56,7 @@ The editor (Chase) is a former political journalist and high-level political ana
 - Add gems: `good_job`, `ruby_llm`, `nokogiri` (explicit), `webmock` (test). Uncomment `bcrypt`. Install and configure GoodJob (migrations, `:good_job` adapter, cron enabled in an initializer, dashboard engine mounted later behind admin auth).
 - Run the Rails 8.1 authentication generator (single-editor auth; remove/disable any public registration path).
 - Create `config/model_params.yml` (full parameter set in the Forecast Model spec below) and a small loader (`Pol::Params`) with typed access.
-- Create a `settings` key-value table for runtime toggles; `Setting.agents_enabled?` defaults false, and `ENV["AGENTS_DISABLED"]` overrides to false regardless.
+- Create a `settings` key-value table for runtime toggles; `Setting.agents_enabled?` defaults **true** (the key exists; the editorial posture is tune-in-production), and `ENV["AGENTS_DISABLED"]` forces false regardless.
 - `bin/setup` works end to end.
 
 ## Phase 1 — Domain model
@@ -114,7 +114,7 @@ Pure-Ruby service objects (no gems needed); every constant below comes from `con
 
 ## Phase 4 — Public site
 
-Hotwire + Tailwind, server-rendered, fragment-cached where hot. No SPA. D3 (importmap-pinned, vendored) inside Stimulus controllers, reading JSON from inline `<script type="application/json">` payloads.
+Hotwire + Tailwind, server-rendered, fragment-cached where hot. No SPA. Charts are a per-chart choice on merit: D3 (importmap-pinned, vendored) inside Stimulus controllers reading inline `<script type="application/json">` payloads, or server-rendered SVG partials.
 
 - `/` — national dashboard: both chambers' control odds, seat histograms, biggest probability movers this week, latest dispatches.
 - `/senate` — sortable table of all races: win prob, average margin, poll count, sparkline.
@@ -126,7 +126,7 @@ Hotwire + Tailwind, server-rendered, fragment-cached where hot. No SPA. D3 (impo
 
 ## Phase 5 — Agent newsroom
 
-- `RubyLLM` configured for OpenRouter in an initializer; API key from credentials (`openrouter.api_key`) with ENV fallback (`OPENROUTER_API_KEY`). **If no key is present, every agent job logs a skip and exits cleanly — the site must build, test, and run without it.**
+- `RubyLLM` configured for OpenRouter in an initializer; API key from `Rails.application.credentials.openrouter_api_key` with ENV fallback (`OPENROUTER_API_KEY`). **If the key is somehow absent, every agent job logs a skip and exits cleanly — the site must still build, test, and run.**
 - Model slugs in `model_params.yml` (`writer_model`, `brief_model`) — default both to the current Anthropic Sonnet-tier slug you verified from the OpenRouter models list; they're one-string swappable by design.
 - One `Newsroom::Writer` service: input is a structured JSON context assembled **only from the database** — race + candidates, the new polls (ids, pollster, dates, n, results, source URLs), current and prior forecast numbers, national context, recent dispatch headlines (to avoid repetition), and a style guide (sober, numerate, AP-adjacent; uncertainty stated plainly; every number attributed; no predictions beyond model outputs; no invented quotes or reporting).
 - Output via ruby_llm's structured-output/schema mechanism: `{headline ≤90 chars, dek ≤200, body_markdown ≤450 words, cited_poll_ids}`. Validation: `cited_poll_ids ⊆ provided poll ids`, length caps enforced. One retry with the validation error appended; a second failure logs and skips — **nothing invalid ever publishes.**
@@ -171,4 +171,4 @@ Governor races (schema supports them; nothing else), pollster ratings/house effe
 
 ## When you finish
 
-Print a handoff summary for Chase: (1) the exact `bin/rails credentials:edit` YAML snippet to add (`openrouter.api_key`, optional `admin` block), (2) how to flip the agents kill switch, (3) the three rake tasks and the cron cadence now active, (4) anything in BUILD_NOTES that needs an editorial decision — e.g., baseline imputations or candidate-list judgment calls.
+Print a handoff summary for Chase: (1) confirmation the existing `openrouter_api_key` credential was detected (plus the optional `admin` credentials block Chase can add later), (2) how to flip the agents kill switch, (3) the three rake tasks and the cron cadence now active, (4) anything in BUILD_NOTES that needs an editorial decision — e.g., baseline imputations or candidate-list judgment calls.
