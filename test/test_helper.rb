@@ -5,6 +5,7 @@ require "webmock/minitest"
 require_relative "test_helpers/session_test_helper"
 require_relative "test_helpers/stub_helper"
 require_relative "test_helpers/wikipedia_stub_helper"
+require_relative "test_helpers/poll_factory"
 
 # Nothing in this suite is allowed to reach the network. Wikipedia is always
 # WebMock-stubbed (see WikipediaStubHelper); localhost stays open for the
@@ -22,5 +23,6 @@ module ActiveSupport
     # Add more helper methods to be used by all tests here...
     include WikipediaStubHelper
     include StubHelper
+    include PollFactory
   end
 end

@@ -33,6 +33,19 @@ error_model:
   sigma_district: 6.0
   time_scale_days: 180
   time_mult_cap: 1.75
+chambers:
+  # Seats not on the 2026 ballot. 53R/45D/2I now, less the 22 R and 13 D seats
+  # up, leaves 31 R and 32 D + Sanders and King (both Class 1, both caucusing
+  # with the Democrats) = 34 Democratic-caucus holdovers. 31 + 34 + 35 = 100.
+  # citation: docs/BUILD_NOTES.md Phase 2 §A2 holdover arithmetic
+  senate_holdover_dem_caucus: 34
+  senate_holdover_rep: 31
+  # The tiebreak. JD Vance is the sitting vice president, so Republicans hold
+  # the Senate at 50 and Democrats need 51.
+  # citation: docs/BUILD_NOTES.md Phase 2 §A2
+  vp_party: "rep"
+  # 435 seats; a majority is 218.
+  house_majority_seats: 218
 simulation:
   n_sims: 10000
 election:

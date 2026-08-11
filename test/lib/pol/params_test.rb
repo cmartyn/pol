@@ -34,6 +34,26 @@ class Pol::ParamsTest < ActiveSupport::TestCase
     assert_in_delta(-2.6, Pol::Params.fetch!(:fundamentals, :house_national_margin_2024))
   end
 
+  # The holdover counts and the tiebreak decide chamber control before a single
+  # seat is simulated, so a typo here is a wrong forecast, not a wrong number.
+  # docs/BUILD_NOTES.md Phase 2 §A2 has the arithmetic: 31 + 34 + 35 = 100.
+  test "the Phase 3 chamber constants match the verified holdover arithmetic" do
+    assert_equal 34, Pol::Params.fetch!(:chambers, :senate_holdover_dem_caucus)
+    assert_equal 31, Pol::Params.fetch!(:chambers, :senate_holdover_rep)
+    assert_equal 100, Pol::Params.fetch!(:chambers, :senate_holdover_dem_caucus) +
+      Pol::Params.fetch!(:chambers, :senate_holdover_rep) + 35
+    assert_equal "rep", Pol::Params.fetch!(:chambers, :vp_party)
+    assert_equal 218, Pol::Params.fetch!(:chambers, :house_majority_seats)
+  end
+
+  test "the error model carries a sigma for every draw the simulator makes" do
+    %i[sigma_national sigma_state_polled sigma_state_unpolled sigma_district].each do |key|
+      assert_operator Pol::Params.fetch!(:error_model, key), :>, 0
+    end
+    assert_operator Pol::Params.fetch!(:error_model, :sigma_state_unpolled), :>,
+                    Pol::Params.fetch!(:error_model, :sigma_state_polled)
+  end
+
   test "to_h returns the full deeply-symbolized params tree" do
     hash = Pol::Params.to_h
     assert_kind_of Hash, hash
