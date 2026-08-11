@@ -24,10 +24,14 @@ namespace :pol do
     outcomes = Ingest::Scraper.new.call
 
     puts
-    printf("  %-58s %-10s %6s %5s %5s %5s %5s\n", "Source", "Status", "Rows", "New", "Dup", "Skip", "Ref")
-    puts "  " + "-" * 100
+    # Wide enough for the longest source title there is — "2026 United States
+    # House of Representatives elections in North Carolina" — because every
+    # state House page shares its first 52 characters and a narrower column
+    # turns thirty-three of them into the same row.
+    printf("  %-72s %-10s %6s %5s %5s %5s %5s\n", "Source", "Status", "Rows", "New", "Dup", "Skip", "Ref")
+    puts "  " + "-" * 114
     outcomes.each do |outcome|
-      printf("  %-58s %-10s %6d %5d %5d %5d %5d\n", outcome.source.truncate(58), outcome.status,
+      printf("  %-72s %-10s %6d %5d %5d %5d %5d\n", outcome.source.truncate(72), outcome.status,
              outcome.fetched, outcome.created, outcome.duplicate, outcome.skipped, outcome.refused)
       # When rows were skipped the Skip column already says so; anything else
       # (a missing page, a fetch that failed outright) needs spelling out.
@@ -38,8 +42,8 @@ namespace :pol do
 
       puts "      refused: " + outcome.refusals.sort.map { |reason, count| "#{reason} ×#{count}" }.join(", ")
     end
-    puts "  " + "-" * 100
-    printf("  %-58s %-10s %6d %5d %5d %5d %5d\n", "TOTAL (#{outcomes.size} sources)", "",
+    puts "  " + "-" * 114
+    printf("  %-72s %-10s %6d %5d %5d %5d %5d\n", "TOTAL (#{outcomes.size} sources)", "",
            outcomes.sum(&:fetched), outcomes.sum(&:created), outcomes.sum(&:duplicate),
            outcomes.sum(&:skipped), outcomes.sum(&:refused))
     failed = outcomes.count { |outcome| outcome.status == :failed }

@@ -546,6 +546,15 @@ their pages at all, which is what you would expect for uncompetitive or
 late-primary races; nothing was invented to fill them. Best-polled races: NC 26,
 TX 24, MT 22, MI 21, FL-special 21, AK 15, OH-special 15, NH 13.
 
+> **Correction (Phase 8).** "No polling section content at all" was true of six
+> of the eleven and wrong about five. Colorado, Illinois, Louisiana, New Mexico
+> and Oklahoma all carry polling sections — 104 rows across the four re-fetched
+> in Phase 8, plus Colorado's — and every table in them is a primary field,
+> correctly refused. The sentence above could
+> not tell the two cases apart because at the time neither could the code. It
+> can now: see Phase 8 §D for the page-by-page audit and §C for what the
+> scrape run records instead.
+
 The 4 duplicates in the first sweep were genuine within-page repeats (the same
 poll listed in two matchup tables on the Minnesota, South Carolina and generic-
 ballot pages). The 15 skips were all the Montana/Mississippi dashed-column rows
@@ -1744,3 +1753,436 @@ real-world fact still carries its URL — the Senate map and holdover arithmetic
 6. **Deployment is deliberately not done.** The app is 12-factor-ready and the
    generated Kamal config is present but unused; nothing has been deployed and
    no production database exists. See the README's "Deploy posture".
+
+---
+
+# Phase 8 — Data coverage (ingestion)
+
+The House side of the model had no polls in it. All 435 district forecasts ran
+on fundamentals alone, and a parser refusal was indistinguishable from a page
+with nothing on it, so a race could stop being polled — or stop being *read* —
+without anything saying so. This phase went looking for district polling, found
+more of it than expected, and made every refusal say why.
+
+## A. Where 2026 House district polling actually lives
+
+Checked live on 2026-08-11 through the project's own client (descriptive UA,
+~1 request/second), one pass over every candidate page.
+
+### A1. The three places it is not
+
+| Page | URL | What it carries |
+|---|---|---|
+| 2026 United States House of Representatives elections | <https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections> | 58 wikitables. Exactly one polling table, and it is the generic-ballot **aggregator** average ("Source of poll aggregation" — 270toWin, RCP and friends). The other 57 are per-state candidate rosters. **No district polls.** |
+| Nationwide opinion polling for the 2026 United States House of Representatives elections | <https://en.wikipedia.org/wiki/Nationwide_opinion_polling_for_the_2026_United_States_House_of_Representatives_elections> | **404.** No such article. The sibling we already scrape for individual generic-ballot polls is [2026 United States elections](https://en.wikipedia.org/wiki/2026_United_States_elections), unchanged. |
+| Per-district articles | e.g. <https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_in_New_York%27s_17th_congressional_district> | **404**, as is the Pennsylvania-10 equivalent. Searching Wikipedia for 2026 House district articles returns state pages, the main article and a [ratings article](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_ratings) — never a district one. 2026 House districts do not get their own articles the way Senate races do; the state page is the unit. |
+
+### A2. The place it is
+
+`2026 United States House of Representatives elections in {State}` — one page
+per state, each district a section, polling nested inside it:
+
+```
+District 17
+  Democratic primary
+    Polling          ← a primary field
+  General election
+    Polling          ← the matchup we want
+```
+
+**All fifty state pages were read.** Six states with a single at-large district
+use the singular title (`…House of Representatives election in Alaska`); the
+plural 404s for them, and only for them.
+
+Thirty-three states carry at least one general-election district poll. The
+counts below are what the parser as committed takes off each page.
+
+| State | Page | Poll rows | Districts | Tables refused |
+|---|---|---:|---|---|
+| AL | [Alabama](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Alabama) | **1** | 2 | primary ×3 |
+| AK | [Alaska](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_in_Alaska) | **7** | at-large | primary ×1, placeholder ×2 |
+| AZ | [Arizona](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Arizona) | **4** | 2, 6 | primary ×5, placeholder ×1 |
+| AR | [Arkansas](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Arkansas) | **2** | 2 | — |
+| CA | [California](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_California) | **8** | 3, 6, 22, 40, 48 | primary ×10, results ×1, same-party ×1, placeholder ×1, no party columns ×1 |
+| CO | [Colorado](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Colorado) | **5** | 3, 5 | primary ×2, placeholder ×1 |
+| FL | [Florida](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Florida) | **21** | 2, 7, 8, 11, 12, 13, 14, 22, 25, 27, 28 | primary ×18, placeholder ×1 |
+| ID | [Idaho](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Idaho) | **3** | 1 | — |
+| IL | [Illinois](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois) | **1** | 4 | primary ×4 |
+| IN | [Indiana](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Indiana) | **1** | 5 | — |
+| IA | [Iowa](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Iowa) | **6** | 1, 2, 3 | placeholder ×1 |
+| KY | [Kentucky](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Kentucky) | **6** | 6 | primary ×5 |
+| ME | [Maine](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Maine) | **14** | 2 | primary ×2, placeholder ×1 |
+| MI | [Michigan](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Michigan) | **13** | 4, 7, 10 | primary ×5, placeholder ×1 |
+| MN | [Minnesota](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Minnesota) | **5** | 1, 2 | primary ×1, placeholder ×1 |
+| MO | [Missouri](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Missouri) | **1** | 2 | primary ×1, placeholder ×2 |
+| MT | [Montana](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Montana) | **6** | 1 | primary ×1 |
+| NE | [Nebraska](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Nebraska) | **3** | 1 | primary ×1 |
+| NV | [Nevada](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Nevada) | **1** | 2 | — |
+| NH | [New Hampshire](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_New_Hampshire) | **6** | 2 | primary ×4 |
+| NJ | [New Jersey](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_New_Jersey) | **2** | 7 | primary ×3, placeholder ×1 |
+| NM | [New Mexico](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_New_Mexico) | **1** | 2 | placeholder ×1 |
+| NY | [New York](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_New_York) | **4** | 1, 17, 21 | primary ×9 |
+| NC | [North Carolina](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_North_Carolina) | **6** | 1, 10, 11, 14 | primary ×1, placeholder ×3, no district ×1 |
+| OH | [Ohio](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Ohio) | **9** | 7, 9, 10, 15 | placeholder ×3, no party columns ×1 |
+| PA | [Pennsylvania](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Pennsylvania) | **9** | 1, 7, 8, 10 | primary ×3 |
+| SC | [South Carolina](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_South_Carolina) | **4** | 1, 7 | primary ×2 |
+| TN | [Tennessee](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Tennessee) | **1** | 5 | primary ×2 |
+| TX | [Texas](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Texas) | **8** | 15, 23, 28, 34 | primary ×17, placeholder ×3, no district ×1 |
+| VT | [Vermont](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_in_Vermont) | **4** | at-large | primary ×1 |
+| VA | [Virginia](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Virginia) | **2** | 1, 2 | primary ×1 |
+| WA | [Washington](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Washington) | **6** | 3, 5 | same-party ×3, placeholder ×2 |
+| WI | [Wisconsin](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Wisconsin) | **8** | 1, 3, 6 | primary ×2, placeholder ×3 |
+
+| State | Page | Poll rows | Why none |
+|---|---|---:|---|
+| CT | [Connecticut](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Connecticut) | 0 | primary ×1 |
+| DE | [Delaware](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_in_Delaware) | 0 | no polling section |
+| GA | [Georgia](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Georgia) | 0 | primary ×1 |
+| HI | [Hawaii](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Hawaii) | 0 | primary ×2 |
+| KS | [Kansas](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Kansas) | 0 | no polling section |
+| LA | [Louisiana](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Louisiana) | 0 | no party columns ×1 |
+| MD | [Maryland](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Maryland) | 0 | primary ×2 |
+| MA | [Massachusetts](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Massachusetts) | 0 | primary ×3 |
+| MS | [Mississippi](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Mississippi) | 0 | no polling section |
+| ND | [North Dakota](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_in_North_Dakota) | 0 | no polling section |
+| OK | [Oklahoma](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Oklahoma) | 0 | no polling section |
+| OR | [Oregon](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Oregon) | 0 | no polling section |
+| RI | [Rhode Island](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Rhode_Island) | 0 | no polling section |
+| SD | [South Dakota](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_in_South_Dakota) | 0 | primary ×3 |
+| UT | [Utah](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Utah) | 0 | primary ×2 |
+| WV | [West Virginia](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_West_Virginia) | 0 | no polling section |
+| WY | [Wyoming](https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_election_in_Wyoming) | 0 | primary ×2 |
+
+**178 general-election poll rows across 73 districts in 33 states** — against
+zero district polls before this phase. It is thin next to the Senate's 241 and
+the generic ballot's 559, and it is aimed where it matters: 28 of the 73
+districts have a 2024 baseline margin inside ten points and 16 inside five,
+against 17 sitting at 20 points or wider. Pollsters are polling the close ones.
+
+### A3. The nine states that were closest
+
+These carry congressional polling today but only of primaries, so they are not
+in `Ingest::Sources::DISTRICT_POLL_STATES` and are not fetched: **CT, GA, HI,
+LA, MD, MA, SD, UT, WY**. Each is one resolved nomination away from qualifying.
+The eight with no polling section of any kind — **DE, KS, MS, ND, OK, OR, RI,
+WV** — are further off.
+
+### A4. The list is a snapshot, and stales in one direction
+
+`DISTRICT_POLL_STATES` is 33 hand-recorded state codes. A state that gains its
+first district poll after today will not be picked up until the list is
+refreshed. Refreshing it means re-running the survey: fetch all 50 state pages,
+run `Ingest::PollTableParser` over each in district scope, and take the states
+with a non-zero row count. Scraping all 50 unconditionally was the alternative
+and was rejected on weight, not on principle — the 33 are 46 MB a sweep, the
+full 50 about 70 MB, twelve times a day, for seventeen pages we know are empty.
+`scrape.max_district_sources` (40) is the ceiling on how far the list can grow
+before someone has to look at that trade again; anything past it is skipped and
+named in the log.
+
+## B. What a district page asks of the parser that a Senate page does not
+
+### B1. The district comes from the section, not the row
+
+Nothing in a poll row says which district it is. The district is the section the
+table sits inside, so `PollTableParser` in district scope walks the table's
+**ancestor `<section>` elements, nearest first**, and takes the first heading
+matching `District N` (or an at-large heading, which resolves to district 1).
+This is DOM containment, not "the last heading above it on the page" — a table
+cannot be captured by a district it is not inside. A polling table with no
+district ancestor is refused as `district_unresolved` rather than attached to
+anything: North Carolina and Texas both poll their congressional vote
+*statewide*, seventeen rows between them under a "Statewide polling" heading,
+and those rows belong to no district.
+
+A state with one at-large district is the one case with no heading to read,
+because there is only one district to mean. The scraper passes
+`default_district` there, and only there, derived from holding exactly one House
+race for the state.
+
+Rows whose district resolves to a district we hold no race for are skipped and
+counted (`Ingest::Scraper#ingest_districts`), never reassigned.
+
+### B2. Three refusals a Senate page never needed
+
+| Refusal | The case | Where it bites |
+|---|---|---|
+| `multiple_same_party_columns` | Two columns tagged with the same *major* party. A general election has one Democrat and one Republican; a field of five has to be a primary. | Washington's top-two primary tables carry party tags and pass every other test — WA-4 is four Republicans and a Democrat. Same for California and Louisiana. |
+| `generic_candidate_column` | A column headed "Generic Democrat", "Generic Republican", "Another Democratic candidate". A real number, but not against an opponent. | 44 tables in the live sweep: 28 on state House pages, 16 on Senate pages. On the Senate side the seeded candidate list already rejected most of them; where a race had a seeded Democrat and no seeded Republican, it did not — which is how the four historical rows in §F got in. |
+| `results_table` | A column headed "Votes". | California's 22nd files its primary *result* under the Polling heading. Without this it would be refused as `layout_unrecognized`, which is meant to mean "the page changed shape under us" and would mark California `partial` on every sweep for a table that is doing nothing wrong. |
+
+Section headings do the rest: a table under a heading matching `primary` and
+not `general election` is `primary_only_table`, which is what catches a jungle
+primary whose columns are perfectly well-formed. That check now runs on Senate
+pages too, so Colorado's Democratic-primary-only page stops reporting as a
+clean empty sweep.
+
+### B3. What this still cannot tell apart, said plainly
+
+No House race has candidates seeded (`Ingest::SeedRaces` seeds candidates for
+Senate races only), so every district column matches on party alone. The
+consequence: a **pre-primary hypothetical general-election matchup is
+indistinguishable from the real one**. California's 22nd carries both
+"Valadao vs Villegas" — Villegas took 32.4% of the primary vote and advanced —
+and an August 2025 "Valadao vs Bains", Bains having finished third on 26.9%.
+Both are ingested. On the Senate side the seeded candidate list
+is exactly what rejects those; here there is nothing to reject them with.
+
+Three things keep it from being worse than it is: the hypotheticals are older
+than the real matchups and the averager decays on a 14-day half-life; they are
+the same party, so the margin they contribute is usually close; and the count is
+small. It is still a real limitation and the fix is to seed House candidates,
+which is its own piece of work.
+
+## C. Refusal observability
+
+### C1. Ten reasons, all of them things the code can actually tell apart
+
+`Ingest::PollTableParser::REFUSAL_REASONS`, in the order the parser tries them:
+`layout_unrecognized` (no columns at all), `aggregator_table`, `results_table`,
+`layout_unrecognized` again (no pollster or date column), `primary_only_table`,
+`district_unresolved`, `generic_candidate_column`, `no_party_columns`,
+`multiple_same_party_columns`, `no_candidate_column_match` — plus the
+page-level `no_polling_section`. A test asserts that every reason on that list
+is produced by a real fixture, so a reason cannot be added without a page that
+emits it.
+
+Refusals are only counted for tables **under a Polling heading**, or tables that
+carry a poll table's own header shape wherever they sit. A wikitable elsewhere
+on the page — endorsements, fundraising, results by county, of which California
+has 265 — is not a poll table and is passed over in silence. Without that scope
+the counts would be noise.
+
+### C2. Which refusals make a source `partial`
+
+Not all of them, and this is the judgement call of the phase.
+
+Refusing a table is *routine*. The Georgia Senate page refuses eighteen every
+sweep — four aggregator averages, seven hypothetical matchups, five primary
+fields, one "Generic Republican", one table with no party columns — and yields
+ten real polls. Treating any
+refusal as trouble would make `partial` the permanent status of nearly every
+source, and a status that is always amber says nothing.
+
+Two things are trouble:
+
+1. **`layout_unrecognized`** — a table under a Polling heading whose shape we
+   could not account for at all. That is what a page restructured under us looks
+   like, and it marks the source `partial` on its own even if the page yielded
+   polls.
+2. **Refusing everything and reading nothing** — `refused_count > 0` with
+   `fetched_count == 0`. The race is dark and we declined the only tables
+   offered. Colorado's Senate page is exactly this.
+
+A page with **no polling section** refused nothing — there was no table to turn
+down — so `refused_count` stays 0, the reason `no_polling_section` is recorded
+anyway, and the status is a clean `succeeded`. "succeeded, fetched 0, refused 0,
+no_polling_section" and "partial, fetched 0, refused 1, primary_only_table" are
+the two cases that used to be the same row.
+
+The policy lives on `ScrapeRun` (`UNREADABLE_REASONS`, `EMPTY_PAGE_REASON`,
+`#dark?`, `#refusal_alarm?`) because that is the record both the scraper writes
+and the admin reads; `Ingest::Scraper` reads it rather than restating it.
+
+### C3. Where it shows
+
+* **`scrape_runs`** gains `refused_count` (integer) and `refusal_reasons`
+  (jsonb, reason → count). `refused_count == refusal_reasons.values.sum` except
+  for the documented `no_polling_section` case.
+* **Admin scrape health** leads with a panel naming the sources that need
+  looking at — the dark ones and the unreadable ones, by name and reason —
+  and a one-line count of the sources that refused only routine tables and
+  still read polls, so the panel stays small as the sweep grows. Every row gets
+  a Refused column with reason chips in plain English (`primary field ×4`)
+  carrying the machine name in `data-reason` and `title`. A page with no polling
+  section renders as "no polling section" instead of a number, which is the
+  visual distinction the phase was asked for. The page is now also **windowed**
+  to the most recent 150 runs (`Admin::ScrapeRunsController::WINDOW`): at 69
+  sources every two hours it would otherwise grow by 828 rows a day, with the
+  refusal summary computed over all of them.
+* **`bin/rails pol:scrape`** gains a `Ref` column, a per-source `refused:` line
+  naming the reasons, and a sweep-wide "Refusals by reason" total.
+
+## D. Dark-race audit — the seven unverified Senate races
+
+Four were hand-checked during the MVP build (NJ, OR, TN: no polling section;
+CO: a Democratic primary table, correctly refused). These are the other seven,
+fetched live on 2026-08-11 and run through the parser with the candidates we
+actually hold for each race.
+
+| Race | Polling section | What is on the page | Parser | Verdict |
+|---|---|---|---|---|
+| **DE** | none | No heading matching "poll" anywhere. Fundraising and ratings tables only. | `no_polling_section`, succeeded | Correct. Candidates, fundraising and ratings, and no poll of any kind. |
+| **IL** | yes | Three primary tables, 28 rows: two Democratic (Kelly / Krishnamoorthi / Stratton) and one Republican. **No general-election table.** | `primary_only_table ×3`, fetched 0 → **partial** | Correct. Was invisible before; now reads as a dark race. |
+| **LA** | yes | Eight tables, 72 poll rows, every one a Republican primary — first round *and* runoff (Letlow / Fleming / Cassidy) — plus one aggregator average. **No general-election table.** | `primary_only_table ×7`, `aggregator_table ×1`, fetched 0 → **partial** | Correct. Louisiana runs closed congressional primaries from 2026, so a runoff poll is still a primary poll. |
+| **NM** | yes | One Democratic primary table, 1 row (Luján 69, Dodson 9). **No general-election table.** | `primary_only_table ×1`, fetched 0 → **partial** | Correct. |
+| **OK** | yes | Two Republican primary tables, 3 rows (Hern / Stitt / Bice). **No general-election table.** | `primary_only_table ×2`, fetched 0 → **partial** | Correct. |
+| **WV** | none | No heading matching "poll". | `no_polling_section`, succeeded | Correct. |
+| **WY** | none | No heading matching "poll". | `no_polling_section`, succeeded | Correct. |
+
+**No parser bug was found.** All seven are genuinely unpolled at the general
+level, and all seven now say which kind of unpolled they are. Five of the eleven
+dark Senate races — CO, IL, LA, NM, OK — will report `partial` on every sweep
+from here until somebody polls their general election. That is the intended
+signal, not a fault: those five have polling on the page and none of it is ours
+to use, which is a different thing from Delaware having no polling at all.
+
+## E. Tests
+
+Thirty-four new tests — the suite goes 722 → 756, plus the end-to-end system
+test — and nothing in any of them touches the network.
+
+| File | What it pins |
+|---|---|
+| `test/lib/ingest/poll_table_parser_test.rb` | District attribution from the enclosing section, per-district candidate matching, at-large default, and one case per refusal reason — including a test that **every** reason in `REFUSAL_REASONS` is emitted by a real fixture |
+| `test/lib/ingest/scraper_test.rb` | A state page becomes polls against the right races; an unmappable district is skipped and counted with **no Poll created and nothing reassigned**; the `max_district_sources` cap; refusal counts surviving parser → scraper → row; the four status outcomes (routine refusals stay `succeeded`, no polling section stays `succeeded`, dark is `partial`, unreadable is `partial`) |
+| `test/models/scrape_run_test.rb` | `#refusals` ordering and labels, `#dark?`, `#refusal_alarm?`, and that every parser reason has a label |
+| `test/controllers/admin/scrape_runs_controller_test.rb` | Reason chips by machine name, the empty-page distinction, the summary panel listing only what needs looking at |
+| `test/lib/ingest/date_range_test.rb` | The optional comma, and that a month with no day still returns nil |
+| `test/fixtures/scrape_runs.yml` | Four fixture rows, one per refusal shape |
+
+Six new fixtures, all real trimmed Parsoid HTML from `bin/rails
+pol:refresh_fixtures` (which grew a district trimmer that keeps the
+`District 7 > General election > Polling` nesting, and an `ONLY=` filter so one
+fixture can be refreshed without touching the rest):
+
+| Fixture | Chosen for |
+|---|---|
+| `house_michigan.html` | Three districts with clean general-election tables — the happy path |
+| `house_washington.html` | Top-two primary fields with party tags, and the missing-comma date |
+| `house_alaska.html` | At-large, plus two placeholder-opponent tables |
+| `house_california.html` | A primary results table under the Polling heading, and a Democrat-versus-Democrat general |
+| `house_north_carolina.html` | Statewide congressional polling under no district |
+| `house_delaware.html` | A page with tables but no polling section |
+
+## F. Live run — one sweep, 2026-08-11
+
+`bin/rails pol:scrape`, once, against live Wikipedia. **69 sources** (35 Senate
+pages + the generic ballot + 33 state House pages), 61 succeeded, 8 partial,
+none failed, no page 404'd.
+
+| | Rows seen | New | Duplicate | Skipped | Refused |
+|---|---:|---:|---:|---:|---:|
+| 35 Senate pages | 240 | 1 | 239 | 0 | 182 |
+| Generic ballot | 561 | 0 | 561 | 0 | 1 |
+| 33 state House pages | 188 | 174 | 4 | 10 | 141 |
+| **Total** | **989** | **175** | **804** | **10** | **324** |
+
+Refusals by reason, sweep-wide: `primary_only_table ×172`,
+`no_candidate_column_match ×67`, `generic_candidate_column ×44`,
+`aggregator_table ×29`, `no_polling_section ×6`, `no_party_columns ×5`,
+`multiple_same_party_columns ×4`, `district_unresolved ×2`, `results_table ×1`.
+No `layout_unrecognized` anywhere in 69 sources — every table under a Polling
+heading was accounted for.
+
+**Database after: 975 polls — 242 Senate, 559 generic ballot, and 174 House
+district polls where there were none.** 73 of 435 districts now hold at least
+one poll. The Senate side gained exactly one new poll (Alaska) and recognised
+the other 232 rows as duplicates, which is the dedup contract holding across a
+sweep that also added a third of a chamber's worth of new sources.
+
+One thing the new guards do **not** do is undo their own past. Four polls
+already in the database were read from placeholder-opponent tables before
+`generic_candidate_column` existed — polls 105 and 106 (Minnesota, "Generic
+Republican" against Craig and against Flanagan), 150 (Nebraska, Ricketts
+against a "Generic Democrat") and 190 (South Carolina, Andrews against a
+"Generic Republican"). No new ones can arrive, and these four were left where
+they are: deleting scraped rows from the live corpus is an editorial call, not
+a parser change. They are named here so the call can be made deliberately.
+
+### F1. Per state page
+
+| State page | Status | Rows | New | Dup | Skipped | Refused | Reasons |
+|---|---|---:|---:|---:|---:|---:|---|
+| Alabama | succeeded | 1 | **1** | 0 | 0 | 3 | primary_only_table ×3 |
+| Alaska | succeeded | 7 | **7** | 0 | 0 | 3 | generic_candidate_column ×2, primary_only_table ×1 |
+| Arizona | succeeded | 4 | **4** | 0 | 0 | 6 | generic_candidate_column ×1, primary_only_table ×5 |
+| Arkansas | succeeded | 2 | **2** | 0 | 0 | 0 | — |
+| California | succeeded | 8 | **8** | 0 | 0 | 14 | generic_candidate_column ×1, multiple_same_party_columns ×1, no_party_columns ×1, primary_only_table ×10, results_table ×1 |
+| Colorado | succeeded | 5 | **5** | 0 | 0 | 3 | generic_candidate_column ×1, primary_only_table ×2 |
+| Florida | partial | 26 | **21** | 0 | 5 | 19 | generic_candidate_column ×1, primary_only_table ×18 |
+| Idaho | succeeded | 3 | **3** | 0 | 0 | 0 | — |
+| Illinois | succeeded | 1 | **1** | 0 | 0 | 4 | primary_only_table ×4 |
+| Indiana | succeeded | 1 | **1** | 0 | 0 | 0 | — |
+| Iowa | succeeded | 6 | **6** | 0 | 0 | 1 | generic_candidate_column ×1 |
+| Kentucky | succeeded | 6 | **5** | 1 | 0 | 5 | primary_only_table ×5 |
+| Maine | succeeded | 14 | **13** | 1 | 0 | 3 | generic_candidate_column ×1, primary_only_table ×2 |
+| Michigan | succeeded | 13 | **13** | 0 | 0 | 6 | generic_candidate_column ×1, primary_only_table ×5 |
+| Minnesota | succeeded | 5 | **5** | 0 | 0 | 2 | generic_candidate_column ×1, primary_only_table ×1 |
+| Missouri | succeeded | 1 | **1** | 0 | 0 | 3 | generic_candidate_column ×2, primary_only_table ×1 |
+| Montana | succeeded | 6 | **6** | 0 | 0 | 1 | primary_only_table ×1 |
+| Nebraska | partial | 5 | **3** | 0 | 2 | 1 | primary_only_table ×1 |
+| Nevada | succeeded | 1 | **1** | 0 | 0 | 0 | — |
+| New Hampshire | succeeded | 6 | **6** | 0 | 0 | 4 | primary_only_table ×4 |
+| New Jersey | succeeded | 2 | **2** | 0 | 0 | 4 | generic_candidate_column ×1, primary_only_table ×3 |
+| New Mexico | succeeded | 1 | **1** | 0 | 0 | 1 | generic_candidate_column ×1 |
+| New York | succeeded | 4 | **4** | 0 | 0 | 9 | primary_only_table ×9 |
+| North Carolina | succeeded | 6 | **6** | 0 | 0 | 5 | district_unresolved ×1, generic_candidate_column ×3, primary_only_table ×1 |
+| Ohio | succeeded | 9 | **9** | 0 | 0 | 4 | generic_candidate_column ×3, no_party_columns ×1 |
+| Pennsylvania | succeeded | 9 | **9** | 0 | 0 | 3 | primary_only_table ×3 |
+| South Carolina | succeeded | 4 | **4** | 0 | 0 | 2 | primary_only_table ×2 |
+| Tennessee | succeeded | 1 | **1** | 0 | 0 | 2 | primary_only_table ×2 |
+| Texas | succeeded | 8 | **8** | 0 | 0 | 21 | district_unresolved ×1, generic_candidate_column ×3, primary_only_table ×17 |
+| Vermont | succeeded | 4 | **3** | 1 | 0 | 1 | primary_only_table ×1 |
+| Virginia | succeeded | 2 | **2** | 0 | 0 | 1 | primary_only_table ×1 |
+| Washington | partial | 9 | **5** | 1 | 3 | 5 | generic_candidate_column ×2, multiple_same_party_columns ×3 |
+| Wisconsin | succeeded | 8 | **8** | 0 | 0 | 5 | generic_candidate_column ×3, primary_only_table ×2 |
+| **33 state pages** | | **188** | **174** | 4 | 10 | 141 | |
+
+Florida, Nebraska and Washington are `partial` for skipped rows, not refusals:
+five and three of those rows carry a month with no day ("Late July 2025"), and
+Nebraska's two are cells with no percentage in them. Ten rows out of 188.
+
+### F2. The eleven dark Senate races, as the sweep now reports them
+
+| Senate source | Status | Refused | Reason |
+|---|---|---:|---|
+| Colorado | partial | 1 | primary_only_table ×1 |
+| Delaware | succeeded | 0 | no_polling_section ×1 |
+| Illinois | partial | 3 | primary_only_table ×3 |
+| Louisiana | partial | 8 | aggregator_table ×1, primary_only_table ×7 |
+| New Jersey | succeeded | 0 | no_polling_section ×1 |
+| New Mexico | partial | 1 | primary_only_table ×1 |
+| Oklahoma | partial | 2 | primary_only_table ×2 |
+| Oregon | succeeded | 0 | no_polling_section ×1 |
+| Tennessee | succeeded | 0 | no_polling_section ×1 |
+| West Virginia | succeeded | 0 | no_polling_section ×1 |
+| Wyoming | succeeded | 0 | no_polling_section ×1 |
+
+Six say "there is no polling section here". Five say "there is polling here and
+none of it is a general-election matchup", and they are `partial` rather than a
+clean zero. Before this phase all eleven read `succeeded, fetched 0`.
+
+### F3. The sweep queued a model run
+
+`Ingest.after_new_polls!` fired once with all 175 new poll ids and enqueued a
+single `Forecast::RunJob(trigger: :ingest)`. It is sitting in GoodJob's queue
+because no worker runs on this machine outside `bin/dev`; the seam behaved
+exactly as it does for a Senate-only sweep. The first run to pick it up will be
+the first forecast in this project's history with House district polling in it.
+
+### F4. Weight of the sweep
+
+The 33 state pages are ~46 MB of Parsoid HTML — Alaska is 0.4 MB, California
+5.6 MB — against ~15 MB for the 36 Senate-and-generic sources. At
+`scrape.cadence_hours: 2` that is 69 requests and ~61 MB twelve times a day,
+all of it paced at one request per second behind the project's descriptive
+user agent. The request rate is trivial; the bytes are the part worth watching,
+and `scrape.max_district_sources` is where the ceiling is set.
+
+## G. What this leaves for later
+
+1. **Seed House candidates.** It is the only thing that would let the parser
+   tell a district's real matchup from a pre-primary hypothetical (§B3), and it
+   would give district poll results a candidate to attach to the way Senate
+   results have.
+2. **Refresh `DISTRICT_POLL_STATES` after the remaining primaries.** Nine
+   states are one nomination away from carrying general-election district polls
+   (§A3) and will not be fetched until the list is re-surveyed.
+3. **Decide about the four placeholder-opponent polls** already in the corpus
+   (§F). They are the kind of row the parser now refuses; whether to leave
+   history alone or delete them is an editorial call, not a code one.
+4. **Watch the bandwidth, not the request rate.** 69 sources is 61 MB a sweep
+   and 12 sweeps a day. If that becomes a problem the lever is a separate,
+   slower cadence for district sources rather than a shorter list — the list is
+   already only the pages that carry polls.

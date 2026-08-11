@@ -9,6 +9,21 @@ class Admin::ScrapeRunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='admin-scrape-run-row']", count: ScrapeRun.count
   end
 
+  # A sweep is 69 rows and runs twelve times a day, so the page has to be a
+  # window rather than the whole history.
+  test "index lists at most a window's worth of runs and says so" do
+    template = scrape_runs(:senate_scrape_run)
+    (Admin::ScrapeRunsController::WINDOW + 5 - ScrapeRun.count).times do |index|
+      ScrapeRun.create!(template.attributes.except("id", "created_at", "updated_at")
+                                .merge("source" => "filler #{index}", "finished_at" => index.minutes.ago))
+    end
+
+    get admin_scrape_runs_path
+
+    assert_select "[data-testid='admin-scrape-run-row']", count: Admin::ScrapeRunsController::WINDOW
+    assert_select "[data-testid='admin-scrape-runs-window']", text: /most recent #{Admin::ScrapeRunsController::WINDOW}/
+  end
+
   test "index shows an honest empty state with none yet" do
     ScrapeRun.delete_all
     get admin_scrape_runs_path
