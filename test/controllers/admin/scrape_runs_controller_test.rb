@@ -15,6 +15,43 @@ class Admin::ScrapeRunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='admin-scrape-runs-empty']"
   end
 
+  test "index names every refusal reason, in English and in machine form" do
+    get admin_scrape_runs_path
+
+    assert_select "[data-testid='admin-scrape-run-reason'][data-reason='primary_only_table']",
+                  text: /primary field ×4/
+    assert_select "[data-testid='admin-scrape-run-reason'][data-reason='layout_unrecognized']",
+                  text: /table layout not recognised ×1/
+  end
+
+  test "index tells a page with no polling section apart from a page we refused" do
+    get admin_scrape_runs_path
+
+    assert_select "[data-testid='admin-scrape-run-empty-page']", text: /no polling section/
+    assert_select "[data-testid='admin-scrape-run-refused']", count: ScrapeRun.refusing.count
+  end
+
+  test "index leads with the sources that refused a table" do
+    get admin_scrape_runs_path
+
+    assert_select "[data-testid='admin-scrape-refusals']" do
+      assert_select "h2", text: /3 sources refused a table/
+      # Only the two that need looking at are listed by name; the routine one
+      # is a count, so the panel stays small as the sweep grows.
+      assert_select "[data-testid='admin-scrape-refusal-summary-row']", count: 2
+      assert_select "[data-testid='admin-scrape-refusal-summary-row']", text: /Colorado.*read no polls/
+      assert_select "[data-testid='admin-scrape-refusals-routine']", text: /1 other source/
+    end
+  end
+
+  test "index shows no refusal panel when nothing refused anything" do
+    ScrapeRun.refusing.destroy_all
+
+    get admin_scrape_runs_path
+
+    assert_select "[data-testid='admin-scrape-refusals']", count: 0
+  end
+
   test "create enqueues Ingest::ScrapeAllJob and redirects with a flash" do
     assert_enqueued_with(job: Ingest::ScrapeAllJob, queue: "default") do
       post admin_scrape_runs_path

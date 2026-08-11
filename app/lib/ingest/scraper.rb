@@ -1,14 +1,16 @@
 module Ingest
-  # Sweeps every poll source once: each Senate race's Wikipedia page, then the
-  # generic congressional ballot. One ScrapeRun row per source, and a single
-  # source never takes the sweep down — its failure is recorded and the sweep
-  # moves on.
+  # Sweeps every poll source once: each Senate race's Wikipedia page, the
+  # generic congressional ballot, then each state House page that carries
+  # district polling. One ScrapeRun row per source, and a single source never
+  # takes the sweep down — its failure is recorded and the sweep moves on.
   class Scraper
     # poll_ids are the polls this source actually created, which is what the
     # newsroom reacts to downstream; `created` stays as the count the sweep
-    # report and the ScrapeRun row are written from.
+    # report and the ScrapeRun row are written from. `refusals` maps a
+    # PollTableParser refusal reason to how many tables it fired on.
     Outcome = Struct.new(
-      :source, :status, :fetched, :created, :duplicate, :skipped, :invalid, :error, :poll_ids,
+      :source, :status, :fetched, :created, :duplicate, :skipped, :invalid, :refused, :refusals,
+      :error, :poll_ids,
       keyword_init: true
     )
 
@@ -21,6 +23,7 @@ module Ingest
     def call
       outcomes = senate_races.map { |race| scrape(Sources.senate_title(race), race: race) }
       outcomes << scrape(Sources.generic_ballot_title, race: nil)
+      outcomes.concat(district_outcomes)
 
       created_poll_ids = outcomes.flat_map(&:poll_ids)
       Ingest.after_new_polls!(created_poll_ids) if created_poll_ids.any?
@@ -33,18 +36,35 @@ module Ingest
         Race.senate.where(cycle: Sources.cycle).order(:slug).includes(:candidates)
       end
 
-      def scrape(title, race:)
+      # A state's House page is one source covering many races, so the district
+      # each row belongs to has to be resolved before a poll can be written.
+      def district_outcomes
+        kept, dropped = Sources.district_states
+        if dropped.any?
+          @logger.warn("Ingest::Scraper: scrape.max_district_sources capped the sweep; " \
+                       "skipped #{dropped.size} state page(s): #{dropped.join(', ')}")
+        end
+
+        by_state = Race.house.where(cycle: Sources.cycle, state: kept).includes(:candidates).group_by(&:state)
+
+        kept.filter_map do |state|
+          races = by_state[state]
+          next if races.blank?
+
+          scrape(Sources.district_title(state, single_district: races.one?), races: races)
+        end
+      end
+
+      def scrape(title, race: nil, races: nil)
         started_at = Time.current
-        tally = { fetched: 0, created: 0, duplicate: 0, skipped: 0, invalid: 0, poll_ids: [] }
+        tally = { fetched: 0, created: 0, duplicate: 0, skipped: 0, invalid: 0,
+                  refused: 0, refusals: {}, poll_ids: [] }
         status = :succeeded
         error = nil
 
         begin
-          ingest(title, race, tally)
-          if tally[:skipped].positive? || tally[:invalid].positive?
-            status = :partial
-            error = "#{tally[:skipped]} row(s) skipped, #{tally[:invalid]} rejected"
-          end
+          races ? ingest_districts(title, races, tally) : ingest(title, race, tally)
+          status, error = outcome_of(tally)
         rescue WikipediaClient::NotFound => e
           status = :partial
           error = "page not available: #{e.message}"
@@ -58,6 +78,32 @@ module Ingest
         record(title, status, tally, error, started_at)
       end
 
+      # Everything a completed parse can say about itself, in one place. Which
+      # refusals make a source `partial` rather than clean is ScrapeRun's
+      # policy (see its constants); this reads it rather than restating it.
+      def outcome_of(tally)
+        problems = []
+        problems << "#{tally[:skipped]} row(s) skipped" if tally[:skipped].positive?
+        problems << "#{tally[:invalid]} rejected" if tally[:invalid].positive?
+
+        unreadable = tally[:refusals].slice(*ScrapeRun::UNREADABLE_REASONS)
+        declined = tally[:refusals].except(ScrapeRun::EMPTY_PAGE_REASON)
+
+        if unreadable.any?
+          problems << "#{unreadable.values.sum} table(s) not recognised (#{reason_list(unreadable)})"
+        elsif tally[:refused].positive? && tally[:fetched].zero?
+          problems << "no polls read; refused #{reason_list(declined)}"
+        end
+
+        return [ :succeeded, nil ] if problems.empty?
+
+        [ :partial, problems.join(", ") ]
+      end
+
+      def reason_list(refusals)
+        refusals.sort.map { |reason, count| "#{reason} ×#{count}" }.join(", ")
+      end
+
       def ingest(title, race, tally)
         result = PollTableParser.new(
           html: @client.page_html(title),
@@ -65,15 +111,55 @@ module Ingest
           candidates: race ? race.candidates.to_a : []
         ).call
 
-        tally[:fetched] = result.fetched
-        tally[:skipped] = result.skipped
+        absorb(result, tally)
+        result.rows.each { |row| record_poll(title, row, race, tally) }
+      end
+
+      def ingest_districts(title, races, tally)
+        by_district = races.index_by(&:district)
+
+        result = PollTableParser.new(
+          html: @client.page_html(title),
+          page_url: WikipediaClient.article_url(title),
+          scope: :district,
+          district_candidates: races.to_h { |race| [ race.district, race.candidates.to_a ] },
+          # A state with one at-large district has no "District N" heading to
+          # read, because there is only the one district to mean.
+          default_district: (races.sole.district if races.one?)
+        ).call
+
+        absorb(result, tally)
 
         result.rows.each do |row|
-          outcome = RecordPoll.call(attributes_for(row, race), results: results_for(row), entry_mode: :scraped)
-          tally[outcome.status == :created ? :created : outcome.status] += 1
-          tally[:poll_ids] << outcome.poll.id if outcome.created?
-          @logger.warn("Ingest::Scraper #{title}: rejected row — #{outcome.message}") if outcome.invalid?
+          race = by_district[row.district]
+          # The district was named on the page but we hold no race for it.
+          # Counted and left alone: guessing which race a poll belongs to is
+          # the one thing worse than not having the poll.
+          if race.nil?
+            tally[:skipped] += 1
+            @logger.warn("Ingest::Scraper #{title}: no race for district #{row.district.inspect}")
+            next
+          end
+
+          record_poll(title, row, race, tally)
         end
+      end
+
+      # Reason keys become strings here and stay strings: that is the shape
+      # they are stored in, so nothing downstream has to remember which side of
+      # the database it is on.
+      def absorb(result, tally)
+        tally[:fetched] = result.fetched
+        tally[:skipped] = result.skipped
+        tally[:refused] = result.refused
+        tally[:refusals] = result.refusals.transform_keys(&:to_s)
+      end
+
+      def record_poll(title, row, race, tally)
+        outcome = RecordPoll.call(attributes_for(row, race), results: results_for(row), entry_mode: :scraped)
+        tally[outcome.status == :created ? :created : outcome.status] += 1
+        tally[:poll_ids] << outcome.poll.id if outcome.created?
+        @logger.warn("Ingest::Scraper #{title}: rejected row — #{outcome.message}") if outcome.invalid?
       end
 
       def attributes_for(row, race)
@@ -101,6 +187,8 @@ module Ingest
           fetched_count: tally[:fetched],
           new_count: tally[:created],
           duplicate_count: tally[:duplicate],
+          refused_count: tally[:refused],
+          refusal_reasons: tally[:refusals],
           error_message: error,
           started_at: started_at,
           finished_at: Time.current
@@ -108,7 +196,8 @@ module Ingest
 
         Outcome.new(
           source: title, status: status, fetched: tally[:fetched], created: tally[:created],
-          duplicate: tally[:duplicate], skipped: tally[:skipped], invalid: tally[:invalid], error: error,
+          duplicate: tally[:duplicate], skipped: tally[:skipped], invalid: tally[:invalid],
+          refused: tally[:refused], refusals: tally[:refusals], error: error,
           poll_ids: tally[:poll_ids]
         )
       end

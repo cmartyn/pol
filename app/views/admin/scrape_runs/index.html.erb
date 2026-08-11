@@ -7,8 +7,44 @@
         form: { data: { testid: "admin-run-scrape-form" } } %>
 </div>
 
+<%# A refused table is the difference between "this page has no polling" and
+    "we could not read this page's polling", and it is the second one that
+    quietly takes a race off the board. It gets said at the top, not buried in
+    a column halfway down a long list. %>
+<% refusing = @scrape_runs.select(&:refused_tables?) %>
+<% if refusing.any? %>
+  <% alarming, routine = refusing.partition(&:refusal_alarm?) %>
+  <div class="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4" data-testid="admin-scrape-refusals">
+    <h2 class="text-sm font-semibold text-amber-900">
+      <%= pluralize(refusing.size, "source") %> refused a table
+    </h2>
+    <p class="mt-1 text-xs text-amber-800">
+      A refused table was looked at and turned down. Most are routine — an aggregator average, a primary
+      field — but a source that refused everything and read nothing has left its races dark.
+    </p>
+    <% if alarming.any? %>
+      <ul class="mt-3 space-y-1 text-sm text-amber-900">
+        <% alarming.each do |run| %>
+          <li data-testid="admin-scrape-refusal-summary-row">
+            <span class="font-medium"><%= run.source %></span>
+            <span class="text-amber-700">
+              — <%= run.refusals.map { |_, count, label| "#{label} ×#{count}" }.to_sentence %><%
+                 %><%= ", and read no polls" if run.dark? %>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+    <% if routine.any? %>
+      <p class="mt-2 text-xs text-amber-800" data-testid="admin-scrape-refusals-routine">
+        <%= pluralize(routine.size, "other source") %> refused only routine tables and still read polls.
+      </p>
+    <% end %>
+  </div>
+<% end %>
+
 <div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white">
-  <table class="w-full min-w-[720px] text-left text-sm" data-testid="admin-scrape-runs-table">
+  <table class="w-full min-w-[820px] text-left text-sm" data-testid="admin-scrape-runs-table">
     <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
       <tr>
         <th class="py-2 pl-4 pr-3 font-medium">Source</th>
@@ -16,6 +52,7 @@
         <th class="py-2 pr-3 font-medium">Fetched</th>
         <th class="py-2 pr-3 font-medium">New</th>
         <th class="py-2 pr-3 font-medium">Dup</th>
+        <th class="py-2 pr-3 font-medium">Refused</th>
         <th class="py-2 pr-3 font-medium">Started</th>
         <th class="py-2 pr-4 font-medium">Finished</th>
       </tr>
@@ -35,6 +72,22 @@
           <td class="py-2 pr-3 text-slate-600"><%= run.fetched_count %></td>
           <td class="py-2 pr-3 text-slate-600"><%= run.new_count %></td>
           <td class="py-2 pr-3 text-slate-600"><%= run.duplicate_count %></td>
+          <td class="py-2 pr-3">
+            <% if run.refused_tables? %>
+              <span class="font-medium text-amber-700" data-testid="admin-scrape-run-refused"><%= run.refused_count %></span>
+              <div class="mt-1 flex flex-wrap gap-1">
+                <% run.refusals.each do |reason, count, label| %>
+                  <span class="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900"
+                        data-testid="admin-scrape-run-reason" data-reason="<%= reason %>"
+                        title="<%= reason %>"><%= label %> ×<%= count %></span>
+                <% end %>
+              </div>
+            <% elsif run.no_polling_section? %>
+              <span class="text-xs text-slate-500" data-testid="admin-scrape-run-empty-page">no polling section</span>
+            <% else %>
+              <span class="text-slate-400">—</span>
+            <% end %>
+          </td>
           <td class="py-2 pr-3 whitespace-nowrap text-slate-500"><%= run.started_at.strftime("%b %-d, %-I:%M %p") %></td>
           <td class="py-2 pr-4 whitespace-nowrap text-slate-500"><%= run.finished_at.strftime("%b %-d, %-I:%M %p") %></td>
         </tr>

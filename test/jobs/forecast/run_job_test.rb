@@ -161,6 +161,7 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     ]))
     stub_wikipedia_page("2026 United States Senate special election in Florida", status: 404)
     stub_wikipedia_page("2026 United States elections", body: poll_page_html(rows: [], dem_column: "Democratic", rep_column: "Republican"))
+    stub_district_pages
 
     assert_enqueued_jobs 1, only: Forecast::RunJob do
       Ingest::ScrapeAllJob.perform_now

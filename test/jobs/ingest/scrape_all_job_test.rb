@@ -23,13 +23,17 @@ class Ingest::ScrapeAllJobTest < ActiveJob::TestCase
     stub_wikipedia_page("2026 United States elections", body: poll_page_html(rows: [
       { pollster: "National Survey Co", dates: "August 1–3, 2026", sample: "1,200 (LV)", dem: "49%", rep: "43%" }
     ], dem_column: "Democratic", rep_column: "Republican"))
+    # The fixture world's one House district makes New York a fourth source.
+    stub_district_pages
 
-    assert_difference [ "ScrapeRun.count", "Poll.count" ], 3 do
-      Ingest::ScrapeAllJob.perform_now
+    assert_difference "ScrapeRun.count", 4 do
+      assert_difference "Poll.count", 3 do
+        Ingest::ScrapeAllJob.perform_now
+      end
     end
 
-    assert_equal %w[succeeded succeeded succeeded], ScrapeRun.order(:id).last(3).map(&:status)
-    assert_equal [ 1, 1, 1 ], ScrapeRun.order(:id).last(3).map(&:new_count)
+    assert_equal %w[succeeded succeeded succeeded succeeded], ScrapeRun.order(:id).last(4).map(&:status)
+    assert_equal [ 1, 1, 1, 0 ], ScrapeRun.order(:id).last(4).map(&:new_count)
   end
 
   # The ids, not just the count: the newsroom reacts to the polls this sweep
@@ -40,6 +44,7 @@ class Ingest::ScrapeAllJobTest < ActiveJob::TestCase
     ]))
     stub_wikipedia_page("2026 United States Senate special election in Florida", status: 404)
     stub_wikipedia_page("2026 United States elections", body: poll_page_html(rows: [], dem_column: "Democratic", rep_column: "Republican"))
+    stub_district_pages
 
     recording(Ingest, :after_new_polls!) do |calls|
       Ingest::ScrapeAllJob.perform_now

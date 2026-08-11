@@ -23,10 +23,20 @@ module Ingest
   # exactly the real matchup. Races with no seeded candidate for a party (the
   # ones whose primary has not happened yet) fall back to matching on party
   # alone.
+  #
+  # Every table the parser declines is counted and given a reason, so that
+  # "this page has no polling" and "we could not read this page's polling" stop
+  # being the same answer. Reasons are per-table; `no_polling_section`
+  # describes a page that had no polling table to decline in the first place.
+  #
+  # A state's House page (scope: :district) is the same tables under a
+  # different roof: each one sits inside a "District 7" section, and that
+  # enclosing section — not the row, and not the nearest heading above it in
+  # reading order — is what says which race a table belongs to.
   class PollTableParser
     Row = Struct.new(
       :pollster, :sponsor, :field_start, :field_end, :sample_size, :population,
-      :results, :source_url, :raw_payload,
+      :results, :source_url, :raw_payload, :district,
       keyword_init: true
     )
 
@@ -34,17 +44,40 @@ module Ingest
     # named a candidate we hold.
     Entry = Struct.new(:party, :pct, :candidate, :column, keyword_init: true)
 
-    Result = Struct.new(:rows, :skipped, :reasons, keyword_init: true) do
+    # `skipped`/`reasons` count rows dropped out of a table we did read;
+    # `refused`/`refusals` count whole tables we declined. The two are
+    # deliberately separate: three unreadable rows in a good table and three
+    # refused tables are different kinds of trouble.
+    Result = Struct.new(:rows, :skipped, :reasons, :refused, :refusals, keyword_init: true) do
       def fetched
         rows.size + skipped
       end
     end
+
+    # Every reason the parser can give for declining a table. Each is something
+    # the code genuinely distinguishes — there is no catch-all.
+    REFUSAL_REASONS = %i[
+      no_polling_section
+      aggregator_table
+      results_table
+      primary_only_table
+      generic_candidate_column
+      multiple_same_party_columns
+      no_party_columns
+      no_candidate_column_match
+      layout_unrecognized
+      district_unresolved
+    ].freeze
 
     POLLSTER_HEADER = /poll(ster)?\s*source|\Apollster\b/i
     DATE_HEADER = /date/i
     SAMPLE_HEADER = /sample/i
     SPONSOR_HEADER = /sponsor|client/i
     AGGREGATOR_HEADER = /aggregat|dates?\s*updated/i
+    # A count of ballots, not of opinions. California's 22nd files its primary
+    # result table inside the Polling section, so this has to be told apart
+    # from a poll table we failed to read rather than lumped in with it.
+    RESULTS_HEADER = /\Avotes\b/i
     # Columns that look like they might be results but are not a party's number.
     NON_PARTY_HEADER = /\A(other|undecided|others|none|margin|lead|spread|net|total|sample|date|poll|source|sponsor|client|mode|notes?)\b|\bof error\b|other\s*\/\s*undecided/i
     PCT = /\A(\d{1,3}(?:\.\d+)?)\s*%?\z/
@@ -71,21 +104,62 @@ module Ingest
     # have to canonicalise to the same pollster.
     POLLSTER_PARTY_TAG = /\s*\(\s*(?:D|R|I|D-aligned|R-aligned)\s*\)/i
 
-    def initialize(html:, page_url:, candidates: [])
+    # A heading that puts a table in scope: everything under it is polling, so
+    # a table we decline there is a refusal worth counting. A wikitable
+    # anywhere else (endorsements, fundraising, results by county) is simply
+    # not a poll table and is passed over in silence.
+    POLLING_HEADING = /\bpoll/i
+    PRIMARY_HEADING = /\bprimar(?:y|ies)\b/i
+    GENERAL_HEADING = /\bgeneral election\b/i
+    DISTRICT_HEADING = /\bdistrict\s+(\d+)\b/i
+    ORDINAL_DISTRICT_HEADING = /\b(\d+)(?:st|nd|rd|th)\s+(?:congressional\s+)?district\b/i
+    AT_LARGE_HEADING = /\bat[-\s]?large\b/i
+
+    # "Generic Democrat", "Generic Republican", "Another Democratic candidate":
+    # a placeholder where a name belongs. The number is real but it is not a
+    # matchup between two people, and treating it as one would put a poll of
+    # nobody into a district's average. (The nationwide generic ballot is a
+    # different thing and says so — its columns read "Democratic" and
+    # "Republican", with no placeholder word.)
+    GENERIC_CANDIDATE = /\bgeneric\b|\banother\b/i
+
+    # A general election has one Democrat and one Republican. Two columns
+    # tagged with the same major party mean a field, not a matchup — a top-two
+    # or jungle primary, which Washington, California and Louisiana all run and
+    # all label with party tags that would otherwise sail through.
+    MAJOR_PARTIES = %i[dem rep].freeze
+
+    # scope: :page     — one race per page (a Senate race, or the generic
+    #                    ballot), candidates given as a flat list.
+    # scope: :district — a state's House page, many races on it. Candidates
+    #                    arrive keyed by district number, and default_district
+    #                    is set only for a state that has a single at-large
+    #                    district, where the page carries no "District N"
+    #                    heading because there is only one.
+    def initialize(html:, page_url:, candidates: [], scope: :page, district_candidates: {}, default_district: nil)
       @html = html
       @page_url = page_url
       @candidates = candidates
+      @scope = scope
+      @district_candidates = district_candidates
+      @default_district = default_district
     end
 
     def call
       rows = []
       skipped = 0
       reasons = Hash.new(0)
+      refusals = Hash.new(0)
 
-      document.css("table.wikitable").each do |table|
-        grid = TableGrid.build(table)
-        layout = layout_for(grid)
-        next if layout.nil?
+      tables = polling_tables
+      refusals[:no_polling_section] += 1 if tables.empty?
+
+      tables.each do |table, grid, headings|
+        layout = layout_for(grid, headings)
+        if layout.is_a?(Symbol)
+          refusals[layout] += 1
+          next
+        end
 
         anchor = section_anchor(table)
         grid.body_rows.each_with_index do |cells, index|
@@ -99,7 +173,11 @@ module Ingest
         end
       end
 
-      Result.new(rows: rows, skipped: skipped, reasons: reasons)
+      # `refused` counts tables. A page with no polling section refused none —
+      # there was nothing there to turn down — so the reason is recorded and
+      # the count stays at zero.
+      Result.new(rows: rows, skipped: skipped, reasons: reasons,
+                 refused: refusals.except(:no_polling_section).values.sum, refusals: refusals)
     end
 
     private
@@ -107,18 +185,52 @@ module Ingest
         @document ||= Nokogiri::HTML5(@html)
       end
 
-      Layout = Struct.new(:pollster, :date, :sample, :sponsor, :parties, :labels, keyword_init: true)
+      Layout = Struct.new(:pollster, :date, :sample, :sponsor, :parties, :labels, :district, keyword_init: true)
+
+      # The tables a refusal can be counted against: everything under a Polling
+      # heading, plus anything that carries a poll table's own header shape
+      # wherever it sits (a page whose sectioning we cannot see must not become
+      # a page with no polls).
+      def polling_tables
+        document.css("table.wikitable").filter_map do |table|
+          grid = TableGrid.build(table)
+          headings = section_headings(table)
+          next unless headings.any? { |heading| heading.match?(POLLING_HEADING) } || poll_shaped?(grid)
+
+          [ table, grid, headings ]
+        end
+      end
+
+      def poll_shaped?(grid)
+        labels = grid.column_labels
+        labels.any? { |label| label.match?(POLLSTER_HEADER) } && labels.any? { |label| label.match?(DATE_HEADER) }
+      end
+
+      # Nearest enclosing section first, which is what makes "District 7 >
+      # General election > Polling" resolve to district 7 and not to whatever
+      # district happens to be printed above it on the page.
+      def section_headings(table)
+        table.ancestors("section").filter_map { |section| section.at_css("h1,h2,h3,h4,h5")&.text&.strip.presence }
+      end
 
       # Decides whether a table is a general-election poll table and, if so,
-      # which column is which. Returns nil for every other table.
-      def layout_for(grid)
+      # which column is which. Returns a refusal reason for every other table.
+      def layout_for(grid, headings)
         labels = grid.column_labels
-        return nil if labels.empty?
-        return nil if labels.any? { |label| label.match?(AGGREGATOR_HEADER) }
+        return :layout_unrecognized if labels.empty?
+        return :aggregator_table if labels.any? { |label| label.match?(AGGREGATOR_HEADER) }
+        return :results_table if labels.any? { |label| label.match?(RESULTS_HEADER) }
 
         pollster = labels.index { |label| label.match?(POLLSTER_HEADER) }
         date = labels.index { |label| label.match?(DATE_HEADER) }
-        return nil if pollster.nil? || date.nil?
+        return :layout_unrecognized if pollster.nil? || date.nil?
+        return :primary_only_table if primary_section?(headings)
+
+        district = nil
+        if @scope == :district
+          district = district_for(headings)
+          return :district_unresolved if district.nil?
+        end
 
         taken = [ pollster, date ].compact
         sample = labels.index { |label| label.match?(SAMPLE_HEADER) }
@@ -133,12 +245,44 @@ module Ingest
           parties[index] = party if party
         end
 
-        return nil if parties.size < 2 || parties.values.uniq.size < 2
+        return :generic_candidate_column if parties.each_key.any? { |index| labels[index].match?(GENERIC_CANDIDATE) }
+        return :no_party_columns if parties.size < 2 || parties.values.uniq.size < 2
+        return :multiple_same_party_columns if duplicate_major_party?(parties)
 
-        matched = match_candidates(parties, labels)
-        return nil if matched.nil?
+        matched = match_candidates(parties, labels, candidates_for(district))
+        return :no_candidate_column_match if matched.nil?
 
-        Layout.new(pollster: pollster, date: date, sample: sample, sponsor: sponsor, parties: matched, labels: labels)
+        Layout.new(pollster: pollster, date: date, sample: sample, sponsor: sponsor,
+                   parties: matched, labels: labels, district: district)
+      end
+
+      # A table under a primary heading is a primary field even when its
+      # columns carry party tags, which is exactly the case a structural test
+      # alone would wave through in the top-two states.
+      def primary_section?(headings)
+        headings.any? { |heading| heading.match?(PRIMARY_HEADING) } &&
+          headings.none? { |heading| heading.match?(GENERAL_HEADING) }
+      end
+
+      def district_for(headings)
+        headings.each do |heading|
+          return 1 if heading.match?(AT_LARGE_HEADING)
+
+          number = heading[DISTRICT_HEADING, 1] || heading[ORDINAL_DISTRICT_HEADING, 1]
+          return number.to_i if number
+        end
+
+        @default_district
+      end
+
+      def candidates_for(district)
+        return @candidates if @scope != :district
+
+        @district_candidates[district] || []
+      end
+
+      def duplicate_major_party?(parties)
+        parties.values.tally.any? { |party, count| MAJOR_PARTIES.include?(party) && count > 1 }
       end
 
       def party_for(label)
@@ -155,8 +299,8 @@ module Ingest
       # has to name one of them (that is what rejects hypothetical matchups);
       # otherwise the column stands on its party alone. Returns nil to reject
       # the whole table.
-      def match_candidates(parties, labels)
-        by_party = @candidates.group_by { |candidate| candidate.party.to_sym }
+      def match_candidates(parties, labels, candidates)
+        by_party = candidates.group_by { |candidate| candidate.party.to_sym }
 
         parties.each_with_object({}) do |(index, party), matched|
           pool = by_party[party]
@@ -210,7 +354,8 @@ module Ingest
           population: population,
           results: results,
           source_url: anchor,
-          raw_payload: raw_payload(cells, layout, index)
+          raw_payload: raw_payload(cells, layout, index),
+          district: layout.district
         )
       end
 

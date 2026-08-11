@@ -8,3 +8,52 @@ senate_scrape_run:
   duplicate_count: 0
   started_at: 2026-08-02 08:55:00
   finished_at: 2026-08-02 08:57:12
+
+# The four shapes a sweep's refusal accounting can take. Only the last two are
+# trouble: a page that turns down a primary field and still reads polls is
+# routine, and a page with no polling section refused nothing at all.
+district_scrape_run:
+  source: 2026 United States House of Representatives elections in Wisconsin
+  status: succeeded
+  fetched_count: 13
+  new_count: 13
+  duplicate_count: 0
+  refused_count: 5
+  refusal_reasons: { "primary_only_table": 4, "generic_candidate_column": 1 }
+  started_at: 2026-08-02 08:40:00
+  finished_at: 2026-08-02 08:40:08
+
+no_polling_section_scrape_run:
+  source: 2026 United States Senate election in Oklahoma
+  status: succeeded
+  fetched_count: 0
+  new_count: 0
+  duplicate_count: 0
+  refused_count: 0
+  refusal_reasons: { "no_polling_section": 1 }
+  started_at: 2026-08-02 08:41:00
+  finished_at: 2026-08-02 08:41:04
+
+dark_scrape_run:
+  source: 2026 United States Senate election in Colorado
+  status: partial
+  fetched_count: 0
+  new_count: 0
+  duplicate_count: 0
+  refused_count: 1
+  refusal_reasons: { "primary_only_table": 1 }
+  error_message: "no polls read; refused primary_only_table ×1"
+  started_at: 2026-08-02 08:42:00
+  finished_at: 2026-08-02 08:42:05
+
+unreadable_scrape_run:
+  source: 2026 United States Senate election in Texas
+  status: partial
+  fetched_count: 24
+  new_count: 1
+  duplicate_count: 23
+  refused_count: 1
+  refusal_reasons: { "layout_unrecognized": 1 }
+  error_message: "1 table(s) not recognised (layout_unrecognized ×1)"
+  started_at: 2026-08-02 08:43:00
+  finished_at: 2026-08-02 08:43:06

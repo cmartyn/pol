@@ -24,20 +24,30 @@ namespace :pol do
     outcomes = Ingest::Scraper.new.call
 
     puts
-    printf("  %-58s %-10s %6s %5s %5s %5s\n", "Source", "Status", "Rows", "New", "Dup", "Skip")
-    puts "  " + "-" * 94
+    printf("  %-58s %-10s %6s %5s %5s %5s %5s\n", "Source", "Status", "Rows", "New", "Dup", "Skip", "Ref")
+    puts "  " + "-" * 100
     outcomes.each do |outcome|
-      printf("  %-58s %-10s %6d %5d %5d %5d\n", outcome.source.truncate(58), outcome.status,
-             outcome.fetched, outcome.created, outcome.duplicate, outcome.skipped)
+      printf("  %-58s %-10s %6d %5d %5d %5d %5d\n", outcome.source.truncate(58), outcome.status,
+             outcome.fetched, outcome.created, outcome.duplicate, outcome.skipped, outcome.refused)
       # When rows were skipped the Skip column already says so; anything else
       # (a missing page, a fetch that failed outright) needs spelling out.
       puts "      #{outcome.error}" if outcome.error.present? && outcome.skipped.zero?
+      # A refused table is only a number in the column above. Which tables, and
+      # why, is the part that says whether a race just went dark.
+      next if outcome.refusals.blank?
+
+      puts "      refused: " + outcome.refusals.sort.map { |reason, count| "#{reason} ×#{count}" }.join(", ")
     end
-    puts "  " + "-" * 94
-    printf("  %-58s %-10s %6d %5d %5d %5d\n", "TOTAL (#{outcomes.size} sources)", "",
-           outcomes.sum(&:fetched), outcomes.sum(&:created), outcomes.sum(&:duplicate), outcomes.sum(&:skipped))
+    puts "  " + "-" * 100
+    printf("  %-58s %-10s %6d %5d %5d %5d %5d\n", "TOTAL (#{outcomes.size} sources)", "",
+           outcomes.sum(&:fetched), outcomes.sum(&:created), outcomes.sum(&:duplicate),
+           outcomes.sum(&:skipped), outcomes.sum(&:refused))
     failed = outcomes.count { |outcome| outcome.status == :failed }
     puts "  #{failed} source(s) failed outright" if failed.positive?
+
+    reasons = outcomes.flat_map { |outcome| outcome.refusals.to_a }
+                      .group_by(&:first).transform_values { |pairs| pairs.sum(&:last) }
+    puts "  Refusals by reason: " + reasons.sort.map { |reason, count| "#{reason} ×#{count}" }.join(", ") if reasons.any?
     puts
   end
 
@@ -145,7 +155,7 @@ namespace :pol do
 
   # Build-time only: the parser tests run entirely off the committed fixtures,
   # and nothing in the suite touches the network.
-  desc "Re-download the trimmed Wikipedia HTML fixtures the parser tests run against"
+  desc "Re-download the trimmed Wikipedia HTML fixtures the parser tests run against (ONLY=prefix to narrow)"
   task refresh_fixtures: :environment do
     require "nokogiri"
 
@@ -168,12 +178,43 @@ namespace :pol do
       # once ended up with fabricated baselines.
       { file: "house_results_2024.html",  title: Ingest::Sources::HOUSE_RESULTS_TITLE,                     sections: /\A(Alabama|Alaska|Louisiana|Minnesota|North Dakota|Washington)\z/ },
       { file: "presidential_2024.html",   title: Ingest::Sources::PRESIDENTIAL_TITLES.fetch(2024),         sections: /results by state/i },
-      { file: "presidential_2020.html",   title: Ingest::Sources::PRESIDENTIAL_TITLES.fetch(2020),         sections: /results by state/i }
+      { file: "presidential_2020.html",   title: Ingest::Sources::PRESIDENTIAL_TITLES.fetch(2020),         sections: /results by state/i },
+      # State House pages, Phase 8. These are trimmed differently: a district
+      # page's tables mean nothing without the "District 7 > General election >
+      # Polling" nesting around them, so whole district sections are kept and
+      # everything inside them that is not a polling table is thrown away.
+      # Between them the six carry every refusal reason the parser can emit.
+      { file: "house_michigan.html",       title: district_title("MI"), districts: /\ADistrict (4|7|10)\z/ },
+      # Washington runs a top-two primary, so its primary tables carry party
+      # tags and are the case a structural check has to catch.
+      { file: "house_washington.html",     title: district_title("WA"), districts: /\ADistrict (3|4|5)\z/ },
+      # Alaska is a single at-large district (singular title, no District
+      # heading to read) and carries two "Generic Democrat" matchups.
+      { file: "house_alaska.html",         title: district_title("AK", single: true), districts: /\A(Primary|General) election\z/ },
+      # California's 22nd files its primary *results* under the Polling
+      # heading, and its 11th is a Democrat-versus-Democrat general.
+      { file: "house_california.html",     title: district_title("CA"), districts: /\ADistrict (11|22|48)\z/ },
+      # North Carolina polls its congressional vote statewide, under no
+      # district at all.
+      { file: "house_north_carolina.html", title: district_title("NC"), districts: /\A(Statewide polling|District 1)\z/ },
+      # Delaware's page has no polling section of any kind — and does have
+      # fundraising and ratings tables, which is the point: those must not be
+      # counted as tables we refused.
+      { file: "house_delaware.html",       title: district_title("DE", single: true), sections: /\A(Republican primary|General election)\z/ }
     ]
+
+    only = ENV["ONLY"].presence
+    fixtures = fixtures.select { |fixture| fixture[:file].include?(only) } if only
 
     total = 0
     fixtures.each do |fixture|
-      trimmed = trim_sections(client.page_html(fixture[:title]), fixture[:sections], max_rows: fixture[:max_rows])
+      html = client.page_html(fixture[:title])
+      trimmed =
+        if fixture[:districts]
+          trim_district_sections(html, fixture[:districts])
+        else
+          trim_sections(html, fixture[:sections], max_rows: fixture[:max_rows])
+        end
       path = directory.join(fixture[:file])
       path.write(trimmed)
       total += trimmed.bytesize
@@ -182,6 +223,10 @@ namespace :pol do
     printf("  %-30s %8.1f KB\n", "total", total / 1024.0)
     puts "  (poll_table_malformed.html is hand-edited and is not refreshed here)"
   end
+end
+
+def district_title(state, single: false)
+  Ingest::Sources.district_title(state, single_district: single)
 end
 
 # The races whose Democratic win probability moved most between two runs,
@@ -205,6 +250,37 @@ def biggest_movers(run, previous, limit: 10)
      .first(limit)
 end
 
+# Same idea as trim_sections, for a state House page. The difference is what
+# has to survive: a district's polling tables are only interpretable inside
+# their "District 7 > General election > Polling" nesting, so whole district
+# sections are kept and gutted from the inside — nested sections holding no
+# polling table go, and inside the ones that stay only headings, sections and
+# polling tables are left. A 5 MB page comes out at a few dozen KB with every
+# structure the parser reads still standing.
+def trim_district_sections(html, pattern)
+  document = Nokogiri::HTML5(html)
+
+  sections = document.css("section").select do |section|
+    heading = section.at_css("h1,h2,h3,h4,h5")
+    heading && heading.text.strip.match?(pattern)
+  end
+  sections = sections.reject { |section| sections.any? { |other| other != section && section.ancestors.include?(other) } }
+
+  polling = ->(node) { node.ancestors("section").any? { |s| s.at_css("h1,h2,h3,h4,h5")&.text.to_s.match?(/\bpoll/i) } }
+
+  sections.each do |section|
+    section.css("section").each { |nested| nested.remove if nested.css("table.wikitable").none?(&polling) }
+    section.css("p, ul, ol, dl, figure, style, link, blockquote, table").each do |node|
+      next if node.name == "table" && node["class"].to_s.split.include?("wikitable") && polling.call(node)
+
+      node.remove
+    end
+    section.css("div").each { |node| node.remove if node.css("table.wikitable").empty? }
+  end
+
+  wrap_fixture(sections)
+end
+
 # Keeps only the <section> elements whose heading matches, which is what turns a
 # multi-megabyte Parsoid document into a fixture: infoboxes, navboxes, images and
 # references all go, and the section/heading structure the parsers rely on stays.
@@ -223,6 +299,10 @@ def trim_sections(html, pattern, max_rows: nil)
     end
   end
 
+  wrap_fixture(sections)
+end
+
+def wrap_fixture(sections)
   <<~HTML
     <html><head><meta charset="utf-8"><title>pol test fixture</title></head>
     <body>

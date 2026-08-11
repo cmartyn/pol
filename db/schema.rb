@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_050001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_060001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -271,6 +271,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_050001) do
     t.integer "fetched_count", default: 0, null: false
     t.datetime "finished_at", null: false
     t.integer "new_count", default: 0, null: false
+    t.jsonb "refusal_reasons", default: {}, null: false
+    t.integer "refused_count", default: 0, null: false
     t.string "source", null: false
     t.datetime "started_at", null: false
     t.integer "status", null: false

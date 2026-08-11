@@ -20,6 +20,20 @@ module WikipediaStubHelper
       .to_return(status: status, body: body, headers: { "Content-Type" => "text/html; charset=utf-8" })
   end
 
+  # Every state House page a sweep will reach for, stubbed as a page with
+  # nothing on it. A test that is not about district polls still has to answer
+  # for them, and this is how it says "not my subject" — mirroring exactly how
+  # Ingest::Scraper picks its district sources so the two cannot drift.
+  def stub_district_pages(body: "<html><body><section><h2>Candidates</h2></section></body></html>")
+    scraped, = Ingest::Sources.district_states
+
+    Race.house.where(cycle: Ingest::Sources.cycle).group_by(&:state).each do |state, races|
+      next unless scraped.include?(state)
+
+      stub_wikipedia_page(Ingest::Sources.district_title(state, single_district: races.one?), body: body)
+    end
+  end
+
   # A minimal but structurally faithful poll table: same section/heading
   # wrapper, header row and column shape as the real Parsoid HTML, so parser
   # behaviour in these tests is the behaviour on the real thing.

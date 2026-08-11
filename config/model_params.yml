@@ -138,6 +138,13 @@ newsroom:
 scrape:
   cadence_hours: 2
   user_agent_contact: "cmartyn@gmail.com"
+  # Ceiling on how many state House pages one sweep will read for district
+  # polls. Thirty-three states carry district polling today (Ingest::Sources::
+  # DISTRICT_POLL_STATES, established by reading all fifty once); the ceiling
+  # sits a little above that so the list can grow without the sweep's cost
+  # growing unwatched. Anything past it is skipped and named in the log.
+  # citation: docs/BUILD_NOTES.md Phase 8 §A (state-by-state district survey)
+  max_district_sources: 40
 site:
   # Rolling comparison window for the dashboard's "Movers" module: the latest
   # succeeded model run is compared against the succeeded run closest to this
