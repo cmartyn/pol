@@ -2858,11 +2858,16 @@ would take no regional or state error and quietly fall out of the correlated
 structure, narrowing the seat distribution exactly where this phase widened
 it.
 
-## C. Live before/after — and where it did not land
+## C. Controlled before/after — and where it did not land
 
-Runs 16 and 17, same seed (20260811), same date, **same 975 polls** — nothing
-re-scraped and nothing re-seeded, so the delta is attributable to the change
-and to nothing else. Both run with `AGENTS_DISABLED=1`.
+**This section is a controlled experiment, not the live board.** Runs 16 and
+17, same seed (20260811), same date, **same 975 polls** — nothing re-scraped
+and nothing re-seeded, so the delta is attributable to the change and to
+nothing else. Both run with `AGENTS_DISABLED=1`. Nothing here is restated
+against later data; the current board is §H, and every figure in this section
+keeps its run number so the two can never be confused. (As it happens the two
+sit on identical polls — the refresh in §H added none — so the difference
+between run 17 and the current run 19 is the RNG seed and nothing else.)
 
 | | before (run 16) | after (run 17) |
 |---|---|---|
@@ -3099,3 +3104,104 @@ disciplines are the thing that fails.
 4. **The Senate's idiosyncratic terms are back-solved from Phase 3's totals.**
    If a later phase re-derives those totals from newer evidence, both numbers
    have to be re-solved; `params_test.rb` fails loudly if they are not.
+
+## H. Data refresh, 2026-08-12 — and what it did not change
+
+Run after the phase was reviewed, on instruction, with the no-re-scraping rule
+lifted. All three steps under `AGENTS_DISABLED=1`. **The headline is that the
+board was already current**, which is worth recording as carefully as a change
+would have been: a refresh that finds nothing is only reassuring if you can
+show it looked.
+
+### 1. `bin/rails pol:seed_races` — no change, and a structural reason why
+
+35 Senate races (2 specials, 35 leans), 435 House districts, 37 imputed
+baselines (9%) — identical to the previous seed. Diffed properly rather than
+eyeballed: a before/after snapshot of all 470 races across candidates, lean,
+baseline, imputed flag, uncontested, open-seat and incumbent fields showed
+**0 races added, 0 removed, 0 fields changed, 0 candidate lists changed.**
+
+The reason is structural and should be known before anyone expects otherwise.
+**`pol:seed_races` cannot pick up a settled primary.** The Senate side reads
+`db/seed_data/senate_2026.yml`, a hand-verified committed list last touched in
+Phase 2 (`fbd6b96`); no scraper updates it. The House side re-reads the 2024
+results page, whose numbers are historical and do not move. So the task is
+idempotent by construction, and re-running it after a primary resolves
+**nothing** unless a human edits the YAML first.
+
+Ten races still carry `unsettled: true` in that list — **AK, DE, FL-special,
+MA, MN, NH, OK, RI, SC, WY** — meaning a listed candidate is a declared
+front-runner rather than a nominee. South Carolina's special primary was
+2026-08-11 and South Carolina is still on that list. Reflecting these needs
+either a hand-edit of the verified list or a nominee scraper, and both are
+outside this phase. Recorded so the gap is visible rather than assumed closed.
+
+### 2. `bin/rails pol:scrape` — full sweep, nothing new
+
+| | |
+|---|---|
+| sources swept | **69** |
+| rows fetched | **989** |
+| **new polls** | **0** |
+| duplicates | 979 |
+| skipped | 10 |
+| tables refused | 324 |
+| sources with no polling section | 6 |
+| outright failures | 0 |
+
+Refusals by reason: `primary_only_table` ×172, `no_candidate_column_match`
+×67, `generic_candidate_column` ×44, `aggregator_table` ×29,
+`multiple_same_party_columns` ×5, `no_party_columns` ×4, `district_unresolved`
+×2, `results_table` ×1 — the same distribution Phase 8 §F recorded, which is
+what a healthy sweep looks like: the refusals are the parser declining primary
+and aggregator tables, not failing on general-election ones.
+
+Corpus after: **975 polls, 1,979 poll results, 154 pollsters** — unchanged.
+The newest `field_end` anywhere in the corpus is **2026-08-06**, so Wikipedia
+genuinely has nothing newer; the previous sweep (2026-08-11 23:47) had already
+caught up.
+
+One consequence worth naming, because it is the difference between a quiet
+refresh and an expensive one: `Ingest::Scraper` calls
+`Ingest.after_new_polls!` only when a sweep creates polls, and that hook
+enqueues a `Forecast::RunJob` carrying the new poll ids, which on success calls
+`Newsroom.after_model_run!`. **Zero new polls meant no job was enqueued**, so
+this sweep left nothing armed in the queue (verified: 0 unfinished GoodJob
+rows). Had it found a hundred new polls it would have queued a run that
+published a hundred reactions the next time any worker started — which is the
+hazard `AGENTS_DISABLED=1` covers during the run but *not* afterwards.
+
+### 3. `bin/rails pol:model` — the current board
+
+**Model run 19, 2026-08-12 04:54 UTC**, seed 1987458470819409855, 2.2s:
+
+| | run 19 (current) |
+|---|---|
+| House D control | **93.31%** |
+| House seat SD | **17.48** (range 174–336) |
+| Senate D control | **40.43%** |
+| Senate seat SD | **3.01** (range 39–62) |
+| mean D seats (H / S) | 242.67 / 49.74 |
+| generic ballot | D+6.68, 30 polls, W = 13.97 |
+| t | 1.4611 |
+
+Against run 17's 93.12% / 17.44 and 39.71% / 3.00 on the identical corpus:
+the difference is one RNG seed, and it sits inside the 1.4pp run-to-run noise
+floor from Phase 3 §8.2. The rake summary's mover panel says "nothing moved"
+against run 18.
+
+### Side effects
+
+**0 dispatches** created across the whole refresh (total still 25, newest
+2026-08-12 01:55 UTC, all pre-dating this work). 0 newsroom skips — nothing
+even reached the kill switch this time, because nothing was queued. 0
+unfinished GoodJob rows. Model runs created: 19 only.
+
+**One thing for whoever turns the newsroom back on.** `Setting.agents_enabled?`
+is still stored `true`; the whole of this phase's protection came from the
+`AGENTS_DISABLED` environment variable, which is per-process. Nothing has been
+changed about the stored setting — that is the editor's switch, not the
+build's — but it does mean the newsroom is armed the moment a process starts
+without the variable set. The standing recommendation from §F stands: gate the
+cron registration in `config/initializers/good_job.rb` on something narrower
+than "not test".

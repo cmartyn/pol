@@ -75,8 +75,12 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
       assert_select "li", text: /One correlated error component is missing/
       assert_select "li", text: /demographic-cluster/
       assert_select "li", text: /4\.12 against their 4\.58/
-      assert_select "li", text: /93\.1%/            # the measured live figure the range was taken from
-      assert_select "li", text: /0\.4 and 3\.4/     # ... and the range itself
+      assert_select "li", text: /0\.4 and 3\.4/     # the range, stated in points so it does not go stale
+      # The one absolute probability the page prints is a scale reference, and
+      # it has to name the run it came from and disclaim being a live reading —
+      # the Phase 5 lesson about figures printed next to probabilities.
+      assert_select "li", text: /93\.3% on model run 19/
+      assert_select "li", text: /not a live reading/
       # The far end assumes the omitted term correlates every district at once,
       # which a clustering cannot do. Stating the range without that caveat
       # would be quoting an unreachable bound as if it were a live possibility

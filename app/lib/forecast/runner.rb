@@ -194,13 +194,16 @@ class Forecast::Runner
     # which needs a clustering of all 435 districts we have no data for — so
     # their correlated total is 4.5826 against our 4.1231.
     #
-    # Measured on the live board of 2026-08-12, same seed and same polls:
-    # House control 96.6% → 93.1% and seat SD 13.6 → 17.4 across the change,
-    # with a fifth component of 2 points putting House control somewhere
-    # between 92.8% and 89.7% depending on how broadly it is assumed to
-    # correlate. Both control figures are therefore a point or two firmer than
-    # a fuller model's, in the direction of whichever party leads.
-    # See docs/BUILD_NOTES.md Phase 10 §A and §C.
+    # Measured as a controlled comparison on 2026-08-12 — runs 16 and 17, same
+    # seed, same 975 polls, only the error model changed: House control
+    # 96.6% → 93.1% and seat SD 13.6 → 17.4 across the change. A fifth
+    # component of 2 points would take a further 0.4 to 3.4 points off the
+    # House figure depending on how broadly it is assumed to correlate, so it
+    # is a point or so firmer than a fuller model's, three at the outside, in
+    # the direction of whichever party leads. The Senate's movement across the
+    # same assumptions is inside sampling noise at 10,000 sims.
+    # See docs/BUILD_NOTES.md Phase 10 §A and §C — and §H for the current
+    # board, which is a different thing from that controlled comparison.
     def write_chamber_forecasts
       now = Time.current
       rows = simulation.chambers.map do |outcome|

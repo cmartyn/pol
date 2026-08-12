@@ -148,10 +148,13 @@ four of the five components 538's published House model uses. The one missing
 is their demographic-cluster term, which correlates districts that resemble
 each other regardless of where they are and needs a clustering of all 435 that
 we have no data for; our correlated total is 4.12 against their 4.58. Measured
-on the live board, adding a fifth component of 2 points moves House control
-from 93% to somewhere between 93% and 90% depending on how broadly it is
-assumed to correlate, so both control figures are a point or two firmer than a
-fuller model's, in whichever direction they lean. That note travels with the
+on the board of 2026-08-12, adding a fifth component of 2 points takes between
+0.4 and 3.4 points off the House control probability depending on how broadly
+it is assumed to correlate — and the far end assumes it correlates every
+district at once, which a clustering can't do. So the House figure is a point
+or so firmer than a fuller model's, three at the outside, in whichever
+direction it leans; the Senate's movement across the same assumptions is inside
+sampling noise and we don't claim a direction for it. That note travels with the
 number everywhere it is printed, including into the newsroom's prompt. Beyond
 it: there are no pollster quality weights, district baselines are 2024 results
 and go stale where a state has since redistricted, 37 districts have imputed

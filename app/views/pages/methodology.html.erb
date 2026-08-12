@@ -134,18 +134,20 @@
       data for, and inventing one would be inventing the correlation it is supposed to measure. Our correlated
       total is therefore 4.12 against their 4.58.
       <span class="mt-2 block">
-        Measured on the live board of 2026-08-12 &mdash; same seed, same polls, only the error model changed
-        &mdash; adding a fifth component of 2 points moves House control from 93.1% down by between 0.4 and 3.4
-        points, depending on whether the missing term is assumed to behave like a state, a regional or a national
-        one. The far end of that range assumes it correlates every district in the country at once, which a
-        clustering can't do &mdash; it sorts the 435 districts into groups, so a shock hits some of them and the
-        rest of the chamber absorbs it. The honest reading of the House figure is therefore <strong>a point or so
-        softer than printed, and at the outside three, in whichever party's favour it leans</strong>. The Senate
-        moves by under a point in either direction across the same three assumptions, which at
+        Measured on the board of 2026-08-12 &mdash; same polls, same seed, only the error model changed &mdash;
+        adding a fifth component of 2 points takes <strong>between 0.4 and 3.4 points</strong> off the House
+        control probability, depending on whether the missing term is assumed to behave like a state, a regional
+        or a national one. The far end of that range assumes it correlates every district in the country at once,
+        which a clustering can't do &mdash; it sorts the 435 districts into groups, so a shock hits some of them
+        and the rest of the chamber absorbs it. The honest reading of the House figure is therefore <strong>a
+        point or so softer than printed, and at the outside three, in whichever party's favour it leans</strong>.
+        The Senate moves by under a point in either direction across the same three assumptions, which at
         <%= number_with_delimiter(Pol::Params.fetch!(:simulation, :n_sims)) %> simulations is inside sampling
-        noise &mdash; so we don't claim a direction for it. All of this is a much smaller gap than this page
-        reported before 2026-08-12, when the model had one correlated term instead of four; the arithmetic is in
-        docs/BUILD_NOTES.md Phase 10 §C.
+        noise &mdash; so we don't claim a direction for it. (For scale: the House control probability was 93.3%
+        on model run 19, 2026-08-12. That is a figure from one run, not a live reading &mdash; the current one is
+        on the front page.) All of this is a much smaller gap than this page reported before 2026-08-12, when the
+        model had one correlated term instead of four; the arithmetic is in docs/BUILD_NOTES.md Phase 10 §C, and
+        the run behind the scale figure is in §H.
       </span>
     </li>
     <li>
