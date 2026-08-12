@@ -172,10 +172,15 @@
       the winner, rather than a real two-party result. These carry a small "est." marker on the House table.
     </li>
     <li>
-      <strong class="text-slate-900">Unsettled nominees.</strong> A number of 2026 primaries hadn't happened, or
-      hadn't been called, as of the last time races were seeded. Where a party's nominee isn't settled yet, the
-      model uses the declared front-runner where one has emerged, or a generic party prior where it hasn't —
-      never a guess at a specific name.
+      <strong class="text-slate-900">Unsettled nominees.</strong> The Senate candidate list
+      (<code class="rounded bg-slate-100 px-1 py-0.5 text-sm">db/seed_data/senate_2026.yml</code>) is maintained
+      by hand, not scraped — re-running the seed task does not pick up a primary result; only editing that file
+      does.
+      <% senate_unsettled_pct = @senate_count.zero? ? 0 : (100.0 * @senate_unsettled_count / @senate_count) %>
+      <%= @senate_unsettled_count %> of <%= @senate_count %> Senate races
+      (<%= number_to_percentage(senate_unsettled_pct, precision: 1) %>) are currently affected: where a party's
+      nominee isn't settled yet, the model uses the declared front-runner where one has emerged, or a generic
+      party prior where it hasn't — never a guess at a specific name.
     </li>
   </ul>
 </section>

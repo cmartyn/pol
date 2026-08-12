@@ -117,6 +117,23 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='limitations'] li", text: /3 of 4 House districts \(75\.0%\)/
   end
 
+  # Final fixes: the unsettled-nominee sentence used to say "as of the last
+  # time races were seeded" and never say how many — implying a future
+  # re-seed would resolve it, which it structurally cannot (the Senate list
+  # is a hand-maintained YAML file). This proves the count now reads live
+  # Race data instead of the ten baked into that file today.
+  test "methodology's unsettled-nominee count reflects the live Senate data, not a hardcoded figure" do
+    # The fixture board already carries 2 Senate races, neither unsettled;
+    # adding 1 unsettled one makes 1 of 3 (33.3%) — a figure only a live
+    # query, not a hardcoded string, could produce.
+    Race.create!(office: :senate, state: "OH", cycle: 2026,
+                 slug: "senate-oh-2026-unsettled-test", unsettled: true)
+
+    get methodology_path
+
+    assert_select "[data-testid='limitations'] li", text: /1 of 3 Senate races \(33\.3%\)/
+  end
+
   test "methodology's How the forecast works section is present with an anchor" do
     get methodology_path
     assert_select "#how-it-works"

@@ -3,8 +3,13 @@ module Ingest
   # in db/seed_data/senate_2026.yml, all 435 House districts with their 2024
   # baselines scraped from Wikipedia, and each Senate race's presidential lean.
   #
-  # Idempotent: every race is upserted by slug, so re-running after a primary
-  # resolves updates in place rather than duplicating.
+  # Idempotent: every race is upserted by slug, so re-running never duplicates
+  # a row. That is not the same as staying current. The Senate side reads a
+  # hand-maintained, committed YAML file rather than a scraper, so re-running
+  # after a primary resolves updates nothing — only hand-editing
+  # db/seed_data/senate_2026.yml (or a future nominee scraper) does. The House
+  # side does re-scrape on every run, but what it fetches is the 2024 results
+  # page, which does not change either.
   class SeedRaces
     # Raised rather than seeding a partial House. Wikipedia can restructure a
     # page at any time, and a parser that quietly returns 300 districts would
@@ -59,7 +64,8 @@ module Ingest
             seat_class: entry["seat_class"],
             incumbent_name: entry["incumbent_name"],
             incumbent_party: entry["incumbent_party"],
-            open_seat: entry.fetch("open_seat", false)
+            open_seat: entry.fetch("open_seat", false),
+            unsettled: entry.fetch("unsettled", false)
           )
           race.save!
           sync_candidates(race, entry.fetch("candidates", []))

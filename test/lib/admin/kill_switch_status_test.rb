@@ -36,6 +36,45 @@ class Admin::KillSwitchStatusTest < ActiveSupport::TestCase
     end
   end
 
+  # Final fixes: in development, with nothing stored, the development
+  # default (Setting.agents_enabled?) is the reason agents are off — the
+  # three-part display should name that reason rather than just say "off"
+  # the way it would for an ENV override or an explicit false.
+  test "development_default? and stored_label name the development default as the reason, in development with nothing stored" do
+    with_rails_env("development") do
+      status = Admin::KillSwitchStatus.call
+
+      assert status.development_default?
+      assert_equal "not set (defaults to off in development)", status.stored_label
+      assert_not status.effective?
+      assert_not status.env_override?
+    end
+  end
+
+  test "development_default? is false once a value is explicitly stored, even in development" do
+    Setting.set(Setting::AGENTS_ENABLED_KEY, "true")
+
+    with_rails_env("development") do
+      status = Admin::KillSwitchStatus.call
+
+      assert_not status.development_default?
+      assert_equal "on", status.stored_label
+      assert status.effective?
+    end
+  end
+
+  test "development_default? is false when ENV is overriding, even in development with nothing stored" do
+    with_rails_env("development") do
+      with_env("AGENTS_DISABLED", "1") do
+        status = Admin::KillSwitchStatus.call
+
+        assert_not status.development_default?, "the ENV override is the reason here, not the development default"
+        assert status.env_override?
+        assert_not status.effective?
+      end
+    end
+  end
+
   private
     def with_env(key, value)
       original = ENV[key]
@@ -47,5 +86,16 @@ class Admin::KillSwitchStatusTest < ActiveSupport::TestCase
       else
         ENV[key] = original
       end
+    end
+
+    # Runs the block with Rails.env swapped to another environment name, then
+    # restores it. Each parallel test worker is its own process, so this
+    # can't leak into other tests running concurrently.
+    def with_rails_env(name)
+      original = Rails.env
+      Rails.env = name
+      yield
+    ensure
+      Rails.env = original
     end
 end

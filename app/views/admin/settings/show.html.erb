@@ -37,6 +37,13 @@
         Toggle unavailable — ENV override active
       </button>
     <% else %>
+      <% if @kill_switch.development_default? %>
+        <p class="text-sm text-slate-500" data-testid="admin-kill-switch-dev-default-explanation">
+          Nothing is stored yet, and this is a development environment, so agents default to <strong>off</strong>
+          here instead of on — the newsroom shouldn't fire from a laptop by accident. Use the toggle below to
+          turn them on for this database.
+        </p>
+      <% end %>
       <%= button_to (@kill_switch.effective? ? "Turn agents off" : "Turn agents on"), admin_settings_path, method: :patch,
             class: "rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700",
             data: { testid: "admin-kill-switch-toggle" } %>

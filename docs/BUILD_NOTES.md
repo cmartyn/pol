@@ -2718,7 +2718,9 @@ wall of moved goldens.
    its shrinkage to total respondents. A firm with three 3,000-person polls
    and one with three 400-person polls are treated identically here.
 3. **`min_polls_to_apply` is the weakest-evidenced constant on the page**
-   (§A2). Five is the better-precedented value and costs seven firms.
+   (§A2). Five is the better-precedented value and costs twenty firms — 44
+   applied at 3, 24 at 5, per §A2 and §D, re-verified live rather than taken
+   on faith (this bullet previously said seven, which was simply wrong).
 4. **Residuals within a firm are correlated** — a run of polls in one short
    span is close to one observation, so `n` overstates the independent
    evidence and the shrinkage is correspondingly too gentle for a firm that
@@ -3010,9 +3012,11 @@ It is gone from all five surfaces:
   levels and why a state's Senate race and its districts move together. Known
   limitations replaces "The House control probability is overconfident" with
   "One correlated error component is missing", carrying 4.12-against-4.58 and
-  the measured 93.1% → 92.8–89.7% range. The six sigmas render in the params
-  table with their citations, including the census.gov spreadsheet beside
-  `sigma_regional`.
+  the range stated as points off the House control probability — between 0.4
+  and 3.4 — rather than as raw percentages, plus a separately-caveated
+  model-run-19 figure (93.3%) kept only for scale and explicitly disclaimed as
+  not a live reading. The six sigmas render in the params table with their
+  citations, including the census.gov spreadsheet beside `sigma_regional`.
 
 `Forecast::Runner#write_chamber_forecasts` and the README's Current
 limitations carried the same claim in prose and were rewritten to match. (The

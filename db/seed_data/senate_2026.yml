@@ -4,9 +4,12 @@
 # whose nominees are not settled yet.
 #
 # open_seat is true exactly when the sitting senator is not on the November
-# ballot. `unsettled` is documentation only: it marks races where a listed
-# candidate is a declared front-runner rather than a nominee, and it is why
-# some races carry only one major-party candidate (we do not invent the other).
+# ballot. `unsettled` marks races where a listed candidate is a declared
+# front-runner rather than a nominee — it is why some races carry only one
+# major-party candidate (we do not invent the other) — and Ingest::SeedRaces
+# persists it on the Race, so the public site can say how many races are
+# currently affected without a hardcoded count. It only changes when this
+# file is hand-edited; re-running the seed task does not touch it.
 #
 # Independents get no caucus_with unless they have said which way they would
 # caucus. Dan Osborn, for one, has said he would caucus with neither party.

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_090001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -275,6 +275,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_090001) do
     t.string "state", null: false
     t.boolean "uncontested", default: false, null: false
     t.integer "uncontested_party"
+    t.boolean "unsettled", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["office"], name: "index_races_on_office"
     t.index ["slug"], name: "index_races_on_slug", unique: true
