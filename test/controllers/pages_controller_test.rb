@@ -22,8 +22,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     get methodology_path
 
     assert_select "[data-testid='param-table-newsroom'] a[href='https://openrouter.ai/api/v1/models']"
+    # The note is whatever trails the URL — today a retrieval date. Pinning the
+    # date itself would fail every time a model slug is re-verified, which is a
+    # thing we want to be cheap.
     assert_select "[data-testid='param-table-newsroom'] [data-testid='param-citation']",
-                  text: /retrieved 2026-08-11/
+                  text: /\(retrieved \d{4}-\d{2}-\d{2}\)/
     assert_select "a[href*=' ']", false, "no citation link should have whitespace in its href"
   end
 

@@ -190,16 +190,29 @@ simulation:
 election:
   date: "2026-11-03"
 newsroom:
-  # Both slugs verified live on 2026-08-11 against OpenRouter's public model
-  # list: `anthropic/claude-sonnet-5` (canonical
-  # `anthropic/claude-sonnet-5-20260630`, 1M context, 128k max completion,
-  # $2/M input and $10/M output) is the current Anthropic Sonnet-tier model,
-  # and its supported_parameters include `structured_outputs`, `response_format`
-  # and `max_tokens` — the three things Newsroom::Client depends on. Each is a
-  # one-string swap: nothing in the code knows which model it is talking to.
-  # citation: https://openrouter.ai/api/v1/models (retrieved 2026-08-11)
-  writer_model: "anthropic/claude-sonnet-5"
-  brief_model: "anthropic/claude-sonnet-5"
+  # Both slugs verified live on 2026-08-12 against OpenRouter's public model
+  # list: `anthropic/claude-opus-5` (canonical
+  # `anthropic/claude-opus-5-20260723`, 1M context, 128k max completion,
+  # $5/M input and $25/M output) advertises `structured_outputs`,
+  # `response_format` and `max_tokens` — the three things Newsroom::Client
+  # depends on — and a live A/B against the same brief payload confirmed all
+  # three work in practice, not just in the catalogue.
+  #
+  # These stay two keys rather than one because the roles differ. The brief is
+  # one flagship piece a day where causal explanation earns its cost; reactions
+  # run at volume (23 in six minutes on 2026-08-12) where it mostly does not.
+  # Both are Opus today by choice, not by coupling: either is a one-string swap
+  # and nothing in the code knows which model it is talking to.
+  #
+  # Measured on an identical 12-poll brief payload (2026-08-12): Opus explained
+  # the 51-vs-50 Senate asymmetry as the cause of the probability gap, attached
+  # every number to a named candidate, and volunteered that the size of the
+  # House overstatement is unmeasured. Sonnet enumerated the same facts, left
+  # one Alaska margin ambiguous as to who led, and used the "X in 100" phrasing
+  # four times against a style guide that asks for one.
+  # citation: https://openrouter.ai/api/v1/models (retrieved 2026-08-12)
+  writer_model: "anthropic/claude-opus-5"
+  brief_model: "anthropic/claude-opus-5"
   # A dispatch is a headline, a dek and at most body_max_words of prose —
   # roughly 700 tokens of JSON at the ceiling. 2000 leaves room for a long
   # piece without leaving room for a runaway one.
