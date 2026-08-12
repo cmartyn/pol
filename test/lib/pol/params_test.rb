@@ -80,11 +80,31 @@ class Pol::ParamsTest < ActiveSupport::TestCase
   end
 
   test "the error model carries a sigma for every draw the simulator makes" do
-    %i[sigma_national sigma_state_polled sigma_state_unpolled sigma_district].each do |key|
+    %i[sigma_national sigma_regional sigma_state
+       sigma_senate_polled sigma_senate_unpolled sigma_district].each do |key|
       assert_operator Pol::Params.fetch!(:error_model, key), :>, 0
     end
-    assert_operator Pol::Params.fetch!(:error_model, :sigma_state_unpolled), :>,
-                    Pol::Params.fetch!(:error_model, :sigma_state_polled)
+    assert_operator Pol::Params.fetch!(:error_model, :sigma_senate_unpolled), :>,
+                    Pol::Params.fetch!(:error_model, :sigma_senate_polled)
+  end
+
+  # The two idiosyncratic Senate terms are not free parameters: they are
+  # back-solved so that a Senate race's TOTAL error stays on the anchors Phase
+  # 3 calibrated against AAPOR and Shirani-Mehr et al. Anyone retuning a
+  # correlated component has to re-solve them, and this is what says so.
+  test "the back-solved senate sigmas preserve the totals Phase 3 calibrated" do
+    correlated = %i[sigma_national sigma_regional sigma_state]
+                   .sum { |key| Pol::Params.fetch!(:error_model, key)**2 }
+    total = ->(key) { Math.sqrt(correlated + (Pol::Params.fetch!(:error_model, key)**2)) }
+
+    assert_in_delta 4.1231, Math.sqrt(correlated), 1e-4
+    assert_in_delta Math.sqrt((2.5**2) + (4.0**2)), total.call(:sigma_senate_polled), 1e-4
+    assert_in_delta 4.7170, total.call(:sigma_senate_polled), 1e-4
+    assert_in_delta Math.sqrt((2.5**2) + (8.0**2)), total.call(:sigma_senate_unpolled), 1e-4
+    assert_in_delta 8.3815, total.call(:sigma_senate_unpolled), 1e-4
+    # The one total that deliberately moved, toward 538's own sqrt(57) = 7.5498.
+    assert_in_delta Math.sqrt(53), total.call(:sigma_district), 1e-4
+    assert_in_delta 7.2801, total.call(:sigma_district), 1e-4
   end
 
   test "to_h returns the full deeply-symbolized params tree" do

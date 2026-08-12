@@ -48,7 +48,13 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
   # --- The full-scenario golden -------------------------------------------
   # The fixture world at a fixed date and seed. These numbers are checked
   # against hand arithmetic in the assertions that follow, and are here to
-  # catch a formula drifting silently in a later phase.
+  # catch a formula drifting silently in a later phase. Re-pinned in Phase 10,
+  # which replaced one correlated error term with four: the mu arithmetic is
+  # untouched (every hand-computed central estimate below still holds), and
+  # what moved is the width around it. The fixture world's three races are in
+  # Maine, Florida and New York — three states in three census divisions — so
+  # they share the national term and nothing else; the state term is exercised
+  # end to end by the test after this one.
 
   test "the fixture world produces exactly these forecasts" do
     runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED)
@@ -67,42 +73,77 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     # (weight 0.4771598) and +1.0 at 8 days on n=650 (weight 0.7004287),
     # W = 1.1775884, average +2.0130020, w = W/3 = 0.3925295,
     # mu = 0.3925295 × 2.0130020 + 0.6074705 × 4.0 = 3.2200447.
-    # 10,000 draws around that mu have a standard error of 0.07, and the
-    # simulated mean lands 0.06 away.
+    # A polled Senate race's total error is unchanged by Phase 10 — sqrt(3² +
+    # 2² + 2² + 2.2913²) × t = 4.7170 × 1.5222 = 7.1804 — so 10,000 draws
+    # around that mu still have a standard error of 0.07, and the simulated
+    # mean still lands within 0.01 of it.
     assert_in_delta 1.1775884, maine.effective_poll_weight, 1e-7
     assert_in_delta 3.2200447, maine.mean_margin, 0.15
-    assert_equal 0.6714, maine.p_dem_win
-    assert_equal 0.3286, maine.p_rep_win
+    assert_equal 0.6743, maine.p_dem_win
+    assert_equal 0.3257, maine.p_rep_win
     assert_equal 0.0, maine.p_other_win
-    assert_in_delta 3.2824395, maine.mean_margin, 1e-6
-    assert_in_delta(-8.4884637, maine.margin_percentiles["5"], 1e-6)
-    assert_in_delta 3.2395528, maine.margin_percentiles["50"], 1e-6
-    assert_in_delta 15.1840294, maine.margin_percentiles["95"], 1e-6
+    assert_in_delta 3.2165247, maine.mean_margin, 1e-6
+    assert_in_delta(-8.4489142, maine.margin_percentiles["5"], 1e-6)
+    assert_in_delta 3.1647114, maine.margin_percentiles["50"], 1e-6
+    assert_in_delta 14.9786476, maine.margin_percentiles["95"], 1e-6
+    # p95 − p5 over 2 × 1.6448536 recovers the sigma above from the output.
+    assert_in_delta 4.7170 * 1.5222222,
+                    (maine.margin_percentiles["95"] - maine.margin_percentiles["5"]) / (2 * 1.6448536), 0.15
 
     # Florida's special has no polls: mu is the prior, −12.0 + 2.0 − 1.5, and
     # the wider unpolled sigma.
     assert_equal 0.0, florida.effective_poll_weight
     assert_in_delta(-11.5, florida.mean_margin, 0.3)
-    assert_in_delta(-11.4875265, florida.mean_margin, 1e-6)
-    assert_equal 0.1845, florida.p_dem_win
+    assert_in_delta(-11.4566456, florida.mean_margin, 1e-6)
+    assert_equal 0.1843, florida.p_dem_win
 
     # NY-17: 2.7 + (2.0 − −2.6) = 7.3, no district polls.
     assert_in_delta 7.3, ny17.mean_margin, 0.3
-    assert_in_delta 7.2004515, ny17.mean_margin, 1e-6
-    assert_equal 0.7663, ny17.p_dem_win
+    assert_in_delta 7.2710386, ny17.mean_margin, 1e-6
+    assert_equal 0.7446, ny17.p_dem_win
+    # The one total Phase 10 deliberately moved: a district's error is now
+    # sqrt(17 + 6²) = 7.2801 where it was 6.5000, so NY-17's 5th-to-95th
+    # spread widens with it.
+    assert_in_delta Math.sqrt(53) * 1.5222222,
+                    (ny17.margin_percentiles["95"] - ny17.margin_percentiles["5"]) / (2 * 1.6448536), 0.2
 
     senate = run.chamber_forecasts.find_by(chamber: :senate)
-    # 34 holdovers plus the two seats up: 34 + 0.6714 + 0.1845. Nobody can
+    # 34 holdovers plus the two seats up: 34 + 0.6743 + 0.1843. Nobody can
     # reach 51, or 50, from there.
-    assert_in_delta 34.8559, senate.mean_dem_seats, 1e-9
+    assert_in_delta 34.8586, senate.mean_dem_seats, 1e-9
     assert_equal 0.0, senate.p_dem_control
     assert_equal 0.0, senate.p_rep_control
-    assert_equal({ "34" => 2808, "35" => 5825, "36" => 1367 }, senate.seat_histogram)
+    assert_equal({ "34" => 2845, "35" => 5724, "36" => 1431 }, senate.seat_histogram)
 
     house = run.chamber_forecasts.find_by(chamber: :house)
-    assert_in_delta 0.7663, house.mean_dem_seats, 1e-9
+    assert_in_delta 0.7446, house.mean_dem_seats, 1e-9
     assert_equal 0.0, house.p_dem_control
-    assert_equal({ "0" => 2337, "1" => 7663 }, house.seat_histogram)
+    assert_equal({ "0" => 2554, "1" => 7446 }, house.seat_histogram)
+  end
+
+  # End to end, through the real Race rows: the state a race sits in is a
+  # model input now, and Forecast::RaceModel#to_entry is what carries it. Two
+  # House districts in Maine, alongside Maine's Senate race, all with the
+  # state's shared error — and one district in Oregon, which has only the
+  # national term in common with them. The Maine trio's margins move together
+  # far more than the Oregon one moves with any of them, which can only be
+  # true if the state reached the simulator.
+  test "a state's races are correlated through the state the runner hands over" do
+    maine = Race.create!(office: :house, state: "ME", district: 1, cycle: 2026,
+                         slug: "house-me-01-state-term-test", baseline_margin: 0.0)
+    also_maine = Race.create!(office: :house, state: "ME", district: 3, cycle: 2026,
+                              slug: "house-me-03-state-term-test", baseline_margin: 0.0)
+    oregon = Race.create!(office: :house, state: "OR", district: 4, cycle: 2026,
+                          slug: "house-or-04-state-term-test", baseline_margin: 0.0)
+
+    # Every district sits at mu = baseline + swing = 0 + 4.6, so any
+    # difference between their win probabilities is error, not fundamentals.
+    run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED)
+    probability = ->(race) { run.forecasts.find_by(race_id: race.id).p_dem_win }
+
+    assert_in_delta probability.call(maine), probability.call(also_maine), 0.02
+    assert_operator (probability.call(maine) - probability.call(also_maine)).abs, :<,
+                    (probability.call(maine) - probability.call(oregon)).abs
   end
 
   test "percentile keys are strings in the order the site reads them" do
@@ -115,13 +156,15 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
 
   test "with no generic-ballot polls the national environment falls back to 2024" do
     Poll.for_generic_ballot.destroy_all
-    runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 100)
+    runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 2000)
     runner.call
 
     assert_in_delta(-2.6, runner.national_env, 1e-9)
-    # ... which leaves every district exactly at its 2024 baseline.
+    # ... which leaves every district exactly at its 2024 baseline. A district's
+    # error is sqrt(53) × 1.5222 = 11.08, so 2,000 draws put a standard error of
+    # 0.25 on the simulated mean and 0.75 is three of them.
     assert_in_delta races(:house_ny_17).baseline_margin,
-                    runner.model_run.forecasts.find_by(race_id: races(:house_ny_17).id).mean_margin, 0.3
+                    runner.model_run.forecasts.find_by(race_id: races(:house_ny_17).id).mean_margin, 0.75
   end
 
   test "governor races are not part of the chamber model and get no forecast" do

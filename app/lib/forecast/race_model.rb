@@ -115,12 +115,17 @@ class Forecast::RaceModel
     (weight * average.mean_margin) + ((1.0 - weight) * prior)
   end
 
-  # Election-day-equivalent standard deviation of this race's own error, on top
-  # of the shared national error. The simulator applies the time multiplier.
+  # Election-day-equivalent standard deviation of this race's OWN error — the
+  # part that is not shared with the nation, its census division or its state.
+  # The simulator draws those three itself and applies the time multiplier to
+  # all four. The two Senate values are back-solved from the totals Phase 3
+  # calibrated (config/model_params.yml error_model shows the arithmetic), so
+  # this term is smaller than the number a reader might expect: the missing
+  # variance did not disappear, it moved into the shared draws.
   def sigma_key
     return :sigma_district if race.house?
 
-    polled? ? :sigma_state_polled : :sigma_state_unpolled
+    polled? ? :sigma_senate_polled : :sigma_senate_unpolled
   end
 
   def sigma
@@ -151,6 +156,9 @@ class Forecast::RaceModel
       # one under "senate" would corrupt a control probability. The runner
       # never hands one over; if that changes, this says so.
       chamber: CHAMBERS.fetch(race.office),
+      # The state is a model input now, not a label: it is how the simulator
+      # finds this race's state and census-division error draws.
+      state: race.state,
       mu: mu,
       sigma: sigma,
       weight: average.weight,

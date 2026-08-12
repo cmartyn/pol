@@ -87,7 +87,7 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
   end
 
   # Identical treatment for a Senate race, which matters because its sigma
-  # moves too: an ambiguous race is an unpolled race, and sigma_state_polled
+  # moves too: an ambiguous race is an unpolled race, and sigma_senate_polled
   # would be claiming a precision the polls cannot supply.
   test "a Senate race whose polls span two matchups rests on fundamentals, at the unpolled sigma" do
     race = senate_race(lean: 4.0, incumbent_party: :rep, open_seat: false, slug: "senate-ambiguous-matchup")
@@ -102,8 +102,8 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     assert_equal :ambiguous_matchup, subject.average.reason
     assert_in_delta 4.5, subject.mu, 1e-9, "the prior, untouched by either matchup"
     assert_in_delta 0.0, subject.blend_weight, 1e-9
-    assert_equal :sigma_state_unpolled, subject.sigma_key
-    assert_in_delta Pol::Params.fetch!(:error_model, :sigma_state_unpolled), subject.sigma, 1e-9
+    assert_equal :sigma_senate_unpolled, subject.sigma_key
+    assert_in_delta Pol::Params.fetch!(:error_model, :sigma_senate_unpolled), subject.sigma, 1e-9
   end
 
   test "a Senate race whose polls agree keeps the polled sigma" do
@@ -116,7 +116,7 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     subject = model(race, national_env: 2.0)
 
     assert_predicate subject, :polled?
-    assert_equal :sigma_state_polled, subject.sigma_key
+    assert_equal :sigma_senate_polled, subject.sigma_key
   end
 
   test "a district whose polls agree on one matchup blends them as usual" do
@@ -215,7 +215,7 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     refute_predicate subject, :polled?
     assert_equal 0.0, subject.blend_weight
     assert_in_delta 6.0, subject.mu, 1e-9
-    assert_equal :sigma_state_unpolled, subject.sigma_key
+    assert_equal :sigma_senate_unpolled, subject.sigma_key
   end
 
   test "a house district blends its own polls the same way" do
@@ -234,15 +234,15 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
   test "an unpolled senate race carries the wider unpolled sigma" do
     race = senate_race(lean: 4.0, incumbent_party: :rep, open_seat: true)
 
-    assert_equal :sigma_state_unpolled, model(race, national_env: 0.0).sigma_key
-    assert_in_delta Pol::Params.fetch!(:error_model, :sigma_state_unpolled), model(race, national_env: 0.0).sigma, 1e-9
+    assert_equal :sigma_senate_unpolled, model(race, national_env: 0.0).sigma_key
+    assert_in_delta Pol::Params.fetch!(:error_model, :sigma_senate_unpolled), model(race, national_env: 0.0).sigma, 1e-9
   end
 
   test "a polled senate race carries the polled sigma" do
     race = senate_race(lean: 4.0, incumbent_party: :rep, open_seat: true)
     create_poll(pollster: @beacon, race: race, field_end: AS_OF, sample_size: 600, results: { dem: 50.0, rep: 45.0 })
 
-    assert_equal :sigma_state_polled, model(race, national_env: 0.0).sigma_key
+    assert_equal :sigma_senate_polled, model(race, national_env: 0.0).sigma_key
   end
 
   test "a house district always carries the district sigma, polled or not" do
@@ -345,7 +345,7 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
 
     refute_predicate subject, :polled?
     assert_in_delta subject.prior, subject.mu, 1e-9
-    assert_equal :sigma_state_unpolled, subject.sigma_key
+    assert_equal :sigma_senate_unpolled, subject.sigma_key
     assert_equal 0.0, entry.weight
   end
 
@@ -410,7 +410,7 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     assert_equal race.id, entry.race_id
     assert_equal :senate, entry.chamber
     assert_in_delta 8.0, entry.mu, 1e-9
-    assert_in_delta Pol::Params.fetch!(:error_model, :sigma_state_polled), entry.sigma, 1e-9
+    assert_in_delta Pol::Params.fetch!(:error_model, :sigma_senate_polled), entry.sigma, 1e-9
     assert_in_delta 1.5, entry.weight, 1e-9
     assert_nil entry.certain
   end

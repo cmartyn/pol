@@ -115,40 +115,89 @@ fundamentals:
   house_national_margin_2024: -2.6
   imputed_baseline_margin: 35.0
 error_model:
-  # Election-day-equivalent standard deviations, on the D−R margin scale. Each
-  # race's total error is sigma_national (shared by every race in a simulated
-  # world) and the race's own sigma, combined in quadrature. Anchors verified
-  # against the published literature in Phase 3; the full reasoning, including
-  # the one value that moved, is in docs/BUILD_NOTES.md Phase 3 §A.
+  # Election-day-equivalent standard deviations, on the D−R margin scale. A
+  # race's error is FOUR terms combined in quadrature: national (every race in
+  # a simulated world), regional (every race in the same census division),
+  # state (a state's Senate race and every one of its House districts), and the
+  # race's own idiosyncratic term. Phase 10 replaced a single correlated term
+  # with this structure; the reasoning, the arithmetic and the measured effect
+  # are in docs/BUILD_NOTES.md Phase 10 §A. Phase 3 §A has the original anchors.
   #
-  # Signed national polling error on the margin, final two weeks, all offices:
-  # 2016 +3.1, 2018 +0.1, 2020 +4.6, 2022 −0.6, 2024 +2.7 → RMS about zero 2.8,
-  # sample SD 2.2. The 2020 task force's presidential series (−1.1, +1.4, +0.7,
-  # −2.4, +1.3, +3.9 from 2000) gives RMS 2.1. 2.5 sits in the middle.
+  # THE BACK-SOLVE, because these are the numbers a reader will want to check:
+  #   correlated total          sqrt(3² + 2² + 2²)   = sqrt(17)    = 4.1231
+  #   Senate polled, total      sqrt(2.5² + 4.0²)    = sqrt(22.25) = 4.7170  (unchanged)
+  #     → idiosyncratic         sqrt(22.25 − 17)     = sqrt(5.25)  = 2.2913
+  #   Senate unpolled, total    sqrt(2.5² + 8.0²)    = sqrt(70.25) = 8.3815  (unchanged)
+  #     → idiosyncratic         sqrt(70.25 − 17)     = sqrt(53.25) = 7.2973
+  #   House district, total     sqrt(17 + 6²)        = sqrt(53)    = 7.2801  (was 6.5000)
+  # The two Senate totals are the AAPOR/Shirani-Mehr-calibrated numbers Phase 3
+  # arrived at, preserved: variance moves from the independent channel to the
+  # correlated one, none is invented. The two idiosyncratic terms are stored to
+  # four decimals rather than in full, which puts the unpolled total back at
+  # 8.3816 against 8.3815 — a ten-thousandth of a point, on a quantity whose
+  # anchors are quoted to one. The House district total is the
+  # one number that rises, deliberately: 6.0 is 538's own cited district-level
+  # value, while our old 6.5000 total was never independently calibrated — it
+  # was an artifact of having only one correlated term. 7.2801 is closer to
+  # 538's 7.5498 (sqrt(57)) than 6.5000 was.
+  #
+  # 538's national component. Raised from 2.5, and the reason is structural
+  # rather than evidentiary: the three correlated terms below are 538's
+  # published decomposition, and a decomposition only means anything taken
+  # whole — pairing our national term with their regional and state ones would
+  # produce a correlated total that neither source stands behind. The AAPOR
+  # anchors that put 2.5 "in the middle" still hold at the level they actually
+  # constrain, which is a race's TOTAL error, and the back-solve above keeps
+  # both Senate totals exactly where they were. Signed national polling error
+  # on the margin, final two weeks, all offices: 2016 +3.1, 2018 +0.1,
+  # 2020 +4.6, 2022 −0.6, 2024 +2.7 → RMS about zero 2.8, sample SD 2.2. The
+  # 2020 task force's presidential series (−1.1, +1.4, +0.7, −2.4, +1.3, +3.9
+  # from 2000) gives RMS 2.1. 3.0 sits just above that range and is 538's.
+  # citation: https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291
   # citation: https://aapor.org/wp-content/uploads/2025/10/Task-Force-on-2024-Pre-Election-Polling-Report-Executive-Summary.pdf
   # citation: https://aapor.org/wp-content/uploads/2022/11/AAPOR-Task-Force-on-2020-Pre-Election-Polling_Report-FNL.pdf
-  sigma_national: 2.5
-  # Raised from 3.5 in Phase 3 — see BUILD_NOTES Phase 3 §A2. 538's 2024
-  # presidential model expects "a hair over 2 points" of share error in a
-  # competitive state, "around 3.8 points on the margin" (MAE 3.8 → sigma
-  # ≈ 4.75); Shirani-Mehr et al. put election-level Senate bias at 2.0% of
-  # share on election day, ~4.0 points of margin MAE → sigma ≈ 5.0. With
-  # sigma_national 2.5, a 4.0 here totals 4.72; 3.5 totalled 4.30, below every
-  # anchor found.
+  sigma_national: 3.0
+  # 538's regional component, applied at the census-division level: one draw
+  # per division per simulated world, shared by every race in it. We use the
+  # nine Census divisions rather than the four Census regions because a
+  # four-region split would have one shock cover the whole South — see
+  # Pol::CensusDivisions, which carries the mapping and its census.gov source.
+  # citation: https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291
+  # citation: https://www2.census.gov/programs-surveys/popest/geographies/2023/state-geocodes-v2023.xlsx
+  sigma_regional: 2.0
+  # 538's state component, and the structural point of Phase 10: one draw per
+  # state per simulated world, read by that state's Senate race AND by every
+  # one of its House districts. It is what makes a bad night in Georgia a bad
+  # night for Georgia's Senate race and its fourteen districts together,
+  # instead of fifteen independent coin flips around a shared national mood.
+  # citation: https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291
+  sigma_state: 2.0
+  # A polled Senate race's own error, back-solved above so its total stays at
+  # Phase 3's 4.7170. Renamed from sigma_state_polled in Phase 10: with a
+  # genuine state-level term now sitting above it, a name saying "state" for a
+  # single race's idiosyncratic noise was actively misleading. The anchors
+  # behind the 4.7170 it preserves: 538's 2024 presidential model expects "a
+  # hair over 2 points" of share error in a competitive state, "around 3.8
+  # points on the margin" (MAE 3.8 → sigma ≈ 4.75); Shirani-Mehr et al. put
+  # election-level Senate bias at 2.0% of share on election day, ~4.0 points of
+  # margin MAE → sigma ≈ 5.0.
   # citation: https://abcnews.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753
   # citation: https://sites.stat.columbia.edu/gelman/research/published/polling-errors.pdf
-  sigma_state_polled: 4.0
-  # A race with no polls is a fundamentals estimate. 538 on their own: "we
-  # would expect our fundamentals model to miss the vote margin in the average
-  # state by about 6.5 points" — MAE 6.5 → sigma ≈ 8.15.
+  sigma_senate_polled: 2.2913
+  # The same, for a Senate race with no polls: a fundamentals estimate, total
+  # preserved at 8.3815. 538 on their own fundamentals: "we would expect our
+  # fundamentals model to miss the vote margin in the average state by about
+  # 6.5 points" — MAE 6.5 → sigma ≈ 8.15.
   # citation: https://abcnews.com/538/538s-2024-presidential-election-forecast-works/story?id=113068753
-  sigma_state_unpolled: 8.0
+  sigma_senate_unpolled: 7.2973
   # 538's 2024 House model decomposes seat-level error exactly this way: "about
   # 3 points of error at the national level, 2 each at the regional and state
   # levels, 2 at the demographic-cluster level, and 6 at the district level",
-  # combined in quadrature. Our district term matches theirs; our single
-  # national term is narrower than their four correlated ones, which is a
-  # known and recorded limitation (BUILD_NOTES Phase 3 §A4).
+  # combined in quadrature ("These numbers don't add up to 8 points because
+  # uncorrelated errors are not additive"). We now carry four of their five
+  # terms at their values. The one we omit is the demographic-cluster 2.0: it
+  # needs cluster assignments we have no data for, so our correlated total is
+  # 4.1231 against their sqrt(21) = 4.5826, and the methodology page says so.
   # citation: https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291
   sigma_district: 6.0
   # Time inflation: t = min(time_mult_cap, 1 + days_to_election/time_scale_days).

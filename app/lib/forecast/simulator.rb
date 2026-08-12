@@ -1,17 +1,32 @@
-# The Monte Carlo. Every simulated world gets one national error, drawn once
-# and applied to every race in both chambers, plus an independent error per
-# race. That shared term is the whole point: it is what makes a bad night for
-# one party a bad night everywhere, and what keeps 435 near-certain districts
-# from averaging into a chamber forecast of false precision.
+# The Monte Carlo. Every simulated world draws error at four levels and adds
+# them up:
+#
+#   margin = mu + N + D[division] + S[state] + idiosyncratic
+#
+# N is one national error shared by every race in both chambers; D is one per
+# census division, shared by every race in it; S is one per state, read by that
+# state's Senate race AND by every one of its House districts; the last term is
+# the race's own. All four are scaled by the same time multiplier.
+#
+# The shared terms are the whole point. Independent noise averages away over
+# 435 districts and a chamber forecast built on it is falsely precise;
+# correlated error does not average away, which is why it — not the size of any
+# one race's uncertainty — is what decides how wide a seat distribution is.
+# Phase 10 replaced a single national term with this structure, and the state
+# term is the structural gain: a bad night in Georgia is now a bad night for
+# Georgia's Senate race and its districts together.
 #
 # Margins are side A minus side B in percentage points. Given the same seed and
 # the same entries in the same order, every number this produces is identical.
 class Forecast::Simulator
   # What the simulator needs to know about a race; no ActiveRecord below this
-  # line. `sigma` is the election-day-equivalent standard deviation — the time
-  # multiplier is applied here, once, to every sigma including the national one.
-  # `certain` is a Side when the race has only one possible winner.
-  Entry = Struct.new(:race_id, :chamber, :mu, :sigma, :weight, :side_a, :side_b, :certain, keyword_init: true)
+  # line. `sigma` is the election-day-equivalent standard deviation of the
+  # race's OWN error — the shared terms come from the params, and the time
+  # multiplier is applied here, once, to all four. `state` is the two-letter
+  # code, which is how a race finds its state and division draws. `certain` is
+  # a Side when the race has only one possible winner.
+  Entry = Struct.new(:race_id, :chamber, :state, :mu, :sigma, :weight, :side_a, :side_b, :certain,
+                     keyword_init: true)
 
   RaceOutcome = Struct.new(
     :race_id, :p_dem_win, :p_rep_win, :p_other_win, :mean_margin, :percentiles, :weight,
@@ -24,6 +39,11 @@ class Forecast::Simulator
   )
 
   Result = Struct.new(:races, :chambers, :n_sims, :time_multiplier, :seed, keyword_init: true)
+
+  # The three shared error series a race reads: `national` is one array of
+  # n_sims draws; `by_division` and `by_state` are one such array apiece,
+  # keyed by division name and two-letter state code.
+  SharedErrors = Struct.new(:national, :by_division, :by_state)
 
   PERCENTILES = [ 5, 25, 50, 75, 95 ].freeze
   CHAMBERS = %i[senate house].freeze
@@ -68,13 +88,10 @@ class Forecast::Simulator
     multiplier = time_multiplier
     gaussian = Forecast::Gaussian.new(Random.new(seed))
     tallies = CHAMBERS.index_with { Tally.new(n_sims) }
-
-    # One national environment per simulated world, shared by every race.
-    national_sigma = Pol::Params.fetch!(:error_model, :sigma_national) * multiplier
-    national = Array.new(n_sims) { gaussian.next * national_sigma }
+    shared = shared_errors(gaussian, multiplier)
 
     races = entries.map do |entry|
-      simulate(entry, national: national, gaussian: gaussian, multiplier: multiplier,
+      simulate(entry, shared: shared, gaussian: gaussian, multiplier: multiplier,
                       tally: tallies.fetch(entry.chamber))
     end
 
@@ -88,9 +105,53 @@ class Forecast::Simulator
   end
 
   private
-    def simulate(entry, national:, gaussian:, multiplier:, tally:)
+    # One national series, one per census division, one per state. Each is
+    # n_sims long and is read — not redrawn — by every race that belongs to it,
+    # which is both what makes the correlation real and what keeps the cost at
+    # 9 + 50 series rather than three extra draws per race per world.
+    #
+    # Only states with a race still in doubt are drawn for: an uncontested race
+    # takes no noise at all, so it neither needs a state series nor may be
+    # allowed to conjure one — that would shift every draw after it and move
+    # every other race's numbers. Divisions and states are drawn in a fixed
+    # canonical order — Census order for divisions, alphabetical for states —
+    # rather than in the order the entries happen to arrive, so that adding a
+    # race in a state already on the board leaves every shared series untouched.
+    def shared_errors(gaussian, multiplier)
+      states = entries.reject(&:certain).map { |entry| state_of(entry) }.uniq
+      divisions = states.map { |state| Pol::CensusDivisions.for(state) }.uniq
+
+      SharedErrors.new(
+        series(gaussian, :sigma_national, multiplier),
+        Pol::CensusDivisions.names.select { |name| divisions.include?(name) }
+                            .index_with { series(gaussian, :sigma_regional, multiplier) },
+        states.sort.index_with { series(gaussian, :sigma_state, multiplier) }
+      )
+    end
+
+    def series(gaussian, key, multiplier)
+      sigma = Pol::Params.fetch!(:error_model, key) * multiplier
+
+      Array.new(n_sims) { gaussian.next * sigma }
+    end
+
+    # A race with no state could take neither a state nor a regional error, and
+    # would sit in the seat total correlated to nothing but the national mood —
+    # narrowing the distribution exactly where this phase widened it. Refused
+    # rather than defaulted.
+    def state_of(entry)
+      return entry.state if entry.state.present?
+
+      raise ArgumentError, "Forecast::Simulator: entry #{entry.race_id.inspect} has no state"
+    end
+
+    def simulate(entry, shared:, gaussian:, multiplier:, tally:)
       return certain_outcome(entry, tally) if entry.certain
 
+      code = state_of(entry)
+      state = shared.by_state.fetch(code)
+      division = shared.by_division.fetch(Pol::CensusDivisions.for(code))
+      national = shared.national
       sigma = entry.sigma * multiplier
       mu = entry.mu
       bucket_a = tally.buckets.fetch(entry.side_a.caucus)
@@ -104,7 +165,7 @@ class Forecast::Simulator
         # A margin of exactly zero goes to side A. It is a measure-zero event
         # on a continuous distribution; the rule exists so the code has no
         # undefined case, not because it will ever come up.
-        margin = mu + national[index] + (gaussian.next * sigma)
+        margin = mu + national[index] + division[index] + state[index] + (gaussian.next * sigma)
         margins[index] = margin
         total += margin
         if margin >= 0.0

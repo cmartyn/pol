@@ -9,9 +9,21 @@ class Site::ParamCitationsTest < ActiveSupport::TestCase
   test "finds multiple citation lines stacked above one key" do
     citations = Site::ParamCitations.for(:error_model, :sigma_national)
 
-    assert_equal 2, citations.size
+    assert_equal 3, citations.size
+    assert(citations.any? { |c| c.include?("538s-2024-house-election-forecast-works") })
     assert(citations.any? { |c| c.include?("aapor.org/wp-content/uploads/2025") })
     assert(citations.any? { |c| c.include?("aapor.org/wp-content/uploads/2022") })
+  end
+
+  # The census.gov spreadsheet the division map was transcribed from is a
+  # citation like any other: the methodology page renders it beside
+  # sigma_regional, so a reader can check the mapping against its source.
+  test "the correlated components added in Phase 10 each carry their citation" do
+    assert_equal 1, Site::ParamCitations.for(:error_model, :sigma_state).size
+    regional = Site::ParamCitations.for(:error_model, :sigma_regional)
+
+    assert_equal 2, regional.size
+    assert(regional.any? { |c| c.include?("census.gov") })
   end
 
   test "does not bleed a citation into the next key that has none of its own" do
