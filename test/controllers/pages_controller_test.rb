@@ -75,8 +75,16 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
       assert_select "li", text: /One correlated error component is missing/
       assert_select "li", text: /demographic-cluster/
       assert_select "li", text: /4\.12 against their 4\.58/
-      assert_select "li", text: /93\.1%/  # the measured live figure this range was taken from
-      assert_select "li", text: /89\.7%/  # ... and the far end of the range
+      assert_select "li", text: /93\.1%/            # the measured live figure the range was taken from
+      assert_select "li", text: /0\.4 and 3\.4/     # ... and the range itself
+      # The far end assumes the omitted term correlates every district at once,
+      # which a clustering cannot do. Stating the range without that caveat
+      # would be quoting an unreachable bound as if it were a live possibility
+      # — the same error Phase 3's caveat made (BUILD_NOTES Phase 3 §A4).
+      assert_select "li", text: /far end of that range assumes/
+      # And no directional claim about the Senate, whose spread across the
+      # three assumptions is inside Monte Carlo noise at this many sims.
+      assert_select "li", text: /inside sampling noise/
       # Phase 9 closed "no pollster house-effect correction" and opened a
       # narrower one in its place: there IS a correction now, and the honest
       # caveat is that it is estimated in one pass where 538 and Silver

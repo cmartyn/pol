@@ -685,6 +685,32 @@ the bottom of that"**, not 96%. The Senate is less exposed but moves too, by
 about 7 points. Neither figure is wrong for the model as specified; both are
 narrower than the evidence supports.
 
+> **Corrected 2026-08-12 by Phase 10 — read the conclusion above with this.**
+> The three measurements in the table are still true and still reproduce (Phase
+> 10 §C re-ran the 3.5 and 4.58 rows and got 91.2% and 84.9% on a later date and
+> a grown corpus). **The sentence drawing a conclusion from them is not.**
+>
+> Every row here raises `sigma_national` alone, so all of the correlated
+> variance travels through the one channel common to all 435 districts. That is
+> the *upper bound* this section said it was — but the paragraph above then
+> printed the bound as the honest reading, and the site repeated it for two
+> phases. A correlated total of 4.58 spread across national, regional, state and
+> cluster scopes is a different object from a national term of 4.58: only the
+> 3.0 is common to every district, and the rest partly averages away across a
+> chamber. Measured on the same board with the correlation put where the
+> literature puts it, the same variance moves the House number by about 3.5
+> points, not 12 (96.6% → 93.1%). **The honest reading was nearer "around 90–96%"
+> than "85–95%, nearer the bottom".** The same over-reading applies to the
+> Senate line: it moves by one to two points across these configurations, not
+> seven.
+>
+> The closing line of the paragraph before the table — "The fix is a regional or
+> state-level shared term... left for a later phase" — is also stale. That is
+> Phase 10, and it shipped: `sigma_regional` over census divisions and
+> `sigma_state` over a state's Senate race and all its districts, at 538's own
+> values. See Phase 10 §A for the components and §C for the measurement that
+> corrects this paragraph.
+
 ### A5. Time inflation `t = min(1.75, 1 + days/180)` — kept
 
 No published source states a 1.75 cap or a 180-day scale; what the literature
@@ -2895,6 +2921,21 @@ new code draws the regional and state series even when their sigma is zero, so
 the per-race draws differ. Both sit inside the 1.4pp run-to-run noise floor
 measured in Phase 3 §8.2.)
 
+**Provenance, because the first reviewer of this table reconstructed one row
+differently and got different Senate numbers.** Every row above is
+`as_of 2026-08-12`, seed 20260811, 10,000 sims, the 975-poll corpus, and — this
+is the part that has to be said out loud — **each row carries the full parameter
+set of the model it names, not just its correlated terms**. The Phase 9 row
+therefore uses Phase 9's `sigma_state_polled: 4.0` / `unpolled: 8.0`, giving a
+polled Senate race a total of 4.7170; it is the Phase 9 *model*, not Phase 10
+with `sigma_national` turned down. Reconstructing it the other way — varying
+`sigma_national` to 2.5 and leaving Phase 10's back-solved 2.2913 in place —
+gives a polled Senate total of 3.3912, below every anchor Phase 3 calibrated
+against, and reads **S 37.49% / sd 2.47** instead of 38.20 / 2.62 (verified: it
+reproduces to the digit, 37.01 / 2.47 at `as_of` 08-11). The House cells are
+identical either way, since `sigma_district` does not move between the two.
+Both figures are correct arithmetic; only the first is a Phase 9 baseline.
+
 **Two things follow, and the second is the more important.**
 
 1. **The Phase 3 caveat overstated the problem it described.** "96% here reads
@@ -2912,11 +2953,22 @@ measured in Phase 3 §8.2.)
    requires the geography, not just the total.
 
 **The cost of the missing cluster term, measured rather than guessed:** adding
-a fifth component of 2.0 points moves House control from 93.1% to between
-92.8% (state scope) and 89.7% (national scope), and the Senate by about a
-point, toward 50% (39.1% to 40.9% across the same three). A demographic cluster spans states, so the truth sits nearer the
-regional row (92.2%) than either end. **One to three points, against the six
-to twelve the retired caveat claimed.**
+a fifth component of 2.0 points moves House control from 93.12% to 92.77% at
+state scope, 92.16% at region scope and 89.68% at national scope — **0.35 to
+3.44 points**, against the six to twelve the retired caveat claimed.
+
+Where in that range is a question about the component, not about the model. A
+demographic clustering *partitions* the 435 districts into groups, so a cluster
+shock hits a subset and the rest of the chamber absorbs it; the 3.44-point end
+assumes the term correlates every district at once, which is the one thing a
+partition cannot do. It is an upper bound by construction. The truth sits
+nearer the region row, because a cluster spans states but not the country.
+
+The Senate moves by under a point across the same three placements — 39.11%,
+40.08%, 40.89% against a 39.71% baseline — and in both directions. At 10,000
+simulations the standard error on a control probability near 40% is 0.49
+points, so **that spread is not resolved from sampling noise** and nothing here
+should be read as a Senate effect with a sign.
 
 No constant was tuned to close the gap to the design's prediction. The
 structure is 538's, at 538's values, applied to the geographies they name; the
