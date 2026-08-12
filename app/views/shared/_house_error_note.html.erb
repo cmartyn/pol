@@ -1,8 +1,15 @@
-<%# The House control probability never ships unqualified — see the brief's
-    non-negotiable rule #1 and docs/BUILD_NOTES.md Phase 3 §A4/§8.1: v1's
-    error structure is national-only correlation, and the House number is
-    measured 6-12 points overconfident. %>
-<p class="mt-1 text-xs text-slate-500" data-testid="house-caveat">
-  <sup>&dagger;</sup> Model likely overstates certainty here — see
+<%# Replaced the Phase 3 "model likely overstates certainty" caveat in Phase 10.
+    That caveat was accurate for a model whose only correlated term was
+    national; this one has four, at 538's own values, over census divisions and
+    states. One component is still missing and the note names it. Measured on
+    the live board — see docs/BUILD_NOTES.md Phase 10 §C — the gap the missing
+    term leaves is one to three points of House control, against the six to
+    twelve the old caveat claimed. No number here on purpose: a figure printed
+    beside a probability goes stale the run after it is written, and the
+    measured range lives on the methodology page where it carries a date. %>
+<p class="mt-1 text-xs text-slate-500" data-testid="house-error-note">
+  <sup>&dagger;</sup> Our simulation carries four of the five correlated error components 538's House model
+  uses; the one we leave out needs data we don't have, which makes this figure slightly firmer than a fuller
+  model's &mdash; see
   <%= link_to "Known limitations", "#{methodology_path}#known-limitations", class: "underline decoration-dotted hover:text-slate-700" %>.
 </p>

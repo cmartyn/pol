@@ -34,10 +34,16 @@
     </li>
     <li>
       <strong class="text-slate-900">Simulate <%= number_with_delimiter(Pol::Params.fetch!(:simulation, :n_sims)) %>
-      correlated elections.</strong> Every simulated world draws one shared national error — so a bad night for a
-      party is a bad night everywhere, not race-by-race independent luck — plus an independent error for each
-      race. Every error is scaled up the further out from election day the forecast is run
-      (up to <%= Pol::Params.fetch!(:error_model, :time_mult_cap) %>&times; at its widest).
+      correlated elections.</strong> Every simulated world draws error at four levels and adds them up: one
+      <strong>national</strong> error (<%= Pol::Params.fetch!(:error_model, :sigma_national) %> points) shared by
+      every race in both chambers; one <strong>regional</strong> error
+      (<%= Pol::Params.fetch!(:error_model, :sigma_regional) %>) per U.S. Census division; one
+      <strong>state</strong> error (<%= Pol::Params.fetch!(:error_model, :sigma_state) %>) read by that state's
+      Senate race <em>and</em> every one of its House districts; and each race's own. A bad night in Georgia is
+      therefore a bad night for Georgia's Senate race and its districts together, not fourteen independent coin
+      flips around a shared national mood &mdash; which matters, because independent error averages away over 435
+      districts and correlated error does not. Every error is scaled up the further out from election day the
+      forecast is run (up to <%= Pol::Params.fetch!(:error_model, :time_mult_cap) %>&times; at its widest).
     </li>
     <li>
       <strong class="text-slate-900">Call control.</strong> <%= Pol::Params.fetch!(:chambers, :senate_holdover_dem_caucus) %>
@@ -120,15 +126,22 @@
   <h2 class="font-serif text-xl font-semibold text-slate-900">Known limitations</h2>
   <ul class="mt-4 list-disc space-y-3 pl-5 text-slate-700">
     <li>
-      <strong class="text-slate-900">The House control probability is overconfident.</strong> v1 correlates every
-      race through a single shared national error term. 538's published House model uses four correlated terms
-      (national, regional, state and demographic-cluster); ours has only the first. Measured on the live board —
-      same seed, same inputs, just the national term stood up to match — the reported House control probability
-      (96.3%) falls to 83.9% once that fuller correlation is approximated, so the honest reading of the live House
-      number is roughly <strong>85&ndash;95%, nearer the bottom of that range</strong>, not the number shown at
-      face value. The Senate is affected too, by roughly 7 points, but less: 35 races can't average away as much
-      correlated uncertainty as 435. See docs/BUILD_NOTES.md Phase 3 §A4 and §8.1. Wherever this site shows a
-      House control probability, it carries a footnote back to this paragraph.
+      <strong class="text-slate-900">One correlated error component is missing.</strong> 538's published House
+      model decomposes error into five parts &mdash; national 3, regional 2, state 2, demographic-cluster 2, and
+      6 at the district level. We carry four of them at their values. The one we omit is the
+      <strong>demographic-cluster</strong> term, which correlates districts that resemble each other
+      <em>regardless of where they are</em>; building it needs a clustering of all 435 districts that we have no
+      data for, and inventing one would be inventing the correlation it is supposed to measure. Our correlated
+      total is therefore 4.12 against their 4.58.
+      <span class="mt-2 block">
+        Measured on the live board of 2026-08-12 &mdash; same seed, same polls, only the error model changed
+        &mdash; adding a fifth component of 2 points moves House control from 93.1% to between 92.8% and 89.7%,
+        depending on whether the missing term is treated as behaving like a state, a regional or a national one.
+        So the honest reading of the House figure is <strong>a point or two softer than printed, in whichever
+        party's favour it leans</strong>, and the same holds for the Senate by well under a point. That is a much
+        smaller gap than this page reported before 2026-08-12, when the model had one correlated term instead of
+        four; the arithmetic behind both numbers is in docs/BUILD_NOTES.md Phase 10 §C.
+      </span>
     </li>
     <li>
       <strong class="text-slate-900">House effects are computed in a single pass.</strong> The correction

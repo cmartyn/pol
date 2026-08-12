@@ -113,14 +113,18 @@ namespace :pol do
              chamber.mean_dem_seats)
     end
     puts "  " + "-" * 62
-    # The number does not travel without this. v1 correlates races through one
-    # national error where 538 uses four, so the House seat distribution is too
-    # narrow and its control probability is too confident — measured at 96.3%
-    # here against 83.9% at 538's correlated total.
-    puts "  Read House control as several points softer than printed: v1 has one"
-    puts "  correlated error term where 538 has four, which overstates certainty"
-    puts "  in whichever party leads (~96% here reads ~84% at 538's correlated"
-    puts "  total). Senate is affected too, by roughly 7 points. BUILD_NOTES §A4."
+    # What travels with the two control numbers. Phase 10 replaced the single
+    # national error with 538's own decomposition, so the old "read this as
+    # several points softer" warning is gone; what is left is the one
+    # component we still cannot build, and it is worth a line because both
+    # figures lean the same way without it.
+    printf("  Correlated error: national %.1f, division %.1f, state %.1f (total %.4f).\n",
+           *%i[sigma_national sigma_regional sigma_state].map { |key| Pol::Params.fetch!(:error_model, key) },
+           Math.sqrt(%i[sigma_national sigma_regional sigma_state]
+                       .sum { |key| Pol::Params.fetch!(:error_model, key)**2 }))
+    puts "  538's decomposition less their demographic-cluster term (4.5826),"
+    puts "  which needs data we do not have — so both control figures are a"
+    puts "  point or two firmer than a fuller model's. BUILD_NOTES Phase 10 §A."
     puts "  " + "-" * 62
 
     if previous

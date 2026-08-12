@@ -183,24 +183,24 @@ class Forecast::Runner
       ::Forecast.insert_all!(rows) if rows.any?
     end
 
-    # A caveat that has to travel with these two rows, because everything
+    # What still has to travel with these two rows, because everything
     # downstream — the homepage number, a dispatch headline, an API consumer —
     # reads p_dem_control without reading the model.
     #
-    # v1 correlates races through ONE shared national error. 538's House model
-    # uses four correlated terms (national 3, regional 2, state 2,
-    # demographic-cluster 2, combining to 4.58 against our 2.5). The missing
-    # correlation does not average away over 435 districts, so the House seat
-    # distribution here is too narrow and p_dem_control for the House is
-    # systematically too confident, in the direction of whichever party is
-    # ahead. Measured on the live board: 96.3% here against 83.9% at 538's
-    # correlated total, seat SD 13.6 against 25.4. The Senate is affected too,
-    # by roughly 7 points, but less: 35 races cannot average away as much.
+    # Phase 10 replaced the single national error with 538's own
+    # decomposition: national 3, regional 2 (census division), state 2, plus
+    # each race's own, combining to 4.1231 of correlated error. What is still
+    # missing is 538's fifth term, 2 points at the demographic-cluster level,
+    # which needs a clustering of all 435 districts we have no data for — so
+    # their correlated total is 4.5826 against our 4.1231.
     #
-    # The fix is a regional or state-level shared term — a change to the
-    # model's structure, not to a constant, and deliberately deferred. Until
-    # then, anything that publishes these numbers should say so.
-    # See docs/BUILD_NOTES.md Phase 3 §A4.
+    # Measured on the live board of 2026-08-12, same seed and same polls:
+    # House control 96.6% → 93.1% and seat SD 13.6 → 17.4 across the change,
+    # with a fifth component of 2 points putting House control somewhere
+    # between 92.8% and 89.7% depending on how broadly it is assumed to
+    # correlate. Both control figures are therefore a point or two firmer than
+    # a fuller model's, in the direction of whichever party leads.
+    # See docs/BUILD_NOTES.md Phase 10 §A and §C.
     def write_chamber_forecasts
       now = Time.current
       rows = simulation.chambers.map do |outcome|

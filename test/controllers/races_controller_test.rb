@@ -34,12 +34,13 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
   # --- /house ------------------------------------------------------------
 
-  test "house renders the chamber summary, caveat and search input" do
+  test "house renders the chamber summary, error-model note and search input" do
     get house_path
     assert_response :success
     assert_select "[data-testid='seat-histogram-house']"
-    assert_select "[data-testid='house-caveat']"
+    assert_select "[data-testid='house-error-note']"
     assert_select "[data-testid='house-search-input']"
+    refute_match(/overstates certainty/, response.body)
   end
 
   test "house renders every House fixture race with a data-search attribute for the client-side filter" do

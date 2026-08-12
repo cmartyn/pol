@@ -27,24 +27,31 @@ module Newsroom
       }
     }.freeze
 
-    # The one thing that must travel with a House control probability wherever
-    # it is printed. Same limitation the site's house-caveat partial states,
-    # in words a paragraph can absorb. See docs/BUILD_NOTES.md Phase 3 §A4.
+    # What the newsroom is told about the House error model. Same limitation
+    # the site's house-error-note partial states, in words a paragraph can
+    # absorb. See docs/BUILD_NOTES.md Phase 10 §A.
+    #
+    # Phase 10 took the mandate out. Until then this text required every
+    # sentence carrying a House probability to say the model overstated
+    # certainty — accurate while the only correlated term was national, and
+    # false once there were four. What is left is context the writer may use
+    # where it earns its place, plus the two prohibitions that were always the
+    # useful part of it.
     #
     # Deliberately carries NO numbers. It used to quote the Phase 3 measurement
     # ("96% here against 84% for a correlated model"), which was a snapshot of
     # one run: the first time the House number was not 96%, this text would
     # have instructed the model to publish a figure contradicting the payload
     # it was reading, and the citation validator only checks poll ids — it
-    # cannot see a wrong number in prose. The size of the overstatement is not
-    # measured per run, so the caveat says there is one and refuses to price it.
-    HOUSE_CAVEAT =
-      "Our model correlates races through a single national error term where fuller models use several. " \
-      "That makes the House seat distribution too narrow and its control probability too confident, in " \
-      "whichever party's favour it leans. Any sentence that gives a House control probability must say, in " \
-      "plain words, that our model likely overstates certainty there. Do not put a figure on the " \
-      "overstatement and do not offer a corrected probability: we have not measured either for this run, " \
-      "so any number you give for them would be invented."
+    # cannot see a wrong number in prose.
+    HOUSE_ERROR_NOTE =
+      "On the House specifically: our simulation draws error at four levels — one national, one per census " \
+      "division, one per state, and each district's own — which is how the published models decompose it, " \
+      "less one component (538 also carries a demographic-cluster term; we have no cluster data). The House " \
+      "control probability is therefore marginally firmer than a fuller model's would be. Say so in your own " \
+      "words where it is relevant; you are not required to qualify every sentence that carries a House " \
+      "number. Do not put a figure on the difference and do not offer a corrected probability: neither is " \
+      "measured for this run, so any number you gave for them would be invented."
 
     ASSIGNMENTS = {
       poll_reaction:
@@ -104,7 +111,7 @@ module Newsroom
         A probability is not a prediction. Write probabilities as our estimate of a chance, never as a
         forecast of a result: "our model gives the Democrat a 62 in 100 chance" rather than "the Democrat will
         win". Use the "X in 100" phrasing once, where it lands best; percentages elsewhere. Do not describe a
-        lead inside a poll's margin of error as a lead — say the race is close. #{HOUSE_CAVEAT}
+        lead inside a poll's margin of error as a lead — say the race is close. #{HOUSE_ERROR_NOTE}
 
         FORM
         - headline: at most #{Pol::Params.fetch!(:newsroom, :headline_max_chars)} characters, sentence case, no

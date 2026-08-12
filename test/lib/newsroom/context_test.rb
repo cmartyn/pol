@@ -54,14 +54,15 @@ class Newsroom::ContextTest < ActiveSupport::TestCase
     assert_equal "55%", national.dig(:senate, :dem_control)
     assert_equal 51.2, national.dig(:senate, :mean_dem_seats)
     assert_equal "48%", national.dig(:house, :dem_control)
-    assert_match(/overstates certainty/, national.dig(:house, :must_say))
-    assert_nil national.dig(:senate, :must_say)
-    # No numerals: the caveat used to quote the Phase 3 measurement ("96% here
+    assert_match(/marginally firmer than a fuller model's/, national.dig(:house, :error_model_note))
+    assert_nil national.dig(:senate, :error_model_note)
+    # No numerals: this text used to quote the Phase 3 measurement ("96% here
     # against 84%"), which is one run's snapshot. Travelling with a payload
     # whose House number is 48%, that text would instruct the model to publish
     # figures contradicting the numbers beside it — and the citation validator
-    # only checks poll ids, so nothing downstream could catch it.
-    refute_match(/\d/, national.dig(:house, :must_say))
+    # only checks poll ids, so nothing downstream could catch it. The one
+    # numeral it may carry is 538's name.
+    refute_match(/\d/, national.dig(:house, :error_model_note).sub("538", ""))
     assert_equal "D+2.0", national.dig(:generic_ballot, :average)
     assert_equal 1, national.dig(:generic_ballot, :polls_in_average)
   end

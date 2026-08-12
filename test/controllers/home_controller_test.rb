@@ -22,12 +22,18 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='seat-histogram-house']"
   end
 
-  test "the House control probability always carries its caveat marker" do
+  # Phase 10 replaced the "model likely overstates certainty" caveat with a
+  # note naming the one correlated component the error model still omits. The
+  # marker stays, its claim does not.
+  test "the House control probability always carries its error-model note" do
     get root_path
-    assert_select "[data-testid='chamber-card-house'] [data-testid='house-caveat']"
-    # The Senate card needs no such caveat — only House control is
-    # structurally overconfident (docs/BUILD_NOTES.md Phase 3 §A4).
-    assert_select "[data-testid='chamber-card-senate'] [data-testid='house-caveat']", count: 0
+    assert_select "[data-testid='chamber-card-house'] [data-testid='house-error-note']" do
+      assert_select "*", text: /four of the five correlated error components/
+    end
+    refute_match(/overstates certainty/, response.body)
+    # The Senate card needs no such note: the omitted component is a
+    # district-level correlation and 35 races feel it far less than 435.
+    assert_select "[data-testid='chamber-card-senate'] [data-testid='house-error-note']", count: 0
   end
 
   test "shows the national environment as a formatted margin" do

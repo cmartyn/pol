@@ -65,12 +65,18 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='single-pass-note']", text: /simplification, not a refinement/
   end
 
-  test "methodology's Known limitations section names the House overconfidence, with the measured range" do
+  # Phase 10 closed the "single national error term" limitation and opened a
+  # narrower one in its place: there are four correlated components now, at
+  # 538's own values, and what is missing is their fifth.
+  test "methodology's Known limitations section names the omitted error component, with the measured range" do
     get methodology_path
 
     assert_select "[data-testid='limitations']" do
-      assert_select "li", text: /House control probability is overconfident/
-      assert_select "li", text: /85.{1,3}95%/ # the measured range, en-dash or hyphen either way
+      assert_select "li", text: /One correlated error component is missing/
+      assert_select "li", text: /demographic-cluster/
+      assert_select "li", text: /4\.12 against their 4\.58/
+      assert_select "li", text: /93\.1%/  # the measured live figure this range was taken from
+      assert_select "li", text: /89\.7%/  # ... and the far end of the range
       # Phase 9 closed "no pollster house-effect correction" and opened a
       # narrower one in its place: there IS a correction now, and the honest
       # caveat is that it is estimated in one pass where 538 and Silver

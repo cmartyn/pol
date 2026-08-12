@@ -102,7 +102,11 @@ module Newsroom
           senate: senate && chamber_section(senate).merge(seats_needed_for_control),
           house: house && chamber_section(house).merge(
             seats_needed: Pol::Params.fetch!(:chambers, :house_majority_seats),
-            must_say: Prompts::HOUSE_CAVEAT
+            # Was `must_say` until Phase 10, when the mandate it named came
+            # off. The text is still in the payload — a writer that has the
+            # chamber's numbers should have the shape of their error too — but
+            # nothing now requires it to appear in the copy.
+            error_model_note: Prompts::HOUSE_ERROR_NOTE
           )
         }.compact
       end

@@ -142,20 +142,23 @@ reading, and the live runs that proved each phase worked.
 
 ## Current limitations
 
-The one that matters most: this model correlates races through a *single*
-national error term where fuller models use several (national, regional,
-state, demographic). The missing correlation does not average away across 435
-districts, so the House seat distribution is too narrow and its control
-probability is too confident in whichever direction it leans — measured at 96%
-here against about 84% for a correlated total, with the Senate off by roughly
-seven points in the same direction. That caveat travels with the number
-everywhere it is printed, including into the newsroom's prompt. Beyond it:
-there are no pollster house effects or quality weights, District baselines are
-2024 results and go stale where a state has since redistricted, 37 districts
-have imputed baselines because a major party did not field a candidate in 2024,
-about ten Senate nominations were unsettled when the board was seeded, and the
-model has no idea which party currently controls either chamber — which is why
-the newsroom writes about *winning* control and never about holding it.
+The one that matters most: the simulation draws correlated error at three
+levels — national, census division, and state — plus each race's own, which is
+four of the five components 538's published House model uses. The one missing
+is their demographic-cluster term, which correlates districts that resemble
+each other regardless of where they are and needs a clustering of all 435 that
+we have no data for; our correlated total is 4.12 against their 4.58. Measured
+on the live board, adding a fifth component of 2 points moves House control
+from 93% to somewhere between 93% and 90% depending on how broadly it is
+assumed to correlate, so both control figures are a point or two firmer than a
+fuller model's, in whichever direction they lean. That note travels with the
+number everywhere it is printed, including into the newsroom's prompt. Beyond
+it: there are no pollster quality weights, district baselines are 2024 results
+and go stale where a state has since redistricted, 37 districts have imputed
+baselines because a major party did not field a candidate in 2024, about ten
+Senate nominations were unsettled when the board was seeded, and the model has
+no idea which party currently controls either chamber — which is why the
+newsroom writes about *winning* control and never about holding it.
 
 ## Deploy posture
 
