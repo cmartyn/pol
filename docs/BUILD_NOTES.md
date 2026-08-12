@@ -2719,3 +2719,331 @@ Worth a guard before the next phase does the same thing: either a
 `GOOD_JOB_ENABLE_CRON=false` in the smoke-test path, or gate the cron
 registration on something other than "not test". Curling a page should not be
 able to spend API credit and publish to the site.
+
+---
+
+# Phase 10 — Correlated error structure (simulation)
+
+The last model-v2 phase, and the one the site's own pages apologised for.
+Until now every race was correlated to every other through exactly one shared
+national error; this replaces it with four components, three of them shared at
+different geographic scopes. Research and live runs dated **2026-08-12**.
+
+## A. The four components, and the back-solve
+
+538's 2024 House model publishes the decomposition outright: "There are about
+3 points of error at the national level, 2 each at the regional and state
+levels, 2 at the demographic-cluster level, and 6 at the district level,"
+combined in quadrature.
+<https://abcnews.com/538/538s-2024-house-election-forecast-works/story?id=114446291>
+
+We now carry four of those five, at their values:
+
+| Component | Shared by | σ |
+|---|---|---|
+| National | every race, both chambers | 3.0 |
+| Regional | every race in a census division | 2.0 |
+| **State** | **a state's Senate race and all its districts** | **2.0** |
+| Idiosyncratic — Senate polled | one race | 2.2913 |
+| Idiosyncratic — Senate unpolled | one race | 7.2973 |
+| Idiosyncratic — House district | one district | 6.0 |
+
+**`sigma_national` 2.5 → 3.0 is not a re-reading of the evidence; it is a
+refusal to mix decompositions.** The AAPOR series Phase 3 used still says what
+it said (RMS 2.8 across offices 2016–2024, 2.1 for the presidential series
+back to 2000, so 2.5 "in the middle"). But a decomposition only means anything
+taken whole: our national term paired with 538's regional and state terms
+would give a correlated total neither source stands behind. What the AAPOR
+anchors actually constrain is a race's *total* error, and the back-solve below
+holds both Senate totals exactly where Phase 3 put them.
+
+**The arithmetic, to four decimals:**
+
+```
+correlated total          sqrt(3² + 2² + 2²)   = sqrt(17)    = 4.1231
+Senate polled, total      sqrt(2.5² + 4.0²)    = sqrt(22.25) = 4.7170   (unchanged)
+  → idiosyncratic         sqrt(22.25 − 17)     = sqrt(5.25)  = 2.2913
+Senate unpolled, total    sqrt(2.5² + 8.0²)    = sqrt(70.25) = 8.3815   (unchanged)
+  → idiosyncratic         sqrt(70.25 − 17)     = sqrt(53.25) = 7.2973
+House district, total     sqrt(17 + 6²)        = sqrt(53)    = 7.2801   (was 6.5000)
+538's correlated total    sqrt(3² + 2² + 2² + 2²) = sqrt(21) = 4.5826
+538's district total      sqrt(21 + 36)        = sqrt(57)    = 7.5498
+```
+
+The stored idiosyncratic terms are the back-solve rounded to four decimals,
+which puts the unpolled total back at 8.3816 against 8.3815 — a ten-thousandth
+of a point on a quantity whose anchors are quoted to one. `test/lib/pol/
+params_test.rb` pins all six totals against this arithmetic, so anyone
+retuning a correlated component is told to re-solve rather than left to
+discover it.
+
+**The House district total rises on purpose.** 6.0 is 538's own cited
+district-level value; our old 6.5000 total was never independently calibrated
+— it was an artifact of having a single correlated term. 7.2801 is nearer
+538's 7.5498 than 6.5000 was.
+
+**`sigma_state_polled` / `sigma_state_unpolled` are renamed
+`sigma_senate_polled` / `sigma_senate_unpolled`.** With a genuine state-level
+term now above them, a name saying "state" for one race's idiosyncratic noise
+was actively misleading.
+
+**Omitted, and said out loud:** the demographic-cluster term. It correlates
+districts that resemble each other regardless of where they are, and building
+it needs a clustering of all 435 districts we have no data for. Inventing a
+clustering would be inventing the correlation it is supposed to measure. What
+that omission costs is measured in §C, not guessed.
+
+## B. Census divisions — the mapping and its source
+
+`Pol::CensusDivisions` maps all 50 states plus DC to one of the nine Census
+divisions. Transcribed at build time from two census.gov sources that agree
+exactly, one prose and one machine-readable:
+
+- <https://www.census.gov/programs-surveys/economic-census/guidance-geographies/levels.html>
+  ("Regions and Divisions" section, read from the page's own HTML rather than
+  a summary of it)
+- <https://www2.census.gov/programs-surveys/popest/geographies/2023/state-geocodes-v2023.xlsx>
+  — "Census Bureau Region and Division Codes and Federal Information
+  Processing System (FIPS) Codes for States", Population Division, internet
+  release date May 2024. Its 51 state rows were joined to `Race::STATE_NAMES`
+  to get the two-letter codes.
+
+Counts: New England 6, Middle Atlantic 3, East North Central 5, West North
+Central 7, South Atlantic 9 (including DC), East South Central 4, West South
+Central 4, Mountain 8, Pacific 5 — 51 rows, 9 divisions, every state exactly
+once. The test asserts those counts and that the code set equals
+`Race::STATE_NAMES`, so the two lists cannot drift.
+
+**Divisions, not the four Census regions.** 538 says "the regional level" and
+does not publish which grouping it means. Four regions would put one shared
+shock over the entire South — 16 states and 164 districts. Nine divisions is
+the finest standard grouping published, which is the conservative reading. It
+is also very nearly free: measured on the live board, running the same four
+components over four regions instead of nine divisions moves House control
+from 93.1% to 92.5% and seat SD from 17.4 to 17.8. The choice is documented
+rather than defended as decisive, because it isn't.
+
+**DC** is in the table because the Census puts it in the South Atlantic and a
+table that disagreed with its source would be the kind of small silent edit
+the file exists to prevent. It never draws: no Senate seat, no voting
+district, and the live board has races in exactly 50 states. A state outside
+the table raises rather than resolving to nothing — a race with no division
+would take no regional or state error and quietly fall out of the correlated
+structure, narrowing the seat distribution exactly where this phase widened
+it.
+
+## C. Live before/after — and where it did not land
+
+Runs 16 and 17, same seed (20260811), same date, **same 975 polls** — nothing
+re-scraped and nothing re-seeded, so the delta is attributable to the change
+and to nothing else. Both run with `AGENTS_DISABLED=1`.
+
+| | before (run 16) | after (run 17) |
+|---|---|---|
+| House D control | **96.61%** | **93.12%** |
+| House seat SD | 13.62 | **17.44** |
+| House seat range | 187–310 | 180–314 |
+| Senate D control | **37.95%** | **39.71%** |
+| Senate seat SD | 2.62 | **3.00** |
+| mean D seats (H / S) | 241.65 / 49.73 | 242.26 / 49.68 |
+| runtime | 2.04s | 2.12s |
+
+**Individual races barely moved — the signature of reallocation rather than
+inflation.** Not one of the 470 races moved as much as the newsroom's 8-point
+movement threshold; the largest single move was 3.77 points and the mean was
+0.86.
+
+| race | before | after |
+|---|---|---|
+| Michigan Senate | 48.06% | 48.04% |
+| Texas Senate | 65.05% | 64.77% |
+| Alaska Senate | 26.69% | 26.75% |
+| AZ-2 | 51.37% | 51.34% |
+| WI-1 | 45.50% | 46.11% |
+| AL-1 | 0.00% | 0.00% |
+
+### The result did not land where the design predicted, and the reason is the
+### design's arithmetic, not the model's
+
+The design expected House control near **85–88%**, interpolating the Phase 3
+measurement table (2.5 → 96.3%, 3.5 → 90.2%, 4.58 → 83.9%). It landed at
+**93.1%**. That table raised `sigma_national` alone, so every one of its rows
+routes the whole correlated variance through the *national* channel — and a
+correlated total of 4.1231 spread over national, division and state is not
+interchangeable with a national term of 4.1231. Only the 3.0 is common to all
+435 districts; the regional and state parts partly average away across a
+chamber, which is precisely what a national term cannot do.
+
+Measured on the live board, same seed, same polls, error model varied:
+
+| configuration | correlated | House D | seat SD | Senate D | seat SD |
+|---|---|---|---|---|---|
+| Phase 9 (N 2.5 only) | 2.5000 | 96.8% | 13.6 | 38.2% | 2.62 |
+| **Phase 10 (3.0 / 2.0 / 2.0)** | **4.1231** | **93.1%** | **17.4** | **39.7%** | **3.00** |
+| same per-race totals, all correlation national | 4.1231 | 87.6% | 22.6 | 41.4% | 3.73 |
+| Phase 3 table row: N 3.5 | 3.5000 | 91.2% | 19.0 | 40.2% | 3.31 |
+| Phase 3 table row: N 4.58 | 4.5800 | 84.9% | 25.3 | 42.1% | 4.07 |
+| + a 5th component of 2, at state scope | 4.5826 | 92.8% | 17.8 | 39.1% | 3.01 |
+| + a 5th component of 2, at region scope | 4.5826 | 92.2% | 18.2 | 40.1% | 3.06 |
+| + a 5th component of 2, at national scope | 4.5826 | 89.7% | 20.7 | 40.9% | 3.43 |
+
+(The two Phase 3 rows reproduce that table to about a point — 91.2 against
+90.2, 84.9 against 83.9 — on a different date, a different seed and a corpus
+that has grown since, which is as close as reproduction gets here. The Phase 9
+row reads 96.8% against run 16's 96.61% for the same reason plus one more: the
+new code draws the regional and state series even when their sigma is zero, so
+the per-race draws differ. Both sit inside the 1.4pp run-to-run noise floor
+measured in Phase 3 §8.2.)
+
+**Two things follow, and the second is the more important.**
+
+1. **The Phase 3 caveat overstated the problem it described.** "96% here reads
+   84%" was measured by routing all correlated variance through the
+   maximally-correlating channel. That is an upper bound on the effect — Phase
+   3 said as much ("not the right fix, but it does bound the size of the
+   effect") — and the site then printed the bound as the honest reading. With
+   the correlation put where the literature puts it, the same variance moves
+   the House number by 3.5 points, not 12.
+2. **538's own House model is therefore narrower than a 4.58 national term
+   would imply, for exactly the same reason.** Their 4.5826 is a quadrature
+   sum across four scopes; only 3.0 of it is common to all 435 districts.
+   Comparing our correlated total to theirs in quadrature is the right way to
+   size the omission, but converting either into a chamber probability
+   requires the geography, not just the total.
+
+**The cost of the missing cluster term, measured rather than guessed:** adding
+a fifth component of 2.0 points moves House control from 93.1% to between
+92.8% (state scope) and 89.7% (national scope), and the Senate by about a
+point, toward 50% (39.1% to 40.9% across the same three). A demographic cluster spans states, so the truth sits nearer the
+regional row (92.2%) than either end. **One to three points, against the six
+to twelve the retired caveat claimed.**
+
+No constant was tuned to close the gap to the design's prediction. The
+structure is 538's, at 538's values, applied to the geographies they name; the
+number is what that produces.
+
+## D. What came off the site, and what replaced it
+
+The blanket caveat's factual claim — "correlates races through a single
+national error term where fuller models use several" — is false as of this
+phase, and its magnitude claim was an overstatement even when it was written.
+It is gone from all five surfaces:
+
+- **`app/views/shared/_house_caveat.html.erb` → `_house_error_note.html.erb`**
+  (`data-testid` renamed with it). A marker is still warranted — the residual
+  gap is one-directional and larger than the 1.5pp noise floor the site
+  already treats as meaningful — but it now names the real remaining gap: four
+  of five components, the fifth omitted for want of data. **No number in it**,
+  for the reason Phase 5 learned: a figure printed beside a probability goes
+  stale the run after it is written. The measured range lives on the
+  methodology page, where it carries a date.
+- **`Newsroom::Prompts::HOUSE_CAVEAT` → `HOUSE_ERROR_NOTE`.** The mandate that
+  every sentence carrying a House probability say the model overstates
+  certainty is gone. What is left describes the four levels and the omitted
+  fifth, invites the writer to say so where it is relevant, and keeps the two
+  prohibitions that were always the useful part: no figure on the difference,
+  no corrected probability. "A probability is not a prediction" was never part
+  of this string and is untouched in the UNCERTAINTY block above it.
+- **The payload key `must_say` → `error_model_note`.** The text still travels
+  with the House numbers; nothing now requires it to appear in the copy.
+- **`lib/tasks/pol.rake`.** The summary prints the three correlated sigmas and
+  their total, read from the params rather than hardcoded, then names the
+  omitted component.
+- **`/methodology`.** "How the forecast works" step 4 describes all four
+  levels and why a state's Senate race and its districts move together. Known
+  limitations replaces "The House control probability is overconfident" with
+  "One correlated error component is missing", carrying 4.12-against-4.58 and
+  the measured 93.1% → 92.8–89.7% range. The six sigmas render in the params
+  table with their citations, including the census.gov spreadsheet beside
+  `sigma_regional`.
+
+`Forecast::Runner#write_chamber_forecasts` and the README's Current
+limitations carried the same claim in prose and were rewritten to match. (The
+README also still said there were no pollster house effects, which Phase 9
+made untrue; fixed in the same paragraph rather than left standing.)
+
+## E. Tests
+
+880 tests, 3,075 assertions, plus the system test. Rubocop clean.
+
+- **Goldens re-pinned with their independent checks.** Both the simulator's
+  fixed-seed golden and the runner's fixture-world golden moved, and both keep
+  a paired check. The simulator gains a stronger one than it had: the golden's
+  two races are now **rebuilt draw for draw** from the design — national
+  series, then one per census division in Census order, then one per state
+  alphabetically, then each race's own noise in entry order — and composed by
+  hand, so a change to the composition rule fails saying what broke instead of
+  leaving five moved numbers to be re-pinned on faith. The 200,000-draw
+  closed-form check stands alongside it and now reads its correlated terms
+  from the params. The runner's golden keeps every hand-computed `mu` it had
+  (none of them moved — the central estimates are untouched by this phase) and
+  adds two width checks that recover 4.7170 × t and sqrt(53) × t from the
+  published percentiles.
+- **The correlation ladder, against a closed form.** For two mean-zero races
+  with correlation ρ, the share of simulated worlds where exactly one goes to
+  side A is 1/2 − arcsin(ρ)/π, and the seat histogram's middle bucket counts
+  it directly. Same state ρ = 17/17, same division 13/17, different divisions
+  9/17 — each asserted against its own value, so the ordering is a consequence
+  of the arithmetic rather than the claim being tested.
+- **Cross-chamber sharing, extended.** The Phase 3 regression (a refactor
+  drawing the shared series once per chamber loop) is kept, isolated by
+  switching the regional and state terms off so only the national series can
+  be doing the work. Added beside it: a state's Senate race and its two
+  districts win the identical set of worlds, and their seat histogram has no
+  bucket for "one district each way".
+- **Reallocation, not inflation.** A Senate race's margin distribution keeps
+  its width — 4.7170 × t, read back off the percentiles — while a 35-race
+  chamber's seat SD widens by a fifth. Both seat SDs are checked against an
+  analytic form (n/4 plus every pair's arcsin(ρ)/π) rather than recorded, so
+  the widening is verified rather than observed.
+- **The shared draws cost one series each, not one per race**, asserted by
+  counting Gaussian draws: 1 national + 2 divisions + 3 states + 4 contested
+  races = 10 series, with the certain race taking nothing. That is the
+  performance guarantee as arithmetic instead of a stopwatch; the wall clock
+  is in §C (2.12s for 470 races × 10,000 sims against a 60-second budget).
+- **End to end through real Race rows**, because `to_entry` passing the state
+  is what makes any of the above reach the live board: two House districts in
+  Maine alongside Maine's Senate race co-move, and an Oregon district does
+  not.
+- **Division mapping completeness**: 51 codes, 9 non-empty divisions, equality
+  with `Race::STATE_NAMES`, DC in the South Atlantic with no race, every state
+  on the live board resolvable, and territories/typos/nil raising.
+
+## F. Operational note — the guard Phase 9 asked for earned its keep
+
+Phase 9 §H recorded 23 dispatches published by accident from a smoke-test
+development server, and asked for a guard before the next phase did the same
+thing. This phase ran every live model run and the one dev server with
+`AGENTS_DISABLED=1`, and it mattered: the server booted GoodJob's async
+executor with cron enabled ("GoodJob started cron with 3 jobs"), which picked
+up **one `Newsroom::PollReactionsJob` left queued from before this session**
+and drained it. It recorded **74 `agents_disabled` skips and published
+nothing** — 74 Opus-written poll reactions that a server booted without the
+flag would have paid for.
+
+Confirmed for the whole phase, counting from the first live run: 0 dispatches,
+0 scrape runs, 0 new GoodJob rows, no OpenRouter call in the server log, and
+the corpus still at 975 polls. The three model runs it did create (16, 17, 18)
+are the before, the after and the rake-summary check.
+
+The standing recommendation stands and is now evidence-backed rather than
+hypothetical: the cron registration in `config/initializers/good_job.rb`
+should be gated on something narrower than "not test", so that starting a dev
+server cannot spend API credit. `AGENTS_DISABLED=1` is a discipline, and
+disciplines are the thing that fails.
+
+## G. What this leaves for later
+
+1. **The demographic-cluster term**, the fifth component, needing a clustering
+   of all 435 districts. §C prices the omission at one to three points of
+   House control.
+2. **The regional term's geography is a judgement call.** Nine divisions, not
+   four regions, and 538 does not say which it means. Worth 0.6 points either
+   way (§B), so it is a note rather than a risk.
+3. **Correlated error is symmetric and mean-zero here.** Nothing in this
+   structure expresses a *directional* prior — that polling misses have leaned
+   one way in recent cycles is in the sigma, not in a bias term, and adding one
+   would be a different kind of claim than this phase makes.
+4. **The Senate's idiosyncratic terms are back-solved from Phase 3's totals.**
+   If a later phase re-derives those totals from newer evidence, both numbers
+   have to be re-solved; `params_test.rb` fails loudly if they are not.
