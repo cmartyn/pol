@@ -23,11 +23,20 @@ class Forecast::Averager
     end
   end
 
-  # One poll reduced to the number the average cares about.
-  Measurement = Struct.new(:poll, :margin, keyword_init: true)
+  # One poll reduced to the number the average cares about. `adjustment` is
+  # the pollster house effect that was removed from it (0.0 when none was),
+  # kept alongside the margin so a caller can say what it did rather than
+  # only what came out.
+  Measurement = Struct.new(:poll, :margin, :adjustment, keyword_init: true)
 
-  def initialize(as_of:)
+  # `house_effects` is { pollster_id => effect }, in percentage points of
+  # D−R margin, and only ever holds effects a run decided to apply — see
+  # Forecast::HouseEffects. Defaulting it to empty is what keeps every caller
+  # that does not know about house effects (and every Phase 3 golden) reading
+  # exactly the numbers it read before.
+  def initialize(as_of:, house_effects: {})
     @as_of = as_of.to_date
+    @house_effects = house_effects || {}
     @window_days = Pol::Params.fetch!(:averaging, :window_days)
     @extended_window_days = Pol::Params.fetch!(:averaging, :extended_window_days)
     @min_polls_in_window = Pol::Params.fetch!(:averaging, :min_polls_in_window)
@@ -37,7 +46,7 @@ class Forecast::Averager
     @sample_size_pivot = Pol::Params.fetch!(:averaging, :sample_size_pivot).to_f
   end
 
-  attr_reader :as_of
+  attr_reader :as_of, :house_effects
 
   # `polls` may be a relation or a plain array; callers that are about to
   # average hundreds of races should preload poll_results and pass arrays.
@@ -133,18 +142,47 @@ class Forecast::Averager
   # exp(-ln2 × age / half_life) × sqrt(min(n, cap) / pivot). A poll with the
   # pivot sample size and no age weighs exactly 1.
   def weight_for(poll)
-    recency = Math.exp(-Math.log(2) * age_days(poll) / @half_life_days)
+    weight_at_age(age_days(poll), poll.sample_size)
+  end
+
+  # The same function on an age given explicitly, so Phase 9 can weigh a poll
+  # by its distance from another poll's field date rather than from as_of.
+  # Callers there pass an absolute distance: a poll fielded a week after the
+  # one being scored must not weigh more than one fielded on the day, which is
+  # what exp(-ln2 × negative_age / half_life) would do.
+  def weight_at_age(age_days, sample_size)
+    recency = Math.exp(-Math.log(2) * age_days / @half_life_days)
     # A recorded sample size of zero is an unknown sample size, not a poll of
     # nobody. The scraper already normalises those to nil; manual and CSV entry
     # can still get there, and a zero would otherwise weigh the poll out of
     # existence rather than fall back to the default.
-    size = poll.sample_size
+    size = sample_size
     size = @default_sample_size unless size&.positive?
     recency * Math.sqrt([ size, @sample_size_cap ].min / @sample_size_pivot)
   end
 
   def age_days(poll)
     (as_of - poll.field_end).to_i
+  end
+
+  # The two eligibility rules below are public for one reason: Forecast::
+  # HouseEffects has to apply exactly the same ones. A residual measured from
+  # a poll this class would refuse — a placeholder opponent, a missing side,
+  # a race whose polls disagree about who is running — would carry that
+  # contamination into every pollster's estimated lean, and from there into
+  # every average. Sharing the code is what stops the two drifting apart.
+
+  # One poll reduced to the margin the average would read from it, or nil
+  # when the poll does not measure this matchup at all.
+  def measurement(poll, side_a: :dem, side_b: :rep)
+    measure(poll, side_a, side_b)
+  end
+
+  # ["andrews vs norman", "andrews vs sanford"] — the distinct contests these
+  # measurements named on the two sides being compared. More than one and
+  # there is no single contest to average.
+  def distinct_matchups(measurements, side_a: :dem, side_b: :rep)
+    contested_pairs(measurements, side_a, side_b)
   end
 
   private
@@ -180,7 +218,12 @@ class Forecast::Averager
       b = top_pct(poll, side_b)
       return nil if a.nil? || b.nil?
 
-      Measurement.new(poll: poll, margin: a - b)
+      # A positive house effect means this pollster's polls run more
+      # Democratic than the field, so subtracting it removes the lean. The
+      # lookup only ever holds effects the run decided to apply, which is why
+      # there is no threshold test here.
+      adjustment = @house_effects[poll.pollster_id].to_f
+      Measurement.new(poll: poll, margin: a - b - adjustment, adjustment: adjustment)
     end
 
     def top_pct(poll, party)

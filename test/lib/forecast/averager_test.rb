@@ -478,6 +478,97 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     assert_nil result.reason
   end
 
+  # ---------------------------------------------------------------------
+  # Pollster house effects (Phase 9)
+  # ---------------------------------------------------------------------
+
+  # Beacon at +6.0 with a +2.0 house effect becomes +4.0; Cardinal at −3.0
+  # with no effect stays put. Both weigh 1.0 (age 0, n = 600), so the
+  # unadjusted mean is (6.0 − 3.0)/2 = 1.5 and the adjusted one is
+  # (4.0 − 3.0)/2 = 0.5 — exactly half the effect, because exactly half the
+  # weight carried it.
+  test "an effect is subtracted from its pollster's margin before weighting" do
+    polls = [
+      create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600, results: { dem: 50.0, rep: 44.0 }),
+      create_poll(pollster: @cardinal, field_end: AS_OF, sample_size: 600, results: { dem: 45.0, rep: 48.0 })
+    ]
+
+    assert_in_delta 1.5, @averager.call(polls: polls).mean_margin, 1e-9
+
+    adjusted = Forecast::Averager.new(as_of: AS_OF, house_effects: { @beacon.id => 2.0 })
+    result = adjusted.call(polls: polls)
+
+    assert_in_delta 0.5, result.mean_margin, 1e-9
+    assert_in_delta 2.0, result.weight, 1e-9, "the adjustment moves the margin, never the weight"
+    assert_equal 2, result.poll_count
+  end
+
+  # The sign is the whole contract: a positive effect means the pollster
+  # leans Democratic, so subtracting it moves the margin toward the
+  # Republican. Getting this backwards would double every lean instead of
+  # removing it, and would look entirely plausible on the page.
+  test "a positive effect moves a margin toward the Republican, and a negative one the other way" do
+    poll = create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600, results: { dem: 50.0, rep: 44.0 })
+
+    leans_dem = Forecast::Averager.new(as_of: AS_OF, house_effects: { @beacon.id => 1.5 })
+    leans_rep = Forecast::Averager.new(as_of: AS_OF, house_effects: { @beacon.id => -1.5 })
+
+    assert_in_delta 4.5, leans_dem.call(polls: [ poll ]).mean_margin, 1e-9
+    assert_in_delta 7.5, leans_rep.call(polls: [ poll ]).mean_margin, 1e-9
+  end
+
+  # Phase 3's goldens are the contract this phase must not touch: with no
+  # effects supplied, every number the averager produces is the number it
+  # produced before house effects existed. The rest of this file is that
+  # proof in detail — this is the statement of it.
+  test "no effects supplied reproduces the unadjusted average exactly" do
+    polls = [
+      create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 1500, results: { dem: 48.0, rep: 45.0 }),
+      create_poll(pollster: @cardinal, field_end: AS_OF - 21, sample_size: 600, results: { dem: 44.0, rep: 45.0 }),
+      create_poll(pollster: @delta, field_end: AS_OF - 42, sample_size: 400, results: { dem: 52.0, rep: 44.0 })
+    ]
+    fields = %i[mean_margin weight poll_count window_days skipped_count reason matchups]
+
+    default = @averager.call(polls: polls)
+    empty = Forecast::Averager.new(as_of: AS_OF, house_effects: {}).call(polls: polls)
+    nil_lookup = Forecast::Averager.new(as_of: AS_OF, house_effects: nil).call(polls: polls)
+    # The Phase 3 golden, unchanged.
+    assert_in_delta 2.5562, default.mean_margin, 0.00005
+
+    assert_equal fields.map { |field| default[field] }, fields.map { |field| empty[field] }
+    assert_equal fields.map { |field| default[field] }, fields.map { |field| nil_lookup[field] }
+  end
+
+  test "an effect for a pollster with no poll here changes nothing" do
+    poll = create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600, results: { dem: 50.0, rep: 44.0 })
+    bystander = Forecast::Averager.new(as_of: AS_OF, house_effects: { @cardinal.id => 9.0 })
+
+    assert_in_delta 6.0, bystander.call(polls: [ poll ]).mean_margin, 1e-9
+  end
+
+  # An adjusted poll is still the same poll: the effect changes the number it
+  # contributes, not whether it is eligible, which house it belongs to, or
+  # which contest it measured.
+  test "an adjustment does not change which poll a pollster contributes" do
+    stale = create_poll(pollster: @beacon, field_end: AS_OF - 20, sample_size: 600, results: { dem: 60.0, rep: 40.0 })
+    fresh = create_poll(pollster: @beacon, field_end: AS_OF - 2, sample_size: 600, results: { dem: 48.0, rep: 46.0 })
+    adjusted = Forecast::Averager.new(as_of: AS_OF, house_effects: { @beacon.id => 1.0 })
+
+    result = adjusted.call(polls: [ stale, fresh ])
+
+    assert_equal 1, result.poll_count
+    assert_in_delta 1.0, result.mean_margin, 1e-9, "the fresh poll's +2.0, less the +1.0 effect"
+  end
+
+  test "the measurement carries the adjustment it applied, so a caller can say what was done" do
+    poll = create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600, results: { dem: 50.0, rep: 44.0 })
+    adjusted = Forecast::Averager.new(as_of: AS_OF, house_effects: { @beacon.id => 2.5 })
+
+    assert_in_delta 2.5, adjusted.measurement(poll).adjustment, 1e-9
+    assert_in_delta 3.5, adjusted.measurement(poll).margin, 1e-9
+    assert_in_delta 0.0, @averager.measurement(poll).adjustment, 1e-9
+  end
+
   test "for_generic_ballot reads only the race-less polls" do
     create_poll(pollster: @beacon, field_end: AS_OF - 1, sample_size: 600, results: { dem: 49.0, rep: 44.0 })
     create_poll(pollster: @cardinal, race: races(:senate_maine), field_end: AS_OF - 1,

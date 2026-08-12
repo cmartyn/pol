@@ -4,6 +4,9 @@ class ModelRun < ApplicationRecord
 
   has_many :forecasts, dependent: :destroy
   has_many :chamber_forecasts, dependent: :destroy
+  # The pollster leans this run estimated and (where they cleared the minimum
+  # poll count) subtracted — see Forecast::HouseEffects.
+  has_many :house_effects, dependent: :destroy
 
   # ModelRun.succeeded.latest => succeeded runs, most recent first. Chain
   # .first to get the one run whose numbers the site should show.

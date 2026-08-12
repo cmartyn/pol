@@ -13,6 +13,90 @@ averaging:
   default_sample_size: 400
   sample_size_cap: 1500
   sample_size_pivot: 600
+house_effects:
+  # A pollster's house effect is what 538 calls the tendency of a firm's polls
+  # to lean one way "relative to the average poll". We estimate it as the
+  # weighted mean signed residual of that firm's polls against a leave-one-out
+  # average of the same quantity, shrink it toward zero by how many residuals
+  # stand behind it, cap it, and subtract it. Sign convention: positive means
+  # the firm runs more Democratic than the field. The full reasoning, and the
+  # two constants this project had to choose without a published precedent,
+  # are in docs/BUILD_NOTES.md Phase 9 §A.
+  #
+  # One departure worth stating up front, because both published models do it
+  # the other way: 538 runs its aggregation three times (baseline, outliers,
+  # then house and population effects) and Silver Bulletin loops the average
+  # and the house effects until the numbers stop moving. We compute effects
+  # once, from unadjusted averages, and use them. That is a simplification,
+  # not a refinement, and it is on the methodology page as one.
+  # citation: https://abcnews.com/538/polling-averages-work/story?id=103232260
+  # citation: https://www.natesilver.net/p/silver-bulletin-polling-average-methodology
+  enabled: true
+  # Below this many residuals the effect is published but not subtracted.
+  # No published model uses a hard gate at all — 538 and Silver Bulletin both
+  # rely on continuous shrinkage alone — so this is belt and braces on top of
+  # the shrinkage below, and the tension is worth naming: where those
+  # methodologies do state hard minimums they cluster at five (538 needs five
+  # polls from three pollsters before it will publish a race average; Silver's
+  # own house-effect table used firms with at least five polls of the race).
+  # Three is kept because shrinkage has already cut an n=3 effect by 62% by
+  # the time this gate sees it, so the gate is catching n=1 and n=2, where the
+  # "effect" is one poll's sampling error. Raising it to 5 is a one-line
+  # change and BUILD_NOTES Phase 9 §A2 records what it would cost.
+  # citation: https://www.natesilver.net/p/which-polls-are-biased-toward-harris
+  min_polls_to_apply: 3
+  # effect_shrunk = effect_raw × n / (n + k). This is 538's own pollster-
+  # ratings form — "Adjusted Error × (n / (n + n_shrinkage)) + group prior ×
+  # (n_shrinkage / (n + n_shrinkage))" — with the group prior set to zero,
+  # which is what makes it a pull toward "no house effect". 538 describes
+  # n_shrinkage as the effective number of polls' worth of weight to put on
+  # the prior and says it optimised the value, but does not publish it; k = 5
+  # is therefore OURS, not theirs. It halves an effect at n = 5 and leaves 83%
+  # of it at n = 25, which puts the corpus's 71 sub-three-poll houses firmly
+  # on zero and lets its dozen prolific ones keep most of what they show.
+  # citation: https://abcnews.com/538/538s-pollster-ratings-work/story?id=105398138
+  shrinkage_k: 5.0
+  # Clamp on |shrunk effect|, in points of D−R margin. Two independent anchors
+  # put the ceiling here. 538's house-effect prior is a normal centred on zero
+  # whose standard deviation its optimiser picks and which is "usually it's
+  # around 3 points"; and the largest house effects Silver Bulletin measured
+  # across the whole 2024 presidential field were Trafalgar at −2.7 and
+  # Rasmussen at −2.6 on the margin, with the most Democratic-leaning firms
+  # at about +1.9. A cap at 3.0 sits just above the largest effect either
+  # source reports, so it binds on estimates the literature says should not
+  # happen rather than on ordinary ones.
+  # citation: https://abcnews.com/538/polling-averages-work/story?id=103232260
+  # citation: https://www.natesilver.net/p/which-polls-are-biased-toward-harris
+  max_effect_pp: 3.0
+  # How far either side of a poll's field_end the leave-one-out comparison
+  # average reaches. Set equal to averaging.window_days on purpose: the field
+  # a poll is judged against should be the same field the model would have
+  # published, not a differently-shaped one. Symmetric rather than backward-
+  # looking, so that a genuine trend in the race does not read as a lean —
+  # a backward-only window would sit an average of two to three weeks behind
+  # each poll and charge every pollster for the movement in between.
+  residual_window_days: 45
+  # Residuals are time-decayed toward the run date, so a house effect reflects
+  # recent behaviour — but on a half-life of its own, NOT averaging.
+  # half_life_days. A house effect is a slow-moving property of a firm's
+  # methodology; the 14-day half-life is tuned for a fast-moving race. Applied
+  # here it would leave RMG Research's 24 polls carrying 1.4 polls of
+  # effective information while the shrinkage term above, which counts polls,
+  # saw 24 and barely shrank at all — a confident-looking adjustment resting
+  # on one recent poll's sampling error. At 180 days the same 24 polls carry
+  # 19.1, so the count the shrinkage reads and the information behind it agree.
+  # Measured, per pollster, in docs/BUILD_NOTES.md Phase 9 §A3.
+  residual_half_life_days: 180
+  # A residual needs at least this many OTHER houses in the window before it
+  # counts. Against one other house a residual is not a distance from the
+  # field, it is the gap between two polls — half of it the other house's own
+  # lean — and it lands in both firms' estimates equal and opposite. The
+  # approved design asks for race-level residuals only "where a race has
+  # enough distinct pollsters to define a meaningful average"; this is that
+  # rule, applied to the generic ballot too so there is one standard for what
+  # counts as a field. Idaho is the live case it was written for
+  # (BUILD_NOTES Phase 9 §A4).
+  min_comparison_pollsters: 3
 blend:
   weight_saturation: 3.0
 fundamentals:

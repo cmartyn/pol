@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_070001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_090001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -174,6 +174,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_070001) do
     t.index ["scheduled_at"], name: "index_good_jobs_on_scheduled_at", where: "(finished_at IS NULL)"
   end
 
+  create_table "house_effects", force: :cascade do |t|
+    t.boolean "applied", default: false, null: false
+    t.datetime "created_at", null: false
+    t.float "effect_raw", null: false
+    t.float "effect_shrunk", null: false
+    t.bigint "model_run_id", null: false
+    t.bigint "pollster_id", null: false
+    t.integer "residual_count", null: false
+    t.datetime "updated_at", null: false
+    t.index ["model_run_id", "pollster_id"], name: "index_house_effects_on_model_run_id_and_pollster_id", unique: true
+    t.index ["model_run_id"], name: "index_house_effects_on_model_run_id"
+    t.index ["pollster_id"], name: "index_house_effects_on_pollster_id"
+  end
+
   create_table "model_runs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error_message"
@@ -312,6 +326,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_070001) do
   add_foreign_key "dispatches", "races"
   add_foreign_key "forecasts", "model_runs"
   add_foreign_key "forecasts", "races"
+  add_foreign_key "house_effects", "model_runs"
+  add_foreign_key "house_effects", "pollsters"
   add_foreign_key "newsroom_skips", "races"
   add_foreign_key "poll_results", "candidates"
   add_foreign_key "poll_results", "polls"

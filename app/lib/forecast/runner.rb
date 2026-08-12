@@ -31,7 +31,7 @@ class Forecast::Runner
 
   attr_reader :trigger, :as_of, :logger
   # Set during the run, for callers that want to report on it (bin/rails pol:model).
-  attr_reader :model_run, :national_env, :generic_ballot, :simulation, :race_models
+  attr_reader :model_run, :national_env, :generic_ballot, :simulation, :race_models, :house_effects
 
   def call
     @model_run = start_run!
@@ -92,7 +92,12 @@ class Forecast::Runner
     end
 
     def forecast!
-      averager = Forecast::Averager.new(as_of: as_of)
+      # Before any averaging, and from unadjusted averages — the single pass
+      # described in Forecast::HouseEffects. The lookup then threads through
+      # every average this run takes, the generic ballot and all 470 races,
+      # because one averager instance serves all of them.
+      @house_effects = Forecast::HouseEffects.call(as_of: as_of)
+      averager = Forecast::Averager.new(as_of: as_of, house_effects: @house_effects.lookup)
       @generic_ballot = averager.for_generic_ballot
       @national_env = national_environment(@generic_ballot)
       @race_models = build_race_models(averager)
@@ -104,6 +109,7 @@ class Forecast::Runner
       ).call
 
       ActiveRecord::Base.transaction do
+        write_house_effects
         write_forecasts
         write_chamber_forecasts
         model_run.update!(status: :succeeded, finished_at: Time.current)
@@ -111,7 +117,9 @@ class Forecast::Runner
 
       logger.info(
         "Forecast::Runner: run #{model_run.id} (#{trigger}) forecast #{@race_models.size} races, " \
-        "national env #{format('%+.2f', national_env)}, seed #{model_run.rng_seed}"
+        "national env #{format('%+.2f', national_env)}, " \
+        "#{@house_effects.applied_count} of #{@house_effects.effects.size} house effects applied, " \
+        "seed #{model_run.rng_seed}"
       )
     end
 
@@ -144,6 +152,15 @@ class Forecast::Runner
           polls: polls.fetch(race.id, [])
         )
       end
+    end
+
+    # In the run's own transaction, alongside the forecasts they produced, so
+    # a forecast's inputs are reproducible from the run's own rows rather than
+    # from whatever the estimator would say today.
+    def write_house_effects
+      rows = house_effects.rows_for(model_run.id)
+
+      HouseEffect.insert_all!(rows) if rows.any?
     end
 
     def write_forecasts

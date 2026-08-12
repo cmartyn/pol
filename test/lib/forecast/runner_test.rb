@@ -146,6 +146,156 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     assert_operator run.chamber_forecasts.find_by(chamber: :senate).mean_dem_seats, :>=, 35.0
   end
 
+  # --- House effects (Phase 9) ---------------------------------------------
+
+  # A world where one house is reliably 4 points more Democratic than three
+  # others, polled on ten separate days. Beacon's raw effect is +4.0 and its
+  # shrunk one is 4.0 × 10/15 = 2.6666667.
+  def leaning_world(margin: 8.0, days: 10)
+    field = [ pollsters(:cardinal_research), pollsters(:delta_metrics), create_pollster("Katahdin Polling") ]
+    Poll.for_generic_ballot.destroy_all
+
+    days.times do |index|
+      date = AS_OF - 3 - index
+      field.each do |pollster|
+        create_poll(pollster: pollster, field_end: date, sample_size: 600, results: { dem: 48.0, rep: 44.0 })
+      end
+      create_poll(pollster: pollsters(:beacon_polling), field_end: date, sample_size: 600,
+                  results: { dem: 44.0 + margin, rep: 44.0 })
+    end
+  end
+
+  test "a run persists every estimated effect, applied or not" do
+    leaning_world
+
+    run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+    beacon = run.house_effects.find_by(pollster_id: pollsters(:beacon_polling).id)
+
+    assert_equal 4, run.house_effects.count, "all four houses in the world got an estimate"
+    assert_in_delta 4.0, beacon.effect_raw, 1e-9
+    assert_in_delta 4.0 * 10 / 15, beacon.effect_shrunk, 1e-9
+    assert_equal 10, beacon.residual_count
+    assert_predicate beacon, :applied?
+  end
+
+  test "the effects a run applied are the ones its averages used" do
+    leaning_world
+    runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+    runner.call
+
+    lookup = HouseEffect.applied_lookup(runner.model_run)
+    adjusted = Forecast::Averager.new(as_of: AS_OF, house_effects: lookup).for_generic_ballot.mean_margin
+
+    assert_in_delta lookup.fetch(pollsters(:beacon_polling).id), 4.0 * 10 / 15, 1e-9
+    assert_in_delta adjusted, runner.national_env, 1e-12,
+                    "the environment is the average taken with this run's own effects"
+  end
+
+  # Worth stating as its own property, because it is easy to expect the
+  # opposite. Residuals are measured against the other houses, so in a field
+  # where everyone polls equally often the effects net out and removing them
+  # redistributes weight between pollsters WITHOUT moving the average. A house
+  # effect correction that shifted a balanced average would be measuring
+  # something other than the gap between houses.
+  test "in a field where every house polls equally, removing the effects does not move the average" do
+    leaning_world
+
+    unadjusted = Forecast::Averager.new(as_of: AS_OF).for_generic_ballot.mean_margin
+    runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+    runner.call
+
+    assert_in_delta 5.0, unadjusted, 1e-9, "(8 + 4 + 4 + 4) / 4"
+    assert_in_delta unadjusted, runner.national_env, 1e-9
+    assert_operator HouseEffect.applied_lookup(runner.model_run).values.map(&:abs).max, :>, 0.5,
+                    "and it is not because the effects were all zero"
+  end
+
+  # Where the correction bites is a race one house has to itself. Beacon's
+  # generic-ballot lean is +4.0 raw, +2.6666667 shrunk; Maine's average is its
+  # single Beacon poll, so the whole effect comes off it: 5.0 − 2.6666667.
+  test "a race polled only by a leaning house moves by that house's whole effect" do
+    leaning_world
+    races(:senate_maine).polls.destroy_all
+    create_poll(pollster: pollsters(:beacon_polling), race: races(:senate_maine), field_end: AS_OF - 3,
+                sample_size: 600, results: { dem: 50.0, rep: 45.0 })
+
+    runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+    runner.call
+    maine = runner.race_models.find { |model| model.race.id == races(:senate_maine).id }
+
+    assert_in_delta 5.0 - (4.0 * 10 / 15), maine.average.mean_margin, 1e-9
+    assert_in_delta 2.3333333, maine.average.mean_margin, 1e-7
+  end
+
+  # The run's rows are its own inputs: reproducing a forecast must not depend
+  # on the estimator agreeing with itself a week later.
+  test "two runs each get their own effect rows" do
+    leaning_world
+
+    first = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+    second = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+
+    assert_equal first.house_effects.count, second.house_effects.count
+    assert_empty first.house_effects.pluck(:id) & second.house_effects.pluck(:id)
+    assert_equal first.house_effects.order(:pollster_id).pluck(:effect_shrunk),
+                 second.house_effects.order(:pollster_id).pluck(:effect_shrunk)
+  end
+
+  test "a run cannot record two effects for one pollster" do
+    run = model_runs(:model_run_one)
+    HouseEffect.create!(model_run: run, pollster: pollsters(:beacon_polling),
+                        effect_raw: 1.0, effect_shrunk: 0.5, residual_count: 4, applied: true)
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      HouseEffect.insert_all!([ {
+        model_run_id: run.id, pollster_id: pollsters(:beacon_polling).id,
+        effect_raw: 2.0, effect_shrunk: 1.0, residual_count: 9, applied: true,
+        created_at: Time.current, updated_at: Time.current
+      } ])
+    end
+  end
+
+  test "a failed run leaves no effect rows behind" do
+    leaning_world
+
+    raising(ChamberForecast, :insert_all!, "the database fell over") do
+      assert_raises(RuntimeError) { Forecast::Runner.call(trigger: :manual, as_of: AS_OF, n_sims: 50) }
+    end
+
+    assert_equal 0, ModelRun.latest.first.house_effects.count
+  end
+
+  # The switch has to be a real switch: off means the model's numbers are
+  # exactly what they were before this phase existed, while the estimates are
+  # still made and still published.
+  test "with house effects disabled nothing is applied and the averages are the unadjusted ones" do
+    leaning_world
+
+    off = with_params(house_effects: { enabled: false }) do
+      runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+      runner.call
+      assert_in_delta Forecast::Averager.new(as_of: AS_OF).for_generic_ballot.mean_margin,
+                      runner.national_env, 1e-12
+      runner.model_run
+    end
+
+    assert_equal 0, off.house_effects.where(applied: true).count
+    assert_operator off.house_effects.count, :>, 0, "the estimates are still recorded and still shown"
+    assert_empty HouseEffect.applied_lookup(off)
+  end
+
+  # The fixture world is too thin for any effect to clear the minimum, which
+  # is why every Phase 3 golden above still reads exactly as it did. This
+  # pins that, so a change to the estimator that started adjusting the fixture
+  # world would fail here — naming the cause — rather than as a wall of
+  # moved goldens.
+  test "the fixture world produces no applied effects, which is why the Phase 3 goldens hold" do
+    run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+
+    assert_equal 0, run.house_effects.where(applied: true).count
+    assert_empty HouseEffect.applied_lookup(run)
+  end
+
   # --- Concurrency --------------------------------------------------------
 
   test "the database refuses a second running run, whoever asks" do
