@@ -152,4 +152,21 @@ class PollTest < ActiveSupport::TestCase
   test "a poll with no matchup has no label" do
     assert_nil polls(:maine_poll_one).matchup_label
   end
+
+  # Three Senate races hold both keyed and unkeyed polls, so the race page has
+  # a group headed by neither name. It should say which kind of nothing it is.
+  test "a placeholder-opponent poll heads its group with why it is not in the average" do
+    poll = create_poll(pollster: pollsters(:beacon_polling), race: races(:senate_maine),
+                       field_end: Date.new(2026, 7, 1), results: { dem: 51.0, rep: 45.0 },
+                       raw_payload: { "columns" => { "Jordan Ellis (D)" => "51%", "Generic Republican" => "45%" } })
+
+    assert_predicate poll, :placeholder_opponent?
+    assert_nil poll.matchup_label, "a placeholder is not a name, so there is no matchup"
+    assert_equal "Against a generic opponent — not in the average", poll.matchup_heading
+  end
+
+  test "a poll with no cell map at all heads its group honestly rather than inventing one" do
+    assert_not_predicate polls(:maine_poll_two), :placeholder_opponent?
+    assert_equal "Matchup not recorded", polls(:maine_poll_two).matchup_heading
+  end
 end

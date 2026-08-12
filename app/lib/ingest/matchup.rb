@@ -74,6 +74,22 @@ module Ingest
         key(columns_of(poll))
       end
 
+      # A poll one of whose sides was a placeholder rather than a person —
+      # "Generic Republican", "Another Democratic candidate". The parser
+      # refuses these now (`generic_candidate_column`), but four were read
+      # before it did and are still in the corpus. They carry no matchup key,
+      # because a placeholder is not a name, so the ambiguity rule cannot see
+      # them; the averager drops them on this instead.
+      def placeholder_opponent?(poll)
+        columns = poll.raw_payload.is_a?(Hash) ? poll.raw_payload["columns"] : nil
+        return false if columns.blank?
+
+        columns.keys.any? do |label|
+          label.match?(PollTableParser::GENERIC_CANDIDATE) &&
+            (party_of(label) || PollTableParser::BARE_PARTY.each_value.any? { |p| label.match?(p) })
+        end
+      end
+
       # ["Matt Dunlap (D)", "Paul LePage (R)"] — the contest as the page wrote
       # it, which is what a reader should see rather than a normalised key.
       def labels_for_poll(poll)

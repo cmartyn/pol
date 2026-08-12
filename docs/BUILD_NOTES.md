@@ -2080,14 +2080,15 @@ one poll. The Senate side gained exactly one new poll (Alaska) and recognised
 the other 232 rows as duplicates, which is the dedup contract holding across a
 sweep that also added a third of a chamber's worth of new sources.
 
-One thing the new guards do **not** do is undo their own past. Four polls
-already in the database were read from placeholder-opponent tables before
-`generic_candidate_column` existed — polls 105 and 106 (Minnesota, "Generic
-Republican" against Craig and against Flanagan), 150 (Nebraska, Ricketts
-against a "Generic Democrat") and 190 (South Carolina, Andrews against a
-"Generic Republican"). No new ones can arrive, and these four were left where
-they are: deleting scraped rows from the live corpus is an editorial call, not
-a parser change. They are named here so the call can be made deliberately.
+Four polls already in the database were read from placeholder-opponent tables
+before `generic_candidate_column` existed — polls 105 and 106 (Minnesota,
+"Generic Republican" against Craig and against Flanagan), 150 (Nebraska,
+Ricketts against a "Generic Democrat") and 190 (South Carolina, Andrews against
+a "Generic Republican"). No new ones can arrive. These four are **left in the
+table and left off the average** (§G3): a poll fought against a placeholder
+measured the party, not the nominee, so its margin is not a reading of that
+contest. They stay on their race pages, grouped under a heading that says so.
+Deleting them is still an editorial call nobody has had to make.
 
 ### F1. Per state page
 
@@ -2203,21 +2204,16 @@ that we cannot tell who is running. `Forecast::Averager#contested_pairs` reads
 only the two sides it is about to compare, so Montana resolves to one contest
 and Maine's four Democrats against LePage stay four.
 
-The test runs **inside the averaging window, after the one-per-pollster cut**,
-which matters more than it sounds:
+The test runs **inside the averaging window and before the one-per-pollster
+cut** — see §G6 for why that order, and what it cost to get wrong. A race
+resolves itself as its old hypotheticals age out of the window; nothing has to
+be re-run when a primary settles and no migration is owed.
 
-* Idaho's 1st has three tables from SurveyUSA on one day — a three-way, and two
-  two-ways carved out of it. Three matchups on the page, one poll in the
-  average, no ambiguity.
-* A district resolves itself as its old hypotheticals age out of the window.
-  Nothing has to be re-run when a primary settles and no migration is owed.
-
-**Result on the live board: 54 of the 73 polled districts average cleanly, 3
-fall back to fundamentals — ME-2, MT-1, FL-25 — and 16 have no poll recent
-enough to qualify** (which was already true before this rule and is not caused
-by it). The 3 are exactly the districts whose *recent* polls disagree; the
-other 19 of the 22 multi-matchup districts resolve themselves once the window
-and the per-pollster cut have run.
+**Result on the live board: 47 of the 73 polled districts average cleanly, 10
+fall back to fundamentals, and 16 have no poll recent enough to qualify** (the
+last of those was already true before this rule and is not caused by it). The
+ten: FL-2, FL-14, FL-25, ME-2, MI-7, MN-2, MT-1, NJ-7, VT-1, WA-5. The other
+twelve multi-matchup districts resolve themselves once the window has run.
 
 **The rule applies to every race, not only districts.** It reads on the polls:
 if the ones that survive the window and the per-pollster cut name two different
@@ -2234,9 +2230,12 @@ lean. Nothing is hidden.
 
 ### G1a. What the rule does to the Senate
 
-**Today: nothing. Zero of the 24 polled Senate races fall back** — 22 average
-cleanly and 2 have no poll recent enough to qualify. That is not because the
-Senate is clean. It is because of which poll happens to be newest.
+**Two of the 24 polled Senate races fall back: Florida and South Carolina.**
+Twenty average cleanly and 2 have no poll recent enough to qualify.
+
+(An earlier draft of this section said zero. That was measured with the
+ambiguity test running *after* the one-per-pollster cut, which is a bug in its
+own right — see §G6 — and hid both of these.)
 
 The mechanism that contaminates a Senate race is not the obvious one. No 2026
 Senate race has two candidates of one party seeded, so a hypothetical against a
@@ -2247,17 +2246,18 @@ every hypothetical for that slot is accepted. South Carolina has no Republican
 nominee and its page polls Annie Andrews against eight different Republicans;
 Florida's page carries four pairs, Minnesota's two.
 
-Back-dating the averager to each of the 139 field-end dates in the Senate
-corpus, **three races would have fallen back on 41 of those days**: Florida on
-23, South Carolina on 13 — most recently 2026-07-17, three and a half weeks
-before this was written — and Minnesota on 5. The guard is doing nothing this
-afternoon and would have been doing something on a fifth of the days behind us.
-That is the argument for having it. Phase 9 estimates pollster house effects
-from race-level residuals, and a residual measured on one of those days would
-have carried the blend into every pollster's estimated lean.
+Back-dating the averager to each of the **194** field-end dates in the corpus,
+three Senate races fall back on **192 race-days** between them: Minnesota 98,
+Florida 75, South Carolina 19. Florida and South Carolina were both ambiguous
+as recently as **2026-08-06** — five days before this was written — which is
+why they are ambiguous today. (Not to be confused with 2026-07-17, the field
+date of the seven-row Public Policy Polling battery in §G6: one is when a poll
+was taken, the other is a day on which the average would have stood down.) Phase 9 estimates pollster house effects from
+race-level residuals, and a residual measured on any of those days would have
+carried the blend into every pollster's estimated lean.
 
 Montana, South Dakota, Idaho and Nebraska — four of the seven races the first
-audit flagged — were never mutual exclusivity at all. Each polls one pair both
+audit flagged — are not mutual exclusivity at all. Each polls one pair both
 two-way and three-way (Bodnar in Montana, Beaudion in South Dakota, Roth in
 Idaho, and Nebraska's Democrats against Ricketts alongside the Osborn contest
 the model actually reads), and the flat-list key was counting a third name as a
@@ -2282,7 +2282,7 @@ or three times each. It now groups by source first and judges each on its most
 recent run. Same defect, same fix, in the "other sources refused only routine
 tables" count.
 
-### G3. Four smaller things
+### G3. Smaller things
 
 * **A real same-party general now says so.** California's 11th is a genuine
   top-two general between two Democrats; it was being refused as
@@ -2298,6 +2298,12 @@ tables" count.
   the parser used to invent. No live page carries such a heading — the branch
   exists for the day one does — and with no caller district it now refuses as
   `district_unresolved` instead of guessing.
+* **A poll against a placeholder opponent no longer enters an average.** The
+  four rows in §F carry no matchup key — a placeholder is not a name — so the
+  ambiguity rule cannot see them, and they were still feeding named-candidate
+  races. `Forecast::Averager` drops them (counted in `skipped_count`, which is
+  exactly what it means) and the race page heads their group "Against a generic
+  opponent — not in the average".
 * **A generational suffix is not a surname.** "Nick Begich III" was a man
   called "iii", and "Mike Bouchard Jr." and "Tom Kean Jr." were the same
   person. Audited against the corpus before and after: no seeded candidate
@@ -2330,6 +2336,52 @@ Two fixtures were added for the matchup rule, both real trimmed Parsoid HTML:
 The Phase 8 report said 55 of the 69 sources refused at least one table. The
 sweep's rows say **57**.
 
+### G6. The ambiguity test runs before the one-per-pollster cut
+
+Shipped the other way round at first, and it was wrong in a way worth writing
+down. `one_per_pollster` keeps the latest poll per house and breaks ties on id.
+Run the ambiguity test after it and an **insertion order decides which
+hypothetical the site publishes**: Public Policy Polling fielded seven South
+Carolina rows to 2026-07-17, against seven different Republicans, and the cut
+kept whichever happened to land with the highest id. Forty-four
+(race, pollster, field_end) groups in the corpus span more than one matchup in
+a single field period — that is the count, independently reproduced.
+
+A pollster testing seven opponents in one field period is not a race to pick a
+winner from — it is the plainest evidence there is that nobody knows who is
+running. The test now runs on everything inside the window, before the cut. The
+per-pollster cut keeps doing its own job (not letting one house weigh twice) on
+races that are not ambiguous, and the test can only ever get more conservative
+this way, never less.
+
+What it cost, measured before shipping:
+
+| | After the cut | **Before the cut** |
+|---|---:|---:|
+| Senate races falling back (of 24 polled) | 0 | **2** — FL, SC |
+| House districts falling back (of 73 polled) | 3 | **10** |
+| Combined | 3 of 97 (3%) | **12 of 97 (12%)** |
+| Races ever ambiguous in the 194-date back-test | 7 | **17** |
+| Race-days ambiguous | 308 | **1,153** |
+
+Twelve per cent of polled races resting on fundamentals is a real cost and it
+is the honest one; the stop-condition agreed beforehand was a third, and this
+is well inside it. Sixty-seven of the 97 polled races still publish a
+poll-based average.
+
+### G7. `matchup_key` is computed once, at ingest
+
+It is never re-derived on read. That is deliberate — the key is provenance,
+recording what a page said at the moment it was read — but it has a
+consequence worth knowing before Phase 9 touches this: **if the normalisation
+ever changes, old rows keep old-format keys and new rows get new ones, and a
+race holding both would be declared ambiguous for no reason other than the
+format change.** The remedy is the backfill the migration already contains
+(`Ingest::Matchup.for_poll` over every poll), and it should be run in the same
+commit as any change to how the key is built. This has already happened twice
+during Phase 8 — once for the name-suffix fix, once when the key became
+party-keyed — and both times the whole table was recomputed.
+
 ## H. What this leaves for later
 
 1. **Seed candidates for the slots that have none.** Seeding House candidates
@@ -2342,9 +2394,9 @@ sweep's rows say **57**.
 2. **Refresh `DISTRICT_POLL_STATES` after the remaining primaries.** Nine
    states are one nomination away from carrying general-election district polls
    (§A3) and will not be fetched until the list is re-surveyed.
-3. **Decide about the four placeholder-opponent polls** already in the corpus
-   (§F). They are the kind of row the parser now refuses; whether to leave
-   history alone or delete them is an editorial call, not a code one.
+3. **The four placeholder-opponent polls** are excluded from averaging and
+   still displayed (§F, §G3). Whether to delete them outright is an editorial
+   call nobody now has to make in a hurry.
 4. **Watch the bandwidth, not the request rate.** 69 sources is 61 MB a sweep
    and 12 sweeps a day. If that becomes a problem the lever is a separate,
    slower cadence for district sources rather than a shorter list — the list is

@@ -332,9 +332,13 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     assert_equal 2, today.poll_count
   end
 
-  # Three tables from one pollster on one day are three matchups on the page
-  # and one poll in the average.
-  test "the one-per-pollster cut runs before the matchup test, not after" do
+  # The order these two run in decides what the site publishes. Public Policy
+  # Polling put out seven South Carolina rows on one day against seven
+  # different Republicans; run the per-pollster cut first and an id tiebreak
+  # picks which of the seven the forecast rests on. A pollster testing seven
+  # opponents in one field period is the evidence that nobody knows who is
+  # running.
+  test "one pollster testing several opponents on one day is ambiguity, not a tiebreak" do
     race = district("house-2026-me-02-samepollster", 2)
     3.times do |index|
       create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
@@ -343,8 +347,56 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
 
     result = @averager.for_race(race)
 
+    assert_not_predicate result, :polled?
+    assert_equal :ambiguous_matchup, result.reason
+    assert_equal 3, result.matchups.size
+    assert_equal 3, result.poll_count, "all three were in the window; none was thrown away first"
+  end
+
+  # The per-pollster cut still does its own job on a race that is not
+  # ambiguous: one house does not get to weigh twice.
+  test "one pollster polling the same matchup twice still counts once" do
+    race = district("house-2026-me-02-onehouse", 2)
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "dem:golden|rep:lepage", results: { dem: 50.0, rep: 44.0 })
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 4, sample_size: 600,
+                matchup_key: "dem:golden|rep:lepage", results: { dem: 49.0, rep: 45.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "dem:golden|rep:lepage", results: { dem: 48.0, rep: 46.0 })
+
+    result = @averager.for_race(race)
+
     assert_predicate result, :polled?
+    assert_equal 2, result.poll_count
+  end
+
+  # A poll fought against "Generic Republican" measured the party, not the
+  # nominee. The parser refuses those tables now; four rows predate the guard,
+  # carry no matchup key, and would otherwise sail into the average unnoticed.
+  test "a poll against a placeholder opponent does not enter the average" do
+    race = district("house-2026-me-02-placeholder", 2)
+    real = create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                       matchup_key: "dem:golden|rep:lepage", results: { dem: 50.0, rep: 44.0 },
+                       raw_payload: { "columns" => { "Jared Golden (D)" => "50%", "Paul LePage (R)" => "44%" } })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 4, sample_size: 600,
+                results: { dem: 20.0, rep: 70.0 },
+                raw_payload: { "columns" => { "Jared Golden (D)" => "20%", "Generic Republican" => "70%" } })
+
+    result = @averager.for_race(race)
+
     assert_equal 1, result.poll_count
+    assert_equal 1, result.skipped_count, "counted, not silently dropped"
+    assert_in_delta 6.0, result.mean_margin, 1e-9, "the placeholder's -50 never reached the mean"
+    assert_predicate real.reload, :persisted?, "and it stays in the table, and on the page"
+  end
+
+  test "the generic ballot's own party columns are not mistaken for placeholders" do
+    poll = create_poll(pollster: @beacon, field_end: AS_OF - 1, sample_size: 600,
+                       results: { dem: 49.0, rep: 44.0 },
+                       raw_payload: { "columns" => { "Democratic" => "49%", "Republican" => "44%" } })
+
+    assert_not poll.placeholder_opponent?
+    assert_predicate @averager.call(polls: [ poll ]), :polled?
   end
 
   # The rule reads on the polls, not on the chamber. A Senate race gets its

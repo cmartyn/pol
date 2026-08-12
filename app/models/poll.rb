@@ -40,6 +40,21 @@ class Poll < ApplicationRecord
     labels.any? ? labels.join(" vs ") : Ingest::Matchup.humanize(matchup_key)
   end
 
+  # One side of this poll was a placeholder — "Generic Republican" — rather
+  # than a person. The parser refuses those tables now; a few rows predate the
+  # guard, and Forecast::Averager leaves them out of the average.
+  def placeholder_opponent?
+    Ingest::Matchup.placeholder_opponent?(self)
+  end
+
+  # What to head this poll's group with on a page that lists polls by matchup.
+  # A poll with no matchup is not a mystery — it is a poll that named nobody to
+  # run against, and the heading says which kind rather than shrugging.
+  def matchup_heading
+    matchup_label ||
+      (placeholder_opponent? ? "Against a generic opponent — not in the average" : "Matchup not recorded")
+  end
+
   class << self
     # Poll.compute_digest(pollster_slug: "beacon-polling", race_id: 1,
     #   field_start: Date.new(2026, 7, 1), field_end: Date.new(2026, 7, 5),

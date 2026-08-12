@@ -212,10 +212,15 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
   test "a table refused is a table counted, with a reason" do
     result = parse("senate_georgia.html", candidates: georgia_candidates)
 
+    # The whole hash, not a total and a couple of entries: the fixture is here
+    # to reproduce the live page, and it only does that if every reason
+    # matches. These are the exact counts the 2026-08-11 sweep read off the
+    # live Georgia page.
+    assert_equal({ aggregator_table: 4, no_candidate_column_match: 7, primary_only_table: 5,
+                   generic_candidate_column: 1, no_party_columns: 1 },
+                 result.refusals)
     assert_equal 18, result.refused
     assert_equal result.refusals.values.sum, result.refused, "the count is the total of the reasons"
-    assert_equal 4, result.refusals[:aggregator_table]
-    assert_equal 7, result.refusals[:no_candidate_column_match], "the hypothetical matchups"
     assert_equal 10, result.rows.size, "and the real matchup still comes through"
   end
 

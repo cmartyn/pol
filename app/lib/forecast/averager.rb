@@ -74,8 +74,8 @@ class Forecast::Averager
     window = @window_days
     window = @extended_window_days if within(measured, @window_days).size < @min_polls_in_window
 
-    kept = one_per_pollster(within(measured, window))
-    skipped = in_hand.count { |poll| age_days(poll) <= window } - within(measured, window).size
+    in_window = within(measured, window)
+    skipped = in_hand.count { |poll| age_days(poll) <= window } - in_window.size
 
     # Every race, not only House districts. A Senate race whose nomination is
     # unsettled has several same-party candidates seeded, so several
@@ -85,23 +85,33 @@ class Forecast::Averager
     # race-level residuals, so a blended average here would end up inside every
     # pollster's estimated lean.
     #
-    # The test runs on the polls that actually survived — after the window and
-    # after the one-per-pollster cut — and not over all history. Three same-day
-    # tables from one pollster collapse to one poll and are no ambiguity at
-    # all; a race whose old hypotheticals have aged out of the window has
-    # already resolved itself. Doing it any earlier would refuse races that are
-    # perfectly readable today, and would need undoing by hand as each primary
-    # settles.
+    # The test runs on everything inside the window and *before* the
+    # one-per-pollster cut, which is the order that matters. Running it after
+    # would let an id tiebreak among a pollster's same-day rows decide which
+    # hypothetical the site publishes: Public Policy Polling fielded seven
+    # South Carolina rows to 2026-07-17, against seven different Republicans,
+    # and the cut keeps whichever landed with the highest id. A pollster
+    # testing seven opponents in one field period is itself the evidence that
+    # nobody knows who is running — that is a race to stand down on, not one
+    # to pick a winner from by insertion order.
+    #
+    # Ageing out still works, because the window is what does it: a race whose
+    # old hypotheticals have fallen out of the window has resolved itself, and
+    # no hand-editing is owed as each primary settles.
     #
     # The generic ballot is untouched: its columns name nobody, so its polls
     # carry no matchup and this can never fire on them.
-    matchups = contested_pairs(kept, side_a, side_b)
+    matchups = contested_pairs(in_window, side_a, side_b)
     if matchups.size > 1
       return Result.new(
-        mean_margin: nil, weight: 0.0, poll_count: kept.size, window_days: window,
+        mean_margin: nil, weight: 0.0, poll_count: in_window.size, window_days: window,
         skipped_count: skipped, reason: :ambiguous_matchup, matchups: matchups
       )
     end
+
+    # One poll per pollster goes on doing its own job — not letting one house
+    # weigh twice — now that it is no longer also deciding the question above.
+    kept = one_per_pollster(in_window)
 
     weight = 0.0
     weighted_sum = 0.0
@@ -159,6 +169,13 @@ class Forecast::Averager
     # stronger one. A poll that never asked about one of the two sides is not
     # evidence about this matchup and returns nil.
     def measure(poll, side_a, side_b)
+      # A poll fought against "Generic Republican" measured the party, not the
+      # nominee, and its margin is not a reading of this contest. The parser
+      # refuses those tables now; four rows predate the guard and are still in
+      # the corpus, so they are dropped here — counted in skipped_count, which
+      # is exactly what it means, and still shown on the race page.
+      return nil if Ingest::Matchup.placeholder_opponent?(poll)
+
       a = top_pct(poll, side_a)
       b = top_pct(poll, side_b)
       return nil if a.nil? || b.nil?
