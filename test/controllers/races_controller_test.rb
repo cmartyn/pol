@@ -113,6 +113,42 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='polls-scatter-chart']"
   end
 
+  # A district whose polls measure contests that cannot all happen has polling
+  # and no forecast-grade average. The page has to say both — hiding the polls
+  # would be as dishonest as averaging them.
+  test "show says why a district with several matchups rests on fundamentals, and keeps its polls" do
+    race = races(:house_ny_17)
+    ambiguous_district_polls(race)
+
+    get race_path(race.slug)
+
+    assert_select "[data-testid='ambiguous-matchup-note']", text: /2 different matchups/
+    assert_select "[data-testid='ambiguous-matchup-note']", text: /rests on fundamentals/
+    assert_select "[data-testid='poll-row']", { count: 2 }, "both polls are still on the page"
+    assert_select "[data-testid='poll-matchup-heading']", count: 2
+    assert_select "[data-testid='poll-matchup-heading'][data-matchup='conley vs lawler']"
+  end
+
+  test "show leaves a single-matchup race's poll table ungrouped" do
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='poll-table']"
+    assert_select "[data-testid='poll-matchup-heading']", count: 0
+    assert_select "[data-testid='ambiguous-matchup-note']", count: 0
+  end
+
+  def ambiguous_district_polls(race)
+    [ [ "conley vs lawler", "Cait Conley (D)", 51.0 ],
+      [ "jones vs lawler", "Pat Jones (D)", 44.0 ] ].each_with_index do |(key, dem_label, dem_pct), index|
+      create_poll(
+        pollster: index.zero? ? pollsters(:beacon_polling) : pollsters(:cardinal_research),
+        race: race, field_end: Date.current - index, sample_size: 600,
+        results: { dem: dem_pct, rep: 45.0 }, matchup_key: key,
+        raw_payload: { "columns" => { "Mike Lawler (R)" => "45%", dem_label => "#{dem_pct}%" } }
+      )
+    end
+  end
+
   test "show renders a graceful no-forecast state for a race with no forecast row" do
     unforecast = Race.create!(office: :senate, state: "ZZ", cycle: 2026, slug: "senate-controller-test-unforecast")
 

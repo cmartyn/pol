@@ -172,7 +172,8 @@ module Ingest
           sample_size: row.sample_size,
           population: row.population,
           source_url: row.source_url,
-          raw_payload: row.raw_payload
+          raw_payload: row.raw_payload,
+          matchup_key: row.matchup_key
         }
       end
 

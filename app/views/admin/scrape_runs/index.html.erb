@@ -11,7 +11,12 @@
     "we could not read this page's polling", and it is the second one that
     quietly takes a race off the board. It gets said at the top, not buried in
     a column halfway down a long list. %>
-<% refusing = @scrape_runs.select(&:refused_tables?) %>
+<%# By source, not by run. The window holds a couple of sweeps, so a source
+    that refuses a table every two hours appears in it two or three times, and
+    counting rows would report more sources refusing than the sweep has. Each
+    source is judged on its most recent run — the window is ordered newest
+    first, so that is the one group_by keeps first. %>
+<% refusing = @scrape_runs.group_by(&:source).values.map(&:first).select(&:refused_tables?) %>
 <% if refusing.any? %>
   <% alarming, routine = refusing.partition(&:refusal_alarm?) %>
   <div class="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4" data-testid="admin-scrape-refusals">

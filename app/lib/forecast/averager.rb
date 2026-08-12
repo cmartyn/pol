@@ -9,7 +9,12 @@ class Forecast::Averager
   # of poll weights, which is what the blend saturates against and what lands
   # in forecasts.effective_poll_weight. `skipped_count` is the polls inside
   # the window that did not measure this matchup (see #measure).
-  Result = Struct.new(:mean_margin, :weight, :poll_count, :window_days, :skipped_count, keyword_init: true) do
+  #
+  # `reason` is set only when there were polls and we declined to average them
+  # anyway; `matchups` carries the contests they disagreed about, so a page can
+  # say which ones rather than "something was wrong".
+  Result = Struct.new(:mean_margin, :weight, :poll_count, :window_days, :skipped_count,
+                      :reason, :matchups, keyword_init: true) do
     # "Polled" means there is an average to blend, not merely that rows exist.
     # Polls whose weights sum to zero leave the race on its prior — and this is
     # what keeps the blend from ever multiplying by a nil mean.
@@ -36,8 +41,14 @@ class Forecast::Averager
 
   # `polls` may be a relation or a plain array; callers that are about to
   # average hundreds of races should preload poll_results and pass arrays.
+  #
+  # House districts are held to the one-matchup rule and Senate races are not,
+  # which is a statement about the data rather than about the chamber: a Senate
+  # race's hypothetical matchups are rejected at ingest by its seeded candidate
+  # list, and no House race has a candidate list to reject anything with.
   def for_race(race, side_a: :dem, side_b: :rep, polls: nil)
-    call(polls: polls || race.polls.includes(:poll_results), side_a: side_a, side_b: side_b)
+    call(polls: polls || race.polls.includes(:poll_results), side_a: side_a, side_b: side_b,
+         one_matchup: race.house?)
   end
 
   # The national environment: the same machinery over generic-ballot polls,
@@ -46,7 +57,7 @@ class Forecast::Averager
     call(polls: polls || Poll.for_generic_ballot.includes(:poll_results))
   end
 
-  def call(polls:, side_a: :dem, side_b: :rep)
+  def call(polls:, side_a: :dem, side_b: :rep, one_matchup: false)
     raise ArgumentError, "side_a and side_b must differ (both #{side_a})" if side_a.to_s == side_b.to_s
 
     # A poll fielded after the as-of date does not exist yet as far as this
@@ -71,6 +82,21 @@ class Forecast::Averager
 
     kept = one_per_pollster(within(measured, window))
     skipped = in_hand.count { |poll| age_days(poll) <= window } - within(measured, window).size
+
+    # The test runs here, on the polls that actually survived — after the
+    # window and after the one-per-pollster cut — and not over all history.
+    # Three same-day tables from one pollster collapse to one poll and are no
+    # ambiguity at all; a district whose old hypotheticals have aged out of the
+    # window has already resolved itself. Doing it any earlier would refuse
+    # districts that are perfectly readable today, and would need undoing by
+    # hand as each primary settles.
+    matchups = kept.filter_map { |measurement| measurement.poll.matchup_key }.uniq
+    if one_matchup && matchups.size > 1
+      return Result.new(
+        mean_margin: nil, weight: 0.0, poll_count: kept.size, window_days: window,
+        skipped_count: skipped, reason: :ambiguous_matchup, matchups: matchups.sort
+      )
+    end
 
     weight = 0.0
     weighted_sum = 0.0

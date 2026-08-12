@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_060001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_070001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -219,6 +219,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_060001) do
     t.integer "entry_mode", null: false
     t.date "field_end", null: false
     t.date "field_start"
+    t.string "matchup_key"
     t.bigint "pollster_id", null: false
     t.integer "population", default: 3, null: false
     t.bigint "race_id"
@@ -230,6 +231,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_060001) do
     t.index ["dedup_digest"], name: "index_polls_on_dedup_digest", unique: true
     t.index ["field_end"], name: "index_polls_on_field_end"
     t.index ["pollster_id"], name: "index_polls_on_pollster_id"
+    t.index ["race_id", "matchup_key"], name: "index_polls_on_race_id_and_matchup_key"
     t.index ["race_id"], name: "index_polls_on_race_id"
   end
 

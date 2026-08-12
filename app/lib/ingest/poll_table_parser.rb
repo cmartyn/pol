@@ -36,7 +36,7 @@ module Ingest
   class PollTableParser
     Row = Struct.new(
       :pollster, :sponsor, :field_start, :field_end, :sample_size, :population,
-      :results, :source_url, :raw_payload, :district,
+      :results, :source_url, :raw_payload, :district, :matchup_key,
       keyword_init: true
     )
 
@@ -246,8 +246,14 @@ module Ingest
         end
 
         return :generic_candidate_column if parties.each_key.any? { |index| labels[index].match?(GENERIC_CANDIDATE) }
-        return :no_party_columns if parties.size < 2 || parties.values.uniq.size < 2
+        return :no_party_columns if parties.size < 2
+        # Before the one-party test, not after it: California's 11th is a real
+        # top-two general between two Democrats, and it has party columns —
+        # calling that "no party-labelled columns" reads like a parser failure
+        # when it is an accurate description of the ballot. Refusing is still
+        # right, because there is no two-party margin in it to measure.
         return :multiple_same_party_columns if duplicate_major_party?(parties)
+        return :no_party_columns if parties.values.uniq.size < 2
 
         matched = match_candidates(parties, labels, candidates_for(district))
         return :no_candidate_column_match if matched.nil?
@@ -264,9 +270,13 @@ module Ingest
           headings.none? { |heading| heading.match?(GENERAL_HEADING) }
       end
 
+      # An at-large heading says "the whole state", which is a district number
+      # only the caller knows — the same one it passes as default_district for
+      # a state with a single seat. Reading it as 1 here would be the one
+      # district number the parser invented rather than read.
       def district_for(headings)
         headings.each do |heading|
-          return 1 if heading.match?(AT_LARGE_HEADING)
+          return @default_district if heading.match?(AT_LARGE_HEADING)
 
           number = heading[DISTRICT_HEADING, 1] || heading[ORDINAL_DISTRICT_HEADING, 1]
           return number.to_i if number
@@ -355,7 +365,12 @@ module Ingest
           results: results,
           source_url: anchor,
           raw_payload: raw_payload(cells, layout, index),
-          district: layout.district
+          district: layout.district,
+          # Which contest this row measured, not just which race it belongs to.
+          # A district's page publishes several while its nominees are
+          # unsettled, and averaging across them is averaging across people who
+          # cannot all be on the ballot.
+          matchup_key: Matchup.key(results.map(&:column))
         )
       end
 
@@ -387,11 +402,20 @@ module Ingest
         id.present? ? "#{@page_url}##{id}" : @page_url
       end
 
-      # "Ben Ray Luján" => "lujan"; "Cindy Hyde-Smith" => "hyde-smith".
+      # A generational suffix is not a surname. Without this, "Nick Begich III"
+      # is a person called "iii" and "Mike Bouchard Jr." and "Tom Kean Jr." are
+      # the same person — which matters little for matching a column against a
+      # candidate we hold (both sides are reduced the same way) and a great
+      # deal for telling two matchups apart.
+      NAME_SUFFIX = /\A(?:jr|sr|ii|iii|iv|v)\.?\z/i
+
+      # "Ben Ray Luján" => "lujan"; "Cindy Hyde-Smith" => "hyde-smith";
+      # "Nick Begich III" => "begich".
       def self.surname(name)
         cleaned = name.to_s.gsub(/\s*\([^)]*\)\s*/, " ").gsub(/["'“”‘’]/, "").strip
-        last = cleaned.split(/\s+/).last.to_s
-        last.unicode_normalize(:nfd).gsub(/\p{Mn}/, "").downcase
+        parts = cleaned.split(/\s+/)
+        parts.pop while parts.size > 1 && parts.last.match?(NAME_SUFFIX)
+        parts.last.to_s.unicode_normalize(:nfd).gsub(/\p{Mn}/, "").downcase
       end
   end
 end

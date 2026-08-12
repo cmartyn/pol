@@ -29,6 +29,17 @@ class Poll < ApplicationRecord
     race_id.nil?
   end
 
+  # "Matt Dunlap (D) vs Paul LePage (R)" — which contest this poll measured,
+  # as the source page wrote it. matchup_key is the normalised form the
+  # averager compares on; this is the readable one, and falls back to the key
+  # for a poll whose provenance cannot supply the labels.
+  def matchup_label
+    return nil if matchup_key.blank?
+
+    labels = Ingest::Matchup.labels_for_poll(self)
+    labels.any? ? labels.join(Ingest::Matchup::SEPARATOR) : Ingest::Matchup.humanize(matchup_key)
+  end
+
   class << self
     # Poll.compute_digest(pollster_slug: "beacon-polling", race_id: 1,
     #   field_start: Date.new(2026, 7, 1), field_end: Date.new(2026, 7, 5),

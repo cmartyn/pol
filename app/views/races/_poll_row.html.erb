@@ -1,0 +1,35 @@
+<%# locals: race, poll — one row of the poll table. %>
+<tr data-testid="poll-row">
+  <td class="py-2 pr-3 text-slate-700"><%= poll.pollster.name %></td>
+  <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
+    <% if poll.field_start && poll.field_start != poll.field_end %>
+      <%= poll.field_start.strftime("%b %-d") %>&ndash;<%= poll.field_end.strftime("%b %-d, %Y") %>
+    <% else %>
+      <%= poll.field_end.strftime("%b %-d, %Y") %>
+    <% end %>
+  </td>
+  <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
+    <%= poll.sample_size ? number_with_delimiter(poll.sample_size) : "n/a" %>
+    <span class="uppercase text-slate-400"><%= poll.population %></span>
+  </td>
+  <td class="py-2 pr-3 text-slate-700">
+    <% poll.poll_results.sort_by { |result| -result.pct }.each do |result| %>
+      <span class="mr-2 whitespace-nowrap">
+        <%= result.candidate&.name || result.party.capitalize %>
+        <span class="font-medium <%= party_text_color(result.party) %>"><%= number_with_precision(result.pct, precision: 1) %>%</span>
+      </span>
+    <% end %>
+  </td>
+  <td class="py-2 pr-3 whitespace-nowrap font-semibold">
+    <% margin = poll_margin(poll, race) %>
+    <% if margin %>
+      <span class="<%= party_text_color(margin[:party]) %>"><%= margin[:label] %></span>
+    <% else %>
+      <span class="text-slate-400">&mdash;</span>
+    <% end %>
+  </td>
+  <td class="py-2">
+    <%= link_to "Source", poll.source_url, class: "text-amber-700 hover:text-amber-800", target: "_blank",
+                rel: "noopener nofollow", data: { testid: "poll-source-link" } %>
+  </td>
+</tr>

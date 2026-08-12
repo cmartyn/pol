@@ -98,6 +98,22 @@
     <% polls = @race.polls.recent_first.includes(:poll_results, :pollster) %>
     <% polls_scatter = Site::Charts::PollsScatter.build(race: @race, polls: polls, as_of: Time.current) %>
     <% if polls_scatter %>
+      <%# Polling exists but measures contests that cannot all happen — a
+          district whose nominees are unsettled gets a table per plausible
+          one. Averaging them would publish a margin between people who are
+          not running against each other, so the forecast stays on
+          fundamentals and the polls stay on the page, grouped by what they
+          asked. %>
+      <% if polls_scatter[:average_reason] == :ambiguous_matchup %>
+        <p class="mt-3 max-w-3xl rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+           data-testid="ambiguous-matchup-note">
+          The recent polling here measures
+          <%= pluralize(polls_scatter[:matchups].size, "different matchup") %>, so there is no single
+          contest to average — the forecast rests on fundamentals (the district's 2024 result and the
+          national environment) until the nominees are settled. Every poll is below, grouped by the
+          matchup it tested.
+        </p>
+      <% end %>
       <div class="mt-3">
         <%= render "races/polls_scatter_chart", payload: polls_scatter, race: @race %>
       </div>

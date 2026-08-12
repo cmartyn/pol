@@ -126,4 +126,30 @@ class PollTest < ActiveSupport::TestCase
     assert_kind_of String, digest
     assert_equal 64, digest.length
   end
+
+  # matchup_key is the normalised form the averager compares on;
+  # #matchup_label is what a reader should see, taken from the labels the
+  # source page actually used.
+  test "matchup_label reads back the contest as the page wrote it" do
+    poll = create_poll(
+      pollster: pollsters(:beacon_polling), race: races(:house_ny_17), field_end: Date.new(2026, 7, 1),
+      results: { dem: 51.0, rep: 45.0 }, matchup_key: "conley vs lawler",
+      raw_payload: { "columns" => { "Poll source" => "Beacon", "Mike Lawler (R)" => "45%",
+                                    "Cait Conley (D)" => "51%", "Undecided" => "4%" } }
+    )
+
+    assert_equal "Cait Conley (D) vs Mike Lawler (R)", poll.matchup_label
+  end
+
+  test "matchup_label falls back to the key when the cell map cannot supply labels" do
+    poll = create_poll(pollster: pollsters(:beacon_polling), race: races(:house_ny_17),
+                       field_end: Date.new(2026, 7, 1), results: { dem: 51.0, rep: 45.0 },
+                       matchup_key: "conley vs lawler")
+
+    assert_equal "Conley vs Lawler", poll.matchup_label
+  end
+
+  test "a poll with no matchup has no label" do
+    assert_nil polls(:maine_poll_one).matchup_label
+  end
 end

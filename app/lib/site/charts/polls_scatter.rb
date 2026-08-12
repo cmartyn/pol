@@ -43,6 +43,12 @@ module Site
           side_a_party: side_a,
           side_b_party: side_b,
           average_margin: average.polled? ? average.mean_margin.round(2) : nil,
+          # Why there is no reference line, when there are points to draw one
+          # through. Today the only reason is :ambiguous_matchup — the polls
+          # that qualified disagree about who is running — and the page says
+          # so rather than leaving a reader to wonder.
+          average_reason: average.reason,
+          matchups: average.matchups,
           points: points
         }
       end

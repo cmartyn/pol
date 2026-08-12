@@ -51,7 +51,15 @@ namespace :pol do
 
     reasons = outcomes.flat_map { |outcome| outcome.refusals.to_a }
                       .group_by(&:first).transform_values { |pairs| pairs.sum(&:last) }
+    # The Ref column counts refused tables. `no_polling_section` is a page with
+    # no table to refuse, so it is reported on its own line rather than leaving
+    # an operator to work out why the two totals differ.
+    empty_pages = reasons.delete(ScrapeRun::EMPTY_PAGE_REASON).to_i
     puts "  Refusals by reason: " + reasons.sort.map { |reason, count| "#{reason} ×#{count}" }.join(", ") if reasons.any?
+    if empty_pages.positive?
+      puts "  #{empty_pages} source(s) had no polling section at all — no table to refuse, " \
+           "so not counted in Ref"
+    end
     puts
   end
 
@@ -201,6 +209,11 @@ namespace :pol do
       # North Carolina polls its congressional vote statewide, under no
       # district at all.
       { file: "house_north_carolina.html", title: district_title("NC"), districts: /\A(Statewide polling|District 1)\z/ },
+      # The two worst matchup tangles on the board: Maine's 2nd runs four
+      # different Democrats against Paul LePage across thirteen polls, and
+      # Florida's 25th has four polls and four matchups.
+      { file: "house_maine.html",          title: district_title("ME"), districts: /\ADistrict 2\z/ },
+      { file: "house_florida.html",        title: district_title("FL"), districts: /\ADistrict 25\z/ },
       # Delaware's page has no polling section of any kind — and does have
       # fundraising and ratings tables, which is the point: those must not be
       # counted as tables we refused.
@@ -288,22 +301,42 @@ end
 # Keeps only the <section> elements whose heading matches, which is what turns a
 # multi-megabyte Parsoid document into a fixture: infoboxes, navboxes, images and
 # references all go, and the section/heading structure the parsers rely on stays.
+#
+# Enclosing sections stay too, stripped to their headings. A Georgia "Polling"
+# section lifted out of its "Republican primary" parent stops being a primary
+# table as far as the parser can tell — the fixture then agrees with the live
+# page about how many tables are refused and disagrees about why, which is the
+# worst kind of fixture: one that passes for the wrong reason.
 def trim_sections(html, pattern, max_rows: nil)
   document = Nokogiri::HTML5(html)
 
-  sections = document.css("section").select do |section|
+  matched = document.css("section").select do |section|
     heading = section.at_css("h1,h2,h3,h4,h5")
     heading && heading.text.strip.match?(pattern)
   end
-  sections = sections.reject { |section| sections.any? { |other| other != section && section.ancestors.include?(other) } }
+  matched = matched.reject { |section| matched.any? { |other| other != section && section.ancestors.include?(other) } }
+
+  ancestors = matched.flat_map { |section| section.ancestors("section").to_a }.uniq - matched
+  kept = matched + ancestors
+
+  document.css("section").to_a.each { |section| section.remove unless kept.include?(section) }
+  # An ancestor is scaffolding: its heading is what a nested table's context is
+  # read from, and everything else it holds belongs to some other subsection.
+  ancestors.each do |section|
+    section.element_children.each do |child|
+      child.remove unless child.name == "section" || child.name.match?(/\Ah[1-6]\z/)
+    end
+  end
 
   if max_rows
-    sections.each do |section|
+    matched.each do |section|
       section.css("table.wikitable").each { |table| table.css("tr").drop(max_rows + 1).each(&:remove) }
     end
   end
 
-  wrap_fixture(sections)
+  # The outermost survivors: every section still standing is one we kept, so a
+  # section with no section above it is the root of a chain worth emitting.
+  wrap_fixture(kept.reject { |section| section.ancestors("section").any? })
 end
 
 def wrap_fixture(sections)

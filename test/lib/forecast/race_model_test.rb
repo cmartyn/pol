@@ -66,6 +66,39 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
     assert_in_delta 2.7, model(race, national_env: -2.6).prior, 1e-9
   end
 
+  # A district whose polls disagree about who is running has polls but no
+  # usable average, and the model has to treat it as the unpolled race it
+  # effectively is rather than blending a margin between people who are not
+  # running against each other.
+  test "a district whose polls span two matchups rests on fundamentals" do
+    race = house_race(baseline_margin: 2.7, slug: "house-ambiguous-matchup")
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "dunlap vs lepage", results: { dem: 55.0, rep: 40.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "baldacci vs lepage", results: { dem: 40.0, rep: 55.0 })
+
+    subject = model(race, national_env: 2.0)
+
+    assert_not_predicate subject, :polled?
+    assert_equal :ambiguous_matchup, subject.average.reason
+    assert_in_delta 7.3, subject.mu, 1e-9, "mu is the prior, untouched by either matchup"
+    assert_in_delta 0.0, subject.blend_weight, 1e-9
+    assert_in_delta 0.0, subject.to_entry.weight, 1e-9
+  end
+
+  test "a district whose polls agree on one matchup blends them as usual" do
+    race = house_race(baseline_margin: 2.7, slug: "house-single-matchup")
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "golden vs lepage", results: { dem: 55.0, rep: 40.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "golden vs lepage", results: { dem: 53.0, rep: 42.0 })
+
+    subject = model(race, national_env: 2.0)
+
+    assert_predicate subject, :polled?
+    assert_operator subject.mu, :>, 7.3, "the polls pull it above the prior"
+  end
+
   # open_seat is false for all 435 districts in v1 (no 2026 House incumbency
   # data is seeded), so this term is always zero today. These two tests pin
   # both halves: inert now, correctly signed the day the data arrives.

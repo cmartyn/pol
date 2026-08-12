@@ -59,6 +59,31 @@ class Admin::ScrapeRunsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The window holds a couple of sweeps, so every source appears in it more
+  # than once. Counting rows would report more sources refusing than the sweep
+  # has sources, and list Colorado two or three times.
+  test "index counts sources that refused a table, not runs" do
+    before = ScrapeRun.recent_first.select(&:refused_tables?).map(&:source)
+    sweep_again
+
+    get admin_scrape_runs_path
+
+    assert_equal 2, ScrapeRun.refusing.where(source: before.first).count, "the source is in the window twice"
+    assert_select "[data-testid='admin-scrape-refusals'] h2", text: /#{before.size} sources refused a table/
+    assert_select "[data-testid='admin-scrape-refusal-summary-row']", count: 2
+    assert_select "[data-testid='admin-scrape-refusals-routine']", text: /1 other source/
+  end
+
+  # A second run of every source, five minutes later — the same shape a real
+  # sweep leaves behind.
+  def sweep_again
+    ScrapeRun.recent_first.to_a.each do |run|
+      ScrapeRun.create!(run.attributes.except("id", "created_at", "updated_at")
+                           .merge("started_at" => run.started_at + 5.minutes,
+                                  "finished_at" => run.finished_at + 5.minutes))
+    end
+  end
+
   test "index shows no refusal panel when nothing refused anything" do
     ScrapeRun.refusing.destroy_all
 

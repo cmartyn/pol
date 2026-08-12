@@ -277,6 +277,40 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
     assert_equal %i[dem rep], row.results.map(&:party).sort
   end
 
+  # California's 11th is a genuine top-two general between two Democrats.
+  # Refusing it is right — there is no two-party margin in it — but calling it
+  # "no party-labelled columns" would read like a parser failure.
+  test "a real same-party general is refused for being same-party, not for having no parties" do
+    result = parse_district("house_california.html")
+
+    assert_equal 1, result.refusals[:multiple_same_party_columns]
+    assert_equal 0, result.refusals[:no_party_columns], "and not filed under the vaguer reason"
+  end
+
+  test "an at-large heading takes the caller's district rather than inventing one" do
+    html = <<~HTML
+      <html><body><section><h2 id="At-large">At-large district</h2>
+        <section><h3 id="General">General election</h3>
+          <section><h4 id="Polling">Polling</h4>
+            <table class="wikitable"><tbody>
+              <tr><th>Poll source</th><th>Date(s) administered</th><th>Sample size</th>
+                  <th>Robin Pike (D)</th><th>Avery Lane (R)</th></tr>
+              <tr><td>Beacon Research</td><td>July 1–3, 2026</td><td>500 (LV)</td><td>48%</td><td>44%</td></tr>
+            </tbody></table>
+          </section>
+        </section>
+      </section></body></html>
+    HTML
+
+    with_default = Ingest::PollTableParser.new(html: html, page_url: PAGE_URL, scope: :district,
+                                               default_district: 1).call
+    without = Ingest::PollTableParser.new(html: html, page_url: PAGE_URL, scope: :district).call
+
+    assert_equal [ 1 ], with_default.rows.map(&:district)
+    assert_empty without.rows, "no caller district means no district, not district 1"
+    assert_equal 1, without.refusals[:district_unresolved]
+  end
+
   test "a primary field is refused even where its columns carry party tags" do
     # Washington runs a top-two primary: District 4's field is four Republicans
     # and a Democrat, all labelled, which passes every party-column test there
@@ -309,6 +343,57 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
 
     assert_equal 1, result.refusals[:district_unresolved]
     assert_equal [ 1 ], result.rows.map(&:district).uniq, "only the District 1 tables came through"
+  end
+
+  # ---------------------------------------------------------------------
+  # Which contest a row measured
+  # ---------------------------------------------------------------------
+
+  test "a row records the matchup it measured, normalised and order-independent" do
+    row = parse_district("house_michigan.html").rows.find { |candidate_row| candidate_row.district == 4 }
+
+    assert_equal "huizenga vs mccann", row.matchup_key
+  end
+
+  # Maine's 2nd is the worst case on the board: thirteen polls, four different
+  # Democrats against Paul LePage, and nothing on any row saying which of them
+  # will be on the ballot.
+  test "Maine's 2nd reads as four separate matchups, not one race" do
+    rows = parse_district("house_maine.html").rows
+
+    assert_equal 14, rows.size
+    assert_equal [ 2 ], rows.map(&:district).uniq
+    assert_equal({ "dunlap vs lepage" => 4, "baldacci vs lepage" => 4,
+                   "golden vs lepage" => 4, "lepage vs wood" => 2 },
+                 rows.map(&:matchup_key).tally)
+  end
+
+  test "Florida's 25th is four polls of four different matchups" do
+    rows = parse_district("house_florida.html").rows
+
+    assert_equal 4, rows.size
+    assert_equal 4, rows.map(&:matchup_key).uniq.size
+  end
+
+  test "a generational suffix is not a surname" do
+    assert_equal "begich", Ingest::PollTableParser.surname("Nick Begich III")
+    assert_equal "bouchard", Ingest::PollTableParser.surname("Mike Bouchard Jr. (R)")
+    assert_equal "kean", Ingest::PollTableParser.surname("Tom Kean Jr.")
+    assert_equal "hyde-smith", Ingest::PollTableParser.surname("Cindy Hyde-Smith")
+    assert_equal "lujan", Ingest::PollTableParser.surname("Ben Ray Luján")
+  end
+
+  # Michigan's 10th is the case that needs it: three Democrats, all against
+  # "Mike Bouchard Jr.", which without the suffix rule is a man called "jr."
+  test "Michigan's 10th tells its three matchups apart despite the suffix" do
+    rows = parse_district("house_michigan.html").rows.select { |row| row.district == 10 }
+
+    assert_equal %w[bouchard\ vs\ chung bouchard\ vs\ greimel bouchard\ vs\ hines],
+                 rows.map(&:matchup_key).sort
+  end
+
+  test "a generic-ballot table names nobody, so it carries no matchup" do
+    assert(parse("generic_ballot.html").rows.all? { |row| row.matchup_key.nil? })
   end
 
   test "district candidates are matched per district, not across the page" do

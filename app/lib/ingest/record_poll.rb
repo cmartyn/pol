@@ -64,6 +64,7 @@ module Ingest
             sponsor: @attrs[:sponsor].presence,
             source_url: @attrs[:source_url],
             raw_payload: @attrs[:raw_payload],
+            matchup_key: @attrs[:matchup_key],
             entry_mode: @entry_mode,
             dedup_digest: digest
           )

@@ -1917,7 +1917,7 @@ primary whose columns are perfectly well-formed. That check now runs on Senate
 pages too, so Colorado's Democratic-primary-only page stops reporting as a
 clean empty sweep.
 
-### B3. What this still cannot tell apart, said plainly
+### B3. What ingestion cannot tell apart, and where that is dealt with
 
 No House race has candidates seeded (`Ingest::SeedRaces` seeds candidates for
 Senate races only), so every district column matches on party alone. The
@@ -1925,14 +1925,12 @@ consequence: a **pre-primary hypothetical general-election matchup is
 indistinguishable from the real one**. California's 22nd carries both
 "Valadao vs Villegas" — Villegas took 32.4% of the primary vote and advanced —
 and an August 2025 "Valadao vs Bains", Bains having finished third on 26.9%.
-Both are ingested. On the Senate side the seeded candidate list
-is exactly what rejects those; here there is nothing to reject them with.
+Both are ingested. On the Senate side the seeded candidate list is exactly what
+rejects those; here there is nothing to reject them with.
 
-Three things keep it from being worse than it is: the hypotheticals are older
-than the real matchups and the averager decays on a 14-day half-life; they are
-the same party, so the margin they contribute is usually close; and the count is
-small. It is still a real limitation and the fix is to seed House candidates,
-which is its own piece of work.
+Ingestion stays permissive, because refusing a table on suspicion would throw
+away real polling; the judgement is made downstream instead, where the polls
+that actually count towards a forecast are known. See §G.
 
 ## C. Refusal observability
 
@@ -2030,7 +2028,8 @@ to use, which is a different thing from Delaware having no polling at all.
 ## E. Tests
 
 Thirty-four new tests — the suite goes 722 → 756, plus the end-to-end system
-test — and nothing in any of them touches the network.
+test — and nothing in any of them touches the network. The review round added
+twenty-three more (779; see §G).
 
 | File | What it pins |
 |---|---|
@@ -2170,7 +2169,115 @@ all of it paced at one request per second behind the project's descriptive
 user agent. The request rate is trivial; the bytes are the part worth watching,
 and `scrape.max_district_sources` is where the ceiling is set.
 
-## G. What this leaves for later
+## G. Review fixes — matchup ambiguity and refusal-panel accuracy
+
+### G1. Half the district corpus was blending mutually exclusive matchups
+
+Measured after the phase's live sweep: **85 of the 174 district polls (49%) sit
+in 22 of the 73 polled districts, and those 22 carry more than one distinct
+matchup.** Maine's 2nd has thirteen polls across four different Democrats
+against Paul LePage; Florida's 25th has four polls and four matchups. Averaged
+together they would publish a margin between people who cannot all be on the
+ballot — the same thing the Senate side refuses seven times on the Georgia page
+alone, except that a district has no candidate list to refuse it with.
+
+**The rule: a district whose qualifying polls span more than one matchup is
+treated as unpolled.** The forecast falls back to fundamentals with a reason
+the page can read, and the polls stay stored and published, grouped by the
+contest they measured.
+
+`polls.matchup_key` is what makes it computable — a normalised,
+order-independent rendering of the candidate columns a row named
+(`Ingest::Matchup`): surnames only, accents folded, generational suffixes
+dropped, downcased, sorted, joined. `"conley vs lawler"`. It is kept readable
+rather than hashed so a page can group on it and a person can read it in a
+console. Null for the generic ballot (its columns name nobody) and for polls
+entered by hand. Only columns tagged Democrat, Republican or Independent count:
+a Libertarian line that appears in one table and not the next does not change
+who the race is between.
+
+The test runs **inside the averaging window, after the one-per-pollster cut**,
+which matters more than it sounds:
+
+* Idaho's 1st has three tables from SurveyUSA on one day — a three-way, and two
+  two-ways carved out of it. Three matchups on the page, one poll in the
+  average, no ambiguity.
+* A district resolves itself as its old hypotheticals age out of the window.
+  Nothing has to be re-run when a primary settles and no migration is owed.
+
+**Result on the live board: 54 of the 73 polled districts average cleanly, 3
+fall back to fundamentals — ME-2, MT-1, FL-25 — and 16 have no poll recent
+enough to qualify** (which was already true before this rule and is not caused
+by it). The 3 are exactly the districts whose *recent* polls disagree; the
+other 19 of the 22 multi-matchup districts resolve themselves once the window
+and the per-pollster cut have run.
+
+Scoped to House races. `Forecast::Averager#for_race` passes `one_matchup:
+race.house?`, which is a statement about the data rather than the chamber: a
+Senate race's hypotheticals are rejected at ingest by its seeded candidate
+list. **Seven Senate races would trip the same rule if it were applied to them**
+— MT, FL, SC, SD, NE, MN, ID, 82 polls between them — because those are the
+races whose nominations are unsettled and whose candidate list therefore
+rejects nothing. That is a real finding and it is left as a finding: turning
+polling off for seven Senate races is a calibration change, not a bug fix.
+
+On the race page: a district in this state gets a note saying polling exists
+and measures several matchups so the forecast rests on fundamentals, and its
+poll table is grouped under a heading per matchup, labelled as the source page
+wrote it ("Matt Dunlap (D) vs Paul LePage (R)"). Nothing is hidden.
+
+### G2. The admin refusal panel counted runs, not sources
+
+The panel selected over the 150-run window — a little over two sweeps — so from
+the second sweep on it would have read "124 sources refused a table" against 69
+that exist, listing Colorado, Illinois, Louisiana, New Mexico and Oklahoma two
+or three times each. It now groups by source first and judges each on its most
+recent run. Same defect, same fix, in the "other sources refused only routine
+tables" count.
+
+### G3. Four smaller things
+
+* **A real same-party general now says so.** California's 11th is a genuine
+  top-two general between two Democrats; it was being refused as
+  `no_party_columns`, which reads like a parser failure. The duplicate-major-
+  party test now runs first, so it is refused as `multiple_same_party_columns`
+  — still refused, because there is no two-party margin in it, but for the
+  accurate reason.
+* **`pol:scrape` explains its own arithmetic.** The Ref column totalled 324
+  while the by-reason line totalled 330; the six-count gap was
+  `no_polling_section`, which is a page with no table to refuse. It is now
+  reported on its own line instead of left for an operator to spot.
+* **An at-large heading takes the caller's district** rather than the literal 1
+  the parser used to invent. No live page carries such a heading — the branch
+  exists for the day one does — and with no caller district it now refuses as
+  `district_unresolved` instead of guessing.
+* **A generational suffix is not a surname.** "Nick Begich III" was a man
+  called "iii", and "Mike Bouchard Jr." and "Tom Kean Jr." were the same
+  person. Harmless for matching a column against a candidate we hold (both
+  sides were reduced the same way) and fatal for telling two matchups apart.
+
+### G4. A fixture that passed for the wrong reason
+
+`trim_sections` lifted a matched "Polling" section out of its parent, so the
+Georgia fixture's five Republican-primary tables reached the parser with no
+primary heading above them and were refused as `no_party_columns`. The total
+matched live (18) and the reasons did not. The trimmer now keeps enclosing
+sections, stripped to their headings, and the regenerated Georgia fixture
+reproduces the live page exactly: `aggregator_table ×4,
+no_candidate_column_match ×7, primary_only_table ×5, generic_candidate_column
+×1, no_party_columns ×1`. Iowa, Ohio, Rhode Island and the generic ballot were
+regenerated with it; every count they pin is unchanged.
+
+Two fixtures were added for the matchup rule, both real trimmed Parsoid HTML:
+`house_maine.html` (District 2 — fourteen rows, four matchups) and
+`house_florida.html` (District 25 — four rows, four matchups).
+
+### G5. Correction to §F
+
+The Phase 8 report said 55 of the 69 sources refused at least one table. The
+sweep's rows say **57**.
+
+## H. What this leaves for later
 
 1. **Seed House candidates.** It is the only thing that would let the parser
    tell a district's real matchup from a pre-primary hypothetical (§B3), and it

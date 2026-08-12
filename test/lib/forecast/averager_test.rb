@@ -267,6 +267,111 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     assert_in_delta 0.0, result.mean_margin, 1e-9
   end
 
+  # ---------------------------------------------------------------------
+  # Districts whose polls disagree about who is running
+  # ---------------------------------------------------------------------
+
+  def district(slug, district_number)
+    Race.create!(office: :house, state: "ME", district: district_number, cycle: 2026,
+                 slug: slug, baseline_margin: -6.0)
+  end
+
+  test "a district whose qualifying polls all measure one matchup averages normally" do
+    race = district("house-2026-me-02-clean", 2)
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "golden vs lepage", results: { dem: 50.0, rep: 44.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "golden vs lepage", results: { dem: 48.0, rep: 46.0 })
+
+    result = @averager.for_race(race)
+
+    assert_predicate result, :polled?
+    assert_nil result.reason
+    assert_equal 2, result.poll_count
+  end
+
+  # Averaging Dunlap-vs-LePage with Baldacci-vs-LePage publishes a margin
+  # between two people who are not running against each other.
+  test "a district whose qualifying polls span two matchups gets no average, with the reason" do
+    race = district("house-2026-me-02-ambiguous", 2)
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "dunlap vs lepage", results: { dem: 50.0, rep: 44.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "baldacci vs lepage", results: { dem: 44.0, rep: 50.0 })
+
+    result = @averager.for_race(race)
+
+    assert_not_predicate result, :polled?
+    assert_nil result.mean_margin
+    assert_equal :ambiguous_matchup, result.reason
+    assert_equal [ "baldacci vs lepage", "dunlap vs lepage" ], result.matchups
+    assert_equal 0.0, result.weight, "nothing earned its way into the blend"
+    assert_equal 2, result.poll_count, "the polls are still counted — they are on the page"
+  end
+
+  # The test runs on what survives the window, so a district resolves itself as
+  # its old hypotheticals age out. No migration, no hand-editing.
+  test "a matchup that has aged out of the window stops making the district ambiguous" do
+    race = district("house-2026-me-02-resolving", 2)
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 60, sample_size: 600,
+                matchup_key: "dunlap vs lepage", results: { dem: 40.0, rep: 55.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 55, sample_size: 600,
+                matchup_key: "golden vs lepage", results: { dem: 49.0, rep: 45.0 })
+    create_poll(pollster: @delta, race: race, field_end: AS_OF - 10, sample_size: 600,
+                matchup_key: "golden vs lepage", results: { dem: 50.0, rep: 44.0 })
+    create_poll(pollster: create_pollster("Katahdin Polling"), race: race, field_end: AS_OF - 3,
+                sample_size: 600, matchup_key: "golden vs lepage", results: { dem: 51.0, rep: 44.0 })
+
+    assert_equal :ambiguous_matchup,
+                 Forecast::Averager.new(as_of: AS_OF - 50).for_race(race).reason,
+                 "when the two old matchups were the recent ones, the district was ambiguous"
+
+    today = @averager.for_race(race)
+    assert_predicate today, :polled?, "the two recent polls agree, and the old ones are out of the window"
+    assert_equal 2, today.poll_count
+  end
+
+  # Three tables from one pollster on one day are three matchups on the page
+  # and one poll in the average.
+  test "the one-per-pollster cut runs before the matchup test, not after" do
+    race = district("house-2026-me-02-samepollster", 2)
+    3.times do |index|
+      create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                  matchup_key: "lepage vs rival#{index}", results: { dem: 50.0 - index, rep: 44.0 })
+    end
+
+    result = @averager.for_race(race)
+
+    assert_predicate result, :polled?
+    assert_equal 1, result.poll_count
+  end
+
+  # The rule is about House districts, whose nominees are unsettled and which
+  # have no candidate list to reject a hypothetical with. A Senate race's
+  # hypotheticals are refused at ingest instead.
+  test "a Senate race with two matchups still averages" do
+    race = Race.create!(office: :senate, state: "MT", cycle: 2026, slug: "senate-mt-averager-test", lean: -12.0)
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "busse vs zinke", results: { dem: 44.0, rep: 50.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "flint vs forstag", results: { dem: 43.0, rep: 49.0 })
+
+    result = @averager.for_race(race)
+
+    assert_predicate result, :polled?
+    assert_nil result.reason
+  end
+
+  test "the generic ballot carries no matchup and is never called ambiguous" do
+    create_poll(pollster: @beacon, field_end: AS_OF - 1, sample_size: 600, results: { dem: 49.0, rep: 44.0 })
+    create_poll(pollster: @cardinal, field_end: AS_OF - 2, sample_size: 600, results: { dem: 47.0, rep: 46.0 })
+
+    result = @averager.for_generic_ballot
+
+    assert_predicate result, :polled?
+    assert_nil result.reason
+  end
+
   test "for_generic_ballot reads only the race-less polls" do
     create_poll(pollster: @beacon, field_end: AS_OF - 1, sample_size: 600, results: { dem: 49.0, rep: 44.0 })
     create_poll(pollster: @cardinal, race: races(:senate_maine), field_end: AS_OF - 1,

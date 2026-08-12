@@ -158,6 +158,17 @@ class Ingest::ScraperTest < ActiveSupport::TestCase
     assert_equal %w[dem rep], poll.poll_results.map(&:party).sort
   end
 
+  test "each district poll records which contest it measured" do
+    scrape
+
+    keys = Race.house.find_by!(state: "MI", district: 10).polls.pluck(:matchup_key)
+    assert_equal %w[bouchard\ vs\ chung bouchard\ vs\ greimel bouchard\ vs\ hines], keys.sort
+    assert_equal [ "huizenga vs mccann" ],
+                 Race.house.find_by!(state: "MI", district: 4).polls.pluck(:matchup_key).uniq
+    assert(Poll.for_generic_ballot.all? { |poll| poll.matchup_key.nil? },
+           "the generic ballot's columns name nobody")
+  end
+
   test "a row whose district we hold no race for is skipped and counted, never reassigned" do
     Race.house.find_by!(state: "MI", district: 10).destroy!
 
