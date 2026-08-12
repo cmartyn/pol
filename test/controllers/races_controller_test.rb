@@ -126,7 +126,29 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='ambiguous-matchup-note']", text: /rests on fundamentals/
     assert_select "[data-testid='poll-row']", { count: 2 }, "both polls are still on the page"
     assert_select "[data-testid='poll-matchup-heading']", count: 2
-    assert_select "[data-testid='poll-matchup-heading'][data-matchup='conley vs lawler']"
+    assert_select "[data-testid='poll-matchup-heading'][data-matchup='dem:conley|rep:lawler']"
+  end
+
+  # Same note, and the fundamentals it names are the Senate's, not a
+  # district's — a state has no 2024 district result to rest on.
+  test "show gives a Senate race the Senate wording when its matchups disagree" do
+    race = races(:senate_maine)
+    race.polls.destroy_all
+    ambiguous_district_polls(race)
+
+    get race_path(race.slug)
+
+    assert_select "[data-testid='ambiguous-matchup-note']", text: /the state's partisan lean/
+    assert_select "[data-testid='ambiguous-matchup-note']", text: /2 different matchups/
+    assert_select "[data-testid='poll-matchup-heading']", count: 2
+  end
+
+  test "show gives a district the district wording" do
+    ambiguous_district_polls(races(:house_ny_17))
+
+    get race_path(races(:house_ny_17).slug)
+
+    assert_select "[data-testid='ambiguous-matchup-note']", text: /the district's 2024 result/
   end
 
   test "show leaves a single-matchup race's poll table ungrouped" do
@@ -138,8 +160,8 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
   end
 
   def ambiguous_district_polls(race)
-    [ [ "conley vs lawler", "Cait Conley (D)", 51.0 ],
-      [ "jones vs lawler", "Pat Jones (D)", 44.0 ] ].each_with_index do |(key, dem_label, dem_pct), index|
+    [ [ "dem:conley|rep:lawler", "Cait Conley (D)", 51.0 ],
+      [ "dem:jones|rep:lawler", "Pat Jones (D)", 44.0 ] ].each_with_index do |(key, dem_label, dem_pct), index|
       create_poll(
         pollster: index.zero? ? pollsters(:beacon_polling) : pollsters(:cardinal_research),
         race: race, field_end: Date.current - index, sample_size: 600,

@@ -37,7 +37,7 @@ class Poll < ApplicationRecord
     return nil if matchup_key.blank?
 
     labels = Ingest::Matchup.labels_for_poll(self)
-    labels.any? ? labels.join(Ingest::Matchup::SEPARATOR) : Ingest::Matchup.humanize(matchup_key)
+    labels.any? ? labels.join(" vs ") : Ingest::Matchup.humanize(matchup_key)
   end
 
   class << self

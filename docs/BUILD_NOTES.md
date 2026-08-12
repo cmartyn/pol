@@ -2181,7 +2181,7 @@ together they would publish a margin between people who cannot all be on the
 ballot — the same thing the Senate side refuses seven times on the Georgia page
 alone, except that a district has no candidate list to refuse it with.
 
-**The rule: a district whose qualifying polls span more than one matchup is
+**The rule: a race whose qualifying polls span more than one matchup is
 treated as unpolled.** The forecast falls back to fundamentals with a reason
 the page can read, and the polls stay stored and published, grouped by the
 contest they measured.
@@ -2189,12 +2189,19 @@ contest they measured.
 `polls.matchup_key` is what makes it computable — a normalised,
 order-independent rendering of the candidate columns a row named
 (`Ingest::Matchup`): surnames only, accents folded, generational suffixes
-dropped, downcased, sorted, joined. `"conley vs lawler"`. It is kept readable
-rather than hashed so a page can group on it and a person can read it in a
-console. Null for the generic ballot (its columns name nobody) and for polls
-entered by hand. Only columns tagged Democrat, Republican or Independent count:
-a Libertarian line that appears in one table and not the next does not change
-who the race is between.
+dropped, downcased, **keyed by party slot**, sorted, joined.
+`"dem:conley|rep:lawler"`. Kept readable rather than hashed so a page can group
+on it and a person can read it in a console. Null for the generic ballot (its
+columns name nobody) and for polls entered by hand.
+
+**Per party slot rather than as a flat list of names**, and Montana is why. Its
+page polls Alani Bankhead against Kurt Alme both two-way and three-way with
+Seth Bodnar. A flat list calls those two different matchups; they are one
+contest between the same two people with a third option offered, and the gap
+between the two-way and three-way numbers is a third-party effect, not evidence
+that we cannot tell who is running. `Forecast::Averager#contested_pairs` reads
+only the two sides it is about to compare, so Montana resolves to one contest
+and Maine's four Democrats against LePage stay four.
 
 The test runs **inside the averaging window, after the one-per-pollster cut**,
 which matters more than it sounds:
@@ -2212,19 +2219,59 @@ by it). The 3 are exactly the districts whose *recent* polls disagree; the
 other 19 of the 22 multi-matchup districts resolve themselves once the window
 and the per-pollster cut have run.
 
-Scoped to House races. `Forecast::Averager#for_race` passes `one_matchup:
-race.house?`, which is a statement about the data rather than the chamber: a
-Senate race's hypotheticals are rejected at ingest by its seeded candidate
-list. **Seven Senate races would trip the same rule if it were applied to them**
-— MT, FL, SC, SD, NE, MN, ID, 82 polls between them — because those are the
-races whose nominations are unsettled and whose candidate list therefore
-rejects nothing. That is a real finding and it is left as a finding: turning
-polling off for seven Senate races is a calibration change, not a bug fix.
+**The rule applies to every race, not only districts.** It reads on the polls:
+if the ones that survive the window and the per-pollster cut name two different
+pairs on the sides being compared, there is no single contest to average. The
+generic ballot is untouched — its columns name nobody, so its polls carry no
+key and this can never fire on them. §G1a is what that does to the Senate.
 
-On the race page: a district in this state gets a note saying polling exists
-and measures several matchups so the forecast rests on fundamentals, and its
-poll table is grouped under a heading per matchup, labelled as the source page
-wrote it ("Matt Dunlap (D) vs Paul LePage (R)"). Nothing is hidden.
+On the race page: a race in this state gets a note saying polling exists and
+measures several matchups so the forecast rests on fundamentals, and its poll
+table is grouped under a heading per matchup, labelled as the source page wrote
+it ("Matt Dunlap (D) vs Paul LePage (R)"). The note names the right
+fundamentals for the office — a district's 2024 result, a state's partisan
+lean. Nothing is hidden.
+
+### G1a. What the rule does to the Senate
+
+**Today: nothing. Zero of the 24 polled Senate races fall back** — 22 average
+cleanly and 2 have no poll recent enough to qualify. That is not because the
+Senate is clean. It is because of which poll happens to be newest.
+
+The mechanism that contaminates a Senate race is not the obvious one. No 2026
+Senate race has two candidates of one party seeded, so a hypothetical against a
+*different* person of a party we hold is refused at ingest — that is Georgia's
+`no_candidate_column_match ×7`. What gets through is a party slot with **no**
+seeded candidate at all, where `match_candidates` falls back to party alone and
+every hypothetical for that slot is accepted. South Carolina has no Republican
+nominee and its page polls Annie Andrews against eight different Republicans;
+Florida's page carries four pairs, Minnesota's two.
+
+Back-dating the averager to each of the 139 field-end dates in the Senate
+corpus, **three races would have fallen back on 41 of those days**: Florida on
+23, South Carolina on 13 — most recently 2026-07-17, three and a half weeks
+before this was written — and Minnesota on 5. The guard is doing nothing this
+afternoon and would have been doing something on a fifth of the days behind us.
+That is the argument for having it. Phase 9 estimates pollster house effects
+from race-level residuals, and a residual measured on one of those days would
+have carried the blend into every pollster's estimated lean.
+
+Montana, South Dakota, Idaho and Nebraska — four of the seven races the first
+audit flagged — were never mutual exclusivity at all. Each polls one pair both
+two-way and three-way (Bodnar in Montana, Beaudion in South Dakota, Roth in
+Idaho, and Nebraska's Democrats against Ricketts alongside the Osborn contest
+the model actually reads), and the flat-list key was counting a third name as a
+different contest. The per-party key tells them apart; all four are clean under
+it. Correcting that was necessary to extend the rule at all — left as it was,
+extending it would have declared three Senate races unpolled for a reason that
+is not true.
+
+A fallen-back Senate race takes the same path as a district: `polled?` false,
+`mu` the prior alone, `blend_weight` zero. Its **sigma moves too** — from
+`sigma_state_polled` (4.0) to `sigma_state_unpolled` (8.0) — which is right,
+because a race whose polls cannot be read is an unpolled race and claiming the
+polled precision would be claiming something the data does not support. Pinned
+by test rather than by live data, since nothing is in that state today.
 
 ### G2. The admin refusal panel counted runs, not sources
 
@@ -2253,8 +2300,14 @@ tables" count.
   `district_unresolved` instead of guessing.
 * **A generational suffix is not a surname.** "Nick Begich III" was a man
   called "iii", and "Mike Bouchard Jr." and "Tom Kean Jr." were the same
-  person. Harmless for matching a column against a candidate we hold (both
-  sides were reduced the same way) and fatal for telling two matchups apart.
+  person. Audited against the corpus before and after: no seeded candidate
+  anywhere carries a suffix, no race had two candidates colliding under the old
+  rule, all **439** attributed poll-result columns resolve to the same
+  candidate either way, and not one Senate column in the corpus (or in the four
+  Senate fixtures and seven cached pages) carries a suffix at all. The bug was
+  latent on the Senate side and bit only where columns like "Nick Begich III"
+  exist and no candidate list is consulted — the House, and only the matchup
+  keys this phase introduced.
 
 ### G4. A fixture that passed for the wrong reason
 
@@ -2279,10 +2332,13 @@ sweep's rows say **57**.
 
 ## H. What this leaves for later
 
-1. **Seed House candidates.** It is the only thing that would let the parser
-   tell a district's real matchup from a pre-primary hypothetical (§B3), and it
-   would give district poll results a candidate to attach to the way Senate
-   results have.
+1. **Seed candidates for the slots that have none.** Seeding House candidates
+   is what would let the parser tell a district's real matchup from a
+   pre-primary hypothetical (§B3) and turn the three districts now resting on
+   fundamentals back into polled races. The same gap exists on the Senate side
+   wherever a *party* has no nominee yet — South Carolina's Republican slot is
+   the worst of them, eight hypotheticals deep (§G1a) — and closing it is the
+   same piece of work.
 2. **Refresh `DISTRICT_POLL_STATES` after the remaining primaries.** Nine
    states are one nomination away from carrying general-election district polls
    (§A3) and will not be fetched until the list is re-surveyed.

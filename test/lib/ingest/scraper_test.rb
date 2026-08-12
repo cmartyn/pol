@@ -162,8 +162,8 @@ class Ingest::ScraperTest < ActiveSupport::TestCase
     scrape
 
     keys = Race.house.find_by!(state: "MI", district: 10).polls.pluck(:matchup_key)
-    assert_equal %w[bouchard\ vs\ chung bouchard\ vs\ greimel bouchard\ vs\ hines], keys.sort
-    assert_equal [ "huizenga vs mccann" ],
+    assert_equal [ "dem:chung|rep:bouchard", "dem:greimel|rep:bouchard", "dem:hines|rep:bouchard" ], keys.sort
+    assert_equal [ "dem:mccann|rep:huizenga" ],
                  Race.house.find_by!(state: "MI", district: 4).polls.pluck(:matchup_key).uniq
     assert(Poll.for_generic_ballot.all? { |poll| poll.matchup_key.nil? },
            "the generic ballot's columns name nobody")

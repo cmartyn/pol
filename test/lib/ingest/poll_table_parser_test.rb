@@ -349,10 +349,25 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
   # Which contest a row measured
   # ---------------------------------------------------------------------
 
-  test "a row records the matchup it measured, normalised and order-independent" do
+  test "a row records the matchup it measured, by party slot, order-independent" do
     row = parse_district("house_michigan.html").rows.find { |candidate_row| candidate_row.district == 4 }
 
-    assert_equal "huizenga vs mccann", row.matchup_key
+    assert_equal "dem:mccann|rep:huizenga", row.matchup_key
+    assert_equal({ "dem" => "mccann", "rep" => "huizenga" }, Ingest::Matchup.parse(row.matchup_key))
+  end
+
+  # Keyed per party, not as a flat list of names: Montana polls Bankhead
+  # against Alme both two-way and three-way with Seth Bodnar, and those are the
+  # same contest between the same two people with a third option offered.
+  test "a third candidate does not change who the two major parties put up" do
+    two_way = Ingest::Matchup.key([ "Alani Bankhead (D)", "Kurt Alme (R)" ])
+    three_way = Ingest::Matchup.key([ "Alani Bankhead (D)", "Kurt Alme (R)", "Seth Bodnar (I)" ])
+
+    assert_equal "dem:bankhead|rep:alme", two_way
+    assert_equal "dem:bankhead|ind:bodnar|rep:alme", three_way
+    assert_equal Ingest::Matchup.parse(two_way).slice("dem", "rep"),
+                 Ingest::Matchup.parse(three_way).slice("dem", "rep"),
+                 "the two sides a Montana average compares are the same in both"
   end
 
   # Maine's 2nd is the worst case on the board: thirteen polls, four different
@@ -363,8 +378,8 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
 
     assert_equal 14, rows.size
     assert_equal [ 2 ], rows.map(&:district).uniq
-    assert_equal({ "dunlap vs lepage" => 4, "baldacci vs lepage" => 4,
-                   "golden vs lepage" => 4, "lepage vs wood" => 2 },
+    assert_equal({ "dem:dunlap|rep:lepage" => 4, "dem:baldacci|rep:lepage" => 4,
+                   "dem:golden|rep:lepage" => 4, "dem:wood|rep:lepage" => 2 },
                  rows.map(&:matchup_key).tally)
   end
 
@@ -388,7 +403,7 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
   test "Michigan's 10th tells its three matchups apart despite the suffix" do
     rows = parse_district("house_michigan.html").rows.select { |row| row.district == 10 }
 
-    assert_equal %w[bouchard\ vs\ chung bouchard\ vs\ greimel bouchard\ vs\ hines],
+    assert_equal [ "dem:chung|rep:bouchard", "dem:greimel|rep:bouchard", "dem:hines|rep:bouchard" ],
                  rows.map(&:matchup_key).sort
   end
 

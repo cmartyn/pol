@@ -279,9 +279,9 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
   test "a district whose qualifying polls all measure one matchup averages normally" do
     race = district("house-2026-me-02-clean", 2)
     create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
-                matchup_key: "golden vs lepage", results: { dem: 50.0, rep: 44.0 })
+                matchup_key: "dem:golden|rep:lepage", results: { dem: 50.0, rep: 44.0 })
     create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
-                matchup_key: "golden vs lepage", results: { dem: 48.0, rep: 46.0 })
+                matchup_key: "dem:golden|rep:lepage", results: { dem: 48.0, rep: 46.0 })
 
     result = @averager.for_race(race)
 
@@ -295,16 +295,17 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
   test "a district whose qualifying polls span two matchups gets no average, with the reason" do
     race = district("house-2026-me-02-ambiguous", 2)
     create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
-                matchup_key: "dunlap vs lepage", results: { dem: 50.0, rep: 44.0 })
+                matchup_key: "dem:dunlap|rep:lepage", results: { dem: 50.0, rep: 44.0 })
     create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
-                matchup_key: "baldacci vs lepage", results: { dem: 44.0, rep: 50.0 })
+                matchup_key: "dem:baldacci|rep:lepage", results: { dem: 44.0, rep: 50.0 })
 
     result = @averager.for_race(race)
 
     assert_not_predicate result, :polled?
     assert_nil result.mean_margin
     assert_equal :ambiguous_matchup, result.reason
-    assert_equal [ "baldacci vs lepage", "dunlap vs lepage" ], result.matchups
+    assert_equal [ "baldacci vs lepage", "dunlap vs lepage" ], result.matchups,
+                 "named on the two sides being compared, and readable"
     assert_equal 0.0, result.weight, "nothing earned its way into the blend"
     assert_equal 2, result.poll_count, "the polls are still counted — they are on the page"
   end
@@ -314,13 +315,13 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
   test "a matchup that has aged out of the window stops making the district ambiguous" do
     race = district("house-2026-me-02-resolving", 2)
     create_poll(pollster: @beacon, race: race, field_end: AS_OF - 60, sample_size: 600,
-                matchup_key: "dunlap vs lepage", results: { dem: 40.0, rep: 55.0 })
+                matchup_key: "dem:dunlap|rep:lepage", results: { dem: 40.0, rep: 55.0 })
     create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 55, sample_size: 600,
-                matchup_key: "golden vs lepage", results: { dem: 49.0, rep: 45.0 })
+                matchup_key: "dem:golden|rep:lepage", results: { dem: 49.0, rep: 45.0 })
     create_poll(pollster: @delta, race: race, field_end: AS_OF - 10, sample_size: 600,
-                matchup_key: "golden vs lepage", results: { dem: 50.0, rep: 44.0 })
+                matchup_key: "dem:golden|rep:lepage", results: { dem: 50.0, rep: 44.0 })
     create_poll(pollster: create_pollster("Katahdin Polling"), race: race, field_end: AS_OF - 3,
-                sample_size: 600, matchup_key: "golden vs lepage", results: { dem: 51.0, rep: 44.0 })
+                sample_size: 600, matchup_key: "dem:golden|rep:lepage", results: { dem: 51.0, rep: 44.0 })
 
     assert_equal :ambiguous_matchup,
                  Forecast::Averager.new(as_of: AS_OF - 50).for_race(race).reason,
@@ -337,7 +338,7 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     race = district("house-2026-me-02-samepollster", 2)
     3.times do |index|
       create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
-                  matchup_key: "lepage vs rival#{index}", results: { dem: 50.0 - index, rep: 44.0 })
+                  matchup_key: "dem:rival#{index}|rep:lepage", results: { dem: 50.0 - index, rep: 44.0 })
     end
 
     result = @averager.for_race(race)
@@ -346,20 +347,73 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     assert_equal 1, result.poll_count
   end
 
-  # The rule is about House districts, whose nominees are unsettled and which
-  # have no candidate list to reject a hypothetical with. A Senate race's
-  # hypotheticals are refused at ingest instead.
-  test "a Senate race with two matchups still averages" do
-    race = Race.create!(office: :senate, state: "MT", cycle: 2026, slug: "senate-mt-averager-test", lean: -12.0)
+  # The rule reads on the polls, not on the chamber. A Senate race gets its
+  # hypotheticals the same way a district does — through a party slot with no
+  # seeded candidate to match against — so it is held to the same test.
+  # South Carolina's page carries Annie Andrews against eight different
+  # Republicans.
+  test "a Senate race whose polls span two matchups falls back too" do
+    race = senate_race_for_matchups
     create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
-                matchup_key: "busse vs zinke", results: { dem: 44.0, rep: 50.0 })
+                matchup_key: "dem:andrews|rep:norman", results: { dem: 44.0, rep: 50.0 })
     create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
-                matchup_key: "flint vs forstag", results: { dem: 43.0, rep: 49.0 })
+                matchup_key: "dem:andrews|rep:sanford", results: { dem: 43.0, rep: 49.0 })
+
+    result = @averager.for_race(race)
+
+    assert_not_predicate result, :polled?
+    assert_equal :ambiguous_matchup, result.reason
+    assert_equal [ "andrews vs norman", "andrews vs sanford" ], result.matchups
+  end
+
+  # Montana's live case, and the reason the key is per party slot rather than a
+  # flat list of names: the same two people, polled two-way and three-way.
+  # Offering a third option changes the numbers, not who is being compared.
+  test "a third candidate on the ballot does not make a race ambiguous" do
+    race = senate_race_for_matchups
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "dem:bankhead|rep:alme", results: { dem: 44.0, rep: 50.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "dem:bankhead|ind:bodnar|rep:alme", results: { dem: 41.0, rep: 47.0, ind: 8.0 })
 
     result = @averager.for_race(race)
 
     assert_predicate result, :polled?
     assert_nil result.reason
+  end
+
+  # South Dakota and Idaho both put an independent in the anti-Republican slot
+  # with a Democrat also on the page. The pair that matters is the one the
+  # average compares, and nobody else on the row counts.
+  test "the pair compared is the one the sides name, not everyone on the row" do
+    race = senate_race_for_matchups
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "ind:bengs|rep:rounds", results: { ind: 40.0, rep: 52.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: "dem:beaudion|ind:bengs|rep:rounds", results: { ind: 38.0, rep: 50.0, dem: 6.0 })
+
+    result = @averager.for_race(race, side_a: :ind, side_b: :rep)
+
+    assert_predicate result, :polled?, "both measure Bengs against Rounds"
+    assert_nil result.reason
+  end
+
+  test "a poll whose key does not name both sides is not evidence of ambiguity" do
+    race = senate_race_for_matchups
+    create_poll(pollster: @beacon, race: race, field_end: AS_OF - 3, sample_size: 600,
+                matchup_key: "dem:andrews|rep:norman", results: { dem: 44.0, rep: 50.0 })
+    create_poll(pollster: @cardinal, race: race, field_end: AS_OF - 5, sample_size: 600,
+                matchup_key: nil, results: { dem: 43.0, rep: 49.0 })
+
+    result = @averager.for_race(race)
+
+    assert_predicate result, :polled?
+    assert_equal 2, result.poll_count
+  end
+
+  def senate_race_for_matchups
+    Race.create!(office: :senate, state: "MT", cycle: 2026,
+                 slug: "senate-matchups-#{SecureRandom.hex(4)}", lean: -12.0)
   end
 
   test "the generic ballot carries no matchup and is never called ambiguous" do

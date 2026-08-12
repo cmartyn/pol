@@ -133,7 +133,7 @@ class PollTest < ActiveSupport::TestCase
   test "matchup_label reads back the contest as the page wrote it" do
     poll = create_poll(
       pollster: pollsters(:beacon_polling), race: races(:house_ny_17), field_end: Date.new(2026, 7, 1),
-      results: { dem: 51.0, rep: 45.0 }, matchup_key: "conley vs lawler",
+      results: { dem: 51.0, rep: 45.0 }, matchup_key: "dem:conley|rep:lawler",
       raw_payload: { "columns" => { "Poll source" => "Beacon", "Mike Lawler (R)" => "45%",
                                     "Cait Conley (D)" => "51%", "Undecided" => "4%" } }
     )
@@ -144,7 +144,7 @@ class PollTest < ActiveSupport::TestCase
   test "matchup_label falls back to the key when the cell map cannot supply labels" do
     poll = create_poll(pollster: pollsters(:beacon_polling), race: races(:house_ny_17),
                        field_end: Date.new(2026, 7, 1), results: { dem: 51.0, rep: 45.0 },
-                       matchup_key: "conley vs lawler")
+                       matchup_key: "dem:conley|rep:lawler")
 
     assert_equal "Conley vs Lawler", poll.matchup_label
   end

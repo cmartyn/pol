@@ -109,7 +109,8 @@
            data-testid="ambiguous-matchup-note">
           The recent polling here measures
           <%= pluralize(polls_scatter[:matchups].size, "different matchup") %>, so there is no single
-          contest to average — the forecast rests on fundamentals (the district's 2024 result and the
+          contest to average — the forecast rests on fundamentals
+          (<%= @race.house? ? "the district's 2024 result" : "the state's partisan lean" %> and the
           national environment) until the nominees are settled. Every poll is below, grouped by the
           matchup it tested.
         </p>

@@ -41,14 +41,8 @@ class Forecast::Averager
 
   # `polls` may be a relation or a plain array; callers that are about to
   # average hundreds of races should preload poll_results and pass arrays.
-  #
-  # House districts are held to the one-matchup rule and Senate races are not,
-  # which is a statement about the data rather than about the chamber: a Senate
-  # race's hypothetical matchups are rejected at ingest by its seeded candidate
-  # list, and no House race has a candidate list to reject anything with.
   def for_race(race, side_a: :dem, side_b: :rep, polls: nil)
-    call(polls: polls || race.polls.includes(:poll_results), side_a: side_a, side_b: side_b,
-         one_matchup: race.house?)
+    call(polls: polls || race.polls.includes(:poll_results), side_a: side_a, side_b: side_b)
   end
 
   # The national environment: the same machinery over generic-ballot polls,
@@ -57,7 +51,7 @@ class Forecast::Averager
     call(polls: polls || Poll.for_generic_ballot.includes(:poll_results))
   end
 
-  def call(polls:, side_a: :dem, side_b: :rep, one_matchup: false)
+  def call(polls:, side_a: :dem, side_b: :rep)
     raise ArgumentError, "side_a and side_b must differ (both #{side_a})" if side_a.to_s == side_b.to_s
 
     # A poll fielded after the as-of date does not exist yet as far as this
@@ -83,18 +77,29 @@ class Forecast::Averager
     kept = one_per_pollster(within(measured, window))
     skipped = in_hand.count { |poll| age_days(poll) <= window } - within(measured, window).size
 
-    # The test runs here, on the polls that actually survived — after the
-    # window and after the one-per-pollster cut — and not over all history.
-    # Three same-day tables from one pollster collapse to one poll and are no
-    # ambiguity at all; a district whose old hypotheticals have aged out of the
-    # window has already resolved itself. Doing it any earlier would refuse
-    # districts that are perfectly readable today, and would need undoing by
-    # hand as each primary settles.
-    matchups = kept.filter_map { |measurement| measurement.poll.matchup_key }.uniq
-    if one_matchup && matchups.size > 1
+    # Every race, not only House districts. A Senate race whose nomination is
+    # unsettled has several same-party candidates seeded, so several
+    # hypothetical matchups satisfy the parser's candidate check and all of
+    # them are ingested — the same contamination a district has, arrived at by
+    # a different route. Phase 9 estimates pollster house effects from
+    # race-level residuals, so a blended average here would end up inside every
+    # pollster's estimated lean.
+    #
+    # The test runs on the polls that actually survived — after the window and
+    # after the one-per-pollster cut — and not over all history. Three same-day
+    # tables from one pollster collapse to one poll and are no ambiguity at
+    # all; a race whose old hypotheticals have aged out of the window has
+    # already resolved itself. Doing it any earlier would refuse races that are
+    # perfectly readable today, and would need undoing by hand as each primary
+    # settles.
+    #
+    # The generic ballot is untouched: its columns name nobody, so its polls
+    # carry no matchup and this can never fire on them.
+    matchups = contested_pairs(kept, side_a, side_b)
+    if matchups.size > 1
       return Result.new(
         mean_margin: nil, weight: 0.0, poll_count: kept.size, window_days: window,
-        skipped_count: skipped, reason: :ambiguous_matchup, matchups: matchups.sort
+        skipped_count: skipped, reason: :ambiguous_matchup, matchups: matchups
       )
     end
 
@@ -133,6 +138,23 @@ class Forecast::Averager
   end
 
   private
+    # ["achilles vs risch"] — the distinct contests these polls measured,
+    # named on the two sides being compared and nobody else. Montana's
+    # two-way and three-way Bankhead-vs-Alme tables are one contest with a
+    # third option offered, and this is what says so; Maine's four Democrats
+    # against LePage are four contests, and this says that too. Polls whose
+    # key does not name both sides are left out rather than counted as their
+    # own contest — the key is provenance, and a poll without it is not
+    # evidence that the race is ambiguous.
+    def contested_pairs(measurements, side_a, side_b)
+      measurements.filter_map { |measurement|
+        by_party = Ingest::Matchup.parse(measurement.poll.matchup_key)
+        a = by_party[side_a.to_s]
+        b = by_party[side_b.to_s]
+        "#{a} vs #{b}" if a && b
+      }.uniq.sort
+    end
+
     # Top result for each side, so a poll listing two Democrats scores the
     # stronger one. A poll that never asked about one of the two sides is not
     # evidence about this matchup and returns nil.
