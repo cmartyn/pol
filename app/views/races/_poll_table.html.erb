@@ -1,11 +1,12 @@
-<%# locals: race, polls — preloaded with :poll_results and :pollster, recent_first %>
+<%# locals: race, polls — preloaded with :poll_results and :pollster, recent_first;
+    house_effects — { pollster_id => applied effect } for the run on show. %>
 <%# A race whose polls measure more than one contest is shown grouped by
     contest rather than as one undifferentiated list: the rows are not
     comparable with each other, and a reader scanning the margin column
     should be able to see why. %>
 <% groups = polls.group_by(&:matchup_key) %>
 <div class="overflow-x-auto">
-  <table class="w-full min-w-[640px] text-left text-sm" data-testid="poll-table">
+  <table class="w-full min-w-[760px] text-left text-sm" data-testid="poll-table">
     <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
       <tr>
         <th class="py-2 pr-3 font-medium">Pollster</th>
@@ -13,6 +14,10 @@
         <th class="py-2 pr-3 font-medium">Sample</th>
         <th class="py-2 pr-3 font-medium">Results</th>
         <th class="py-2 pr-3 font-medium">Margin</th>
+        <th class="py-2 pr-3 font-medium">
+          <%= link_to "House adj.", pollsters_path, class: "hover:text-amber-700",
+                      title: "Pollster house effect removed before averaging" %>
+        </th>
         <th class="py-2 font-medium">Source</th>
       </tr>
     </thead>
@@ -20,15 +25,17 @@
       <% if groups.size > 1 %>
         <% groups.each do |key, group| %>
           <tr class="bg-slate-50" data-testid="poll-matchup-heading" data-matchup="<%= key %>">
-            <th colspan="6" class="py-2 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th colspan="7" class="py-2 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <%= group.first.matchup_heading %>
               <span class="font-normal normal-case text-slate-400">&middot; <%= pluralize(group.size, "poll") %></span>
             </th>
           </tr>
-          <%= render partial: "races/poll_row", collection: group, as: :poll, locals: { race: race } %>
+          <%= render partial: "races/poll_row", collection: group, as: :poll,
+                     locals: { race: race, house_effects: house_effects } %>
         <% end %>
       <% else %>
-        <%= render partial: "races/poll_row", collection: polls, as: :poll, locals: { race: race } %>
+        <%= render partial: "races/poll_row", collection: polls, as: :poll,
+                   locals: { race: race, house_effects: house_effects } %>
       <% end %>
     </tbody>
   </table>

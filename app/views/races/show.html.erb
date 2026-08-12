@@ -96,7 +96,12 @@
   <section class="mt-10">
     <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Polls</h2>
     <% polls = @race.polls.recent_first.includes(:poll_results, :pollster) %>
-    <% polls_scatter = Site::Charts::PollsScatter.build(race: @race, polls: polls, as_of: Time.current) %>
+    <%# The same adjustments the run on show actually applied, so the poll
+        table's arithmetic and the reference line on the chart both match
+        what the model did rather than each recomputing their own version. %>
+    <% house_effects = HouseEffect.applied_lookup(@latest_run) %>
+    <% polls_scatter = Site::Charts::PollsScatter.build(race: @race, polls: polls, as_of: Time.current,
+                                                        house_effects: house_effects) %>
     <% if polls_scatter %>
       <%# Polling exists but measures contests that cannot all happen — a
           district whose nominees are unsettled gets a table per plausible
@@ -119,7 +124,7 @@
         <%= render "races/polls_scatter_chart", payload: polls_scatter, race: @race %>
       </div>
       <div class="mt-6">
-        <%= render "races/poll_table", race: @race, polls: polls %>
+        <%= render "races/poll_table", race: @race, polls: polls, house_effects: house_effects %>
       </div>
     <% else %>
       <p class="mt-3 text-slate-600" data-testid="unpolled-empty-state">

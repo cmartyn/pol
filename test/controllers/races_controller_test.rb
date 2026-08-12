@@ -113,6 +113,38 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='polls-scatter-chart']"
   end
 
+  # --- Pollster house effects on the poll table (Phase 9) ----------------
+
+  # A reader has to be able to see exactly what the model did to each poll,
+  # not just be told that it did something. maine_poll_one is Beacon at
+  # 47.5–44.0 (D+3.5); a +1.5 effect leaves D+2.0.
+  test "show spells out the adjustment on a poll whose pollster has an applied effect" do
+    HouseEffect.create!(model_run: model_runs(:model_run_one), pollster: pollsters(:beacon_polling),
+                        effect_raw: 3.0, effect_shrunk: 1.5, residual_count: 9, applied: true)
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='poll-adjustment']", count: 1
+    assert_select "[data-testid='poll-adjustment']", text: /D\+1\.5/, count: 1
+    assert_select "[data-testid='poll-adjustment']", text: /D\+2\.0/, count: 1
+    assert_select "[data-testid='poll-table']", text: /House adj/
+  end
+
+  test "a poll whose pollster has no applied effect shows no adjustment" do
+    HouseEffect.create!(model_run: model_runs(:model_run_one), pollster: pollsters(:beacon_polling),
+                        effect_raw: 6.0, effect_shrunk: 2.0, residual_count: 1, applied: false)
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='poll-adjustment']", count: 0
+  end
+
+  test "the poll table links its adjustment column to the pollsters page" do
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='poll-table'] a[href='#{pollsters_path}']"
+  end
+
   # A district whose polls measure contests that cannot all happen has polling
   # and no forecast-grade average. The page has to say both — hiding the polls
   # would be as dishonest as averaging them.

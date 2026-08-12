@@ -1,4 +1,4 @@
-<%# locals: race, poll — one row of the poll table. %>
+<%# locals: race, poll, house_effects — one row of the poll table. %>
 <tr data-testid="poll-row">
   <td class="py-2 pr-3 text-slate-700"><%= poll.pollster.name %></td>
   <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
@@ -26,6 +26,21 @@
       <span class="<%= party_text_color(margin[:party]) %>"><%= margin[:label] %></span>
     <% else %>
       <span class="text-slate-400">&mdash;</span>
+    <% end %>
+  </td>
+  <%# What the model did to this poll before averaging it, so the arithmetic
+      is visible rather than asserted. Blank where no effect was applied. %>
+  <td class="py-2 pr-3 whitespace-nowrap text-xs">
+    <% adjustment = poll_adjustment(poll, race, house_effects) %>
+    <% if adjustment %>
+      <span class="text-slate-500" data-testid="poll-adjustment"
+            title="This pollster's estimated house effect is <%= adjustment[:effect] %>; the model subtracts it before averaging.">
+        <span class="text-slate-400">&minus;<%= adjustment[:effect] %></span>
+        <span aria-hidden="true" class="text-slate-300">&rarr;</span>
+        <span class="font-semibold <%= party_text_color(adjustment[:adjusted_party]) %>"><%= adjustment[:adjusted] %></span>
+      </span>
+    <% else %>
+      <span class="text-slate-300">&mdash;</span>
     <% end %>
   </td>
   <td class="py-2">

@@ -1,6 +1,7 @@
 module PagesHelper
   SECTION_TITLE = {
     averaging: "Poll averaging",
+    house_effects: "Pollster house effects",
     blend: "Blending polls with fundamentals",
     fundamentals: "Fundamentals — partisan lean & national baselines",
     error_model: "Error model — how much uncertainty each draw carries",

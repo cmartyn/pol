@@ -1,0 +1,123 @@
+<% content_for :title, "Pollsters & house effects · Pol" %>
+
+<h1 class="font-serif text-3xl font-semibold text-slate-900">Pollsters</h1>
+<p class="mt-2 max-w-3xl text-slate-600">
+  Every polling firm in this corpus, and how far its polls sit from everyone else's.
+</p>
+<%= render "shared/as_of", time: @latest_run&.started_at %>
+
+<section class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-slate-50 p-5" data-testid="sign-convention">
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">How to read this</h2>
+  <p class="mt-2 text-slate-700">
+    <strong class="font-semibold text-slate-900">D+0.8 means this pollster's polls run 0.8 points more
+    Democratic than the field; we subtract that before averaging.</strong>
+    R+0.8 means the same in the other direction. The effect is measured against the other firms polling the
+    same thing at the same time &mdash; never against the election result, which hasn't happened &mdash; so it
+    says a firm differs from its competitors, not that it is wrong.
+  </p>
+  <p class="mt-3 text-sm text-slate-600">
+    <strong class="font-medium text-slate-900">Raw</strong> is the firm's average gap from the field.
+    <strong class="font-medium text-slate-900">Applied</strong> is that number pulled toward zero by how much
+    evidence stands behind it &mdash; a firm with three polls keeps
+    <%= number_to_percentage(100.0 * 3 / (3 + Pol::Params.fetch!(:house_effects, :shrinkage_k)), precision: 0) %>
+    of its raw effect, one with thirty keeps
+    <%= number_to_percentage(100.0 * 30 / (30 + Pol::Params.fetch!(:house_effects, :shrinkage_k)), precision: 0) %>
+    &mdash; and then capped at
+    <%= number_with_precision(Pol::Params.fetch!(:house_effects, :max_effect_pp), precision: 1) %> points.
+    Firms under <%= pluralize(Pol::Params.fetch!(:house_effects, :min_polls_to_apply), "usable poll") %> are
+    shown but <strong class="font-medium text-slate-900">not</strong> adjusted for.
+    <%= link_to "The full method is on the methodology page", methodology_path(anchor: "house-effects"),
+                class: "font-medium text-amber-700 hover:text-amber-800" %>.
+  </p>
+</section>
+
+<%# Keyed on the run the effects come from and on the poll table's own
+    freshness, so a new poll for a pollster with no estimate still changes
+    the page. Site::PollsterTable.build's three queries live inside the
+    block so a cache hit skips them. %>
+<% cache [ "pollster-table", @latest_run, Site::CacheKey.collection_freshness(Poll.all) ] do %>
+  <% rows = Site::PollsterTable.build(model_run: @latest_run) %>
+  <% estimated = rows.count(&:estimated?) %>
+
+  <% if rows.empty? %>
+    <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="pollsters-empty">
+      No polls have been collected yet, so there are no pollsters to rate.
+    </p>
+  <% else %>
+    <% if estimated.zero? %>
+      <p class="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900" data-testid="no-effects-yet">
+        No forecast run has estimated house effects yet, so nothing on this page is being adjusted for.
+        The <%= pluralize(rows.size, "pollster") %> below are listed with their poll counts only.
+      </p>
+    <% end %>
+
+    <p class="mt-8 text-sm text-slate-500" data-testid="pollster-summary">
+      <%= pluralize(rows.size, "pollster") %> &middot;
+      <%= estimated %> with an estimated effect &middot;
+      <%= rows.count(&:applied?) %> whose effect is being applied
+    </p>
+
+    <div class="mt-3 overflow-x-auto">
+      <table class="w-full min-w-[720px] text-left text-sm" data-testid="pollsters-table">
+        <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="py-2 pr-3 font-medium">Pollster</th>
+            <th class="py-2 pr-3 font-medium text-right">Polls</th>
+            <th class="py-2 pr-3 font-medium text-right">Usable</th>
+            <th class="py-2 pr-3 font-medium text-right">Raw effect</th>
+            <th class="py-2 pr-3 font-medium text-right">Applied effect</th>
+            <th class="py-2 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% rows.each do |row| %>
+            <tr data-testid="pollster-row" data-applied="<%= row.applied? %>"
+                class="<%= "text-slate-400" unless row.applied? %>">
+              <td class="py-2 pr-3 font-medium <%= row.applied? ? "text-slate-900" : "text-slate-500" %>">
+                <%= row.pollster.name %>
+              </td>
+              <td class="py-2 pr-3 text-right"><%= row.poll_count %></td>
+              <td class="py-2 pr-3 text-right" data-testid="residual-count"><%= row.residual_count %></td>
+              <% if row.estimated? %>
+                <td class="py-2 pr-3 text-right" data-testid="raw-effect">
+                  <%= Site::Format.house_effect(row.effect.effect_raw) %>
+                </td>
+                <td class="py-2 pr-3 text-right font-semibold <%= row.applied? ? party_text_color(house_effect_party(row.effect.effect_shrunk)) : "" %>"
+                    data-testid="shrunk-effect">
+                  <%= Site::Format.house_effect(row.effect.effect_shrunk) %>
+                </td>
+              <% else %>
+                <td class="py-2 pr-3 text-right text-slate-300">&mdash;</td>
+                <td class="py-2 pr-3 text-right text-slate-300" data-testid="shrunk-effect">&mdash;</td>
+              <% end %>
+              <td class="py-2 text-xs">
+                <% if row.applied? %>
+                  <span class="rounded bg-emerald-50 px-1.5 py-0.5 font-medium text-emerald-800"
+                        data-testid="pollster-status">Applied</span>
+                <% elsif row.estimated? %>
+                  <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500" data-testid="pollster-status">
+                    Shown only &mdash; under
+                    <%= pluralize(Pol::Params.fetch!(:house_effects, :min_polls_to_apply), "usable poll") %>
+                  </span>
+                <% else %>
+                  <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500" data-testid="pollster-status">
+                    No estimate &mdash; nothing comparable to measure against
+                  </span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="mt-4 max-w-3xl text-xs text-slate-500">
+      &ldquo;Usable&rdquo; counts the polls that produced a comparison &mdash; one per firm per field period,
+      excluding polls in races whose polling disagrees about who is running, polls against a placeholder
+      opponent, and polls with no other firm in the field within
+      <%= Pol::Params.fetch!(:house_effects, :residual_window_days) %> days.
+      A firm with polls but no usable ones gets no estimate at all, which is a different thing from an
+      estimate of zero.
+    </p>
+  <% end %>
+<% end %>

@@ -113,15 +113,47 @@ module RacesHelper
   # is. nil when the poll has no result for one of the two sides (rare —
   # see Site::Charts::PollsScatter for why it can happen).
   def poll_margin(poll, race)
+    value = poll_margin_value(poll, race)
+    return nil if value.nil?
+
+    side_a, side_b = race_sides(race)
+    rounded = value.round(1)
+    party = rounded.zero? ? "other" : (rounded.positive? ? side_a : side_b)
+    { label: Site::Format.margin(value, side_a_party: side_a, side_b_party: side_b), party: party }
+  end
+
+  # The raw number behind #poll_margin — side A's best result minus side B's,
+  # before any house-effect adjustment. nil when the poll never asked about
+  # one of the two sides.
+  def poll_margin_value(poll, race)
     side_a, side_b = race_sides(race)
     a = poll.poll_results.filter_map { |result| result.pct if result.party == side_a }.max
     b = poll.poll_results.filter_map { |result| result.pct if result.party == side_b }.max
     return nil if a.nil? || b.nil?
 
-    value = a - b
-    rounded = value.round(1)
-    party = rounded.zero? ? "other" : (rounded.positive? ? side_a : side_b)
-    { label: Site::Format.margin(value, side_a_party: side_a, side_b_party: side_b), party: party }
+    a - b
+  end
+
+  # What the model did to this poll's margin, or nil when it did nothing.
+  # `effects` is HouseEffect.applied_lookup for the run on show, so a poll
+  # whose pollster was under the minimum (or whose effect was never estimated)
+  # simply reports no adjustment rather than an adjustment of zero.
+  #
+  # Sign: a positive effect means the pollster leans Democratic and the model
+  # subtracts it, so the adjusted margin is the raw margin MINUS the effect.
+  def poll_adjustment(poll, race, effects)
+    effect = effects[poll.pollster_id]
+    return nil if effect.nil?
+
+    raw = poll_margin_value(poll, race)
+    return nil if raw.nil?
+
+    side_a, side_b = race_sides(race)
+    {
+      effect: Site::Format.house_effect(effect),
+      adjusted: Site::Format.margin(raw - effect, side_a_party: side_a, side_b_party: side_b),
+      adjusted_party: margin_party(race, raw - effect)
+    }
   end
 
   # Lowercase, whitespace-joined text for the /house client-side filter:

@@ -39,6 +39,15 @@ module Site
       format("%s+%.1f", letter, rounded.abs)
     end
 
+    # A pollster house effect, on the same convention as every other margin
+    # on this site: +0.8 renders "D+0.8" and means the pollster's polls run
+    # 0.8 points more Democratic than the field. Always dem/rep, whatever
+    # race a residual came from — a house effect is a property of the house,
+    # not of any one contest, and it is pooled across all of them.
+    def house_effect(value)
+      margin(value, side_a_party: "dem", side_b_party: "rep")
+    end
+
     # "Tossup" when the leading side's win probability is at or under the
     # tossup band (site.tossup_band_pp, e.g. 65.0); otherwise
     # "Favors {Party}". `tossup_band_pp` is points (0..100), matching how

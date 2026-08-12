@@ -33,13 +33,46 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='param-table-site'] [data-testid='param-row']", text: /65/
   end
 
+  # Phase 9's params, and the two that had to be chosen without a published
+  # precedent, all render with their citations like every other number.
+  test "methodology renders the house_effects params with their citations" do
+    get methodology_path
+
+    assert_select "[data-testid='param-table-house_effects'] [data-testid='param-row']", text: /shrinkage_k/
+    assert_select "[data-testid='param-table-house_effects'] [data-testid='param-row']", text: /max_effect_pp/
+    assert_select "[data-testid='param-table-house_effects'] [data-testid='param-row']",
+                  text: /residual_half_life_days/
+    assert_select "[data-testid='param-table-house_effects'] [data-testid='param-row']",
+                  text: /min_comparison_pollsters/
+    assert_select "[data-testid='param-table-house_effects'] a[href='https://abcnews.com/538/538s-pollster-ratings-work/story?id=105398138']"
+    assert_select "[data-testid='param-table-house_effects'] a[href='https://www.natesilver.net/p/which-polls-are-biased-toward-harris']"
+  end
+
+  test "methodology explains house effects in plain language, and owns the single-pass shortcut" do
+    get methodology_path
+
+    assert_select "#house-effects"
+    assert_select "[data-testid='house-effects']" do
+      assert_select "*", text: /residual/
+      assert_select "*", text: /firm's own polls are excluded from the comparison/
+      assert_select "*", text: /pulled toward zero/
+      assert_select "*", text: /capped at/
+    end
+    assert_select "[data-testid='single-pass-note']", text: /compute house effects once/
+    assert_select "[data-testid='single-pass-note']", text: /simplification, not a refinement/
+  end
+
   test "methodology's Known limitations section names the House overconfidence, with the measured range" do
     get methodology_path
 
     assert_select "[data-testid='limitations']" do
       assert_select "li", text: /House control probability is overconfident/
       assert_select "li", text: /85.{1,3}95%/ # the measured range, en-dash or hyphen either way
-      assert_select "li", text: /pollster house-effect/
+      # Phase 9 closed "no pollster house-effect correction" and opened a
+      # narrower one in its place: there IS a correction now, and the honest
+      # caveat is that it is estimated in one pass where 538 and Silver
+      # Bulletin both iterate.
+      assert_select "li", text: /[Hh]ouse effects are computed in a single pass/
       assert_select "li", text: /redistricting-stale/
       assert_select "li", text: /[Ii]mputed baseline/
       assert_select "li", text: /[Uu]nsettled nominee/

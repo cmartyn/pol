@@ -16,24 +16,32 @@
 module Site
   module Charts
     class PollsScatter
-      def self.build(race:, polls:, as_of: Time.current)
-        new(race: race, polls: polls, as_of: as_of).build
+      def self.build(race:, polls:, as_of: Time.current, house_effects: {})
+        new(race: race, polls: polls, as_of: as_of, house_effects: house_effects).build
       end
 
       # polls: an array (or loaded relation) of Poll, with poll_results and
       # pollster preloaded by the caller — this never queries beyond the one
       # Averager#for_race call, which reuses the same preloaded array.
-      def initialize(race:, polls:, as_of:)
+      #
+      # house_effects: the adjustments the run on show applied. The reference
+      # line has to be drawn from the adjusted average, because that is the
+      # average the model used; drawing the unadjusted one would put a line
+      # on the page that no number elsewhere on the site agrees with. The
+      # plotted points stay raw — they are what the pollster published, and
+      # the poll table beneath shows each one's adjustment alongside it.
+      def initialize(race:, polls:, as_of:, house_effects: {})
         @race = race
         @polls = polls.to_a
         @as_of = as_of
+        @house_effects = house_effects || {}
       end
 
       def build
         return nil if @polls.empty?
 
         side_a, side_b = Site::RaceSides.for(@race.candidates)
-        average = Forecast::Averager.new(as_of: @as_of).for_race(
+        average = Forecast::Averager.new(as_of: @as_of, house_effects: @house_effects).for_race(
           @race, side_a: side_a.to_sym, side_b: side_b.to_sym, polls: @polls
         )
         points = @polls.filter_map { |poll| point(poll, side_a, side_b) }

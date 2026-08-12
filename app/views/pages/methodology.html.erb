@@ -19,6 +19,13 @@
       size (capped at <%= number_with_delimiter(Pol::Params.fetch!(:averaging, :sample_size_cap)) %>).
     </li>
     <li>
+      <strong class="text-slate-900">Correct for pollster house effects.</strong> Before a poll enters an
+      average, the model subtracts that pollster's estimated lean &mdash; how far its polls sit from everyone
+      else's. <%= link_to "Every firm's number is published", pollsters_path,
+                          class: "font-medium text-amber-700 hover:text-amber-800" %>, including the ones the
+      model decided not to act on. The method is spelled out below.
+    </li>
+    <li>
       <strong class="text-slate-900">Blend with fundamentals.</strong> The poll average is blended with a
       fundamentals-only prior — partisan lean and incumbency for the Senate; the district's 2024 result and the
       national swing since then for the House. The more a race has been polled, the more the average counts,
@@ -48,6 +55,67 @@
   </ol>
 </section>
 
+<section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="house-effects" data-testid="house-effects">
+  <h2 class="font-serif text-xl font-semibold text-slate-900">Pollster house effects, in plain language</h2>
+  <p class="mt-3 text-slate-700">
+    Some polling firms consistently show a race a point or two more Democratic, or more Republican, than
+    everyone else polling the same thing at the same time. That gap is called a <em>house effect</em>. It is
+    not the same as being wrong &mdash; it is measured against other pollsters, not against an election
+    result that hasn't happened &mdash; but leaving it in means the average partly reflects who happened to
+    poll recently rather than what the electorate thinks.
+  </p>
+  <ol class="mt-4 list-decimal space-y-3 pl-5 text-slate-700">
+    <li>
+      <strong class="text-slate-900">Measure one poll against its contemporaries.</strong> For every poll, we
+      build an average of what <em>other</em> firms found on the same question &mdash; the generic ballot, or
+      that specific race &mdash; within <%= Pol::Params.fetch!(:house_effects, :residual_window_days) %> days
+      either side of it, weighted the same way the model's own averages are. The gap between the poll and that
+      average is the poll's <em>residual</em>. The firm's own polls are excluded from the comparison, so
+      nobody is ever measured against themselves.
+    </li>
+    <li>
+      <strong class="text-slate-900">Only compare what is comparable.</strong> A residual needs at least
+      <%= Pol::Params.fetch!(:house_effects, :min_comparison_pollsters) %> other firms in the window; against
+      one or two, the "gap from the field" is mostly the other firm's own lean. Polls in races where the
+      polling disagrees about who is actually running, and polls fought against a placeholder opponent, are
+      left out entirely &mdash; the same rule that keeps them out of the averages.
+    </li>
+    <li>
+      <strong class="text-slate-900">Pool a firm's residuals into one number.</strong> All of a firm's
+      residuals, across the generic ballot and every race, average into a single estimated lean. Older polls
+      count for less, halving every
+      <%= Pol::Params.fetch!(:house_effects, :residual_half_life_days) %> days, because a firm's methods
+      change.
+    </li>
+    <li>
+      <strong class="text-slate-900">Shrink it toward zero, then cap it.</strong> A firm with three polls
+      might look 6 points off the field purely by chance, so the raw number is pulled toward zero by how much
+      evidence stands behind it: a firm keeps <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">n /
+      (n + <%= number_with_precision(Pol::Params.fetch!(:house_effects, :shrinkage_k), precision: 0) %>)</code>
+      of its raw effect, where <em>n</em> is its number of usable polls. Whatever survives that is capped at
+      <%= number_with_precision(Pol::Params.fetch!(:house_effects, :max_effect_pp), precision: 1) %> points,
+      just above the largest house effect published research reports. Firms with fewer than
+      <%= pluralize(Pol::Params.fetch!(:house_effects, :min_polls_to_apply), "usable poll") %> have their
+      estimate shown but not applied.
+    </li>
+    <li>
+      <strong class="text-slate-900">Subtract it, and publish it.</strong> The surviving number comes off each
+      of that firm's polls before they are averaged, and every firm's figures are on the
+      <%= link_to "pollsters page", pollsters_path, class: "font-medium text-amber-700 hover:text-amber-800" %>
+      &mdash; raw, shrunk, and whether it was used. Race pages show the adjustment poll by poll.
+    </li>
+  </ol>
+  <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+     data-testid="single-pass-note">
+    <strong class="font-semibold">One simplification, stated plainly.</strong> House effects and polling
+    averages depend on each other: the "field" a poll is compared against is itself made of polls with their
+    own leans. 538 handles that by running its aggregation three times, and Silver Bulletin loops the average
+    and the house effects until the numbers stop moving. We compute house effects once, from unadjusted
+    averages, and then use them. That is a simplification, not a refinement, and it means our effects are
+    slightly biased toward zero for firms polling alongside other firms that lean the same way.
+  </p>
+</section>
+
 <section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="known-limitations" data-testid="limitations">
   <h2 class="font-serif text-xl font-semibold text-slate-900">Known limitations</h2>
   <ul class="mt-4 list-disc space-y-3 pl-5 text-slate-700">
@@ -63,9 +131,12 @@
       House control probability, it carries a footnote back to this paragraph.
     </li>
     <li>
-      <strong class="text-slate-900">No pollster house-effect correction.</strong> Every poll is weighted by
-      recency and sample size only — a pollster with a persistent lean toward one party isn't adjusted for or
-      down-weighted for it.
+      <strong class="text-slate-900">House effects are computed in a single pass.</strong> The correction
+      described above is estimated once, from averages that have not themselves been corrected, where the two
+      published models that do this iterate until the numbers settle. The effect of the shortcut is small and
+      one-directional: where several firms polling the same thing lean the same way, each is measured partly
+      against the others' lean, so all of their estimated effects come out a little too close to zero. The
+      correction is therefore conservative rather than overcooked.
     </li>
     <li>
       <strong class="text-slate-900">2024 House baselines are redistricting-stale.</strong> Several states redrew

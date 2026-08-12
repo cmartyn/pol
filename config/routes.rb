@@ -22,6 +22,11 @@ Rails.application.routes.draw do
 
   get "dispatches", to: "dispatches#index"
 
+  # Phase 9. Every pollster in the corpus, its estimated lean, and whether the
+  # model is acting on it. An adjustment readers cannot inspect is the secret
+  # sauce this project promised not to have.
+  get "pollsters", to: "pollsters#index"
+
   get "methodology", to: "pages#methodology"
   get "about", to: "pages#about"
 
