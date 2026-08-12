@@ -31,13 +31,17 @@
   <%# What the model did to this poll before averaging it, so the arithmetic
       is visible rather than asserted. Blank where no effect was applied. %>
   <td class="py-2 pr-3 whitespace-nowrap text-xs">
+    <%# The adjusted margin is the number the model used, so it leads; the
+        lean that produced it sits under it. Deliberately NOT written as
+        "−R+1.6": a minus sign in front of an already-signed party label is
+        two conventions in one token, and a reader cannot tell whether the
+        margin moved toward D or R from it. %>
     <% adjustment = poll_adjustment(poll, race, house_effects) %>
     <% if adjustment %>
-      <span class="text-slate-500" data-testid="poll-adjustment"
-            title="This pollster's estimated house effect is <%= adjustment[:effect] %>; the model subtracts it before averaging.">
-        <span class="text-slate-400">&minus;<%= adjustment[:effect] %></span>
-        <span aria-hidden="true" class="text-slate-300">&rarr;</span>
+      <span data-testid="poll-adjustment"
+            title="This pollster leans <%= adjustment[:effect] %> against the field; the model removes that before averaging.">
         <span class="font-semibold <%= party_text_color(adjustment[:adjusted_party]) %>"><%= adjustment[:adjusted] %></span>
+        <span class="block text-slate-400"><%= adjustment[:effect] %> lean removed</span>
       </span>
     <% else %>
       <span class="text-slate-300">&mdash;</span>

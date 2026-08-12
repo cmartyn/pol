@@ -2401,3 +2401,321 @@ party-keyed — and both times the whole table was recomputed.
    and 12 sweeps a day. If that becomes a problem the lever is a separate,
    slower cadence for district sources rather than a shorter list — the list is
    already only the pages that carry polls.
+
+---
+
+# Phase 9 — Pollster house effects (averaging)
+
+The averaging layer now estimates each pollster's systematic lean, removes it
+from every average, and publishes every number that went into the decision on
+a public `/pollsters` page. The estimate is a leave-one-out residual: how far
+a firm's polls sit from what everyone *else* found on the same question at the
+same time. It is not a measure of accuracy — no election has happened — and
+the page says so.
+
+## A. Params, and the two the brief did not ask for
+
+### A1. What the literature actually supports
+
+Four URLs, each fetched and read during this phase rather than recalled:
+
+| Source | What it establishes |
+|---|---|
+| [538, "How our polling averages work"](https://abcnews.com/538/polling-averages-work/story?id=103232260) (Morris, 2023-10-09) | The definition we use — a firm's tendency to lean one way relative to the average poll. Bayesian shrinkage toward a zero-mean prior whose SD "usually it's around 3 points". Aggregation run **three separate times**. |
+| [538, "How 538's pollster ratings work"](https://abcnews.com/538/538s-pollster-ratings-work/story?id=105398138) (Morris, 2024-01-25) | The shrinkage **form**, verbatim: `Adjusted Error × (n / (n + n_shrinkage)) + group_error_prior × (n_shrinkage / (n + n_shrinkage))`. `n_shrinkage` is described as the effective number of polls' worth of weight to put on the prior. **The value is not published.** |
+| [Silver Bulletin, polling-average methodology](https://www.natesilver.net/p/silver-bulletin-polling-average-methodology) | House effects and the average solved **iteratively**, looping "until there are no further gains to be had". Shrinkage keyed to how often a firm polls. |
+| [Silver Bulletin, "Which polls are biased toward Harris or Trump?"](https://www.natesilver.net/p/which-polls-are-biased-toward-harris) (2024-09-27) | Magnitudes, **on the margin scale**: the most Republican-leaning majors were Trafalgar −2.7 and Rasmussen −2.6; the most Democratic about +1.9. Firms with a handful of polls "discounted heavily toward the mean". The write-up's own cutoff was five polls of the race. |
+
+Dead ends, recorded so nobody re-runs the search: every `fivethirtyeight.com`
+permalink for the 2010–2012 Silver-era house-effect posts now 301s to an ABC
+politics index, and `web.archive.org` was unreachable from the build
+environment. Those are the pieces most likely to carry a plain "a typical
+house effect is X points" sentence, and their absence is the biggest hole in
+the citation set. `abcnews.com/538/<slug>/story?id=<n>` — the pattern Phase 3
+already used — is confirmed working across six methodology pieces.
+
+So: **the functional form is 538's, the cap is anchored to two published
+magnitudes, and `shrinkage_k` is ours.** Said plainly in the YAML rather than
+dressed up as inherited.
+
+### A2. `min_polls_to_apply: 3`, and the tension in it
+
+Kept at the brief's value, but it is the weakest-supported number here and the
+comment says so. **No published model uses a hard gate at all** — both 538 and
+Silver Bulletin rely on continuous shrinkage that approaches zero smoothly.
+Where those methodologies do state hard minimums they cluster at five, never
+three: 538 needs five polls from three pollsters before publishing a race
+average, and Silver's own house-effect table used firms with five or more.
+
+Three is kept because the gate is belt-and-braces behind the shrinkage, which
+has already cut an n=3 effect by 62% before the gate sees it; what the gate
+actually catches is n=1 and n=2, where an "effect" is one poll's sampling
+error. What raising it would cost, measured on the live board: **44 applied at
+3, 24 at 5** — twenty firms, two of them in the top ten by magnitude (Marist
+University and Public Opinion Strategies, both estimated on three residuals).
+That is a large enough cut to be a real decision rather than a tidy-up, and it
+is the reason this is flagged as the weakest-evidenced constant on the page
+rather than quietly changed to match the literature's adjacent thresholds.
+
+### A3. `residual_half_life_days: 180` — a param the brief did not list
+
+The approved design says residuals are "time-decayed on the same half-life as
+the averager". Implemented literally that is 14 days, and on a 20-month corpus
+it breaks the estimator. Effective sample size (Kish, `(Σw)²/Σw²`) per
+pollster, measured on the live generic-ballot corpus:
+
+| Pollster | Polls | ESS at 14d | ESS at 180d |
+|---|---:|---:|---:|
+| The Economist/YouGov | 81 | 8.4 | 71.4 |
+| Morning Consult | 49 | 6.3 | 42.7 |
+| Big Data Poll | 33 | 6.2 | 29.3 |
+| Reuters/Ipsos | 30 | 5.0 | 27.7 |
+| **RMG Research** | **24** | **1.4** | **19.1** |
+| Quantus Insights | 23 | 1.8 | 17.8 |
+| Cygnal | 21 | 1.8 | 15.8 |
+
+At 14 days, RMG Research's estimate rests on 1.4 polls of information while
+the shrinkage term — which counts polls — sees 24 and shrinks by only 17%. A
+single poll's margin carries roughly ±3.5 points of sampling error at n=800,
+so the cap would routinely bind on noise, and the page would publish "R+2.8
+from 24 polls" when the truth is "R+2.8 from last month's poll". That is the
+confident-looking adjustment built on noise this phase was told not to ship.
+
+A house effect is a slow-moving property of a firm's methodology; the 14-day
+half-life is tuned for a fast-moving race. Separating them is what makes the
+count-based shrinkage coherent with the weighting. **180 days** keeps the
+design's requirement (recent behaviour outweighs old) while leaving ESS
+tracking the count closely.
+
+### A4. `min_comparison_pollsters: 3` — implementing a clause the brief dropped
+
+The approved design asks for race-level residuals only "where a race has
+enough distinct pollsters to define a meaningful average". The brief omitted
+that clause, and the first live run showed exactly why it exists:
+
+```
+The Bullfinch Group   +7.43 raw  → +3.00 (capped), n=9, applied
+Peak Insights        -44.00 raw  → -3.00 (capped), n=1
+```
+
+Both traced to **one pairing in Idaho** — two polls a week apart, 44 points
+between them, each firm's residual being nothing but the other firm's lean
+with the sign flipped. That single pairing was the largest input to two
+different published effects, and it dragged Bullfinch to the top of the table
+on the strength of it.
+
+Against one other house a residual is not a distance from the field. The rule
+is applied to the generic ballot too, so there is one standard for what counts
+as a field; the generic ballot clears it on nearly every date, so it costs
+almost nothing there. The threshold sweep, live:
+
+| `min_comparison_pollsters` | Estimated | Applied | At the cap | Top three |
+|---:|---:|---:|---:|---|
+| 1 | 129 | 56 | 3 | Bullfinch, Peak Insights, AtlasIntel — two of them Idaho artefacts |
+| **2** | 113 | 48 | 1 | AtlasIntel, RMG, McLaughlin |
+| **3** | **111** | **44** | **1** | AtlasIntel, RMG, McLaughlin |
+| 4 | 105 | 42 | 1 | unchanged |
+| 5 | 101 | 40 | 1 | unchanged |
+
+The answer is stable from 2 upward — the top of the table does not move again
+— so this is a cliff, not a dial, and 3 sits just past it. Three is chosen
+over two because a "field" of two houses is still 50% one house.
+
+## B. How the estimator works
+
+`Forecast::HouseEffects`, one pass, in the runner before any averaging.
+
+**The residual.** For poll `p` by pollster `P` measuring quantity `Q` at
+`field_end t`: build the weighted mean margin of every OTHER house's polls of
+`Q` within ±`residual_window_days` of `t`, using the averager's own weight
+function on the **absolute** distance from `t`. `residual = margin_p − that`.
+
+Three details that are decisions, not mechanics:
+
+1. **The window is symmetric.** A backward-only window would sit two to three
+   weeks behind each poll on average and charge every pollster for whatever
+   the race did in between. Centring on the poll removes the first-order
+   trend bias.
+2. **One poll per house in the comparison.** The Economist/YouGov alone has 81
+   of the 559 generic-ballot polls; without this, a good part of every other
+   firm's "lean" would be a measurement of its distance from The
+   Economist/YouGov. The one kept is the nearest in time to `t` — the window
+   runs both ways, so "latest" is not the question being asked.
+3. **One residual per house per field period.** A release publishing a two-way
+   and a three-way version of the same question is one poll. Tavern Research's
+   four Montana rows to 2026-07-27 were producing four residuals — two of them
+   numerically identical — inflating the very count the shrinkage reads as
+   evidence. Deduplicating those cut `ambiguous_matchup` skips from 80 to 40
+   and Tavern's residual count from 11 to 3.
+
+**Eligibility is the averager's own, shared not copied.** `Forecast::Averager`
+gained two public methods (`#measurement`, `#distinct_matchups`) for this. A
+poll the average would refuse contributes no residual: a placeholder opponent,
+a missing side, or a race whose polls *in that window* disagree about who is
+running. Phase 8's rule reaching in here is the whole point — a residual
+measured against a blend of mutually exclusive matchups would put that
+contamination inside every pollster's estimated lean, and from there into
+every average the model takes. The ambiguity test runs over everything in the
+window **including the subject's own polls and before the field-period
+dedup**, the same order and for the same reason as §G6 of Phase 8.
+
+**The effect.** Weighted mean of the firm's residuals pooled across every
+quantity — the generic ballot and each race are all D−R margins against a
+contemporaneous average of the same thing — weighted by each residual's own
+poll weight, decayed toward the run date on `residual_half_life_days`. Then
+`clamp(raw × n/(n+k), ±max_effect_pp)`.
+
+**A row is written only for a firm with at least one residual.** "No estimate"
+and "an estimate of zero" are different claims, and 42 of the 153 firms in the
+corpus are the first. A run of zeroes on the page would say the second.
+
+**Single pass, and it is a simplification.** Both published models iterate;
+we do not. The bias it leaves is one-directional and worth naming: where
+several firms polling the same thing lean the same way, each is measured
+partly against the others' lean, so all their estimated effects come out a
+little too close to zero. The correction is therefore conservative rather than
+overcooked. On the methodology page in those words.
+
+## C. What it does to the board
+
+Same seed (20260811), same corpus, effects off then on — runs 13 and 14, so
+the difference is the adjustment and not the RNG.
+
+| | Effects off | Effects on | Δ |
+|---|---:|---:|---:|
+| Generic ballot (D−R) | +6.4272 | +6.6799 | **+0.2527** |
+| Senate D control | 37.08% | 37.95% | +0.87pp |
+| Senate mean D seats | 49.64 | 49.73 | +0.09 |
+| House D control | 96.15% | 96.61% | +0.46pp |
+| House mean D seats | 240.76 | 241.65 | +0.89 |
+
+Every one of those deltas is **deterministic**, not sampling scatter — same
+seed means the simulator draws the identical numbers, so the only thing that
+changed is each race's `mu`. But deterministic is not the same as meaningful:
+both chamber moves are **smaller than the Monte Carlo uncertainty in the
+reported probability itself** (~1.4pp on Senate control at n_sims=10,000,
+Phase 3 §8.2), so neither should be read as the forecast having changed. Race
+by race, `mean |Δ margin| = 0.251` and **1 of 470 races moved by 1.5pp or
+more** on the site's own movers floor (OH-07, +2.5pp).
+The correction is a small, almost entirely national shift — the generic-ballot
+move flowing into every district's prior — not a re-ranking of the board.
+
+That is the honest headline: **this phase buys inspectability and a quarter
+point on the national environment, not a different forecast.**
+
+### C1. A property worth knowing
+
+In a field where every house polls equally often, removing house effects
+**does not move the average at all**. Residuals are measured against the other
+houses, so the effects net out; what changes is which firms carry the weight.
+Pinned as a regression test, because a correction that shifted a balanced
+average would be measuring something other than the gap between houses. Where
+it bites is a race one firm has to itself — there the whole effect comes off.
+
+## D. The ten largest effects, live (run 14, 2026-08-11)
+
+| Pollster | Raw | Shrunk | Residuals | Polls | Applied |
+|---|---:|---:|---:|---:|:--|
+| AtlasIntel | +8.48 | **+3.00** (capped) | 5 | 5 | yes |
+| RMG Research | −3.68 | −2.84 | 17 | 24 | yes |
+| McLaughlin & Associates | −3.59 | −2.69 | 15 | 18 | yes |
+| Harvard/Harris Poll/HarrisX | −4.04 | −2.20 | 6 | 12 | yes |
+| Glengariff Group | −7.12 | −2.03 | 2 | 7 | **no** |
+| Marist University | +5.15 | +1.93 | 3 | 3 | yes |
+| Public Opinion Strategies | −5.12 | −1.92 | 3 | 4 | yes |
+| Morning Consult | −1.99 | −1.81 | 49 | 49 | yes |
+| Catawba College/YouGov | +6.14 | +1.75 | 2 | 2 | **no** |
+| Strength In Numbers/Verasight | +2.43 | +1.75 | 13 | 22 | yes |
+
+**111 of 153 firms estimated, 44 applied, exactly 1 at the cap.** Applied
+effects: mean −0.093, median −0.029, 19 above 1 point, 4 above 2. A
+leave-one-out system should centre near zero by construction, and it does —
+that is the estimator checking its own arithmetic.
+
+**AtlasIntel is the surprise and it is not an artefact.** Its five
+generic-ballot polls read D+9, D+8, D+8, D+16, D+15 against field medians of
+D+0, D+3, D+3, D+4 and D+6 in the same months — a consistent gap across twelve
+months, not one stray release. A firm with a public reputation for
+Republican-leaning US presidential numbers is the most Democratic-leaning
+generic-ballot house in this corpus by a wide margin, and it is the only firm
+the cap binds on. Reported as found. On five residuals the shrinkage keeps
+half of it and the cap takes the rest, which is the machinery behaving
+correctly around an outlier rather than being fooled by one.
+
+Two firms in the top ten are shown and **not** applied (Glengariff, Catawba)
+— which is the `/pollsters` page doing its job.
+
+## E. Publication
+
+* **`/pollsters`** — all 153 firms with a poll, sorted by |shrunk effect|,
+  not-applied rows visually muted. The sign convention is stated in words at
+  the top, because it is the one thing a reader cannot derive and inverting it
+  would double every lean instead of removing it. Three queries however many
+  firms there are, pinned by test. Honest empty states for "no polls at all"
+  and "no run has estimated effects yet".
+* **Race pages** — a "House adj." column showing the adjusted margin over the
+  lean that was removed. Deliberately *not* rendered as "−R+1.6": a minus sign
+  in front of an already-signed party label is two conventions in one token
+  and a reader cannot tell which way the margin moved. Caught by looking at
+  the rendered live page, not by a test.
+* **The scatter's reference line** is now drawn from the *adjusted* average,
+  so the line on the chart is the one the model used. The plotted points stay
+  raw — they are what the pollster published.
+* **Methodology** — a five-step plain-language section, plus the single-pass
+  note. The old "no pollster house-effect correction" limitation is gone,
+  replaced by the accurate narrower one about the single pass.
+
+## F. Tests
+
+69 new tests (792 → 861), plus the system test. Highlights: a hand-computed
+residual golden to 7dp; shrinkage arithmetic at n = 1, 5 and 50 against a
+constructed flat field where every residual is exactly 2.0, so the arithmetic
+is isolated from the weighting; the cap in both directions; window boundary at
+exactly 45 and 46 days; symmetry; leave-one-out proven by a firm that polls a
+quantity alone getting no residual; ambiguous matchups and placeholder
+opponents excluded; `min_polls_to_apply` gating `applied` without gating
+display; `enabled: false` estimating everything and applying nothing.
+
+**The Phase 3 averaging goldens are byte-for-byte unchanged**, pinned three
+ways: the whole pre-existing averager suite still passes untouched, a new test
+asserts that a nil/empty/absent lookup all reproduce the same Result fields,
+and a runner test asserts the fixture world applies zero effects — so a future
+change that started adjusting the fixture world fails by name rather than as a
+wall of moved goldens.
+
+## G. What this leaves for later
+
+1. **Iterate.** One extra pass would be cheap (the estimator runs in 0.5s) and
+   would recover the conservative bias in §B. Two or three passes is what both
+   published models do.
+2. **Shrink on aggregate sample size, not poll count.** Silver Bulletin keys
+   its shrinkage to total respondents. A firm with three 3,000-person polls
+   and one with three 400-person polls are treated identically here.
+3. **`min_polls_to_apply` is the weakest-evidenced constant on the page**
+   (§A2). Five is the better-precedented value and costs seven firms.
+4. **Residuals within a firm are correlated** — a run of polls in one short
+   span is close to one observation, so `n` overstates the independent
+   evidence and the shrinkage is correspondingly too gentle for a firm that
+   polls in bursts.
+5. **42 firms have polls and no estimate.** Mostly single polls of races
+   nobody else polled. More district polling closes this on its own.
+
+## H. Operational note — 23 dispatches the build published by accident
+
+Smoke-testing the new pages against the real corpus meant starting a
+development server, and `config/initializers/good_job.rb` registers the
+newsroom cron in development too. It fired: **model run 15 (trigger `ingest`)
+and 23 published `poll_reaction` dispatches**, written by real OpenRouter
+calls to `anthropic/claude-sonnet-5`. Dispatch ids 4–26.
+
+Nothing was scraped and no poll was added or changed — the corpus is still 975
+polls and 559 generic-ballot polls, and run 15 is a clean run of the new code
+(111 effects estimated, 44 applied), so the live board is correct. **The
+dispatches were left in place.** They are published editorial content and
+deleting or retracting them is the editor's call, not the build's; the
+standing rule for this database is that nothing gets destroyed.
+
+Worth a guard before the next phase does the same thing: either a
+`GOOD_JOB_ENABLE_CRON=false` in the smoke-test path, or gate the cron
+registration on something other than "not test". Curling a page should not be
+able to spend API credit and publish to the site.
