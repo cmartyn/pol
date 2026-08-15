@@ -156,24 +156,38 @@ module RacesHelper
     }
   end
 
-  # Lowercase, whitespace-joined text for the /house client-side filter:
-  # matches on the district code, the full state name and the bare number,
-  # so "ny", "new york", "17" and "ny-17" all find NY-17.
-  def house_search_text(race)
-    [ race.name, Race::STATE_NAMES[race.state], race.state, race.district ].compact.join(" ").downcase
+  # Lowercase, whitespace-joined text for the /senate and /house client-side
+  # filters: matches on the race's own display name (state name + office for
+  # Senate, state code + district for House), the full state name, the bare
+  # state code, the district number and — because a reader might type
+  # exactly this — the word "special" for a special election. So "ny",
+  # "new york", "17" and "ny-17" all find NY-17, and "georgia", "ga" or
+  # "special" all find the Georgia Senate race.
+  def race_search_text(race)
+    parts = [ race.name, Race::STATE_NAMES[race.state], race.state, race.district ]
+    parts << "special" if race.special?
+    parts.compact.join(" ").downcase
   end
 
-  # A /senate column header that links to itself sorted the other way when
-  # already active, and to ascending when it isn't — plain query-param
-  # sorting, no JS table library.
-  def senate_sort_header(label, key, current_sort:, current_direction:)
+  # A /senate or /house column header that links to itself sorted the other
+  # way when already active, and to ascending when it isn't — plain
+  # query-param sorting, no JS table library. base_path/testid_prefix are
+  # what keep this chamber-neutral: callers hand over their own path helper
+  # and a short prefix rather than this helper knowing either chamber's name.
+  #
+  # Every link also carries data-table-filter-target="sortLink" so the
+  # table-filter Stimulus controller can rewrite its href with the reader's
+  # live search text before it navigates — see table_filter_controller.js
+  # for why that has to happen client-side rather than here.
+  def sort_header(label, key, base_path:, testid_prefix:, current_sort:, current_direction:)
     active = current_sort == key
     next_direction = active && current_direction == "asc" ? "desc" : "asc"
     indicator = active ? (current_direction == "asc" ? " ▲" : " ▼") : ""
     classes = active ? "font-semibold text-slate-900" : "text-slate-500 hover:text-slate-700"
+    href = "#{base_path}?#{{ sort: key, dir: next_direction }.to_query}"
 
-    link_to "#{label}#{indicator}", senate_path(sort: key, dir: next_direction), class: classes,
-                                     data: { testid: "senate-sort-#{key}" }
+    link_to "#{label}#{indicator}", href, class: classes,
+            data: { testid: "#{testid_prefix}-sort-#{key}", table_filter_target: "sortLink" }
   end
 
   private

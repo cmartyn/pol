@@ -226,4 +226,103 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-testid='dispatch-byline']", text: /Updated by the editor/
   end
+
+  # --- Chamber index parity -------------------------------------------------
+  # /senate and /house drifted apart when they were specified separately. The
+  # tests below pin the chrome both pages are now expected to share. The
+  # *columns* deliberately still differ (lean vs 2024 baseline) — that is the
+  # point of keeping the two templates separate, so nothing here asserts they
+  # are identical, only that neither is missing a feature the other has.
+
+  test "both chamber pages render the summary card, the search box and a sticky header" do
+    { senate_path => "senate", house_path => "house" }.each do |path, chamber|
+      get path
+      assert_response :success
+
+      assert_select "[data-testid='chamber-card-#{chamber}']", { count: 1 }, "#{path} is missing the chamber card"
+      assert_select "input[data-table-filter-target='input']", { count: 1 }, "#{path} is missing the search box"
+      assert_select "thead th.sticky", { minimum: 1 }, "#{path} is missing a sticky header"
+    end
+  end
+
+  test "both chamber pages sort by every advertised key without error" do
+    { senate_path => Site::SenateTable::SORTS, house_path => Site::HouseTable::SORTS }.each do |path, keys|
+      keys.each do |key|
+        %w[asc desc].each do |dir|
+          get path, params: { sort: key, dir: dir }
+          assert_response :success, "#{path}?sort=#{key}&dir=#{dir} failed"
+        end
+      end
+    end
+  end
+
+  test "house sort headers link to the house path, not the senate one" do
+    get house_path
+
+    assert_select "[data-testid='house-sort-margin']" do |links|
+      assert_match %r{\A/house\?}, links.first["href"]
+    end
+  end
+
+  test "an active sort header offers the opposite direction next" do
+    get house_path, params: { sort: "margin", dir: "asc" }
+    assert_select "[data-testid='house-sort-margin']" do |links|
+      assert_match "dir=desc", links.first["href"]
+      assert_match "▲", links.first.text
+    end
+  end
+
+  # The interaction the parity work created: sorting reloads the page, so a
+  # sort link has to carry the reader's client-side filter or the reload
+  # silently drops it. The href is written by Stimulus at input time (never
+  # server-side — a cached fragment would leak one reader's search into
+  # another's links), so what this pins is that the hook the controller needs
+  # is present on every sort link.
+  test "every sort link is a table-filter target so the client can carry the search across a reload" do
+    [ senate_path, house_path ].each do |path|
+      get path
+      links = css_select("thead a")
+      assert_operator links.size, :>=, 5, "#{path} has suspiciously few sort links"
+      links.each do |link|
+        assert_equal "sortLink", link["data-table-filter-target"],
+                     "#{path}: a sort link that Stimulus can't rewrite will drop the reader's filter"
+      end
+    end
+  end
+
+  test "house rows carry the forecast margin and last poll date the parity pass added" do
+    run = model_runs(:model_run_one)
+    Forecast.create!(model_run: run, race: races(:house_ny_17), p_dem_win: 0.71, p_rep_win: 0.29, mean_margin: 6.4)
+    Poll.create!(
+      pollster: pollsters(:beacon_polling), race: races(:house_ny_17), field_end: Date.new(2026, 7, 3),
+      sample_size: 500, population: :lv, source_url: "https://example.com/house-parity",
+      dedup_digest: "house-parity-columns", entry_mode: :manual
+    )
+
+    get house_path
+
+    assert_select "[data-testid='house-race-row']", text: /D\+6\.4/
+    assert_select "[data-testid='house-race-row']", text: /Jul 3, 2026/
+  end
+
+  test "senate rows show the state lean, its fundamentals input" do
+    races(:senate_maine).update!(lean: -7.5)
+
+    get senate_path
+
+    assert_select "[data-testid='senate-race-row']", text: /R\+7\.5/
+  end
+
+  test "senate search text matches state name, code and the word special" do
+    get senate_path
+
+    rows = css_select("[data-testid='senate-race-row']").map { |row| row["data-search"] }
+
+    maine = rows.find { |text| text.include?("maine") }
+    assert maine, "no Senate row carries its full state name for the filter"
+    assert_includes maine, "me", "the two-letter code should match too"
+
+    special = rows.find { |text| text.include?("special") }
+    assert special, "a special election should be findable by typing 'special'"
+  end
 end

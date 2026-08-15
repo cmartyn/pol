@@ -1,0 +1,20 @@
+<%# locals: label (sr-only text for the input), placeholder (visible
+    placeholder), total (row count, an integer — the filter starts showing
+    everything), noun (plural for the count, e.g. "races"/"districts"),
+    input_testid.
+    The client-side filter's input + live match count — genuinely
+    chamber-agnostic once handed what to say, so /senate and /house each
+    compose it inside their own data-controller="table-filter" wrapper
+    instead of hand-rolling the same label/input/count markup twice. %>
+<div class="flex flex-wrap items-center justify-between gap-4">
+  <label class="min-w-0 flex-1">
+    <span class="sr-only"><%= label %></span>
+    <input type="text" data-table-filter-target="input" data-action="input->table-filter#filter"
+           placeholder="<%= placeholder %>"
+           class="w-full max-w-sm rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+           data-testid="<%= input_testid %>">
+  </label>
+  <p class="whitespace-nowrap text-sm text-slate-500">
+    <span data-table-filter-target="count"><%= total %></span> of <%= total %> <%= noun %>
+  </p>
+</div>

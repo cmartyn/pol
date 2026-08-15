@@ -37,6 +37,50 @@ class Site::HouseTableTest < ActiveSupport::TestCase
     assert_equal [ 1, 2 ], ordering
   end
 
+  # Sorting is the parity feature /house gained from /senate. Mirrors
+  # senate_table_test's sorting coverage: every key, both directions, and a
+  # bogus key falling back rather than raising.
+  test "sorts by every advertised key, and an unknown key falls back to state order" do
+    Site::HouseTable::SORTS.each do |key|
+      rows = Site::HouseTable.build(sort: key, direction: "asc")
+      assert_equal Race.house.count, rows.size, "#{key} lost or duplicated rows"
+    end
+
+    default = Site::HouseTable.build(sort: nil).map { |row| row.race.id }
+    assert_equal default, Site::HouseTable.build(sort: "not-a-column").map { |row| row.race.id }
+    assert_equal "state", Site::HouseTable.new(sort: "not-a-column").sort
+  end
+
+  test "descending is the exact reverse of ascending" do
+    up = Site::HouseTable.build(sort: "baseline", direction: "asc").map { |row| row.race.id }
+    down = Site::HouseTable.build(sort: "baseline", direction: "desc").map { |row| row.race.id }
+
+    assert_equal up.reverse, down
+    assert_equal "desc", Site::HouseTable.new(sort: "baseline", direction: "desc").direction
+    assert_equal "asc", Site::HouseTable.new(sort: "baseline", direction: "sideways").direction
+  end
+
+  test "a district with no baseline sorts to one end rather than raising" do
+    bare = create_house_race("house-table-test-no-baseline", state: "ZY", district: 1)
+    bare.update!(baseline_margin: nil)
+
+    ids = Site::HouseTable.build(sort: "baseline", direction: "asc").map { |row| row.race.id }
+
+    assert_equal bare.id, ids.first, "a nil baseline is unknown, not high — it belongs at one end"
+  end
+
+  test "carries the last poll date the new column renders" do
+    Poll.create!(
+      pollster: pollsters(:beacon_polling), race: races(:house_ny_17), field_end: Date.new(2026, 7, 9),
+      sample_size: 500, population: :lv, source_url: "https://example.com/house-last-poll",
+      dedup_digest: "house-last-poll-date", entry_mode: :manual
+    )
+
+    row = Site::HouseTable.build.find { |r| r.race.id == races(:house_ny_17).id }
+
+    assert_equal Date.new(2026, 7, 9), row.last_poll_date
+  end
+
   test "a bounded number of queries regardless of row count (the 435-district page's core risk)" do
     # Deliberately no warm-up call here: an uncounted call immediately
     # before the counted one can make the *second* (identical) query get

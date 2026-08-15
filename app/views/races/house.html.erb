@@ -4,8 +4,12 @@
 <p class="mt-1 text-slate-600">All 435 districts.</p>
 <%= render "shared/as_of", time: @latest_run&.started_at %>
 
+<%# Same chrome as /senate: the chamber summary card up top, and the same
+    no-run empty state when there's nothing to show yet. %>
 <% if @latest_run %>
-  <div class="mt-6 max-w-xl rounded-lg border border-slate-200 p-5">
+  <%# The partial owns its own border and padding — the dashboard
+      renders it bare — so this wrapper carries layout only. %>
+  <div class="mt-6 max-w-xl">
     <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true %>
   </div>
 <% else %>
@@ -15,64 +19,107 @@
 <% end %>
 
 <%# The 435-district table is this page's real weight — cache-keyed on the
-    run its forecasts come from and whether the House race collection itself
-    has changed. Site::HouseTable.build lives inside the block so a cache
-    hit skips its queries (races, forecasts, grouped poll counts) entirely.
-    The search input has no server-side state, so it's harmless to cache
-    alongside the table it filters client-side. %>
+    run its forecasts come from, the sort/direction actually in effect (so a
+    hit never serves a differently-ordered table), and whether the House race
+    collection itself has changed. Site::HouseTable.build lives inside the
+    block so a cache hit skips its queries entirely. The search input carries
+    no server-side state, so it's harmless to cache alongside the table it
+    filters client-side — and deliberately so: see table_filter_controller.js
+    on why the reader's ?q= is applied to sort links in the browser rather
+    than baked into this fragment. %>
 <div class="mt-10" data-controller="table-filter">
-  <% cache [ "house-table", @latest_run, Site::CacheKey.collection_freshness(Race.house) ] do %>
-    <% rows = Site::HouseTable.build %>
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <label class="min-w-0 flex-1">
-        <span class="sr-only">Search by state or district</span>
-        <input type="text" data-table-filter-target="input" data-action="input->table-filter#filter"
-               placeholder="Search by state or district (e.g. NY or NY-17)"
-               class="w-full max-w-sm rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
-               data-testid="house-search-input">
-      </label>
-      <p class="whitespace-nowrap text-sm text-slate-500">
-        <span data-table-filter-target="count"><%= rows.size %></span> of <%= rows.size %> districts
+  <% cache [ "house-table", @latest_run, @sort, @direction, Site::CacheKey.collection_freshness(Race.house) ] do %>
+    <% rows = Site::HouseTable.build(sort: @sort, direction: @direction) %>
+    <% if rows.empty? %>
+      <p class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="house-table-empty">
+        No House districts on the board yet.
       </p>
-    </div>
+    <% else %>
+      <%= render "races/search_box", label: "Search by state or district",
+                                      placeholder: "Search by state or district (e.g. NY or NY-17)",
+                                      total: rows.size, noun: "districts", input_testid: "house-search-input" %>
 
-    <div class="mt-4 overflow-x-auto">
-      <table class="w-full min-w-[560px] text-left text-sm" data-testid="house-table">
-        <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th class="py-2 pr-3 font-medium">District</th>
-            <th class="py-2 pr-3 font-medium">Rating</th>
-            <th class="py-2 pr-3 font-medium">Win prob.</th>
-            <th class="py-2 pr-3 font-medium">2024 baseline</th>
-            <th class="py-2 font-medium">Polls</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <% rows.each do |row| %>
-            <tr data-table-filter-target="row" data-search="<%= house_search_text(row.race) %>" data-testid="house-race-row">
-              <td class="py-2 pr-3">
-                <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
-              </td>
-              <td class="py-2 pr-3 text-slate-700" data-testid="rating-word"><%= rating_word_for(row.race, row.forecast) || "—" %></td>
-              <td class="py-2 pr-3"><%= probability_chip(row.forecast) %></td>
-              <td class="py-2 pr-3 whitespace-nowrap">
-                <span class="font-medium <%= party_text_color(house_margin_party(row.race.baseline_margin)) %>">
-                  <%= house_margin(row.race.baseline_margin) || "—" %>
-                </span>
-                <% if row.race.baseline_imputed? %>
-                  <span class="ml-1 rounded bg-amber-50 px-1 py-0.5 text-[10px] font-medium uppercase text-amber-700"
-                        data-testid="baseline-imputed-marker"
-                        title="Estimated baseline: no major-party opponent in 2024 — see Methodology.">est.</span>
-                <% end %>
-              </td>
-              <td class="py-2 text-slate-600"><%= row.poll_count %></td>
+      <%# See the matching comment on /senate: overflow-x-auto is required
+          for narrow viewports to scroll this table sideways, but it also
+          forces overflow-y's used value to auto (CSS's visible/non-visible
+          pairing rule), which hijacks the sticky th's containing block away
+          from the viewport. Reverting to the default (visible on both axes)
+          at lg and up — where this table fits without needing to scroll
+          sideways — is what lets the th actually stick while scrolling
+          through 435 rows, which is the case sticky exists for here. %>
+      <div class="mt-4 overflow-x-auto lg:overflow-x-visible">
+        <table class="w-full min-w-[820px] text-left text-sm" data-testid="house-table">
+          <thead class="text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "District", "state", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Rating", "rating", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Win prob.", "probability", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Margin", "margin", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="hidden sm:table-cell sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">Trend</th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "2024 baseline", "baseline", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Polls", "polls", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 font-medium border-b border-slate-200">
+                <%= sort_header "Last poll", "last_poll", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+              </th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
-      <p class="mt-4 hidden text-center text-sm text-slate-500" data-table-filter-target="noResults" data-testid="house-no-results">
-        No districts match your search.
-      </p>
-    </div>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% rows.each do |row| %>
+              <tr data-table-filter-target="row" data-search="<%= race_search_text(row.race) %>" data-testid="house-race-row">
+                <td class="py-2 pr-3">
+                  <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
+                </td>
+                <td class="py-2 pr-3 text-slate-700" data-testid="rating-word"><%= rating_word_for(row.race, row.forecast) || "—" %></td>
+                <td class="py-2 pr-3"><%= probability_chip(row.forecast) %></td>
+                <%# The forecast's own margin, which this table lacked until
+                    now: its only margin-ish column showed the 2024 baseline,
+                    which is history rather than a forecast. Both earn their
+                    place — one says where the district is headed, the other
+                    where it started. house_margin/house_margin_party bypass
+                    Site::RaceSides deliberately (no candidates are preloaded
+                    for House rows), so the forecast margin uses them too. %>
+                <td class="py-2 pr-3 font-semibold whitespace-nowrap">
+                  <% if row.forecast %>
+                    <span class="<%= party_text_color(house_margin_party(row.forecast.mean_margin)) %>">
+                      <%= house_margin(row.forecast.mean_margin) %>
+                    </span>
+                  <% else %>
+                    <span class="text-slate-300">—</span>
+                  <% end %>
+                </td>
+                <td class="py-2 pr-3 hidden sm:table-cell"><%= render "races/margin_bar", race: row.race, value: row.forecast&.mean_margin %></td>
+                <td class="py-2 pr-3 whitespace-nowrap">
+                  <span class="font-medium <%= party_text_color(house_margin_party(row.race.baseline_margin)) %>">
+                    <%= house_margin(row.race.baseline_margin) || "—" %>
+                  </span>
+                  <% if row.race.baseline_imputed? %>
+                    <span class="ml-1 rounded bg-amber-50 px-1 py-0.5 text-[10px] font-medium uppercase text-amber-700"
+                          data-testid="baseline-imputed-marker"
+                          title="Estimated baseline: no major-party opponent in 2024 — see Methodology.">est.</span>
+                  <% end %>
+                </td>
+                <td class="py-2 pr-3 text-slate-600"><%= row.poll_count %></td>
+                <td class="py-2 text-slate-600"><%= row.last_poll_date&.strftime("%b %-d, %Y") || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="mt-4 hidden text-center text-sm text-slate-500" data-table-filter-target="noResults" data-testid="house-no-results">
+          No districts match your search.
+        </p>
+      </div>
+    <% end %>
   <% end %>
 </div>

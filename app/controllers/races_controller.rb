@@ -16,9 +16,14 @@ class RacesController < PublicController
 
   def house
     @latest_run = ModelRun.succeeded.latest.first
-    # Site::HouseTable.build and the chamber summary's ChamberForecast/
-    # histogram lookup both happen inside the view's `<% cache %>` blocks —
-    # see app/views/races/house.html.erb and _chamber_card.html.erb.
+    # Mirrors #senate: normalize sort/direction only. Site::HouseTable.build
+    # and the chamber summary's ChamberForecast/histogram lookup both happen
+    # inside the view's `<% cache %>` blocks, so a hit skips those queries
+    # rather than paying for them here regardless. The column headers need to
+    # know which sort actually took effect to link and highlight correctly.
+    table = Site::HouseTable.new(sort: params[:sort], direction: params[:dir])
+    @sort = table.sort
+    @direction = table.direction
   end
 
   def show

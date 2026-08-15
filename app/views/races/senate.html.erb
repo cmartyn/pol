@@ -4,6 +4,23 @@
 <p class="mt-1 text-slate-600">All 35 seats on the 2026 ballot.</p>
 <%= render "shared/as_of", time: @latest_run&.started_at %>
 
+<%# Same chrome as /house: the chamber summary card up top (Senate's control
+    math is the richer one — holdovers, VP tiebreak, uncommitted
+    independents summing to less than 1 — but that's ChamberForecast's/the
+    partial's job to render honestly, not this page's), and the same
+    no-run empty state when there's nothing to show yet. %>
+<% if @latest_run %>
+  <%# The partial owns its own border and padding — the dashboard
+      renders it bare — so this wrapper carries layout only. %>
+  <div class="mt-6 max-w-xl">
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false %>
+  </div>
+<% else %>
+  <p class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="chamber-card-empty">
+    No forecast run has completed yet.
+  </p>
+<% end %>
+
 <%# The heaviest surface on this page — a 35-row table each pulling a
     forecast and poll stats — is cache-keyed on the run those forecasts come
     from, the sort/direction actually in effect (so a hit never serves a
@@ -11,45 +28,101 @@
     itself has changed. Site::SenateTable.build lives inside the block so a
     hit skips its queries rather than this template paying for them
     regardless of whether the result is about to be thrown away. %>
-<% cache [ "senate-table", @latest_run, @sort, @direction, Site::CacheKey.collection_freshness(Race.senate) ] do %>
-  <% rows = Site::SenateTable.build(sort: @sort, direction: @direction) %>
-  <div class="mt-6 overflow-x-auto">
-    <table class="w-full min-w-[720px] text-left text-sm" data-testid="senate-table">
-      <thead class="border-b border-slate-200 text-xs uppercase tracking-wide">
-        <tr>
-          <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Race", "state", current_sort: @sort, current_direction: @direction %></th>
-          <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Rating", "rating", current_sort: @sort, current_direction: @direction %></th>
-          <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Win prob.", "probability", current_sort: @sort, current_direction: @direction %></th>
-          <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Margin", "margin", current_sort: @sort, current_direction: @direction %></th>
-          <th class="py-2 pr-3 font-medium hidden sm:table-cell">Trend</th>
-          <th class="py-2 pr-3 font-medium"><%= senate_sort_header "Polls", "polls", current_sort: @sort, current_direction: @direction %></th>
-          <th class="py-2 font-medium"><%= senate_sort_header "Last poll", "last_poll", current_sort: @sort, current_direction: @direction %></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        <% rows.each do |row| %>
-          <tr data-testid="senate-race-row">
-            <td class="py-2.5 pr-3">
-              <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
-              <% if row.race.special? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">special</span><% end %>
-            </td>
-            <td class="py-2.5 pr-3 text-slate-700" data-testid="rating-word"><%= rating_word_for(row.race, row.forecast) || "—" %></td>
-            <td class="py-2.5 pr-3"><%= probability_chip(row.forecast) %></td>
-            <td class="py-2.5 pr-3 font-semibold">
-              <% if row.forecast %>
-                <span class="<%= party_text_color(margin_party(row.race, row.forecast.mean_margin)) %>">
-                  <%= formatted_margin(row.race, row.forecast.mean_margin) %>
-                </span>
-              <% else %>
-                <span class="text-slate-300">—</span>
-              <% end %>
-            </td>
-            <td class="py-2.5 pr-3 hidden sm:table-cell"><%= render "races/margin_bar", race: row.race, value: row.forecast&.mean_margin %></td>
-            <td class="py-2.5 pr-3 text-slate-600"><%= row.poll_count %></td>
-            <td class="py-2.5 text-slate-600"><%= row.last_poll_date&.strftime("%b %-d, %Y") || "—" %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% end %>
+<div class="mt-10" data-controller="table-filter">
+  <% cache [ "senate-table", @latest_run, @sort, @direction, Site::CacheKey.collection_freshness(Race.senate) ] do %>
+    <% rows = Site::SenateTable.build(sort: @sort, direction: @direction) %>
+    <% if rows.empty? %>
+      <p class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="senate-table-empty">
+        No Senate races on the board yet.
+      </p>
+    <% else %>
+      <%= render "races/search_box", label: "Search by state or race name",
+                                      placeholder: "Search by state or race name (e.g. Georgia, GA, or special)",
+                                      total: rows.size, noun: "races", input_testid: "senate-search-input" %>
+
+      <%# overflow-x-auto is what makes a narrow viewport able to scroll this
+          table sideways at all — but a sticky th only sticks to the nearest
+          ancestor that's actually a scroll container, and declaring
+          overflow-x: auto on an ancestor forces overflow-y's *used* value to
+          auto too (CSS's visible/non-visible pairing rule), turning this div
+          itself into that ancestor instead of the viewport. At lg and up the
+          table already fits with room to spare (measured against the
+          720px min-width below), so overflow reverts to its default
+          (visible on both axes — Tailwind's overflow-x-auto never touches
+          overflow-y) and the th sticks to the page as intended. Below lg,
+          horizontal scrolling is the one that actually matters (there isn't
+          room for every column regardless), so sticking with plain
+          scrolling there — same as before this page had sticky headers at
+          all — beats a table that silently doesn't scroll sideways. %>
+      <div class="mt-4 overflow-x-auto lg:overflow-x-visible">
+        <table class="w-full min-w-[820px] text-left text-sm" data-testid="senate-table">
+          <thead class="text-xs uppercase tracking-wide">
+            <tr>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Race", "state", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Rating", "rating", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Win prob.", "probability", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Margin", "margin", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="hidden sm:table-cell sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">Trend</th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Lean", "lean", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
+                <%= sort_header "Polls", "polls", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+              </th>
+              <th class="sticky top-0 z-10 bg-white py-2 font-medium border-b border-slate-200">
+                <%= sort_header "Last poll", "last_poll", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% rows.each do |row| %>
+              <tr data-table-filter-target="row" data-search="<%= race_search_text(row.race) %>" data-testid="senate-race-row">
+                <td class="py-2.5 pr-3">
+                  <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
+                  <% if row.race.special? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">special</span><% end %>
+                </td>
+                <td class="py-2.5 pr-3 text-slate-700" data-testid="rating-word"><%= rating_word_for(row.race, row.forecast) || "—" %></td>
+                <td class="py-2.5 pr-3"><%= probability_chip(row.forecast) %></td>
+                <td class="py-2.5 pr-3 font-semibold">
+                  <% if row.forecast %>
+                    <span class="<%= party_text_color(margin_party(row.race, row.forecast.mean_margin)) %>">
+                      <%= formatted_margin(row.race, row.forecast.mean_margin) %>
+                    </span>
+                  <% else %>
+                    <span class="text-slate-300">—</span>
+                  <% end %>
+                </td>
+                <td class="py-2.5 pr-3 hidden sm:table-cell"><%= render "races/margin_bar", race: row.race, value: row.forecast&.mean_margin %></td>
+              <%# The state's partisan lean — Senate's equivalent of the
+                  2024 baseline /house shows, and the fundamentals half of
+                  every blended mu. It went unshown here until now. %>
+              <td class="py-2.5 pr-3 whitespace-nowrap">
+                <% if row.race.lean %>
+                  <span class="font-medium <%= party_text_color(house_margin_party(row.race.lean)) %>">
+                    <%= house_margin(row.race.lean) %>
+                  </span>
+                <% else %>
+                  <span class="text-slate-300">—</span>
+                <% end %>
+              </td>
+                <td class="py-2.5 pr-3 text-slate-600"><%= row.poll_count %></td>
+                <td class="py-2.5 text-slate-600"><%= row.last_poll_date&.strftime("%b %-d, %Y") || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="mt-4 hidden text-center text-sm text-slate-500" data-table-filter-target="noResults" data-testid="senate-no-results">
+          No races match your search.
+        </p>
+      </div>
+    <% end %>
+  <% end %>
+</div>

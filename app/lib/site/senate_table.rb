@@ -7,7 +7,7 @@ module Site
   class SenateTable
     Row = Struct.new(:race, :forecast, :poll_count, :last_poll_date, keyword_init: true)
 
-    SORTS = %w[state rating probability margin polls last_poll].freeze
+    SORTS = %w[state rating probability margin lean polls last_poll].freeze
     DEFAULT_SORT = "state"
 
     def self.build(sort: nil, direction: "asc")
@@ -61,6 +61,8 @@ module Site
           row.forecast ? leading_probability(row.forecast) : -1.0
         when "margin"
           row.forecast&.mean_margin || -Float::INFINITY
+        when "lean"
+          row.race.lean || -Float::INFINITY
         when "polls"
           row.poll_count
         when "last_poll"
