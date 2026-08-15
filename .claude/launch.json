@@ -4,8 +4,9 @@
     {
       "name": "pol-dev-server",
       "runtimeExecutable": "bin/rails",
-      "runtimeArgs": ["server", "-p", "3131"],
-      "port": 3131
+      "runtimeArgs": ["server"],
+      "port": 3131,
+      "autoPort": true
     }
   ]
 }
