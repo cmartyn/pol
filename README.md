@@ -56,9 +56,9 @@ setup, style, three security scanners, both suites — with `bin/ci`.
 
 | Task | What it does |
 |---|---|
-| `bin/rails pol:seed_races` | Builds the board: 35 Senate races from a verified list (33 regular + 2 specials), 435 House districts with their 2024 margins, and each state's presidential lean. Idempotent — **re-run it after primaries settle** to pick up nominees. Prints a summary, including which districts got an imputed baseline. |
-| `bin/rails pol:scrape` | One polite sweep of all 36 Wikipedia sources (35 Senate pages + the generic ballot), ingesting anything new. Prints a per-source table of rows seen / new / duplicate / skipped. New polls queue a forecast run, which in turn wakes the newsroom. |
-| `bin/rails pol:model` | Runs the model once and prints the headline numbers: the generic-ballot average, both chambers' control probabilities and mean seats, the House caveat, and the biggest movers against the previous run. Takes about two seconds. |
+| `bin/rails pol:seed_races` | Builds the board: 35 Senate races from a verified list (33 regular + 2 specials), 435 House districts with their 2024 margins, and each state's presidential lean. Idempotent in the sense that every race is upserted by slug, so re-running never duplicates one — **but re-running does not pick up a settled primary**: the Senate list is a hand-maintained YAML file, and only editing it (or a future nominee scraper) updates a nominee. Prints a summary, including which districts got an imputed baseline. |
+| `bin/rails pol:scrape` | One polite sweep of all 69 Wikipedia sources (35 Senate pages + the generic ballot + 33 House district state pages), ingesting anything new. Prints a per-source table of rows seen / new / duplicate / skipped. New polls queue a forecast run, which in turn wakes the newsroom. |
+| `bin/rails pol:model` | Runs the model once and prints the headline numbers: the generic-ballot average, both chambers' control probabilities and mean seats, the correlated-error decomposition against 538's published one, and the biggest movers against the previous run. Takes about two seconds. |
 | `bin/rails pol:brief` | Writes today's national brief immediately — the same code path the 07:00 cron uses. Prints the piece, or the reason nothing was written. **Spends money** (one OpenRouter call). |
 | `bin/rails pol:refresh_fixtures` | Build-time only: re-downloads the trimmed Wikipedia HTML the parser tests run against. |
 
@@ -114,11 +114,16 @@ runs and model runs (each with a *Run … now* button), dispatches (edit, and
 **retract** — the lever for pulling a published piece), the newsroom skip log
 (why the newsroom stayed quiet), races and candidates, settings, and jobs.
 
-Settings holds the **kill switch**. `agents_enabled` defaults to on; turning it
-off stops the newsroom writing anything, per piece, with a skip row recorded so
-the silence is visible. Setting `AGENTS_DISABLED` in the environment forces it
-off regardless of the stored value, and the admin page says so rather than
-offering a toggle that would not work.
+Settings holds the **kill switch**. With nothing stored, `agents_enabled`
+defaults to on in test and production — but **off in development**, so a
+freshly cloned or reset database (where a checkout of this README starts)
+cannot fire the newsroom for real just because a dev server is running; the
+admin toggle, once set, always overrides the default in either direction.
+Turning it off stops the newsroom writing anything, per piece, with a skip row
+recorded so the silence is visible. Setting `AGENTS_DISABLED` in the
+environment forces it off regardless of the stored value, in every
+environment, and the admin page says so rather than offering a toggle that
+would not work.
 
 ## The site
 
@@ -157,10 +162,12 @@ direction it leans; the Senate's movement across the same assumptions is inside
 sampling noise and we don't claim a direction for it. That note travels with the
 number everywhere it is printed, including into the newsroom's prompt. Beyond
 it: there are no pollster quality weights, district baselines are 2024 results
-and go stale where a state has since redistricted, 37 districts have imputed
-baselines because a major party did not field a candidate in 2024, about ten
-Senate nominations were unsettled when the board was seeded, and the model has
-no idea which party currently controls either chamber — which is why the
+and go stale where a state has since redistricted, some House districts have
+imputed baselines because a major party did not field a candidate in 2024, and
+some Senate nominations were unsettled when the board was seeded —
+[`/methodology`](#the-site) carries both counts, computed live off the current
+board rather than hardcoded here where they would go stale. The model also has
+no idea which party currently controls either chamber, which is why the
 newsroom writes about *winning* control and never about holding it.
 
 ## Deploy posture

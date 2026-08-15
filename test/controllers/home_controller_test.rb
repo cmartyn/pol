@@ -41,6 +41,23 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='national-environment']"
   end
 
+  # Regression guard for the bug where this surface built its Averager with
+  # no house_effects lookup at all, publishing the unadjusted average while
+  # every forecast displayed beside it was built from the adjusted one.
+  test "the national environment is the house-effects-adjusted average, not the raw one" do
+    HouseEffect.create!(model_run: model_runs(:model_run_one), pollster: pollsters(:delta_metrics),
+                        effect_raw: 1.0, effect_shrunk: 1.0, residual_count: 5, applied: true)
+
+    get root_path
+
+    # Unadjusted, the fixture world's lone generic-ballot poll averages to
+    # D+2.0 (see Newsroom::ContextTest) — the applied +1.0 effect must come
+    # off it here exactly as it does everywhere else the average is printed.
+    assert_select "[data-testid='national-environment']" do
+      assert_select "*", text: "D+1.0"
+    end
+  end
+
   test "omits the Movers section when there's only one succeeded run" do
     get root_path
     assert_select "[data-testid='movers-section']", count: 0

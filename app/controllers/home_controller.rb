@@ -10,8 +10,14 @@ class HomeController < PublicController
 
     # The current poll average, not anything tied to @latest_run — see
     # Site::Charts::PollsScatter for why a live Averager call and a stored
-    # forecast are deliberately different numbers.
-    @national_environment = Forecast::Averager.new(as_of: Time.current).for_generic_ballot
+    # forecast are deliberately different numbers. House effects still apply:
+    # the lookup comes from @latest_run's stored, applied effects (the same
+    # mixed-vintage pattern races/show.html.erb uses for PollsScatter), so
+    # this matches methodology step 2 — a poll's lean is subtracted before it
+    # enters any average this site publishes, not only the ones tied to a run.
+    @national_environment = Forecast::Averager.new(
+      as_of: Time.current, house_effects: HouseEffect.applied_lookup(@latest_run)
+    ).for_generic_ballot
 
     @movers = Site::Movers.call
     @dispatches = Dispatch.published.recent_first.limit(5).includes(:race)

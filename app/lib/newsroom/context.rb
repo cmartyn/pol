@@ -129,8 +129,14 @@ module Newsroom
         }
       end
 
+      # Adjusted, like every other average this site publishes — methodology
+      # step 2 subtracts a pollster's lean before its poll enters an average,
+      # and a national brief attributing an unadjusted number to "our
+      # average" would contradict the forecasts printed beside it.
       def generic_ballot
-        average = Forecast::Averager.new(as_of: today).for_generic_ballot
+        average = Forecast::Averager.new(
+          as_of: today, house_effects: HouseEffect.applied_lookup(model_run)
+        ).for_generic_ballot
         return { average: nil, note: "no generic-ballot polls in the window" } unless average.polled?
 
         {

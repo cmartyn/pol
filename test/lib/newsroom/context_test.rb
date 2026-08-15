@@ -67,6 +67,20 @@ class Newsroom::ContextTest < ActiveSupport::TestCase
     assert_equal 1, national.dig(:generic_ballot, :polls_in_average)
   end
 
+  # Regression guard: this payload's generic_ballot average was built from a
+  # bare Forecast::Averager with no house_effects lookup, so a daily brief
+  # would attribute the unadjusted number to "our average" while every race
+  # forecast in the same piece was built from the adjusted one.
+  test "the generic-ballot average subtracts applied house effects, like every other average on the site" do
+    HouseEffect.create!(model_run: @run, pollster: pollsters(:delta_metrics),
+                        effect_raw: 1.0, effect_shrunk: 1.0, residual_count: 5, applied: true)
+
+    payload = Newsroom::Context.poll_reaction(race: @race, polls: @polls, model_run: @run)
+
+    # D+2.0 unadjusted (see the test above); the applied +1.0 effect comes off it.
+    assert_equal "D+1.0", payload.dig(:national, :generic_ballot, :average)
+  end
+
   # The first live brief written from this payload said Democrats were "short
   # of the 50 needed" in the Senate. 50 is the Republicans' number: the vice
   # president is a Republican, so a tie goes to them and Democrats need 51.

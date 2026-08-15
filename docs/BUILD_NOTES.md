@@ -2235,6 +2235,20 @@ cut** — see §G6 for why that order, and what it cost to get wrong. A race
 resolves itself as its old hypotheticals age out of the window; nothing has to
 be re-run when a primary settles and no migration is owed.
 
+**The reverse also happens, and it is not a regression.** The window is what
+does the resolving, in both directions: if a race's poll count inside
+`window_days` (45) drops below `min_polls_in_window` — typically because a
+poll simply ages past the boundary with nothing new arriving to replace it —
+the window re-extends to `extended_window_days` (120), and can pull old,
+pre-primary hypotheticals back into scope that the narrow window had already
+aged out, re-arming an ambiguity the race had previously resolved. Kentucky's
+6th is the live case: it averaged cleanly in model run 19 (2026-08-12) and is
+back on the fallback as of this writing, one of 13 races there now against the
+12 recorded at the time this section and §G1a were measured (10 districts
+above + 2 Senate races below). A rising ambiguous-race count is therefore not
+necessarily new contamination in the corpus — check whether a window widened
+before reading it as one.
+
 **Result on the live board: 47 of the 73 polled districts average cleanly, 10
 fall back to fundamentals, and 16 have no poll recent enough to qualify** (the
 last of those was already true before this rule and is not caused by it). The
@@ -2388,7 +2402,7 @@ What it cost, measured before shipping:
 | House districts falling back (of 73 polled) | 3 | **10** |
 | Combined | 3 of 97 (3%) | **12 of 97 (12%)** |
 | Races ever ambiguous in the 194-date back-test | 7 | **17** |
-| Race-days ambiguous | 308 | **1,153** |
+| Race-days ambiguous | 308 | **1,169** |
 
 Twelve per cent of polled races resting on fundamentals is a real cost and it
 is the honest one; the stop-condition agreed beforehand was a third, and this
@@ -2586,10 +2600,24 @@ window **including the subject's own polls and before the field-period
 dedup**, the same order and for the same reason as §G6 of Phase 8.
 
 **The effect.** Weighted mean of the firm's residuals pooled across every
-quantity — the generic ballot and each race are all D−R margins against a
-contemporaneous average of the same thing — weighted by each residual's own
-poll weight, decayed toward the run date on `residual_half_life_days`. Then
-`clamp(raw × n/(n+k), ±max_effect_pp)`.
+quantity — the generic ballot and each race, almost all of them D−R margins
+against a contemporaneous average of the same thing — weighted by each
+residual's own poll weight, decayed toward the run date on
+`residual_half_life_days`. Then `clamp(raw × n/(n+k), ±max_effect_pp)`.
+
+**Idaho, Nebraska and South Dakota are the exception**, and it is a real one,
+not a rounding error: no Democrat is seeded in any of the three, so
+Site::RaceSides puts the independent in the anti-Republican slot and those
+races pool in as I−R margins rather than D−R. The code pools them with
+everything else anyway, on the assumption — named here rather than left for a
+reader to discover, and not verified — that a firm's lean is a property of its
+methodology and travels regardless of which name stands opposite the
+Republican. It is left as a comment rather than fixed in code because live
+exposure is close to nil: Idaho (3 distinct pollsters) and South Dakota (2)
+can never clear `min_comparison_pollsters` (3 others required) on their own
+polls, so only Nebraska (4) ever mints an I−R residual. See
+`Forecast::HouseEffects`'s class comment for the same note kept beside the
+code.
 
 **A row is written only for a firm with at least one residual.** "No estimate"
 and "an estimate of zero" are different claims, and 42 of the 153 firms in the
@@ -2742,6 +2770,12 @@ polls and 559 generic-ballot polls, and run 15 is a clean run of the new code
 dispatches were left in place.** They are published editorial content and
 deleting or retracting them is the editor's call, not the build's; the
 standing rule for this database is that nothing gets destroyed.
+
+> **Addendum, 2026-08-13 — the editor's call was made.** 24 of these 25
+> dispatches are now retracted; one predates this incident and is still
+> published. The paragraph above is left as written because it was accurate
+> at the time — retracting was always the editor's option, never the build's
+> — this just records that the option has since been exercised.
 
 Worth a guard before the next phase does the same thing: either a
 `GOOD_JOB_ENABLE_CRON=false` in the smoke-test path, or gate the cron
@@ -3209,3 +3243,14 @@ build's — but it does mean the newsroom is armed the moment a process starts
 without the variable set. The standing recommendation from §F stands: gate the
 cron registration in `config/initializers/good_job.rb` on something narrower
 than "not test".
+
+> **Addendum, 2026-08-12 — a code fix landed, not only an operational one
+> (`6532635`).** `Setting.agents_enabled?` no longer defaults to `true`
+> unconditionally: with nothing stored, development now defaults to `false`
+> (see `app/models/setting.rb`), so the exact hazard this paragraph flags — a
+> process starting armed with only a per-process ENV var standing in the way
+> — is closed in the one environment where it had already bitten twice. The
+> stored row this paragraph refers to is gone from this database; test and
+> production are unaffected and still default to enabled. The §F
+> cron-registration recommendation above is unrelated to this fix and still
+> open.

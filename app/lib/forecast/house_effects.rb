@@ -8,9 +8,18 @@
 #                the same quantity, fielded within residual_window_days of p)
 #
 # A pollster's raw effect is the weighted mean of its residuals, pooled across
-# every quantity — the generic ballot and each race — because all of them are
+# every quantity — the generic ballot and each race. Almost all of those are
 # D−R margins measured against a contemporaneous average of the same thing, so
-# a lean shows up the same way in all of them. That raw effect is then shrunk
+# a lean shows up the same way in all of them. Idaho, Nebraska and South
+# Dakota are the exception: no Democrat is on the ballot, Site::RaceSides puts
+# the independent in the anti-Republican slot instead, and those races pool in
+# as I−R margins. Pooling them with the rest assumes a firm's lean is a
+# property of its methodology rather than of which name stands opposite the
+# Republican — a transfer assumption, named here rather than left for a reader
+# to discover, and not one this project has tried to verify. Live exposure is
+# close to nil: Idaho has 3 distinct pollsters and South Dakota 2, so neither
+# can ever clear min_comparison_pollsters (3 others required); only Nebraska,
+# with 4, ever mints an I−R residual. That raw effect is then shrunk
 # toward zero by the number of residuals behind it and clamped. Every constant
 # is in `house_effects:` in config/model_params.yml.
 #
