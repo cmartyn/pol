@@ -1,44 +1,96 @@
 <%# locals: payload, title
-    Server-rendered SVG, not D3: a static bar chart over a few dozen known
-    bins with no interactivity need doesn't benefit from D3's data-binding,
-    and this partial has to render identically at a small size (dashboard)
-    and a large one (/house), which a fixed-viewBox SVG does for free. %>
+    Server-rendered SVG, not D3: a static bar strip over a few dozen known
+    bins doesn't benefit from D3's data-binding, and it has to render
+    identically at a small size (dashboard) and a large one (/house), which
+    a fixed-viewBox SVG does for free. The charts upgrade kept that decision
+    and moved every word OUT of the SVG: the strip stretches to any width
+    (preserveAspectRatio="none" over a fixed pixel height), so text inside
+    it would distort — labels live in absolutely-positioned HTML spans at
+    percentage offsets instead, and stay 11px at every size. Interactivity
+    is layered on by histogram_chart_controller, which reads only the
+    prebuilt data-* strings below: the payload carries the words, the JS
+    carries the geometry. %>
 <% bins = payload[:bins] %>
-<div data-testid="seat-histogram-<%= payload[:chamber] %>" class="w-full">
-  <svg viewBox="0 0 600 130" class="h-auto w-full" role="img"
-       aria-label="<%= title %> seat distribution across simulated worlds, centered near <%= payload[:mean_dem_seats]&.round || "an unknown number of" %> Democratic-caucus seats">
-    <% if bins.any? %>
-      <% max_probability = payload[:max_probability] %>
-      <% chart_height = 100.0 %>
-      <% n = bins.size %>
-      <% slot_width = 600.0 / n %>
-      <% bar_width = [ slot_width - 1.5, 0.5 ].max %>
+<div data-testid="seat-histogram-<%= payload[:chamber] %>" class="w-full"
+     <% if bins.any? %>
+       data-controller="histogram-chart" tabindex="0" role="group"
+       aria-label="<%= title %> seat histogram; left and right arrow keys step through seat counts"
+     <% end %>>
+  <% if bins.any? %>
+    <% max_probability = payload[:max_probability] %>
+    <% chart_height = 100.0 %>
+    <% n = bins.size %>
+    <% slot_width = 600.0 / n %>
+    <% bar_width = [ slot_width - 1.5, 0.5 ].max %>
+    <% threshold_index = bins.index { |bin| bin.seats >= payload[:dem_threshold] } %>
+
+    <%# The majority line's words, above the strip at the line's own offset —
+        centered on it, except near the edges where centering would push the
+        text outside the card (then it hangs off the line toward the middle).
+        The strip renders (empty) even when no bin reaches the threshold so
+        the two dashboard cards' charts stay vertically aligned. %>
+    <div class="relative" style="height:16px">
+      <% if threshold_index %>
+        <% fraction = threshold_index / n.to_f %>
+        <% anchor = if fraction < 0.08
+                      "left:#{(fraction * 100).round(2)}%"
+                    elsif fraction > 0.92
+                      "right:#{((1 - fraction) * 100).round(2)}%"
+                    else
+                      "left:#{(fraction * 100).round(2)}%;transform:translateX(-50%)"
+                    end %>
+        <span class="text-slate-600" style="position:absolute;bottom:2px;white-space:nowrap;font-size:11px;<%= anchor %>"><%= payload[:majority_label] %></span>
+      <% end %>
+    </div>
+
+    <svg viewBox="0 0 600 100" preserveAspectRatio="none" class="w-full" style="height:96px" role="img"
+         aria-label="<%= title %> seat distribution across simulated worlds, centered near <%= payload[:mean_dem_seats]&.round || "an unknown number of" %> Democratic-caucus seats">
       <% bins.each_with_index do |bin, i| %>
         <% bar_height = max_probability.positive? ? (bin.probability / max_probability) * chart_height : 0.0 %>
         <% x = i * slot_width %>
         <% y = chart_height - bar_height %>
         <rect x="<%= x.round(2) %>" y="<%= y.round(2) %>" width="<%= bar_width.round(2) %>" height="<%= [ bar_height, 0.5 ].max.round(2) %>"
-              class="<%= bin.meets_dem_threshold ? "fill-blue-600" : "fill-slate-300" %>">
-          <title><%= bin.seats %> seats: <%= Site::Format.percent(bin.probability) %> of simulations</title>
-        </rect>
+              class="<%= bin.meets_dem_threshold ? "fill-blue-600" : "fill-slate-300" %>"
+              data-seats="<%= bin.seats %>"
+              data-seats-label="<%= bin.seats_label %>"
+              data-share-label="<%= bin.share_label %>"
+              data-control-label="<%= bin.control_label %>" />
       <% end %>
-      <% threshold_index = bins.index { |bin| bin.seats >= payload[:dem_threshold] } %>
+      <%# Lines get vector-effect="non-scaling-stroke": the non-uniform
+          viewBox stretch would otherwise fatten them with the container.
+          The baseline sits half a unit up so its stroke isn't clipped at
+          the viewBox edge. %>
+      <line x1="0" y1="99.5" x2="600" y2="99.5" stroke="#cbd5e1" stroke-width="1" vector-effect="non-scaling-stroke" />
       <% if threshold_index %>
         <% threshold_x = (threshold_index * slot_width).round(2) %>
         <line x1="<%= threshold_x %>" y1="0" x2="<%= threshold_x %>" y2="<%= chart_height %>"
-              stroke="#475569" stroke-width="1" stroke-dasharray="3,2" />
+              stroke="#475569" stroke-width="1" stroke-dasharray="3,2" vector-effect="non-scaling-stroke" />
       <% end %>
-      <text x="0" y="<%= chart_height + 16 %>" font-size="11" fill="#64748b"><%= bins.first.seats %></text>
-      <text x="600" y="<%= chart_height + 16 %>" text-anchor="end" font-size="11" fill="#64748b"><%= bins.last.seats %></text>
-      <text x="300" y="<%= chart_height + 16 %>" text-anchor="middle" font-size="11" fill="#94a3b8">seats (Dem caucus), dashed line = majority</text>
-    <% else %>
+    </svg>
+
+    <%# Axis ticks, one span per clean seat number, centered under its bin's
+        slot. Bins are contiguous in practice, but a tick whose seat count
+        has no bin is skipped rather than guessed at. Hidden from assistive
+        tech: the svg's aria-label and the caption below carry the meaning. %>
+    <% index_by_seats = bins.each_with_index.to_h { |bin, i| [ bin.seats, i ] } %>
+    <div class="relative" style="height:16px" aria-hidden="true">
+      <% payload[:tick_seats].each do |seats| %>
+        <% index = index_by_seats[seats] %>
+        <% next unless index %>
+        <span class="text-slate-500 tabular-nums" style="position:absolute;top:2px;left:<%= (((index + 0.5) / n) * 100).round(2) %>%;transform:translateX(-50%);font-size:11px"><%= seats %></span>
+      <% end %>
+    </div>
+  <% else %>
+    <svg viewBox="0 0 600 130" class="h-auto w-full" role="img"
+         aria-label="<%= title %> seat distribution across simulated worlds, centered near <%= payload[:mean_dem_seats]&.round || "an unknown number of" %> Democratic-caucus seats">
       <text x="300" y="55" text-anchor="middle" font-size="12" fill="#94a3b8">No simulation yet</text>
-    <% end %>
-  </svg>
+    </svg>
+  <% end %>
 
   <p class="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
     <span class="font-semibold text-blue-700"><%= Site::Format.percent(payload[:p_dem_control]) %> Dem control</span>
     <span class="font-semibold text-red-700"><%= Site::Format.percent(payload[:p_rep_control]) %> Rep control</span>
     <span class="text-slate-500">mean <%= number_with_precision(payload[:mean_dem_seats], precision: 1) %> Dem-caucus seats</span>
+    <span class="text-slate-400">Dem-caucus seats per simulated world; dashed line = majority.</span>
   </p>
 </div>

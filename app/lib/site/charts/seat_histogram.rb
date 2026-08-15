@@ -1,9 +1,13 @@
 # Turns a ChamberForecast's seat_histogram — seat-count => simulation count,
 # already binned by Forecast::Simulator — into the small set of domain values
 # the seat-histogram partial needs: each bin's probability share, sorted by
-# seat count, and whether that bin meets the Democratic-control threshold. No
-# pixels here (the partial does the seats/probability -> SVG-rect arithmetic)
-# and no re-simulation — this only reshapes numbers the engine already wrote.
+# seat count, whether that bin meets the Democratic-control threshold, and
+# every human-readable string the chart shows (bin share/seats/control
+# labels, axis tick seats, the majority line's label). The words are built
+# here, in tested Ruby, so the Stimulus layer only ever positions strings it
+# was handed — never composes them. No pixels here (the partial does the
+# seats/probability -> SVG-rect arithmetic) and no re-simulation — this only
+# reshapes numbers the engine already wrote.
 #
 # The histogram tracks *Democratic-caucus seats per simulated world*, one
 # number per world. For the House that number is complementary (dem_seats <
@@ -21,7 +25,8 @@
 module Site
   module Charts
     class SeatHistogram
-      Bin = Struct.new(:seats, :count, :probability, :meets_dem_threshold, keyword_init: true)
+      Bin = Struct.new(:seats, :count, :probability, :meets_dem_threshold,
+                       :share_label, :seats_label, :control_label, keyword_init: true)
 
       def self.build(chamber_forecast)
         new(chamber_forecast).build
@@ -38,11 +43,16 @@ module Site
 
         bins = histogram.map do |seats, count|
           seats_i = Integer(seats)
+          probability = total.zero? ? 0.0 : count.to_f / total
+          meets = seats_i >= threshold
           Bin.new(
             seats: seats_i,
             count: count,
-            probability: total.zero? ? 0.0 : count.to_f / total,
-            meets_dem_threshold: seats_i >= threshold
+            probability: probability,
+            meets_dem_threshold: meets,
+            share_label: share_label(probability),
+            seats_label: "#{seats_i} Dem-caucus #{'seat'.pluralize(seats_i)}",
+            control_label: control_label(meets)
           )
         end.sort_by(&:seats)
 
@@ -50,6 +60,8 @@ module Site
           chamber: @chamber_forecast.chamber,
           bins: bins,
           dem_threshold: threshold,
+          majority_label: "#{threshold} = majority",
+          tick_seats: tick_seats(bins),
           mean_dem_seats: @chamber_forecast.mean_dem_seats,
           p_dem_control: @chamber_forecast.p_dem_control,
           p_rep_control: @chamber_forecast.p_rep_control,
@@ -58,6 +70,50 @@ module Site
       end
 
       private
+        # One decimal, floored at "<0.1%". Bin shares are not win
+        # probabilities, so the site's whole-percent rule (Site::Format
+        # .percent) doesn't apply here — and a bin the simulator actually
+        # produced printing "0%" would deny it exists.
+        def share_label(probability)
+          label = format("%.1f%%", probability * 100)
+          probability.positive? && label == "0.0%" ? "<0.1%" : label
+        end
+
+        # House seats are complementary (see the header comment: dem < 218
+        # always implies rep >= 218), so a below-threshold House bin honestly
+        # reads "Rep majority". A below-threshold Senate bin may instead
+        # leave an uncommitted independent holding the balance, so its label
+        # claims only what the bin supports — never Republican control.
+        def control_label(meets_dem_threshold)
+          if @chamber_forecast.chamber == "house"
+            meets_dem_threshold ? "Dem majority" : "Rep majority"
+          else
+            meets_dem_threshold ? "Dem control" : "short of Dem control"
+          end
+        end
+
+        # Clean seat numbers for the partial's HTML axis: multiples of a step
+        # picked from the bin range, so a ~20-seat Senate strip ticks every 5
+        # and a ~145-seat House strip every 20 without crowding either.
+        def tick_seats(bins)
+          return [] if bins.empty?
+
+          low = bins.first.seats
+          high = bins.last.seats
+          step = tick_step(high - low)
+          first_tick = (low.to_f / step).ceil * step
+          first_tick.step(high, step).to_a
+        end
+
+        def tick_step(seat_range)
+          case seat_range
+          when ..30 then 5
+          when ..80 then 10
+          when ..160 then 20
+          else 25
+          end
+        end
+
         # The same threshold Forecast::Simulator uses to call control
         # (#senate_outcome / #house_outcome) — read from params, not
         # re-derived by simulating anything.

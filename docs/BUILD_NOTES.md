@@ -996,21 +996,48 @@ above the model's own noise rather than being picked from nowhere.
 
 ## C. Charts — one decision per chart
 
-- **Seat histograms (dashboard, `/house`)** — server-rendered SVG. A static bar
-  chart over a few dozen known bins, needed at two sizes, with no interaction:
-  a fixed-`viewBox` SVG does that with zero JavaScript. Bins are shaded on one
-  axis only (meets the Democratic-control threshold or does not) because the
-  histogram counts Democratic-caucus seats per simulated world, and for the
-  Senate that single number cannot distinguish "Republicans control" from "an
-  independent holds the balance". The exact `p_dem_control` / `p_rep_control`
-  are printed as text beside the chart, not read off it.
-- **Win-probability timeline and polls scatter (race pages)** — D3 in Stimulus
-  controllers, reading a sibling `<script type="application/json">` payload
-  built server-side. The timeline handles 0, 1 and many runs without template
-  branching (one run renders as two dots and no line, which is the common case
-  today). The scatter's reference line is the *live* weighted average from
-  `Forecast::Averager`, deliberately not the forecast's stored `mean_margin` —
-  that is the simulator's blended output, a different number by design.
+All three charts share one contract (the 2026-08-15 charts upgrade,
+`docs/superpowers/specs/2026-08-15-charts-upgrade-design.md`): **the payload
+carries the words, the JS carries the geometry.** Every human-readable string
+— tooltip datelines, "D+13.0" margins, "51 = majority", bin shares — is built
+in Ruby next to `Site::Format` (where the conventions are unit-tested) and the
+JavaScript only places text. Shared client modules live in
+`app/javascript/charts/`: `theme` (party + chrome colors, CVD-checked),
+`dimensions` (render at container pixel width with fixed font sizes, via
+ResizeObserver — the fix for viewBox-scaled ~6px mobile text), `time_ticks`
+(day/week/month/quarter ladders, year-anchored first tick, never hours — the
+fix for d3-axis printing "12 PM / Wed 12" on a three-day run history), and
+`tooltip` (one floating readout per chart; `textContent` only, because
+pollster and candidate names are scraped input).
+
+- **Seat histograms (dashboard, `/house`)** — still server-rendered SVG (bars
+  and lines only, `preserveAspectRatio="none"` over a fixed pixel height);
+  every word moved out of the SVG into HTML spans positioned by percentage so
+  text never scales with the strip. A thin Stimulus controller layers on
+  hover/keyboard readouts from per-`rect` `data-*` strings. Bins are shaded on
+  one axis only (meets the Democratic-control threshold or does not) because
+  the histogram counts Democratic-caucus seats per simulated world, and for
+  the Senate that single number cannot distinguish "Republicans control" from
+  "an independent holds the balance" — which is also why a Senate bin's
+  readout says "short of Dem control", never "Rep". The exact
+  `p_dem_control` / `p_rep_control` are printed as text beside the chart, not
+  read off it.
+- **Win-probability timeline (race pages)** — D3 in a Stimulus controller,
+  payload from a sibling `<script type="application/json">` tag. Handles 0, 1
+  and many runs without template branching. Crosshair scrubbing (pointer or
+  ←/→ keys) reads out every series at the snapped run under the run's
+  dateline; lines carry direct end labels ("Dem 93%") with a collision pass,
+  so the chart reads without the legend.
+- **Polls scatter (race pages)** — same architecture. The y axis is
+  party-anchored ("D+10 / Even / R+10", or "I+" on the three no-Democrat
+  races — sides come from the payload, never from the sign convention), dots
+  are colored by which side leads, and nearest-point hover names the
+  pollster, field period, margin, sample and sponsor; a click (second tap on
+  touch) opens the poll's source. The poll table below remains the
+  no-pointer path to every value. The reference line is the *live* weighted
+  average from `Forecast::Averager`, deliberately not the forecast's stored
+  `mean_margin` — that is the simulator's blended output, a different number
+  by design — and labels itself on-chart ("avg D+10.2").
 - **Senate-table trend cell** — a plain diverging CSS bar, capped at ±30pp. 35
   D3 initialisations for a decorative cell is the clunkiness this site is
   trying to avoid.

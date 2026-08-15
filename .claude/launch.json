@@ -4,7 +4,7 @@
     {
       "name": "pol-dev-server",
       "runtimeExecutable": "bin/rails",
-      "runtimeArgs": ["server"],
+      "runtimeArgs": ["server", "-P", "tmp/pids/preview-server.pid"],
       "port": 3131,
       "autoPort": true
     }

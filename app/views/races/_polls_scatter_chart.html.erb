@@ -1,14 +1,24 @@
 <%# locals: payload — Site::Charts::PollsScatter.build(race:, polls:), or nil when the race has no polls;
              race — the same Race, only needed to format the average-margin caption below.
     The brief wants this chart to omit itself gracefully rather than render
-    an empty axes box, so the caller only renders this partial `if payload`. %>
+    an empty axes box, so the caller only renders this partial `if payload`.
+    The svg's viewBox only reserves sensible space before JS runs; the
+    controller replaces it with real pixel width/height on first render so
+    axis text keeps its size at any width (charts/dimensions.js). %>
 <div data-controller="polls-scatter-chart" data-testid="polls-scatter-chart" class="w-full">
   <svg data-polls-scatter-chart-target="svg" viewBox="0 0 640 220" class="h-auto w-full"
        role="img" aria-label="Poll margins over time"></svg>
   <script type="application/json" data-polls-scatter-chart-target="payload"><%= json_escape(payload.to_json).html_safe %></script>
   <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-    <span><span class="inline-block h-2 w-2 rounded-full bg-blue-700"></span> Dem-leaning poll</span>
-    <span><span class="inline-block h-2 w-2 rounded-full bg-red-700"></span> Rep-leaning poll</span>
+    <%# Dots are colored by which side leads, not "positive = blue" — on the
+        no-Dem Senate races side A is an independent (Site::RaceSides), whose
+        dots wear slate, and the legend has to say so rather than promise
+        blue Dem dots that aren't on the chart. %>
+    <% dot_class = { "dem" => "bg-blue-700", "rep" => "bg-red-700" } %>
+    <% side_word = { "dem" => "Dem", "rep" => "Rep", "ind" => "Ind" } %>
+    <% [ payload[:side_a_party], payload[:side_b_party] ].each do |party| %>
+      <span><span class="inline-block h-2 w-2 rounded-full <%= dot_class.fetch(party, "bg-slate-500") %>"></span> <%= side_word.fetch(party, "Other") %>-leaning poll</span>
+    <% end %>
     <% if payload[:average_margin] %>
       <span>
         <span class="inline-block h-0.5 w-3 bg-amber-600 align-middle"></span>

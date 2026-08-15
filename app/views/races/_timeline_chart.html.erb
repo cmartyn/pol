@@ -8,7 +8,12 @@
         Only <%= pluralize(payload[:points].size, "model run") %> so far — the trend will fill in as more land.
       </p>
     <% end %>
-    <div data-controller="timeline-chart" class="w-full">
+    <%# tabindex puts the whole chart in the tab order for the controller's
+        arrow-key scrubbing; role="group" makes the aria-label announceable.
+        The viewBox only reserves layout space until the controller connects —
+        it renders at real pixel size and removes it. %>
+    <div data-controller="timeline-chart" class="w-full" tabindex="0" role="group"
+         aria-label="Win probability over time; use left and right arrow keys to step through model runs">
       <svg data-timeline-chart-target="svg" viewBox="0 0 640 220" class="h-auto w-full"
            role="img" aria-label="Win probability over time"></svg>
       <script type="application/json" data-timeline-chart-target="payload"><%= json_escape(payload.to_json).html_safe %></script>

@@ -49,9 +49,24 @@ module Site
           {
             t: started_at.iso8601,
             label: started_at.strftime("%b %-d"),
+            # The tooltip's dateline: Site::Format.as_of's vocabulary (month,
+            # day, year, 12-hour clock, zone name — times are UTC throughout
+            # this app), with a middot instead of the sentence comma because
+            # it heads a readout rather than running in prose.
+            time_label: started_at.strftime("%b %-d, %Y · %-I:%M %p %Z"),
             p_dem_win: forecast.p_dem_win,
             p_rep_win: forecast.p_rep_win,
-            p_other_win: forecast.p_other_win
+            p_other_win: forecast.p_other_win,
+            # Pre-formatted whole-percent strings for the tooltip rows and the
+            # on-chart end labels. The payload carries the words and the JS
+            # only places them — going through Site::Format.percent means the
+            # chart can never round a probability differently from the prose
+            # beside it.
+            pct_labels: {
+              dem: Site::Format.percent(forecast.p_dem_win),
+              rep: Site::Format.percent(forecast.p_rep_win),
+              other: Site::Format.percent(forecast.p_other_win)
+            }
           }
         end
     end
