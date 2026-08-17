@@ -1187,7 +1187,7 @@ is what the validator holds the model to.
 ### B2. Validation is ours, not the model's
 
 `Newsroom::Validation` runs against the parsed reply and assumes nothing about
-the schema having been honoured: the headline, dek and body caps from
+the schema having been honoured: the headline and dek caps from
 `config/model_params.yml`; no markdown structure the site cannot render
 (headings, bullet or numbered lists, block quotes, code fences, tables — the
 view uses `simple_format`, so a heading would publish as a literal `## `); and
@@ -1198,6 +1198,14 @@ traced to a source.
 A rejected draft gets exactly one more turn, in the same conversation, with the
 validator's own messages appended. A second failure publishes nothing and
 writes a `validation_failed` skip. Nothing invalid reaches the page.
+
+Body **length** is deliberately not enforced on those terms — see Phase 10 §I.
+The length each kind is written to lives in
+`Newsroom::Prompts::BODY_WORD_TARGETS` as guidance to the model;
+`newsroom.body_words_backstop` is a much larger ceiling here that only runaway
+output reaches. The distinction is which failures are worth the price of a
+rejection: a fabricated citation or an unrenderable heading is worse on the
+page than nothing at all, and a piece that runs long is not.
 
 ### B3. Caps
 
@@ -3293,3 +3301,93 @@ than "not test".
 > production are unaffected and still default to enabled. The §F
 > cron-registration recommendation above is unrelated to this fix and still
 > open.
+
+## I. Operational note, 2026-08-17 — a brief lost to 22 words
+
+A daily brief failed to publish. The skip detail was the whole story:
+
+> rejected 2 drafts — body_markdown is 472 words; the limit is 450
+
+Both turns came back long, so nothing went out that morning. The site's
+flagship daily piece was lost to being 5% over a house-style number no reader
+would have counted.
+
+### What the numbers said
+
+Word counts of everything published to that point:
+
+| kind | n | median | p90 | max |
+|---|---|---|---|---|
+| `poll_reaction` | 23 | 195 | 284 | 347 |
+| `daily_brief` | 2 | 373 | 397 | 397 |
+
+One global `body_max_words: 450` was serving two very different distributions.
+Reactions never came within 100 words of it — the binding constraint on them is
+"2 to 5 short paragraphs", not the cap. The brief lived against it: 349, 397,
+and the rejected 472, so one attempt in three blew a limit the other kind could
+not reach if it tried.
+
+That is structural rather than bad luck. A reaction covers one race. The brief
+covers both chambers, the generic ballot, the movers **and** recent polling,
+under a SOURCING rule that spends about a dozen words attributing each number
+("a Beacon Polling survey of 812 likely voters, fielded July 10-14"). Four
+subjects, one budget.
+
+### The actual mistake, which was not the number
+
+450 is a fine length for a brief; every published one came in under it. The
+error was the **instrument**. `Newsroom::Validation` was applying one mechanism
+— reject, retry once, then publish nothing — to two unlike classes of rule:
+
+- **Truth and rendering.** A cited id outside `citable_poll_ids` puts a
+  fabricated source on the page; a `## ` publishes as literal punctuation
+  through `simple_format`. Publishing these is worse than publishing nothing,
+  so paying the whole piece to stop them is the right trade.
+- **House style.** A long piece is neither false nor broken.
+
+Length had been quietly filed under the first. It cost the maximum penalty the
+file can impose for the least consequential violation in it.
+
+### Not fixable by leaning on the model
+
+Worth recording, because it is the obvious first instinct. The prompt already
+stated the exact number, and the retry turn hands the model its own failure
+verbatim — *"body_markdown is 472 words; the limit is 450"*. That is the
+strongest signal available, and it lost twice. Models do not count words
+reliably while generating. More emphasis would have bought little and cost the
+prompt's voice, which is one of the more carefully written things in the repo.
+
+### What changed
+
+The two classes are now enforced by two mechanisms.
+
+- `Newsroom::Prompts::BODY_WORD_TARGETS` — 300 for a `poll_reaction`, 300 for
+  a `movement_note`, 450 for a `daily_brief` — interpolated into the FORM
+  section as *"about N words"*. `system_prompt` already branched on kind for
+  `ASSIGNMENTS`, so this needed no new machinery.
+- `newsroom.body_words_backstop: 1000` replaces `body_max_words` in the
+  validator. The rename is the point: it stops a future reader tightening it
+  back to an editorial number.
+
+The model is never shown the backstop. Given a ceiling it writes to the
+ceiling, and 1000 is not a length anything here should be.
+
+Nothing about what the site publishes changes — the brief is still aimed at
+450, and reactions are now aimed at roughly the length they already write. What
+changes is what happens when a draft misses: a 472-word brief publishes.
+
+**Why 1000.** A bit over twice the largest target, roughly three times the
+longest piece ever published, and below the ~1,400 words `max_output_tokens:
+2000` truncates at — so a genuine runaway is caught here as a word count rather
+than downstream as unparseable JSON. Anything above ~1,400 would be unreachable
+dead config.
+
+### Tests
+
+`test/lib/newsroom/prompts_test.rb` is new: each kind is aimed at its own
+target, the brief gets more room than a single-race piece, every kind in
+`ASSIGNMENTS` has one, and no prompt mentions the backstop. In
+`validation_test.rb`, a draft 100 words over its target publishes — the
+regression test for this incident — and an invariant test asserts the backstop
+stays at least twice every target, so re-tightening it fails the suite rather
+than a morning's brief.

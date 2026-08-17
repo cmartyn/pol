@@ -3,9 +3,18 @@ module Newsroom
   # these four fields; this is what decides whether what came back may be
   # published, and it assumes nothing about the model having complied.
   #
-  # There is no approval queue behind this, so it is deliberately unforgiving:
-  # anything it cannot vouch for is rejected, the model gets exactly one more
-  # turn with these messages, and a second failure publishes nothing at all.
+  # There is no approval queue behind this, so it is deliberately unforgiving
+  # about the things it exists for: a citation it cannot resolve to a poll in
+  # the payload would put a fabricated source on the page, and markdown the
+  # view cannot render would publish as literal punctuation. Both are worse
+  # than publishing nothing — which is precisely what a rejection costs, since
+  # the model gets exactly one more turn with these messages and a second
+  # failure publishes nothing at all.
+  #
+  # Length is not in that family, and is not enforced here as though it were. A
+  # long piece is neither false nor unrenderable, so the word count below is a
+  # backstop for runaway output; the length each kind is actually written to
+  # lives in Newsroom::Prompts::BODY_WORD_TARGETS, far beneath it.
   class Validation
     MAX_STRUCTURE_SAMPLE = 60
 
@@ -74,7 +83,7 @@ module Newsroom
         return [ "body_markdown is missing" ] if body.blank?
 
         errors = []
-        limit = Pol::Params.fetch!(:newsroom, :body_max_words)
+        limit = Pol::Params.fetch!(:newsroom, :body_words_backstop)
         words = body.split(/\s+/).count { |word| word.match?(/\S/) }
         errors << "body_markdown is #{words} words; the limit is #{limit}" if words > limit
 

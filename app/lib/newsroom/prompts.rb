@@ -81,10 +81,30 @@ module Newsroom
         "call to attention, just the state of the board."
     }.freeze
 
+    # What each kind is aimed at, in words. Guidance, not a gate: the
+    # validator's backstop (newsroom.body_words_backstop) sits far above these,
+    # so a piece that overruns its target still publishes. The model is never
+    # shown the backstop — given a ceiling it writes to the ceiling, and these
+    # are the lengths these pieces should actually be.
+    #
+    # A reaction and a movement note each cover one race. The brief covers both
+    # chambers, the generic ballot, the movers and recent polling, under a
+    # sourcing rule that spends a dozen words attributing every number — so it
+    # is the one kind that needs the room, and the only one that ever ran out
+    # of it.
+    BODY_WORD_TARGETS = {
+      poll_reaction: 300,
+      movement_note: 300,
+      daily_brief: 450
+    }.freeze
+
     module_function
 
-    # The system prompt. Caps are interpolated from config/model_params.yml so
-    # the model is told the same limits the validator will apply.
+    # The system prompt. The headline and dek caps are interpolated from
+    # config/model_params.yml, so the model is told the same limits the
+    # validator will apply to them. The body is deliberately different: it
+    # carries this kind's target from BODY_WORD_TARGETS, and the validator's
+    # much larger backstop is never mentioned.
     def system_prompt(kind)
       <<~PROMPT.strip
         You write for a data-driven U.S. elections site that publishes its own forecast of the 2026 midterms.
@@ -130,10 +150,11 @@ module Newsroom
           trailing period, no colon-clause cliches.
         - dek: at most #{Pol::Params.fetch!(:newsroom, :dek_max_chars)} characters, one sentence, adds
           something the headline does not say.
-        - body_markdown: 2 to 5 short paragraphs, at most #{Pol::Params.fetch!(:newsroom, :body_max_words)}
-          words in total. PLAIN PARAGRAPHS ONLY, separated by blank lines. No headings, no bullet or numbered
-          lists, no block quotes, no tables, no code fences. The site renders this as paragraphs and nothing
-          else.
+        - body_markdown: 2 to 5 short paragraphs, about #{BODY_WORD_TARGETS.fetch(kind.to_sym)} words. Aim
+          for that; it is a target, not a ceiling, and a piece the payload cannot fill should come in under
+          it rather than pad. PLAIN PARAGRAPHS ONLY, separated by blank lines. No headings, no bullet or
+          numbered lists, no block quotes, no tables, no code fences. The site renders this as paragraphs
+          and nothing else.
         - cited_poll_ids: the ids of the polls you actually used, taken from citable_poll_ids in the payload.
           Every id must appear in that list; an id that does not is a rejected draft.
 

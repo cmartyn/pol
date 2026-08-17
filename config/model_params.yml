@@ -262,9 +262,12 @@ newsroom:
   # citation: https://openrouter.ai/api/v1/models (retrieved 2026-08-12)
   writer_model: "anthropic/claude-opus-5"
   brief_model: "anthropic/claude-opus-5"
-  # A dispatch is a headline, a dek and at most body_max_words of prose —
-  # roughly 700 tokens of JSON at the ceiling. 2000 leaves room for a long
-  # piece without leaving room for a runaway one.
+  # A dispatch is a headline, a dek and a few hundred words of prose — the
+  # longest target (Newsroom::Prompts::BODY_WORD_TARGETS) is roughly 700 tokens
+  # of JSON. 2000 leaves room for a piece that overruns without leaving room
+  # for a runaway one: it truncates around 1,400 words, above the
+  # body_words_backstop below, so a runaway is rejected as a word count rather
+  # than as JSON that stops mid-string.
   max_output_tokens: 2000
   max_dispatches_per_race_per_day: 3
   max_dispatches_per_day: 40
@@ -280,7 +283,22 @@ newsroom:
   recent_headline_count: 5
   headline_max_chars: 90
   dek_max_chars: 200
-  body_max_words: 450
+  # Not the house-style length — that is per kind, in
+  # Newsroom::Prompts::BODY_WORD_TARGETS, and it is guidance the writer aims at
+  # rather than a gate. This is the validator's backstop, deliberately far
+  # above every one of those targets.
+  #
+  # The split exists because a rejection costs the whole piece: one retry, and
+  # a second failure publishes nothing. That trade is right for a fabricated
+  # citation and wrong for a long one — a 472-word brief against a 450-word
+  # gate cost a morning's brief outright, and no reader would have noticed the
+  # 22 words. Length is house style, not a truth claim.
+  #
+  # 1000 is a bit over twice the largest target and roughly three times the
+  # longest piece this site has published, so only runaway output reaches it.
+  # It also sits below the ~1,400 words max_output_tokens truncates at, so a
+  # runaway is caught as a word count rather than as unparseable JSON.
+  body_words_backstop: 1000
 scrape:
   cadence_hours: 2
   user_agent_contact: "cmartyn@gmail.com"

@@ -50,12 +50,34 @@ class Newsroom::ValidationTest < ActiveSupport::TestCase
     assert_match(/the limit is #{limit}/, validate(dek: "D" * (limit + 1)).sole)
   end
 
-  test "the body word cap is the one in model_params.yml, and it is words not characters" do
-    limit = Pol::Params.fetch!(:newsroom, :body_max_words)
+  test "the body backstop is the one in model_params.yml, and it is words not characters" do
+    limit = Pol::Params.fetch!(:newsroom, :body_words_backstop)
 
     assert_empty validate(body_markdown: ([ "word" ] * limit).join(" "))
     over = validate(body_markdown: ([ "word" ] * (limit + 1)).join(" ")).sole
     assert_match(/body_markdown is #{limit + 1} words/, over)
+  end
+
+  # The failure this backstop was widened for: a brief came back 472 words
+  # against a 450-word gate, was rejected twice, and published nothing at all.
+  # Length is house style, not a truth claim — a piece that runs a little long
+  # beats a morning with no brief on it.
+  test "a draft that overruns its kind's word target is still published" do
+    Newsroom::Prompts::BODY_WORD_TARGETS.each do |kind, target|
+      words = target + 100
+
+      assert_empty validate(kind_of: kind, body_markdown: ([ "word" ] * words).join(" ")),
+                   "a #{kind} of #{words} words, against a #{target}-word target, should still publish"
+    end
+  end
+
+  # What stops the backstop being quietly re-tightened into a style rule again.
+  test "the backstop sits clear of every word target, so only runaway output reaches it" do
+    backstop = Pol::Params.fetch!(:newsroom, :body_words_backstop)
+
+    Newsroom::Prompts::BODY_WORD_TARGETS.each do |kind, target|
+      assert_operator backstop, :>=, 2 * target, "the backstop should leave a #{kind} real room to overrun"
+    end
   end
 
   test "moving a cap in the params file moves the validator with it" do

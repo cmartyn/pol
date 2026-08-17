@@ -44,7 +44,7 @@ class Pol::ParamsTest < ActiveSupport::TestCase
   test "the newsroom's caps and bounds are all present and positive" do
     %i[max_output_tokens max_dispatches_per_race_per_day max_dispatches_per_day movement_threshold
        movement_note_cooldown_days brief_poll_count recent_headline_count headline_max_chars
-       dek_max_chars body_max_words].each do |key|
+       dek_max_chars body_words_backstop].each do |key|
       assert_operator Pol::Params.fetch!(:newsroom, key), :>, 0, "newsroom.#{key}"
     end
   end
