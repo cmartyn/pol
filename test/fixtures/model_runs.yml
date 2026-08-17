@@ -1,8 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+# Fixture timestamps are inserted as raw SQL, so they do NOT go through
+# Time.zone the way ModelRun.create!(started_at: "...") does — what you write
+# here is what lands in Postgres, and the app reads it back as UTC before
+# converting to Eastern for display. So this is 06:00 AM EDT written in UTC:
+# a morning run, matching the 06:30 ET floor run in the real cron schedule.
 model_run_one:
-  started_at: 2026-08-01 06:00:00
-  finished_at: 2026-08-01 06:00:47
+  started_at: 2026-08-01 10:00:00
+  finished_at: 2026-08-01 10:00:47
   status: succeeded
   params_snapshot:
     n_sims: 10000

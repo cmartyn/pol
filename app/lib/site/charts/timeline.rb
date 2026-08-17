@@ -50,9 +50,10 @@ module Site
             t: started_at.iso8601,
             label: started_at.strftime("%b %-d"),
             # The tooltip's dateline: Site::Format.as_of's vocabulary (month,
-            # day, year, 12-hour clock, zone name — times are UTC throughout
-            # this app), with a middot instead of the sentence comma because
-            # it heads a readout rather than running in prose.
+            # day, year, 12-hour clock, zone name — Eastern throughout this
+            # app, so %Z prints EDT/EST), with a middot instead of the
+            # sentence comma because it heads a readout rather than running
+            # in prose.
             time_label: started_at.strftime("%b %-d, %Y · %-I:%M %p %Z"),
             p_dem_win: forecast.p_dem_win,
             p_rep_win: forecast.p_rep_win,

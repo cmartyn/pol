@@ -48,13 +48,18 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     payload = Site::Charts::Timeline.build(race: races(:senate_maine))
 
     point = payload[:points].first
-    assert_equal "Aug 1, 2026 · 6:00 AM UTC", point[:time_label]
+    assert_equal "Aug 1, 2026 · 6:00 AM EDT", point[:time_label]
     assert_equal({ dem: "62%", rep: "38%", other: "0%" }, point[:pct_labels])
   end
 
   # Pin the dateline's shape, not just the fixture's instance of it: month
   # day, year · 12-hour clock, zone — and no zero-padding on day or hour
   # (%-d/%-I), which is the detail a strftime edit would silently regress.
+  #
+  # December also pins the other half of the zone name: unlike the August
+  # fixture above this run is on the winter side of DST, so the dateline has
+  # to say EST where that one says EDT. Note the bare string is parsed in
+  # Time.zone (Eastern) on assignment, so 18:05 here means 6:05 PM Eastern.
   test "time_label keeps the unpadded dateline shape" do
     run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: "2026-12-09 18:05:00")
     Forecast.create!(model_run: run, race: races(:senate_florida_special),
@@ -63,7 +68,7 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     payload = Site::Charts::Timeline.build(race: races(:senate_florida_special))
 
     point = payload[:points].first
-    assert_equal "Dec 9, 2026 · 6:05 PM UTC", point[:time_label]
+    assert_equal "Dec 9, 2026 · 6:05 PM EST", point[:time_label]
     assert_match(/\A[A-Z][a-z]{2} \d{1,2}, \d{4} · \d{1,2}:\d{2} [AP]M [A-Z]+\z/, point[:time_label])
     # Whole percents via Site::Format.percent — 0.207 says "21%", never "20.7%".
     assert_equal "21%", point[:pct_labels][:dem]

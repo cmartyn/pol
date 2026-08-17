@@ -23,7 +23,7 @@ class ChartInteractionsTest < ApplicationSystemTestCase
       # One fixture run → the single-point degenerate path: a dot, padded
       # domain, still hoverable.
       find("svg").hover
-      assert_selector "[data-testid=chart-tooltip]", text: "Aug 1, 2026 · 6:00 AM UTC"
+      assert_selector "[data-testid=chart-tooltip]", text: "Aug 1, 2026 · 6:00 AM EDT"
       assert_selector "[data-testid=chart-tooltip]", text: "62%"
 
       # Axis text: anchored ("…, 2026" somewhere) and free of hour labels.
@@ -35,7 +35,7 @@ class ChartInteractionsTest < ApplicationSystemTestCase
     chart = find("[data-testid=timeline-chart] [tabindex='0']")
     chart.send_keys :arrow_left
     within "[data-testid=timeline-chart]" do
-      assert_selector "[data-testid=chart-tooltip]", text: "6:00 AM UTC"
+      assert_selector "[data-testid=chart-tooltip]", text: "6:00 AM EDT"
     end
   end
 

@@ -19,12 +19,23 @@ module Pol
     # Postgres-backed job backend; see config/initializers/good_job.rb.
     config.active_job.queue_adapter = :good_job
 
-    # Configuration for the application, engines, and railties goes here.
+    # Eastern is this site's clock. American election coverage is written and
+    # read on it: polls close on it, returns come in on it, and "Tuesday's
+    # numbers" means a Tuesday in New York. Running the app on UTC meant every
+    # evening between 8pm and midnight ET was already tomorrow as far as
+    # Date.current was concerned — which is precisely when a poll lands and a
+    # run fires. Newsroom::ZONE pinned Eastern by hand to work around that;
+    # this makes it the default rather than the exception.
     #
+    # Storage is untouched: config.active_record.default_timezone stays :utc,
+    # so every timestamp is still written to Postgres in UTC and only
+    # converted on the way out. This setting changes what we read and print,
+    # never what we store.
+    config.time_zone = "Eastern Time (US & Canada)"
+
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end
