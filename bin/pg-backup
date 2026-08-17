@@ -1,0 +1,19 @@
+#!/bin/bash
+# Nightly Postgres dump on the droplet (installed into root's crontab by the
+# deploy runbook — see docs/DEPLOY.md). The database is megabytes, so "a
+# gzipped pg_dump and two weeks of history" is the whole backup strategy;
+# anything fancier should start by questioning that premise.
+#
+# Runs ON the droplet as root: the pol-db container is Kamal's Postgres
+# accessory, reachable only over docker, so the dump goes through docker exec.
+set -euo pipefail
+
+BACKUP_DIR=/root/backups
+KEEP_DAYS=14
+
+mkdir -p "$BACKUP_DIR"
+docker exec pol-db pg_dump -U pol -d pol_production \
+  | gzip > "$BACKUP_DIR/pol_production_$(date +%F_%H%M).sql.gz"
+
+# Prune anything older than the retention window.
+find "$BACKUP_DIR" -name 'pol_production_*.sql.gz' -mtime +"$KEEP_DAYS" -delete
