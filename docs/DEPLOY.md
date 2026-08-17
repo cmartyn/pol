@@ -45,19 +45,15 @@ Kamal builds from git HEAD — commit before deploying.
    days of gzipped dumps in `/root/backups`. Restore:
    `gunzip -c dump.sql.gz | docker exec -i pol-db psql -U pol -d pol_production`.
 
-## When there's a domain
+## The domain
 
-Add to `config/deploy.yml`:
-
-```yaml
-proxy:
-  ssl: true
-  host: the-domain.example
-```
-
-turn on `config.assume_ssl` and `config.force_ssl` in
-`config/environments/production.rb`, point the DNS A record at the droplet,
-and `bin/kamal deploy`. Let's Encrypt issuance is automatic.
+The site lives at https://535.appmakey.com — kamal-proxy auto-issues the
+Let's Encrypt certificate, `assume_ssl`/`force_ssl` are on (with the `/up`
+health-check exclusion), and the proxy routes only that hostname, so the
+bare IP no longer serves the app. DNS is an A record in Cloudflare pointing
+at the droplet; DNS-only (gray cloud) is the assumed mode — if it's ever
+switched to proxied (orange cloud), set the zone's SSL/TLS mode to
+"Full (strict)" so Cloudflare speaks HTTPS to the origin's real cert.
 
 ## Costs
 

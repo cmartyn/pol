@@ -22,12 +22,16 @@ servers:
       - 68.183.55.31
     cmd: bundle exec good_job start
 
-# No proxy block: no domain yet, so kamal-proxy serves plain HTTP on the
-# droplet's bare IP. When a domain points here, add
-#   proxy:
-#     ssl: true
-#     host: <the domain>
-# and turn on config.assume_ssl + config.force_ssl in production.rb.
+# kamal-proxy terminates SSL for the subdomain with an auto-issued Let's
+# Encrypt certificate (production.rb's assume_ssl/force_ssl are on to
+# match). Cloudflare sits in front of the DNS: DNS-only (gray cloud) just
+# works; proxied (orange cloud) needs the zone's SSL/TLS mode set to
+# "Full (strict)" so Cloudflare speaks HTTPS to the origin's real cert.
+# With a host set, the proxy routes only this hostname — bare-IP requests
+# stop resolving to the app, which is the point.
+proxy:
+  ssl: true
+  host: 535.appmakey.com
 
 # Credentials come from .kamal/secrets, which reads the macOS keychain —
 # nothing secret is committed. The username is the DO account email; the
