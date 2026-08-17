@@ -27,9 +27,15 @@ Kamal builds from git HEAD — commit before deploying.
 
 1. `bin/kamal setup` (installs docker on the host, boots Postgres, deploys).
 2. Seed the world: `bin/kamal app exec 'bin/rails pol:seed_races pol:scrape pol:model'`.
-3. Create the editor account — run this YOURSELF so the generated password
-   (printed exactly once) lands in your terminal and nowhere else:
-   `bin/kamal app exec 'bin/rails db:seed'`, then sign in at `/session/new`.
+3. The editor account: on a fresh boot the entrypoint's `db:prepare`
+   CREATES the database and therefore runs `db/seeds.rb` — so the account
+   already exists and its generated password was printed once into the web
+   container's boot log. Recover it before the next deploy replaces that
+   container:
+   `ssh root@<host> 'docker logs $(docker ps -q --filter label=role=web) 2>&1 | grep -A4 "GENERATED password"'`
+   then rotate it from `bin/kamal console`
+   (`User.sole.update!(password: ...)`) — it has, after all, been sitting
+   in a docker log. Sign in at `/session/new`, ideally only once SSL is up.
 4. The newsroom: a fresh production database arms it by default
    (`Setting.agents_enabled?`). This deploy set the stored toggle to
    disarmed so an unattended box doesn't publish or spend; arm it from
