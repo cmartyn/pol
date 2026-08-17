@@ -110,7 +110,12 @@ class FullPipelineTest < ApplicationSystemTestCase
     within "[data-testid=dashboard-dispatches]" do
       assert_text REACTION_HEADLINE
     end
-    assert_selector "[data-testid=chamber-cards]", text: "Senate"
+    # Case-insensitive on purpose. Capybara reads *rendered* text through the
+    # driver, so a CSS text-transform on the card's label changes what this
+    # sees even though the markup still says "Senate" — which is exactly how
+    # this broke when the labels became uppercase eyebrows. The assertion is
+    # that the chamber cards name the Senate, not how they are cased.
+    assert_selector "[data-testid=chamber-cards]", text: /senate/i
     assert_text Site::Format.as_of(run.started_at)
 
     # And the Senate table, which reads the same forecast through a different
