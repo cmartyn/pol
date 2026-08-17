@@ -35,6 +35,17 @@ const SERIES = [
 
 const bisectDate = bisector((point) => point.date)
 
+// Keeps the first and last runs off the plot's own edge. The domain runs from
+// the oldest run to the newest, so without this those two land at exactly 0
+// and innerWidth — which is where the capture rect stops, leaving the newest
+// run (the point a reader is most likely to reach for) only half a hover
+// target and, at a fractional layout position, none at all. Measured on a
+// 28-run board: four dots sat exactly on the boundary. Sized to the hovered
+// dot's radius (5) so the largest a dot ever draws still sits clear. The same
+// constant and the fuller reasoning are in
+// polls_scatter_chart_controller.js, where a system test caught it.
+const EDGE_INSET = 7
+
 export default class extends Controller {
   static targets = ["svg", "payload"]
 
@@ -80,7 +91,7 @@ export default class extends Controller {
       heightRatio: 0.38
     })
     this.margin = margin
-    this.x = scaleTime().domain(paddedDateExtent(this.points)).range([0, innerWidth])
+    this.x = scaleTime().domain(paddedDateExtent(this.points)).range([EDGE_INSET, innerWidth - EDGE_INSET])
     this.y = scaleLinear().domain([0, 100]).range([innerHeight, 0])
 
     const svg = select(this.svgTarget)

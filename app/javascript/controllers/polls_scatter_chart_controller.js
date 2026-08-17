@@ -34,6 +34,17 @@ const HOVER_DOT_RADIUS = 6.5
 // Screen distance within which a point counts as "under" the pointer — a
 // reader aims at a region, not a 9px dot.
 const HOVER_RADIUS = 28
+// Keeps the extreme points off the plot's own edge. The x domain runs from
+// the oldest poll to the newest, so without this the first and last dots land
+// at exactly 0 and innerWidth — which is precisely where the capture rect
+// stops. Half of an edge dot's hover region then falls outside the only
+// element listening for pointer events, and at a fractional layout position
+// (a plot starting at x=124.5) the dot's own centre rounds to the wrong side
+// of the boundary and the dot cannot be hovered at all. Insetting the range
+// rather than padding the domain keeps the axis honest about the dates it
+// covers; it only stops marks from being drawn on the boundary. Sized to the
+// hovered dot's radius so the largest a dot ever draws still sits clear.
+const EDGE_INSET = HOVER_DOT_RADIUS + 2
 
 export default class extends Controller {
   static targets = ["svg", "payload"]
@@ -68,7 +79,7 @@ export default class extends Controller {
     })
     svg.attr("width", width).attr("height", height).attr("viewBox", null)
 
-    const x = scaleTime().domain(paddedDateExtent(this.points)).range([0, innerWidth])
+    const x = scaleTime().domain(paddedDateExtent(this.points)).range([EDGE_INSET, innerWidth - EDGE_INSET])
 
     // Symmetric domain so "Even" sits mid-chart and a lead either way reads
     // at the same scale; the average is included so its line can never leave
