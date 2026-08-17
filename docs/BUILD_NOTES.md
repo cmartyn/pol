@@ -1276,6 +1276,18 @@ same-day numbers.
 Both daily times are literals in the initializer rather than parameters: they
 are publication times, not model constants. Tests pin them.
 
+**Later:** the floor moved from `30 6 * * *` to `30 */2 * * *` (and the entry
+from `pol_daily_model` to `pol_model_run`) — twelve runs a day on the scrape's
+own cadence, at the half hour so a sweep at `:00` has landed before the run
+reads it. `*/2` from midnight still puts a run at 06:30, so the brief keeps its
+same-day numbers; the test now asserts that half-hour gap rather than the
+literal, because at a 2-hourly cadence "the model fires before the brief" is
+true of any offset and would not have caught dropping the 06:30 slot. Re-running
+without new polls costs little in information — `as_of` is a date, so the
+averager sees identical inputs until the day turns — and the fresh seed's
+few-tenths jitter is far under the 8-point `movement_threshold`, so a quiet day
+cannot shake a movement note loose out of Monte Carlo noise.
+
 ### C5. What the payload deliberately does not say — and what that cost
 
 See §D. The payload does not carry which party currently controls either

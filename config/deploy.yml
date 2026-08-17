@@ -1,7 +1,7 @@
 # Kamal deploy: the whole site on one $12 DigitalOcean droplet (pol-prod,
 # nyc3). Three containers behind kamal-proxy — the web app, a good_job
 # worker, and Postgres as an accessory — plus the proxy itself. The worker
-# is the reason this exists: cron (2-hourly scrape, 6:30 ET floor model run,
+# is the reason this exists: cron (2-hourly scrape, 2-hourly model run,
 # 7:00 ET brief) lives in a process that is up 24/7, which a laptop dev
 # server structurally is not (docs/BUILD_NOTES.md).
 service: pol

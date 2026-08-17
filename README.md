@@ -77,10 +77,10 @@ Three cron entries, defined in `config/initializers/good_job.rb`:
 | Job | Schedule | Why |
 |---|---|---|
 | `Ingest::ScrapeAllJob` | every 2 hours (`0 */2 * * *`, server time) | The cadence is read from `scrape.cadence_hours` in `config/model_params.yml`. |
-| `Forecast::RunJob` | **06:30 America/New_York** | New polls already trigger a run; this is the floor, so a day with no polling still gets fresh numbers instead of an ageing "as of". |
-| `Newsroom::DailyBriefJob` | **07:00 America/New_York** | Half an hour after the model run, so the morning brief always has same-day numbers. |
+| `Forecast::RunJob` | **every 2 hours at :30 America/New_York** (`30 */2 * * *`) | New polls already trigger a run; this is the floor, so a day with no polling still gets fresh numbers instead of an ageing "as of". `*/2` from midnight includes 06:30, which is the slot the brief depends on. |
+| `Newsroom::DailyBriefJob` | **07:00 America/New_York** | Half an hour after a model run, so the morning brief always has same-day numbers. |
 
-Both daily entries carry an explicit timezone (fugit's sixth cron field), so a
+Both timed entries carry an explicit timezone (fugit's sixth cron field), so a
 deploy to a UTC box does not move the morning brief to the middle of the night.
 The queue dashboard is at `/admin/good_job`.
 

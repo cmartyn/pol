@@ -79,11 +79,11 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     end
   end
 
-  test "the cron schedule runs the model every morning half an hour before the brief" do
-    entry = Rails.application.config.good_job.cron.fetch(:pol_daily_model)
+  test "the cron schedule runs the model every two hours on the half hour" do
+    entry = Rails.application.config.good_job.cron.fetch(:pol_model_run)
 
     assert_equal "Forecast::RunJob", entry[:class]
-    assert_equal "30 6 * * * America/New_York", entry[:cron]
+    assert_equal "30 */2 * * * America/New_York", entry[:cron]
     assert_equal({ trigger: :cron }, entry[:kwargs])
     assert entry[:description].present?
   end
@@ -91,14 +91,37 @@ class Forecast::RunJobTest < ActiveJob::TestCase
   # Ingest queues a run whenever polls arrive, so before this entry existed a
   # day with no new polling was a day the forecast never re-ran — the numbers
   # sat still while their "as of" timestamp aged.
-  test "the daily model run is scheduled before the daily brief, so the brief has fresh numbers" do
+  #
+  # Asserting the 30-minute gap rather than "model fires before brief": with a
+  # 2-hourly cadence the weaker version passes for any offset at all, including
+  # ones that put the last run six hours before the brief and leave it
+  # describing yesterday's board. The 06:30 slot is the property that matters,
+  # and */2 from midnight is what keeps it.
+  test "a model run lands 30 minutes before the brief, whatever the cadence" do
     cron = Rails.application.config.good_job.cron
-    model = Fugit.parse_cron(cron.fetch(:pol_daily_model)[:cron])
+    model = Fugit.parse_cron(cron.fetch(:pol_model_run)[:cron])
     brief = Fugit.parse_cron(cron.fetch(:pol_daily_brief)[:cron])
 
     assert_equal "America/New_York", model.zone
-    from = Time.utc(2026, 8, 11)
-    assert_operator model.next_time(from).to_utc_time, :<, brief.next_time(from).to_utc_time
+    brief_at = brief.next_time(Time.utc(2026, 8, 11)).to_utc_time
+    run_before_brief = model.previous_time(brief_at).to_utc_time
+
+    assert_equal 30 * 60, (brief_at - run_before_brief).to_i,
+                 "the brief must be preceded by a model run half an hour earlier"
+  end
+
+  # Twelve runs a day instead of one is the point of the change; pin it so a
+  # future edit to the cron string can't quietly drop it back to daily.
+  test "the model runs twelve times a day" do
+    model = Fugit.parse_cron(Rails.application.config.good_job.cron.fetch(:pol_model_run)[:cron])
+
+    day = Time.utc(2026, 8, 11)
+    fires = []
+    cursor = day
+    12.times { cursor = model.next_time(cursor).to_utc_time; fires << cursor }
+
+    assert_equal 12, fires.size
+    assert_operator fires.last - day, :<=, 24 * 60 * 60
   end
 
   test "the ingest seam queues a run rather than running one inline, carrying the new poll ids" do

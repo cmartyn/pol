@@ -25,13 +25,26 @@ Rails.application.configure do
     # Ingestion queues a run whenever it finds new polls, so on a busy day the
     # model runs often — but on a quiet day nothing re-ran it at all, and the
     # site's "as of" timestamp aged while the forecast sat still. This is the
-    # floor: one run every morning, half an hour before the brief is written,
-    # so the brief always has same-day numbers to work from.
-    pol_daily_model: {
-      cron: "30 6 * * * America/New_York",
+    # floor under those ingest-triggered runs, on the scrape's own 2-hourly
+    # cadence at the half hour, so a sweep at :00 has finished before the run
+    # at :30 reads what it found.
+    #
+    # */2 from midnight is deliberate rather than incidental: it puts a run at
+    # 06:30, the slot the 07:00 brief depends on for same-day numbers. A */3
+    # or an odd offset would drop that slot and leave the brief describing
+    # yesterday, so a test pins the half-hour gap rather than the literal.
+    #
+    # Re-running without new polls is close to free in information terms —
+    # Forecast::Runner's as_of is a *date*, so the averager sees identical
+    # inputs until the day turns — but the seed is fresh each time, so the
+    # numbers jitter by a few tenths of a point. That is well under
+    # newsroom.movement_threshold (8pp), so a quiet day cannot shake a
+    # movement note loose out of Monte Carlo noise alone.
+    pol_model_run: {
+      cron: "30 */2 * * * America/New_York",
       class: "Forecast::RunJob",
       kwargs: { trigger: :cron },
-      description: "Daily forecast run — the floor under ingest-triggered runs"
+      description: "2-hourly forecast run — the floor under ingest-triggered runs"
     },
     pol_daily_brief: {
       cron: "0 7 * * * America/New_York",

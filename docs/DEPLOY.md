@@ -3,7 +3,7 @@
 One DigitalOcean droplet (`pol-prod`, 68.183.55.31, nyc3, 2GB / $12mo) runs
 the entire site via [Kamal](https://kamal-deploy.org): kamal-proxy in front,
 the web app (Thruster + Puma), a good_job worker (whose in-process cron is
-what runs the 2-hourly scrape, the 6:30 ET floor model run and the 7:00 ET
+what runs the 2-hourly scrape, the 2-hourly model run and the 7:00 ET
 brief — see `config/initializers/good_job.rb`), and Postgres 17 as a Kamal
 accessory on a persistent docker directory. Images live in the free Starter
 tier of DO's container registry (`registry.digitalocean.com/pol-forecast`).
