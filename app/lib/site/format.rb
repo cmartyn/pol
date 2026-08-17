@@ -76,5 +76,15 @@ module Site
     def as_of(time)
       "as of #{time.strftime('%b %-d, %Y, %-I:%M %p %Z')}"
     end
+
+    # The site header's freshness stamp. Deliberately the same instant and
+    # the same vocabulary as as_of, minus the year: the header is read at a
+    # glance and has one line to spend, while as_of sits beside the figures
+    # it dates and carries the full date there. Feed both the same
+    # ModelRun#started_at — a header and a page body disagreeing about how
+    # old the forecast is would be worse than either number alone.
+    def last_updated(time)
+      "Updated #{time.strftime('%b %-d, %-I:%M %p %Z')}"
+    end
   end
 end

@@ -1,22 +1,35 @@
-{
-  "name": "Pol",
+<%#
+  Icon purposes are not interchangeable. "any" gets drawn as-is, so it can use
+  icon.svg/icon.png with their own rounded corners and near-edge-to-edge bars.
+  "maskable" gets cropped to whatever shape the platform likes, so it points at
+  apple-touch-icon.png — the full-bleed variant whose art is inset to 78%,
+  leaving a safe area the crop can eat without clipping the outer bars.
+%>{
+  "name": "535 — 2026 midterms forecast",
+  "short_name": "535",
   "icons": [
     {
-      "src": "/icon.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
     },
     {
       "src": "/icon.png",
       "type": "image/png",
       "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180",
       "purpose": "maskable"
     }
   ],
   "start_url": "/",
   "display": "standalone",
   "scope": "/",
-  "description": "Pol.",
-  "theme_color": "red",
-  "background_color": "red"
+  "description": "An agent-powered forecast of the 2026 U.S. Senate and House elections: correlated Monte Carlo simulation, live polling, transparent methodology.",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff"
 }

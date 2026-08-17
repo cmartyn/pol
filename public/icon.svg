@@ -1,3 +1,39 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="red"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="535">
+  <!--
+    A seat histogram split at the majority line — the chart the dashboard leads
+    with, reduced to what survives a 16px browser tab.
+
+    Colors are the PARTY constants from app/javascript/charts/theme.js verbatim
+    (#b91c1c rep, #1d4ed8 dem), so the mark and the charts can never disagree
+    about what Dem-blue is. That is also why the field is white rather than the
+    slate the rest of a dark mark would want: those two hues were picked and
+    CVD-checked against white, and on a dark field blue-700 goes muddy while
+    red-700 stays bright — the Democratic half of a symmetric mark would read
+    weaker than the Republican half. A partisan tilt nobody chose is a bad
+    property for this site's logo, so the field stays white and both sides
+    carry equal weight.
+
+    There is no separate threshold rule: the color flip IS the majority line,
+    running through the exact center of the peak bar (x=16, the icon's own
+    center). Bars left of it are seat counts where Republicans control, right
+    of it Democrats. The distribution is deliberately symmetric — this mark is
+    permanent identity, not a live readout, and an icon that always showed one
+    party ahead would be an editorial claim the forecast isn't making.
+
+    Geometry is on a 32-unit grid with every value even, so each unit is a
+    whole pixel at 16px and nothing antialiases into mush. Bars are 4 wide on
+    a 6-unit pitch, baseline y=26 — clear of the rx=6 corner curve, so the
+    art needs no clipping.
+  -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="5.5" fill="#ffffff" stroke="#cbd5e1"/>
+  <g fill="#b91c1c">
+    <rect x="2"  y="21" width="4" height="5"/>
+    <rect x="8"  y="14" width="4" height="12"/>
+    <rect x="14" y="8"  width="2" height="18"/>
+  </g>
+  <g fill="#1d4ed8">
+    <rect x="16" y="8"  width="2" height="18"/>
+    <rect x="20" y="14" width="4" height="12"/>
+    <rect x="26" y="21" width="4" height="5"/>
+  </g>
 </svg>

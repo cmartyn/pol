@@ -97,7 +97,27 @@ class Site::FormatTest < ActiveSupport::TestCase
 
   # --- as_of -------------------------------------------------------------
 
+  # as_of is always handed an ActiveRecord timestamp, which arrives already
+  # converted into the app's zone — so the realistic input is zone-aware, not
+  # a bare Time.utc. That distinction matters: strftime on a raw Time prints
+  # whatever zone that object carries, so a Time.utc here would keep printing
+  # "UTC" and pass no matter what config.time_zone said. Handing it a real
+  # zone-aware time pins the conversion too, not just the format string.
   test "as_of renders the model-run timestamp prefix the brief specifies" do
-    assert_equal "as of Aug 1, 2026, 6:00 AM UTC", Site::Format.as_of(Time.utc(2026, 8, 1, 6, 0, 0))
+    assert_equal "as of Aug 1, 2026, 6:00 AM EDT",
+                 Site::Format.as_of(Time.utc(2026, 8, 1, 10, 0, 0).in_time_zone)
+  end
+
+  # --- last_updated ---------------------------------------------------------
+
+  # Asserting both from one instant is the point: the header stamp and the
+  # dateline beside the figures have to name the same moment in the same
+  # vocabulary, differing only in the year the nav bar has no room for. Two
+  # separate tests could drift into two different clocks without failing.
+  test "last_updated keeps as_of's clock and zone, dropping only the year" do
+    time = Time.utc(2026, 8, 1, 10, 0, 0).in_time_zone
+
+    assert_equal "Updated Aug 1, 6:00 AM EDT", Site::Format.last_updated(time)
+    assert_equal "as of Aug 1, 2026, 6:00 AM EDT", Site::Format.as_of(time)
   end
 end

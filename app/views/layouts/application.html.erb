@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Pol — 2026 midterms forecast" %></title>
+    <title><%= content_for(:title) || "535 — 2026 midterms forecast" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light">
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="<%= content_for(:description) || "An agent-powered forecast of the 2026 U.S. Senate and House elections: correlated Monte Carlo simulation, live polling, transparent methodology." %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Pol">
+    <meta name="application-name" content="535">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -17,9 +17,14 @@
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
+    <%# The SVG is the real mark and scales to any tab; the PNG is the fallback
+        for browsers that don't take SVG favicons. apple-touch-icon is its own
+        file rather than icon.png because iOS applies its own rounded mask —
+        that variant is full-bleed with the art inset, so the mask has nothing
+        to cut off. %>
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -33,10 +38,17 @@
 
     <header class="border-b border-slate-200">
       <div class="container mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-5 py-4">
-        <%= link_to root_path, class: "flex items-baseline gap-2.5 shrink-0" do %>
-          <span class="font-serif text-2xl font-semibold tracking-tight text-slate-900">pol</span>
-          <span class="hidden text-xs font-medium uppercase tracking-wide text-slate-400 sm:inline">2026 midterms forecast</span>
-        <% end %>
+        <%# The stamp is beside the wordmark rather than inside the link: it
+            dates the forecast, and a timestamp that navigates home when you
+            click it is a small lie about what it is. %>
+        <div class="flex items-baseline gap-2.5 shrink-0">
+          <%= link_to "535", root_path, class: "font-serif text-2xl font-semibold tracking-tight text-slate-900" %>
+          <% if (run = latest_model_run) %>
+            <span class="hidden text-xs text-slate-400 sm:inline" data-testid="header-updated">
+              <%= Site::Format.last_updated(run.started_at) %>
+            </span>
+          <% end %>
+        </div>
 
         <nav class="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm font-medium" aria-label="Primary">
           <%= nav_link "Dashboard", root_path %>
@@ -58,7 +70,7 @@
       <div class="container mx-auto flex flex-col gap-3 px-5 sm:flex-row sm:items-center sm:justify-between">
         <div class="max-w-2xl">
           <p>
-            Pol is an autonomous forecast newsroom — agents write from the numbers, an editor reviews.
+            535 is an autonomous forecast newsroom — agents write from the numbers, an editor reviews.
             No secret sauce: every parameter this model uses is on the
             <%= link_to "methodology page", methodology_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
           </p>

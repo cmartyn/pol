@@ -1,7 +1,21 @@
-<% content_for :title, "Senate · Pol" %>
+<% content_for :title, "Senate · 535" %>
 
 <h1 class="font-serif text-3xl font-semibold text-slate-900">Senate</h1>
-<p class="mt-1 text-slate-600">All 35 seats on the 2026 ballot.</p>
+
+<%# Seat arithmetic from the model's own constants rather than a literal.
+    Only about a third of the Senate is up in any cycle, so "all 35 seats"
+    read as though the chamber had 35 of them. The holdovers aren't a
+    footnote either — they're counted toward control in every simulated
+    world (see the chamber card's math and methodology step 4), so the page
+    that lists the 35 contested races should say what the other 65 are. %>
+<% senate_seats = Pol::Params.fetch!(:chambers, :senate_total_seats) %>
+<% holdovers = Pol::Params.fetch!(:chambers, :senate_holdover_dem_caucus) +
+               Pol::Params.fetch!(:chambers, :senate_holdover_rep) %>
+<p class="mt-1 text-slate-600">
+  <%= senate_seats - holdovers %> of the Senate's <%= senate_seats %> seats are on the 2026 ballot.
+  The other <%= holdovers %> are holdovers who don't face voters this year, and the forecast
+  counts them toward control.
+</p>
 <%= render "shared/as_of", time: @latest_run&.started_at %>
 
 <%# Same chrome as /house: the chamber summary card up top (Senate's control

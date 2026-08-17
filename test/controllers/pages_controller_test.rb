@@ -154,4 +154,18 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     get about_path
     assert_response :success
   end
+
+  # The header's freshness stamp comes from ApplicationHelper#latest_model_run
+  # rather than a controller ivar, precisely so it survives on pages like
+  # these two — whose controller has no reason to load a model run and never
+  # does. Guards the tempting refactor that moves the lookup back into the
+  # controllers that already had one and silently blanks the header
+  # everywhere else.
+  test "the header stamp renders on pages whose controller never loads a run" do
+    [ methodology_path, about_path ].each do |path|
+      get path
+      assert_select "[data-testid='header-updated']", text: /Updated Aug 1, 6:00 AM EDT/,
+                    message: "expected the header stamp on #{path}"
+    end
+  end
 end
