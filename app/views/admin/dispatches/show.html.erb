@@ -21,14 +21,14 @@
 </div>
 
 <dl class="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 rounded-lg border border-slate-200 bg-white p-5 text-sm sm:grid-cols-4">
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Race</dt>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Race</dt>
     <dd class="mt-0.5"><% if @dispatch.race %><%= link_to @dispatch.race.name, race_path(@dispatch.race.slug), class: "text-amber-700 hover:text-amber-800" %><% else %>National<% end %></dd></div>
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Model</dt><dd class="mt-0.5"><%= @dispatch.model_slug %></dd></div>
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Published</dt><dd class="mt-0.5"><%= @dispatch.published_at&.strftime("%b %-d, %Y %-I:%M %p") || "—" %></dd></div>
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Model run</dt>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Model</dt><dd class="mt-0.5"><%= @dispatch.model_slug %></dd></div>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Published</dt><dd class="mt-0.5"><%= @dispatch.published_at&.strftime("%b %-d, %Y %-I:%M %p") || "—" %></dd></div>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Model run</dt>
     <dd class="mt-0.5"><% if @dispatch.model_run %><%= link_to "Run ##{@dispatch.model_run.id}", admin_model_run_path(@dispatch.model_run), class: "text-amber-700 hover:text-amber-800" %><% else %>—<% end %></dd></div>
   <% if @dispatch.edited_at.present? %>
-    <div><dt class="text-xs uppercase tracking-wide text-slate-400">Edited</dt><dd class="mt-0.5" data-testid="admin-dispatch-edited-at"><%= @dispatch.edited_at.strftime("%b %-d, %Y %-I:%M %p") %></dd></div>
+    <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Edited</dt><dd class="mt-0.5" data-testid="admin-dispatch-edited-at"><%= @dispatch.edited_at.strftime("%b %-d, %Y %-I:%M %p") %></dd></div>
   <% end %>
 </dl>
 

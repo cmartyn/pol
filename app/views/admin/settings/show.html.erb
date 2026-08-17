@@ -6,11 +6,11 @@
 <section class="mt-6 max-w-xl rounded-lg border border-slate-200 bg-white p-5" data-testid="admin-kill-switch-panel">
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
     <div>
-      <p class="text-xs uppercase tracking-wide text-slate-400">Stored value</p>
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Stored value</p>
       <p class="mt-1 font-medium text-slate-900" data-testid="admin-kill-switch-stored"><%= @kill_switch.stored_label %></p>
     </div>
     <div>
-      <p class="text-xs uppercase tracking-wide text-slate-400">ENV override</p>
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500">ENV override</p>
       <p class="mt-1 font-medium <%= @kill_switch.env_override? ? "text-red-700" : "text-slate-900" %>" data-testid="admin-kill-switch-env">
         <% if @kill_switch.env_override? %>
           Present (<code><%= Admin::KillSwitchStatus::ENV_VAR %></code> is set)
@@ -20,7 +20,7 @@
       </p>
     </div>
     <div>
-      <p class="text-xs uppercase tracking-wide text-slate-400">Effective</p>
+      <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Effective</p>
       <p class="mt-1 font-semibold <%= @kill_switch.effective? ? "text-green-700" : "text-red-700" %>" data-testid="admin-kill-switch-effective">
         <%= @kill_switch.effective? ? "Agents ON" : "Agents OFF" %>
       </p>

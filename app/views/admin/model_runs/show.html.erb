@@ -1,14 +1,14 @@
 <% content_for :title, "Model run ##{@model_run.id} · Admin · 535" %>
 
-<p class="text-xs font-medium uppercase tracking-wide text-slate-400">Model run #<%= @model_run.id %></p>
+<p class="text-xs font-medium uppercase tracking-wide text-slate-500">Model run #<%= @model_run.id %></p>
 <h1 class="font-serif text-2xl font-semibold text-slate-900"><%= @model_run.started_at&.strftime("%B %-d, %Y %-I:%M %p") %></h1>
 
 <dl class="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 rounded-lg border border-slate-200 bg-white p-5 text-sm sm:grid-cols-4" data-testid="admin-model-run-detail">
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Status</dt>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Status</dt>
     <dd class="mt-0.5 font-medium <%= @model_run.succeeded? ? "text-green-700" : (@model_run.failed? ? "text-red-700" : "text-amber-700") %>"><%= @model_run.status %></dd></div>
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Trigger</dt><dd class="mt-0.5"><%= @model_run.trigger %></dd></div>
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Finished</dt><dd class="mt-0.5"><%= @model_run.finished_at&.strftime("%-I:%M:%S %p") || "—" %></dd></div>
-  <div><dt class="text-xs uppercase tracking-wide text-slate-400">Seed</dt><dd class="mt-0.5 font-mono text-xs"><%= @model_run.rng_seed %></dd></div>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Trigger</dt><dd class="mt-0.5"><%= @model_run.trigger %></dd></div>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Finished</dt><dd class="mt-0.5"><%= @model_run.finished_at&.strftime("%-I:%M:%S %p") || "—" %></dd></div>
+  <div><dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Seed</dt><dd class="mt-0.5 font-mono text-xs"><%= @model_run.rng_seed %></dd></div>
 </dl>
 
 <% if @model_run.error_message.present? %>

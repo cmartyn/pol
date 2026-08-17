@@ -12,9 +12,14 @@
   <div class="rounded-lg border border-slate-200 p-5" data-testid="chamber-card-<%= title.downcase %>">
     <%# A tracked label rather than a serif heading: on a card whose whole job
         is the two probabilities below it, "Senate" is the caption and the
-        numbers are the headline. Reversing that was the point of this
-        direction. %>
-    <h2 class="eyebrow text-[11px] text-slate-500"><%= title %></h2>
+        numbers are the headline.
+
+        But a label still has to be findable. At 11px in slate-500 this was
+        smaller and paler than the 14px sentence underneath it, which inverts
+        the thing it is supposed to do — the eye landed on the body and found
+        the label second. 12px at slate-700 keeps it subordinate to the
+        figures without making it something you have to hunt for. %>
+    <h2 class="eyebrow text-xs text-slate-700"><%= title %></h2>
 
     <% if chamber_forecast %>
       <p class="mt-1 text-sm text-slate-600">
@@ -46,13 +51,16 @@
         </span>
       </div>
 
-      <% if house %>
-        <%= render "shared/house_error_note" %>
-      <% end %>
-
       <div class="mt-4">
         <%= render "races/seat_histogram", payload: histogram, title: title %>
       </div>
+
+      <%# After the chart, not before it: this is a footnote about the figure,
+          and wedged between the probability and the histogram it broke the
+          card's single idea in two. %>
+      <% if house %>
+        <%= render "shared/house_error_note" %>
+      <% end %>
     <% else %>
       <p class="mt-2 text-sm text-slate-500" data-testid="chamber-card-empty">No forecast yet.</p>
     <% end %>

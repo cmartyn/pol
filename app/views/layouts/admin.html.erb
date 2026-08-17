@@ -26,6 +26,11 @@
         <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
           <%= link_to admin_root_path, class: "flex items-baseline gap-2 shrink-0" do %>
             <span class="font-serif text-xl font-semibold tracking-tight">535</span>
+            <%# slate-400 here, NOT the slate-500 every other label on the site
+                uses: this one sits on the dark header, where the scale runs
+                the other way. On white slate-400 is 2.6:1 and slate-500 is
+                4.8:1; on slate-900 that reverses — slate-400 is 7.1:1 and
+                slate-500 drops to 3.8:1. Same token, opposite outcome. %>
             <span class="text-xs font-medium uppercase tracking-wide text-slate-400">admin</span>
           <% end %>
 

@@ -26,7 +26,10 @@
       the link. The explicit one below it is the second affordance, not the
       only one — a card whose sole way in is a small "read more" makes people
       hunt for it. %>
-  <h3 class="mt-2 font-serif text-xl font-semibold leading-snug">
+  <%# text-lg, not text-xl: a section heading ("Latest dispatches") is text-xl,
+      and a teaser headline set at the same size as the heading above it makes
+      the two read as siblings. The permalink's own h1 carries the full size. %>
+  <h3 class="mt-2 font-serif text-lg font-semibold leading-snug">
     <%= link_to dispatch.headline, dispatch_path(dispatch),
           class: "text-slate-900 decoration-amber-500 decoration-2 underline-offset-4 hover:underline",
           data: { testid: "dispatch-headline-link" } %>

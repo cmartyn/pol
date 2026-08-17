@@ -15,7 +15,7 @@
 <% end %>
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="national-environment">
-  <h2 class="eyebrow text-[11px] text-slate-500">National environment</h2>
+  <h2 class="font-serif text-xl font-semibold text-slate-900">National environment</h2>
   <% if @national_environment.polled? %>
     <p class="mt-1 text-lg text-slate-800">
       Generic ballot:
@@ -33,7 +33,7 @@
 
 <% if @movers.present? %>
   <section class="mt-10 border-t border-slate-200 pt-6" data-testid="movers-section">
-    <h2 class="eyebrow text-[11px] text-slate-500">Movers</h2>
+    <h2 class="font-serif text-xl font-semibold text-slate-900">Movers</h2>
     <p class="mt-1 text-sm text-slate-500">Biggest shifts in Democratic win probability, this run vs. about a week ago.</p>
     <ul class="mt-4 divide-y divide-slate-100">
       <% @movers.each do |mover| %>
@@ -53,7 +53,7 @@
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="dashboard-dispatches">
   <div class="flex items-baseline justify-between">
-    <h2 class="eyebrow text-[11px] text-slate-500">Latest dispatches</h2>
+    <h2 class="font-serif text-xl font-semibold text-slate-900">Latest dispatches</h2>
     <%= link_to "All dispatches →", dispatches_path, class: "text-sm font-medium text-amber-700 hover:text-amber-800" %>
   </div>
   <div class="mt-2 max-w-3xl">
