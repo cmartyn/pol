@@ -1,15 +1,25 @@
-<%# Replaced the Phase 3 "model likely overstates certainty" caveat in Phase 10.
-    That caveat was accurate for a model whose only correlated term was
-    national; this one has four, at 538's own values, over census divisions and
-    states. One component is still missing and the note names it. Measured on
-    the live board — see docs/BUILD_NOTES.md Phase 10 §C — the gap the missing
-    term leaves is one to three points of House control, against the six to
-    twelve the old caveat claimed. No number here on purpose: a figure printed
-    beside a probability goes stale the run after it is written, and the
-    measured range lives on the methodology page where it carries a date. %>
-<p class="mt-1 text-xs text-slate-500" data-testid="house-error-note">
-  <sup>&dagger;</sup> Our simulation carries four of the five correlated error components 538's House model
-  uses; the one we leave out needs data we don't have, which makes this figure slightly firmer than a fuller
-  model's &mdash; see
-  <%= link_to "Known limitations", "#{methodology_path}#known-limitations", class: "underline decoration-dotted hover:text-slate-700" %>.
+<%# The House card's one piece of fine print, and it has been rewritten twice.
+
+    Phase 3 said the model "overstates certainty". Phase 10 replaced that with
+    a count — "four of the five correlated error components 538's House model
+    uses" — which was factually sourced (the five-way decomposition and its
+    values are on the methodology page, with citations) but framed the wrong
+    thing: it reads as though 538's model were a specification we had taken on
+    and not finished, one item outstanding. This site has never claimed to
+    reproduce anyone's model. It borrows published values where they are
+    published and says so on the methodology page; that is a different promise
+    from parity, and a figure a reader meets on the dashboard should not imply
+    the stronger one.
+
+    So this states a property of OUR model and the consequence a reader
+    actually needs — the number is a little too confident — and leaves the
+    comparison, the arithmetic and the measured range to the methodology page,
+    where they carry their citations and a date.
+
+    It also sits below the histogram now rather than between the probability
+    and the chart, where it split the card's one idea in half. Small print
+    belongs with the other small print. %>
+<p class="mt-2 text-xs text-slate-400" data-testid="house-error-note">
+  Our error model leaves out one correlated term, so this figure is slightly firmer than it should be &mdash;
+  <%= link_to "Known limitations", "#{methodology_path}#known-limitations", class: "underline decoration-dotted hover:text-slate-600" %>.
 </p>

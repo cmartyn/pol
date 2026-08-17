@@ -44,14 +44,26 @@ module Newsroom
     # have instructed the model to publish a figure contradicting the payload
     # it was reading, and the citation validator only checks poll ids — it
     # cannot see a wrong number in prose.
+    #
+    # It also no longer names 538. The earlier wording ("how the published
+    # models decompose it, less one component") framed this model as a subset
+    # of someone else's with an item outstanding, which is not a claim this
+    # site makes anywhere: it borrows published values where they are
+    # published and says so on the methodology page, which is a different
+    # promise from parity. The last prohibition is here because the model
+    # knows about 538 without being told — left to itself it will reach for
+    # the comparison, and a dispatch is the one place that framing would go
+    # out under our own byline.
     HOUSE_ERROR_NOTE =
-      "On the House specifically: our simulation draws error at four levels — one national, one per census " \
-      "division, one per state, and each district's own — which is how the published models decompose it, " \
-      "less one component (538 also carries a demographic-cluster term; we have no cluster data). The House " \
-      "control probability is therefore marginally firmer than a fuller model's would be. Say so in your own " \
+      "On the House specifically: our simulation draws error at four correlated levels — one national, one " \
+      "per census division, one per state, and each district's own. A fuller decomposition would add a term " \
+      "correlating demographically similar districts wherever they are; we have no cluster data for it, so " \
+      "the House control probability is marginally firmer than it would otherwise be. Say so in your own " \
       "words where it is relevant; you are not required to qualify every sentence that carries a House " \
       "number. Do not put a figure on the difference and do not offer a corrected probability: neither is " \
-      "measured for this run, so any number you gave for them would be invented."
+      "measured for this run, so any number you gave for them would be invented. Do not name another " \
+      "organisation's model as a standard this one falls short of — describe the limitation as our own, " \
+      "because it is."
 
     ASSIGNMENTS = {
       poll_reaction:

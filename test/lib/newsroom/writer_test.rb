@@ -147,7 +147,12 @@ class Newsroom::WriterTest < ActiveSupport::TestCase
         messages = requests.sole[:body]["messages"]
         assert_equal "system", messages.first["role"]
         assert_match(/you have no other information/i, messages.first["content"])
-        assert_match(/marginally firmer than a fuller model's/, messages.first["content"])
+        assert_match(/marginally firmer than it would otherwise be/, messages.first["content"])
+        # The caveat reaches the writer as our own limitation, not as a
+        # shortfall against a named competitor's model — see
+        # Prompts::HOUSE_ERROR_NOTE. Asserted on the fully assembled prompt
+        # because that is the string the model actually reads.
+        refute_match(/538/, messages.first["content"])
         # Phase 10 took out the mandate that every House sentence carry a
         # qualifier; what is left says the writer MAY say it, and where.
         refute_match(/must say/, messages.first["content"])

@@ -22,15 +22,26 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='seat-histogram-house']"
   end
 
-  # Phase 10 replaced the "model likely overstates certainty" caveat with a
-  # note naming the one correlated component the error model still omits. The
-  # marker stays, its claim does not.
+  # The caveat has been reworded twice and the marker has outlived both: Phase
+  # 3's "model likely overstates certainty", then a count of 538's components.
+  # What has to survive every rewrite is that the House figure never appears
+  # without saying it is a little too confident.
+  #
+  # Pinning the omission and the consequence rather than the sentence, because
+  # the sentence is the part that keeps changing — and asserting the two
+  # retired phrasings are gone, since the failure mode here is old copy
+  # surviving a rewrite somewhere else on the page.
   test "the House control probability always carries its error-model note" do
     get root_path
     assert_select "[data-testid='chamber-card-house'] [data-testid='house-error-note']" do
-      assert_select "*", text: /four of the five correlated error components/
+      assert_select "*", text: /leaves out one correlated term/
+      assert_select "*", text: /firmer than it should be/
     end
     refute_match(/overstates certainty/, response.body)
+    # The dashboard must not imply this model is an unfinished copy of 538's.
+    # That claim belongs on the methodology page, where it is sourced and
+    # states a difference rather than a shortfall against a target.
+    refute_match(/four of the five correlated error components/, response.body)
     # The Senate card needs no such note: the omitted component is a
     # district-level correlation and 35 races feel it far less than 435.
     assert_select "[data-testid='chamber-card-senate'] [data-testid='house-error-note']", count: 0

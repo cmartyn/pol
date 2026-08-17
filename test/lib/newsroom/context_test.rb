@@ -54,15 +54,24 @@ class Newsroom::ContextTest < ActiveSupport::TestCase
     assert_equal "55%", national.dig(:senate, :dem_control)
     assert_equal 51.2, national.dig(:senate, :mean_dem_seats)
     assert_equal "48%", national.dig(:house, :dem_control)
-    assert_match(/marginally firmer than a fuller model's/, national.dig(:house, :error_model_note))
+    assert_match(/marginally firmer than it would otherwise be/, national.dig(:house, :error_model_note))
     assert_nil national.dig(:senate, :error_model_note)
-    # No numerals: this text used to quote the Phase 3 measurement ("96% here
-    # against 84%"), which is one run's snapshot. Travelling with a payload
-    # whose House number is 48%, that text would instruct the model to publish
-    # figures contradicting the numbers beside it — and the citation validator
-    # only checks poll ids, so nothing downstream could catch it. The one
-    # numeral it may carry is 538's name.
-    refute_match(/\d/, national.dig(:house, :error_model_note).sub("538", ""))
+    # No numerals at all now. This text used to quote the Phase 3 measurement
+    # ("96% here against 84%"), which is one run's snapshot. Travelling with a
+    # payload whose House number is 48%, that text would instruct the model to
+    # publish figures contradicting the numbers beside it — and the citation
+    # validator only checks poll ids, so nothing downstream could catch it.
+    refute_match(/\d/, national.dig(:house, :error_model_note))
+    # And it must not hand the writer another organisation's model as the
+    # standard this one falls short of. The site borrows published values and
+    # says so on the methodology page; that is not a claim of parity, and a
+    # dispatch is the one place the stronger implication would go out under
+    # our own byline. The model knows about 538 without being told, so the
+    # prompt has to spend a sentence telling it not to reach for the
+    # comparison — assert both that the name is gone and that the
+    # instruction is present.
+    refute_match(/538/, national.dig(:house, :error_model_note))
+    assert_match(/Do not name another organisation's model/, national.dig(:house, :error_model_note))
     assert_equal "D+2.0", national.dig(:generic_ballot, :average)
     assert_equal 1, national.dig(:generic_ballot, :polls_in_average)
   end
