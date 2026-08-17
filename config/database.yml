@@ -83,3 +83,7 @@ production:
   database: pol_production
   username: pol
   password: <%= ENV["POL_DATABASE_PASSWORD"] %>
+  # The Kamal postgres accessory's name on the deploy's docker network
+  # (config/deploy.yml sets DB_HOST=pol-db). Unset, e.g. running the
+  # production env outside the deploy, falls back to the local socket.
+  host: <%= ENV.fetch("DB_HOST", nil) %>
