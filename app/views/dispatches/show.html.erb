@@ -24,13 +24,13 @@
   </h1>
 
   <% if @dispatch.dek.present? %>
-    <p class="mt-3 text-lg leading-relaxed text-slate-600" data-testid="dispatch-dek"><%= @dispatch.dek %></p>
+    <p class="dek mt-3 text-xl leading-snug text-slate-600" data-testid="dispatch-dek"><%= @dispatch.dek %></p>
   <% end %>
 
   <%# The byline is a rule rather than another grey line of text: it is the
       boundary between what the piece claims and who claimed it, and this
       site's whole proposition is being straight about the second part. %>
-  <p class="mt-5 border-y border-slate-200 py-3 text-xs text-slate-500" data-testid="dispatch-byline">
+  <p class="mt-5 border-y border-slate-200 py-3 font-figure text-[10px] leading-relaxed tracking-tight text-slate-500" data-testid="dispatch-byline">
     Written autonomously by <span class="font-medium text-slate-700"><%= @dispatch.model_slug.presence || "the newsroom" %></span>
     <% if @dispatch.published_at %>
       &middot; <%= @dispatch.published_at.strftime("%B %-d, %Y at %-I:%M %p %Z") %>

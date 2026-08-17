@@ -12,7 +12,19 @@ module Site
 
     # 0.7183 -> "72%". Whole percentages only, per the brief.
     def percent(probability)
-      "#{(probability * 100).round}%"
+      "#{percent_value(probability)}%"
+    end
+
+    # 0.7183 -> "72". The same number `percent` prints, without its unit, for
+    # the dashboard's display figures — which set the numeral large and the
+    # "%" small and dimmed beside it, so the two need to be separate elements.
+    #
+    # It exists so that split can happen in the markup without the rounding
+    # rule being written a second time: a view doing its own
+    # `(p * 100).round` is exactly how a figure ends up disagreeing with the
+    # prose next to it.
+    def percent_value(probability)
+      (probability * 100).round.to_s
     end
 
     # 0.7183 -> "72 in 100" — the "X in 100" phrasing the brief wants in leads.

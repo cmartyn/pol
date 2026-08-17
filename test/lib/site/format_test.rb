@@ -9,6 +9,20 @@ class Site::FormatTest < ActiveSupport::TestCase
     assert_equal "100%", Site::Format.percent(1.0)
   end
 
+  # The dashboard sets the numeral and the "%" as separate elements at
+  # different sizes, so it needs the number alone — but it must be the same
+  # number `percent` would print. Asserting them against each other is the
+  # point: a view rounding on its own is how a figure ends up disagreeing
+  # with the prose beside it.
+  test "percent_value is percent without its unit, rounded identically" do
+    [ 0.7183, 0.004, 1.0, 0.005, 0.9999 ].each do |probability|
+      assert_equal "#{Site::Format.percent_value(probability)}%", Site::Format.percent(probability)
+    end
+
+    assert_equal "72", Site::Format.percent_value(0.7183)
+    assert_equal "0", Site::Format.percent_value(0.004)
+  end
+
   test "x_in_100 reads as a lead-sentence phrase" do
     assert_equal "72 in 100", Site::Format.x_in_100(0.7183)
     assert_equal "1 in 100", Site::Format.x_in_100(0.009)

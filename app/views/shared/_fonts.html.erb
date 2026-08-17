@@ -1,0 +1,14 @@
+<%# The three faces, from Google Fonts. Shared by both layouts so /admin can't
+    drift into Georgia while the public site is in Fraunces.
+
+    preconnect to both hosts: the stylesheet comes from fonts.googleapis.com
+    and the font files from fonts.gstatic.com, so without the second hint that
+    DNS + TLS handshake is serialised behind the first request rather than
+    running alongside it.
+
+    display=swap so text paints immediately in the fallback stack. This site's
+    own TTFB we control; Google's we don't, and a forecast nobody can read
+    until a third party answers is worse than one that reflows once. %>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..700,0..100,0..1;1,9..144,400..700,0..100,0..1&family=Public+Sans:wght@400..700&family=Space+Mono:wght@400;700&display=swap">

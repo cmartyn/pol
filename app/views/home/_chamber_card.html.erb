@@ -10,7 +10,11 @@
   <% chamber_forecast = ChamberForecast.find_by(model_run_id: model_run.id, chamber: chamber) %>
   <% histogram = chamber_forecast && Site::Charts::SeatHistogram.build(chamber_forecast) %>
   <div class="rounded-lg border border-slate-200 p-5" data-testid="chamber-card-<%= title.downcase %>">
-    <h2 class="font-serif text-xl font-semibold text-slate-900"><%= title %></h2>
+    <%# A tracked label rather than a serif heading: on a card whose whole job
+        is the two probabilities below it, "Senate" is the caption and the
+        numbers are the headline. Reversing that was the point of this
+        direction. %>
+    <h2 class="eyebrow text-[11px] text-slate-500"><%= title %></h2>
 
     <% if chamber_forecast %>
       <p class="mt-1 text-sm text-slate-600">
@@ -19,9 +23,27 @@
         <%= leader %> favored to control &mdash; <%= Site::Format.x_in_100(leader_probability) %> simulations.
       </p>
 
-      <div class="mt-3 flex items-baseline gap-4">
-        <span class="text-2xl font-bold text-blue-700">D <%= Site::Format.percent(chamber_forecast.p_dem_control) %></span>
-        <span class="text-2xl font-bold text-red-700">R <%= Site::Format.percent(chamber_forecast.p_rep_control) %></span>
+      <%# The figure, set in three pieces: a tracked party letter, the numeral
+          at full size, and the unit small and dimmed. "46" is the thing being
+          read; "%" only says what kind of number it is, and setting them at
+          one size gives the unit equal billing with the measurement.
+
+          aria-label carries the whole value through Site::Format.percent, so
+          the split is purely visual — a screen reader hears "Democrats 46%",
+          not the three fragments. %>
+      <div class="mt-3 flex items-baseline gap-6" data-testid="chamber-probabilities">
+        <span class="flex items-baseline gap-1.5 text-blue-700"
+              aria-label="Democrats <%= Site::Format.percent(chamber_forecast.p_dem_control) %>">
+          <span class="font-figure text-[11px] font-bold tracking-[0.18em]" aria-hidden="true">D</span>
+          <span class="font-figure text-3xl font-bold tracking-tighter" aria-hidden="true"><%= Site::Format.percent_value(chamber_forecast.p_dem_control) %></span>
+          <span class="font-figure text-sm font-bold opacity-45" aria-hidden="true">%</span>
+        </span>
+        <span class="flex items-baseline gap-1.5 text-red-700"
+              aria-label="Republicans <%= Site::Format.percent(chamber_forecast.p_rep_control) %>">
+          <span class="font-figure text-[11px] font-bold tracking-[0.18em]" aria-hidden="true">R</span>
+          <span class="font-figure text-3xl font-bold tracking-tighter" aria-hidden="true"><%= Site::Format.percent_value(chamber_forecast.p_rep_control) %></span>
+          <span class="font-figure text-sm font-bold opacity-45" aria-hidden="true">%</span>
+        </span>
       </div>
 
       <% if house %>

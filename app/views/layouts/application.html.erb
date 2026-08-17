@@ -9,6 +9,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="535">
     <meta name="mobile-web-app-capable" content="yes">
+
+    <%= render "shared/fonts" %>
+
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -44,7 +47,7 @@
         <div class="flex items-baseline gap-2.5 shrink-0">
           <%= link_to "535", root_path, class: "font-serif text-2xl font-semibold tracking-tight text-slate-900" %>
           <% if (run = latest_model_run) %>
-            <span class="hidden text-xs text-slate-400 sm:inline" data-testid="header-updated">
+            <span class="hidden font-figure text-[10px] tracking-tight text-slate-400 sm:inline" data-testid="header-updated">
               <%= Site::Format.last_updated(run.started_at) %>
             </span>
           <% end %>

@@ -15,11 +15,11 @@
 <% end %>
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="national-environment">
-  <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">National environment</h2>
+  <h2 class="eyebrow text-[11px] text-slate-500">National environment</h2>
   <% if @national_environment.polled? %>
     <p class="mt-1 text-lg text-slate-800">
       Generic ballot:
-      <span class="font-semibold <%= @national_environment.mean_margin.positive? ? "text-blue-700" : "text-red-700" %>">
+      <span class="font-figure font-bold tracking-tight <%= @national_environment.mean_margin.positive? ? "text-blue-700" : "text-red-700" %>">
         <%= Site::Format.margin(@national_environment.mean_margin, side_a_party: "dem", side_b_party: "rep") %>
       </span>
       <span class="text-sm text-slate-500">
@@ -33,14 +33,17 @@
 
 <% if @movers.present? %>
   <section class="mt-10 border-t border-slate-200 pt-6" data-testid="movers-section">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Movers</h2>
+    <h2 class="eyebrow text-[11px] text-slate-500">Movers</h2>
     <p class="mt-1 text-sm text-slate-500">Biggest shifts in Democratic win probability, this run vs. about a week ago.</p>
     <ul class="mt-4 divide-y divide-slate-100">
       <% @movers.each do |mover| %>
         <li class="flex items-center justify-between gap-4 py-2 text-sm" data-testid="mover-row">
           <%= link_to mover.race.name, race_path(mover.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
+          <%# Only the magnitude goes in the figure face — "pts toward Dem" is
+              prose, and setting the whole phrase in mono reads as a log line. %>
           <span class="whitespace-nowrap font-semibold <%= mover.direction == :dem ? "text-blue-700" : "text-red-700" %>">
-            <%= number_with_precision(mover.delta_pp.abs, precision: 1) %> pts toward <%= mover.direction == :dem ? "Dem" : "Rep" %>
+            <span class="font-figure font-bold tracking-tight"><%= number_with_precision(mover.delta_pp.abs, precision: 1) %></span>
+            pts toward <%= mover.direction == :dem ? "Dem" : "Rep" %>
           </span>
         </li>
       <% end %>
@@ -50,7 +53,7 @@
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="dashboard-dispatches">
   <div class="flex items-baseline justify-between">
-    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Latest dispatches</h2>
+    <h2 class="eyebrow text-[11px] text-slate-500">Latest dispatches</h2>
     <%= link_to "All dispatches →", dispatches_path, class: "text-sm font-medium text-amber-700 hover:text-amber-800" %>
   </div>
   <div class="mt-2 max-w-3xl">

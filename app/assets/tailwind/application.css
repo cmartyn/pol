@@ -1,1 +1,67 @@
 @import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Type
+
+   Three faces, each with a job, loaded in app/views/shared/_fonts.html.erb.
+
+   Fraunces is the display face. It is an old-style serif with two shape axes
+   most families don't have, and the whole reason it is here: SOFT rounds the
+   terminals, WONK swaps in the canted, slightly odd alternates. Dialled in a
+   little (below) it gives headlines a printed-almanac character instead of
+   the Georgia-by-default look every Tailwind site starts with.
+
+   Public Sans is the text face — a plain, wide-aperture grotesque that stays
+   out of the way underneath all that.
+
+   Space Mono is the figure face, and it is deliberately NOT mapped over
+   --font-mono. The existing font-mono usages are admin record ids, raw
+   payloads and the methodology parameter keys, where a neutral code mono is
+   the right thing and Space Mono's width would push the w-64 key column into
+   wrapping. Giving figures their own token keeps "this is a number you can
+   read off" and "this is a literal from the config file" as two different
+   voices rather than one.
+--------------------------------------------------------------------------- */
+@theme {
+  --font-serif: "Fraunces", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-figure: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  /* Every existing font-serif element gets the display treatment without a
+     single view edit: optical sizing on (Fraunces carries a real opsz axis,
+     so large headings tighten and small ones open up on their own), and the
+     shape axes set once here rather than repeated per heading.
+
+     WONK 1 is the point of choosing Fraunces at all. SOFT 20 is low on a
+     0-100 axis — enough to take the brittleness off the terminals, not
+     enough to read as a soft-serve logotype on an election forecast. */
+  .font-serif {
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 20, "WONK" 1;
+  }
+}
+
+/* The dek — the italic standfirst under a headline. Named for the field it
+   renders (Dispatch#dek), so the markup and the model use one word.
+
+   Softer and un-wonked on purpose: the display alternates are an accent, and
+   a whole italic sentence set in them reads as a novelty rather than as the
+   sentence it is. */
+@utility dek {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-optical-sizing: auto;
+  font-variation-settings: "SOFT" 30, "WONK" 0;
+}
+
+/* A small tracked-out label — chamber names, section eyebrows. Uppercase at
+   this size needs the extra letter-spacing to stay legible, and the tracking
+   is what makes it read as a label rather than as shouting. */
+@utility eyebrow {
+  font-family: var(--font-figure);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+}

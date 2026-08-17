@@ -3,7 +3,12 @@
 <h1 class="font-serif text-3xl font-semibold text-slate-900">Dispatches</h1>
 <p class="mt-1 text-slate-600">Every note the newsroom has published, newest first.</p>
 
-<div class="mt-8 max-w-3xl" data-testid="dispatches-feed">
+<%# Full container width, like every other index page — the cards' own rules
+    then span the same measure as the heading above them instead of stopping
+    short of it. The reading column is constrained inside each card instead
+    (see the partial), so the rules line up without the body text running to
+    130 characters. %>
+<div class="mt-8" data-testid="dispatches-feed">
   <% if @dispatches.any? %>
     <%= render partial: "dispatches/dispatch", collection: @dispatches, as: :dispatch %>
   <% else %>
