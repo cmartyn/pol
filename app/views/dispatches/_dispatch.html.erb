@@ -1,6 +1,9 @@
 <%# locals: dispatch — belongs_to :race optional, so dispatch.race may be nil (generic-ballot/daily-brief dispatches).
-             truncate (optional) — shortens the body for compact contexts like the dashboard. %>
-<% truncate_body = local_assigns.fetch(:truncate, false) %>
+             truncate (optional) — teaser length in characters. Every context
+             that renders this partial is a feed now that each piece has a
+             permalink; the show page lays out the body itself rather than
+             going through here. %>
+<% teaser_length = local_assigns.fetch(:truncate, 300) %>
 <article class="border-b border-slate-100 py-6 last:border-b-0" data-testid="dispatch-card">
   <div class="flex flex-wrap items-center gap-2 text-xs">
     <span class="rounded-full px-2 py-0.5 font-medium <%= dispatch_kind_color(dispatch.kind) %>" data-testid="dispatch-kind">
@@ -14,17 +17,33 @@
     <% end %>
   </div>
 
-  <h3 class="mt-2 text-lg font-semibold text-slate-900"><%= dispatch.headline %></h3>
+  <%# The headline is how anyone expects to open a story, so the headline is
+      the link. The explicit one below it is the second affordance, not the
+      only one — a card whose sole way in is a small "read more" makes people
+      hunt for it. %>
+  <h3 class="mt-2 text-lg font-semibold">
+    <%= link_to dispatch.headline, dispatch_path(dispatch),
+          class: "text-slate-900 decoration-amber-500 decoration-2 underline-offset-4 hover:underline",
+          data: { testid: "dispatch-headline-link" } %>
+  </h3>
 
   <% if dispatch.dek.present? %>
     <p class="mt-1 text-slate-600"><%= dispatch.dek %></p>
   <% end %>
 
-  <div class="mt-3 max-w-none text-sm leading-relaxed text-slate-700">
-    <%= simple_format(truncate_body ? truncate(dispatch.body_markdown, length: 240, separator: " ") : dispatch.body_markdown) %>
+  <%# space-y, not margins: Tailwind's preflight zeroes <p> margins and
+      simple_format emits bare <p>s, so without this a multi-paragraph
+      dispatch renders as one unbroken block of text. %>
+  <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-700">
+    <%= simple_format(truncate(dispatch.body_markdown, length: teaser_length, separator: " ")) %>
   </div>
 
-  <p class="mt-3 text-xs text-slate-500" data-testid="dispatch-byline">
+  <p class="mt-3">
+    <%= link_to "Read the full dispatch →", dispatch_path(dispatch),
+          class: "text-sm font-medium text-amber-700 hover:text-amber-800" %>
+  </p>
+
+  <p class="mt-2 text-xs text-slate-500" data-testid="dispatch-byline">
     Written autonomously by <%= dispatch.model_slug.presence || "the newsroom" %><% if dispatch.edited_at.present? %> &middot; Updated by the editor<% end %>
   </p>
 </article>

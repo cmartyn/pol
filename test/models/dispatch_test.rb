@@ -77,6 +77,37 @@ class DispatchTest < ActiveSupport::TestCase
     assert_equal [ dispatches(:maine_poll_reaction), older_published ], ordered.to_a
   end
 
+  # --- to_param -------------------------------------------------------------
+
+  test "to_param spells the headline into the URL after the id" do
+    dispatch = dispatches(:maine_poll_reaction)
+
+    assert_equal "#{dispatch.id}-new-maine-poll-shows-tightening-senate-race", dispatch.to_param
+  end
+
+  # Headlines run to 90 characters, so the slug has to be cut somewhere. Cutting
+  # at exactly 60 landed mid-word ("…battle-stays-cl"), which reads like a bug
+  # in every link anyone shares.
+  test "to_param trims a long headline back to a whole word" do
+    dispatch = dispatches(:maine_poll_reaction)
+    dispatch.headline = "Democrats hold generic ballot edge as the Senate battle stays close"
+
+    slug = dispatch.to_param.delete_prefix("#{dispatch.id}-")
+
+    assert_operator slug.length, :<=, 60
+    assert_not slug.end_with?("-"), "slug should not end on a separator"
+    assert_equal "democrats-hold-generic-ballot-edge-as-the-senate-battle", slug
+  end
+
+  # The id is what resolves, so a headline correction never breaks a link that
+  # is already out in the world.
+  test "a dispatch is findable by the bare id its permalink is built from" do
+    dispatch = dispatches(:maine_poll_reaction)
+
+    assert_equal dispatch, Dispatch.find(dispatch.to_param)
+    assert_equal dispatch, Dispatch.find(dispatch.id.to_s)
+  end
+
   test "cited_poll_ids defaults to an empty array" do
     assert_equal [], Dispatch.new.cited_poll_ids
   end

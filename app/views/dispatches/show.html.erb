@@ -1,0 +1,86 @@
+<% content_for :title, "#{@dispatch.headline} · 535" %>
+<% content_for :description, @dispatch.dek.presence || truncate(@dispatch.body_markdown, length: 155, separator: " ") %>
+
+<article class="max-w-2xl" data-testid="dispatch-article">
+  <p class="text-sm">
+    <%= link_to "← All dispatches", dispatches_path, class: "font-medium text-amber-700 hover:text-amber-800" %>
+  </p>
+
+  <div class="mt-5 flex flex-wrap items-center gap-2 text-xs">
+    <span class="rounded-full px-2 py-0.5 font-medium <%= dispatch_kind_color(@dispatch.kind) %>" data-testid="dispatch-kind">
+      <%= @dispatch.kind.humanize %>
+    </span>
+    <% if @dispatch.race %>
+      <%= link_to @dispatch.race.name, race_path(@dispatch.race.slug), class: "font-medium text-amber-700 hover:text-amber-800" %>
+    <% else %>
+      <span class="text-slate-500">National</span>
+    <% end %>
+  </div>
+
+  <%# leading-tight because a 90-character headline at 3xl otherwise sets with
+      the same airy line spacing as body copy and stops reading as one unit. %>
+  <h1 class="mt-3 font-serif text-3xl font-semibold leading-tight text-slate-900" data-testid="dispatch-headline">
+    <%= @dispatch.headline %>
+  </h1>
+
+  <% if @dispatch.dek.present? %>
+    <p class="mt-3 text-lg leading-relaxed text-slate-600" data-testid="dispatch-dek"><%= @dispatch.dek %></p>
+  <% end %>
+
+  <%# The byline is a rule rather than another grey line of text: it is the
+      boundary between what the piece claims and who claimed it, and this
+      site's whole proposition is being straight about the second part. %>
+  <p class="mt-5 border-y border-slate-200 py-3 text-xs text-slate-500" data-testid="dispatch-byline">
+    Written autonomously by <span class="font-medium text-slate-700"><%= @dispatch.model_slug.presence || "the newsroom" %></span>
+    <% if @dispatch.published_at %>
+      &middot; <%= @dispatch.published_at.strftime("%B %-d, %Y at %-I:%M %p %Z") %>
+    <% end %>
+    <% if @dispatch.edited_at.present? %>
+      &middot; <span class="font-medium text-slate-700">Updated by the editor</span>
+      <%= @dispatch.edited_at.strftime("%B %-d, %Y") %>
+    <% end %>
+  </p>
+
+  <%# space-y rather than paragraph margins: Tailwind's preflight zeroes <p>
+      margins and simple_format emits bare <p>s, so a multi-paragraph
+      dispatch would otherwise set as one unbroken block. leading-7 at
+      text-base is the measure this column width wants. %>
+  <div class="mt-6 space-y-4 text-base leading-7 text-slate-800" data-testid="dispatch-body">
+    <%= simple_format(@dispatch.body_markdown) %>
+  </div>
+
+  <%# The citation block is not decoration: "every number traceable back to
+      where it came from" is the claim on the About page, and this is the
+      piece-level version of it. A dispatch that cites nothing says so
+      plainly rather than hiding the section. %>
+  <section class="mt-10 rounded-lg border border-slate-200 bg-slate-50 p-5" data-testid="dispatch-sources">
+    <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <%= @dispatch.kind == "poll_reaction" ? "Polls this dispatch was written from" : "Polls cited" %>
+    </h2>
+
+    <% if @cited_polls.any? %>
+      <ul class="mt-3 space-y-1.5 text-sm text-slate-700">
+        <% @cited_polls.each do |poll| %>
+          <li data-testid="dispatch-cited-poll">
+            <span class="font-medium"><%= poll.pollster.name %></span>
+            <span class="text-slate-500">
+              &middot; <%= poll.field_end.strftime("%b %-d, %Y") %><%= " · n=#{number_with_delimiter(poll.sample_size)}" if poll.sample_size %>
+            </span>
+            <% if poll.race %>
+              &middot; <%= link_to poll.race.name, race_path(poll.race.slug), class: "text-amber-700 hover:text-amber-800" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="mt-3 text-sm text-slate-500" data-testid="dispatch-sources-empty">
+        No individual polls cited — this piece was written from the forecast as a whole.
+      </p>
+    <% end %>
+
+    <p class="mt-4 text-xs text-slate-500">
+      Every constant behind these numbers is on the
+      <%= link_to "methodology page", methodology_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
+    </p>
+  </section>
+</article>

@@ -55,7 +55,7 @@
   </div>
   <div class="mt-2 max-w-3xl">
     <% if @dispatches.any? %>
-      <%= render partial: "dispatches/dispatch", collection: @dispatches, as: :dispatch, locals: { truncate: true } %>
+      <%= render partial: "dispatches/dispatch", collection: @dispatches, as: :dispatch, locals: { truncate: 200 } %>
     <% else %>
       <p class="text-slate-500" data-testid="dispatches-empty">
         No dispatches published yet — the autonomous newsroom comes online in a later phase.

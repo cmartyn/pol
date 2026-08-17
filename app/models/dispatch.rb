@@ -11,6 +11,24 @@ class Dispatch < ApplicationRecord
 
   scope :recent_first, -> { order(published_at: :desc, id: :desc) }
 
+  # Readable permalinks without a slug column to migrate, backfill and keep
+  # unique: Rails finds by the leading integer ("41-maine-tightens".to_i is
+  # 41), so everything after the id is decoration a reader and a search
+  # engine can actually make sense of. The headline is capped at 90
+  # characters by validation and trimmed further here — a URL is not the
+  # place to reproduce the whole sentence.
+  #
+  # Changing a headline changes the URL, which is fine because the id still
+  # resolves: an old link keeps working rather than 404ing.
+  def to_param
+    slug = headline.parameterize
+    # Trim back to a whole word rather than mid-syllable: cutting at exactly
+    # 60 turned "…battle stays close" into "…battle-stays-cl", which reads
+    # like a truncation bug in every link that gets shared.
+    slug = slug.first(60).sub(/-[^-]*\z/, "") if slug.length > 60
+    [ id, slug ].join("-")
+  end
+
   # Dispatches citing any of the given poll ids — the newsroom's duplicate
   # guard, so the same poll is never reacted to twice.
   #

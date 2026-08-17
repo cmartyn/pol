@@ -21,6 +21,11 @@ Rails.application.routes.draw do
   get "races/:slug", to: "races#show", as: :race
 
   get "dispatches", to: "dispatches#index"
+  # Every published piece gets a public permalink — an autonomous newsroom
+  # whose output can't be linked to is a newsroom nobody can cite. Retracted
+  # dispatches 404 here (the controller scopes to .published), which is what
+  # the admin retract button promises.
+  get "dispatches/:id", to: "dispatches#show", as: :dispatch
 
   # Phase 9. Every pollster in the corpus, its estimated lean, and whether the
   # model is acting on it. An adjustment readers cannot inspect is the secret

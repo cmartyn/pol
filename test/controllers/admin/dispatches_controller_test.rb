@@ -79,8 +79,13 @@ class Admin::DispatchesControllerTest < ActionDispatch::IntegrationTest
 
     patch admin_dispatch_path(dispatch), params: { dispatch: { headline: "A corrected headline", dek: dispatch.dek, body_markdown: dispatch.body_markdown } }
 
-    assert_redirected_to admin_dispatch_path(dispatch)
+    # Reload before building the expected path: Dispatch#to_param spells the
+    # headline into the URL, so the controller redirects to the corrected
+    # headline's path while this in-memory copy would still produce the old
+    # one. Both resolve — the id is what looks the record up — but they are
+    # not the same string.
     dispatch.reload
+    assert_redirected_to admin_dispatch_path(dispatch)
     assert_equal "A corrected headline", dispatch.headline
     assert_not_nil dispatch.edited_at
   end
