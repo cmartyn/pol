@@ -55,8 +55,9 @@ env:
     MAIL_FROM: "535.wtf <robot@535.wtf>"
     MAIL_REPLY_TO: cmartyn@gmail.com
     APP_POSTAL_ADDRESS: "Appmakey LLC, 5305 Macomb St NW, Washington, DC 20016"
-    # Enabled only after DNS, Resend authentication and a live end-to-end test pass.
-    DISPATCH_EMAILS_ENABLED: "false"
+    # Resend domain, sender authentication and signed webhooks were smoke-tested
+    # in production before this switch was enabled.
+    DISPATCH_EMAILS_ENABLED: "true"
   secret:
     - RAILS_MASTER_KEY
     - POL_DATABASE_PASSWORD

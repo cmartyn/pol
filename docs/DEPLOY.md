@@ -48,17 +48,13 @@ Kamal builds from git HEAD — commit before deploying.
 
 ## The domain
 
-The canonical site is https://535.wtf. Cloudflare has an apex A record
-pointing at `68.183.55.31` and `www` aliases the apex. Both are DNS-only
-(gray cloud) so kamal-proxy can issue and renew its own Let's Encrypt
-certificate directly. Kamal accepts `535.wtf`, `www.535.wtf` and the legacy
-`535.appmakey.com`; Rails permanently redirects the latter two to the same
-path on the apex. `assume_ssl`/`force_ssl` are on, with `/up` excluded so the
-proxy's internal health check stays valid.
-
-If Cloudflare proxying is enabled later, set SSL/TLS to **Full (strict)** and
-enable trusted forwarded headers in the Kamal proxy configuration before the
-change.
+The canonical site is https://535.wtf. Cloudflare has a proxied apex A record
+pointing at `68.183.55.31` and `www` aliases the apex. Keep the zone's SSL/TLS
+mode at **Full (strict)**: kamal-proxy owns the valid Let's Encrypt origin
+certificate, while Cloudflare terminates the public connection. Kamal accepts
+`535.wtf`, `www.535.wtf` and the legacy `535.appmakey.com`; Rails permanently
+redirects the latter two to the same path on the apex. `assume_ssl`/`force_ssl`
+are on, with `/up` excluded so the proxy's internal health check stays valid.
 
 ## Dispatch email
 
@@ -72,12 +68,13 @@ suppression and delivery state arrive through the signed
 Email has its own production kill switch:
 
 ```yaml
-DISPATCH_EMAILS_ENABLED: "false"
+DISPATCH_EMAILS_ENABLED: "true"
 ```
 
-Keep it false until the Resend domain is verified and a live subscription,
-delivery and unsubscribe smoke test passes; then change it to `"true"` and
-deploy. This does not affect the newsroom's separate `agents_enabled` switch.
+This was enabled only after the Resend domain, production API delivery and
+signed sent/delivered webhooks passed a live smoke test. Set it back to
+`"false"` for an immediate mailing kill switch; this does not affect the
+newsroom's separate `agents_enabled` switch.
 
 The Resend sending domain is `535.wtf`, the sender is
 `535.wtf <robot@535.wtf>`, and replies go to `cmartyn@gmail.com`. The Cloudflare
