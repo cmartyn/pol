@@ -26,4 +26,7 @@ class PagesController < PublicController
 
   def about
   end
+
+  def privacy
+  end
 end

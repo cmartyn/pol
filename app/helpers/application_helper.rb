@@ -1,4 +1,10 @@
 module ApplicationHelper
+  def canonical_url
+    URI::HTTPS.build(
+      host: ENV.fetch("CANONICAL_HOST", request.host),
+      path: request.path
+    ).to_s
+  end
   # A primary-nav link that marks itself current — aria-current is what
   # assistive tech reads; the underline is what everyone else sees.
   def nav_link(label, path)

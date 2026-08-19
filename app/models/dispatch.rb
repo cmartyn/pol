@@ -11,6 +11,8 @@ class Dispatch < ApplicationRecord
 
   scope :recent_first, -> { order(published_at: :desc, id: :desc) }
 
+  after_create_commit :enqueue_dispatch_email_fanout, if: -> { published? && DispatchEmail.enabled? }
+
   # Readable permalinks without a slug column to migrate, backfill and keep
   # unique: Rails finds by the leading integer ("41-maine-tightens".to_i is
   # 41), so everything after the id is decoration a reader and a search
@@ -53,6 +55,10 @@ class Dispatch < ApplicationRecord
   }
 
   private
+    def enqueue_dispatch_email_fanout
+      DispatchEmailFanoutJob.perform_later(id)
+    end
+
     # Reads the cap from Pol::Params on every validation run rather than
     # caching it in a constant, so editing config/model_params.yml takes
     # effect without a restart-triggering code change.

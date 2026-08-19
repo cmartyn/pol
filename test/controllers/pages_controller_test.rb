@@ -1,6 +1,14 @@
 require "test_helper"
 
 class PagesControllerTest < ActionDispatch::IntegrationTest
+  test "privacy explains email use and the no-sale promise" do
+    get privacy_path
+
+    assert_response :success
+    assert_select "h1", text: /Privacy/
+    assert_select "article", text: /do not sell/
+    assert_select "article", text: /5305 Macomb St NW/
+  end
   test "methodology renders every params section with a spot-checked value and its citation" do
     get methodology_path
     assert_response :success

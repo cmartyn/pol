@@ -89,6 +89,8 @@ The queue dashboard is at `/admin/good_job`.
 | Key | Required? | Fallback |
 |---|---|---|
 | `openrouter_api_key` | Only for the newsroom | `ENV["OPENROUTER_API_KEY"]` |
+| `resend_api_key` | Production email | Encrypted Rails credential; `RESEND_API_KEY` can override it |
+| `resend_webhook_secret` | Resend delivery events | Encrypted Rails credential; `RESEND_WEBHOOK_SECRET` can override it |
 | `admin.email` | No | `ENV` is not consulted; defaults to the maintainer's address in `db/seeds.rb` |
 | `admin.password` | No | `ENV["ADMIN_PASSWORD"]`, else a generated one printed once |
 

@@ -22,7 +22,7 @@ servers:
       - 68.183.55.31
     cmd: bundle exec good_job start
 
-# kamal-proxy terminates SSL for the subdomain with an auto-issued Let's
+# kamal-proxy terminates SSL for these hostnames with an auto-issued Let's
 # Encrypt certificate (production.rb's assume_ssl/force_ssl are on to
 # match). Cloudflare sits in front of the DNS: DNS-only (gray cloud) just
 # works; proxied (orange cloud) needs the zone's SSL/TLS mode set to
@@ -31,7 +31,10 @@ servers:
 # stop resolving to the app, which is the point.
 proxy:
   ssl: true
-  host: 535.appmakey.com
+  hosts:
+    - 535.wtf
+    - www.535.wtf
+    - 535.appmakey.com
 
 # Credentials come from .kamal/secrets, which reads the macOS keychain —
 # nothing secret is committed. The username is the DO account email; the
@@ -48,6 +51,12 @@ env:
     # The Postgres accessory's DNS name on Kamal's docker network —
     # database.yml reads this for the production host.
     DB_HOST: pol-db
+    CANONICAL_HOST: 535.wtf
+    MAIL_FROM: "535.wtf <robot@535.wtf>"
+    MAIL_REPLY_TO: cmartyn@gmail.com
+    APP_POSTAL_ADDRESS: "Appmakey LLC, 5305 Macomb St NW, Washington, DC 20016"
+    # Enabled only after DNS, Resend authentication and a live end-to-end test pass.
+    DISPATCH_EMAILS_ENABLED: "false"
   secret:
     - RAILS_MASTER_KEY
     - POL_DATABASE_PASSWORD

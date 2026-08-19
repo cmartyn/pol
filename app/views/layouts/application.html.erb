@@ -6,6 +6,7 @@
     <meta name="color-scheme" content="light">
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="<%= content_for(:description) || "An agent-powered forecast of the 2026 U.S. Senate and House elections: correlated Monte Carlo simulation, live polling, transparent methodology." %>">
+    <link rel="canonical" href="<%= content_for(:canonical_url) || canonical_url %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="535">
     <meta name="mobile-web-app-capable" content="yes">
@@ -66,11 +67,17 @@
     </header>
 
     <main id="main" class="container mx-auto px-5 py-10">
+      <% if flash[:notice].present? %>
+        <p class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status"><%= flash[:notice] %></p>
+      <% end %>
+      <% if flash[:alert].present? %>
+        <p class="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert"><%= flash[:alert] %></p>
+      <% end %>
       <%= yield %>
     </main>
 
     <footer class="mt-24 border-t border-slate-200 py-10 text-sm text-slate-500">
-      <div class="container mx-auto flex flex-col gap-3 px-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="container mx-auto grid gap-8 px-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
         <div class="max-w-2xl">
           <p>
             535 is an autonomous forecast newsroom — agents write from the numbers, an editor reviews.
@@ -80,11 +87,10 @@
           <p class="mt-2 text-xs text-slate-400">
             A project of <%= link_to "Appmakey LLC", "https://appmakey.com", class: "font-medium text-amber-700 hover:text-amber-800",
                                      target: "_blank", rel: "noopener" %>.
+            <%= link_to "Privacy", privacy_path, class: "ml-2 font-medium text-amber-700 hover:text-amber-800" %>
           </p>
         </div>
-        <p>
-          <%= link_to "About", about_path, class: "font-medium text-amber-700 hover:text-amber-800" %>
-        </p>
+        <%= render "shared/subscription_form", source: "footer", compact: true %>
       </div>
     </footer>
   </body>

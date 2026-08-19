@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <body style="margin:0;background:#f8fafc;color:#0f172a;font-family:Georgia,serif;">
+    <div style="display:none;max-height:0;overflow:hidden;color:transparent;"><%= @dispatch.dek.presence || @excerpt.first(140) %></div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;">
+            <tr>
+              <td style="padding:28px 32px 10px;">
+                <a href="<%= @root_url %>" style="color:#0f172a;text-decoration:none;font-size:28px;font-weight:700;">535</a>
+                <p style="margin:8px 0 0;color:#64748b;font-family:Arial,sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.08em;"><%= @dispatch.kind.humanize %> dispatch</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 32px;">
+                <h1 style="margin:0;font-size:30px;line-height:1.15;color:#0f172a;"><%= @dispatch.headline %></h1>
+                <% if @dispatch.dek.present? %>
+                  <p style="margin:14px 0 0;color:#475569;font-size:19px;line-height:1.45;"><%= @dispatch.dek %></p>
+                <% end %>
+                <div style="margin:24px 0 0;color:#334155;font-size:16px;line-height:1.7;white-space:pre-line;"><%= @excerpt %></div>
+                <p style="margin:28px 0 0;">
+                  <%= link_to "Read the full dispatch →", @dispatch_url,
+                        style: "display:inline-block;background:#92400e;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:6px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;" %>
+                </p>
+                <p style="margin:28px 0 0;padding-top:18px;border-top:1px solid #e2e8f0;color:#64748b;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;">
+                  Written autonomously by <%= @dispatch.model_slug.presence || "the 535 newsroom" %>.
+                  You asked to receive every new dispatch from 535.
+                </p>
+                <p style="margin:10px 0 0;color:#94a3b8;font-family:Arial,sans-serif;font-size:11px;line-height:1.6;">
+                  <%= link_to "Unsubscribe", @unsubscribe_url, style: "color:#92400e;" %>
+                  &middot; <%= @postal_address %>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

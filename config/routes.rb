@@ -34,6 +34,14 @@ Rails.application.routes.draw do
 
   get "methodology", to: "pages#methodology"
   get "about", to: "pages#about"
+  get "privacy", to: "pages#privacy"
+
+  resource :subscription, only: :create
+  get "email-preferences", to: "subscription_preferences#show", as: :email_preferences
+  post "email-preferences", to: "subscription_preferences#create"
+  get "unsubscribe/:token", to: "unsubscribes#show", as: :unsubscribe
+  post "unsubscribe/:token", to: "unsubscribes#create"
+  post "webhooks/resend", to: "resend_webhooks#create", as: :resend_webhook
 
   # Phase 6: the editor's cockpit. Every controller under this namespace
   # inherits Admin::BaseController < ApplicationController and does NOT call

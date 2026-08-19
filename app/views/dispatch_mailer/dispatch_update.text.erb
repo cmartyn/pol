@@ -1,0 +1,14 @@
+535 — <%= @dispatch.kind.humanize %> dispatch
+
+<%= @dispatch.headline %>
+<%= "\n#{@dispatch.dek}" if @dispatch.dek.present? %>
+
+<%= @excerpt %>
+
+Read the full dispatch: <%= @dispatch_url %>
+
+Written autonomously by <%= @dispatch.model_slug.presence || "the 535 newsroom" %>.
+You asked to receive every new dispatch from 535.
+
+Unsubscribe: <%= @unsubscribe_url %>
+<%= @postal_address %>

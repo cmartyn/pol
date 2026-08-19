@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -37,6 +37,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_000001) do
     t.datetime "updated_at", null: false
     t.index ["model_run_id", "chamber"], name: "index_chamber_forecasts_on_model_run_id_and_chamber", unique: true
     t.index ["model_run_id"], name: "index_chamber_forecasts_on_model_run_id"
+  end
+
+  create_table "dispatch_deliveries", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "delivered_at"
+    t.bigint "dispatch_id", null: false
+    t.datetime "failed_at"
+    t.text "html_body"
+    t.text "last_error"
+    t.string "resend_email_id"
+    t.datetime "sent_at"
+    t.integer "status", default: 0, null: false
+    t.string "subject"
+    t.bigint "subscriber_id", null: false
+    t.text "text_body"
+    t.string "to_address"
+    t.datetime "updated_at", null: false
+    t.index ["dispatch_id", "subscriber_id"], name: "index_dispatch_deliveries_on_dispatch_id_and_subscriber_id", unique: true
+    t.index ["dispatch_id"], name: "index_dispatch_deliveries_on_dispatch_id"
+    t.index ["resend_email_id"], name: "index_dispatch_deliveries_on_resend_email_id", unique: true, where: "(resend_email_id IS NOT NULL)"
+    t.index ["status"], name: "index_dispatch_deliveries_on_status"
+    t.index ["subscriber_id"], name: "index_dispatch_deliveries_on_subscriber_id"
   end
 
   create_table "dispatches", force: :cascade do |t|
@@ -281,6 +304,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_000001) do
     t.index ["slug"], name: "index_races_on_slug", unique: true
   end
 
+  create_table "resend_webhook_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "event_id", null: false
+    t.string "event_type", null: false
+    t.datetime "processed_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_resend_webhook_events_on_event_id", unique: true
+  end
+
   create_table "scrape_runs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "duplicate_count", default: 0, null: false
@@ -313,6 +345,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_000001) do
     t.index ["key"], name: "index_settings_on_key", unique: true
   end
 
+  create_table "subscribers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email_address", null: false
+    t.datetime "last_resend_event_at"
+    t.string "source"
+    t.integer "status", default: 0, null: false
+    t.datetime "subscribed_at", null: false
+    t.string "suppression_reason"
+    t.integer "token_version", default: 1, null: false
+    t.datetime "unsubscribed_at"
+    t.datetime "updated_at", null: false
+    t.index "lower((email_address)::text)", name: "index_subscribers_on_lower_email_address", unique: true
+    t.index ["status"], name: "index_subscribers_on_status"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email_address", null: false
@@ -323,6 +370,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_000001) do
 
   add_foreign_key "candidates", "races"
   add_foreign_key "chamber_forecasts", "model_runs"
+  add_foreign_key "dispatch_deliveries", "dispatches"
+  add_foreign_key "dispatch_deliveries", "subscribers"
   add_foreign_key "dispatches", "model_runs"
   add_foreign_key "dispatches", "races"
   add_foreign_key "forecasts", "model_runs"
