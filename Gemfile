@@ -65,10 +65,6 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
-
-  # Load .env file in development so POSTHOG_PROJECT_TOKEN and other local
-  # environment variables are available without manual shell exports.
-  gem "dotenv-rails"
 end
 
 group :test do

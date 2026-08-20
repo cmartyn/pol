@@ -11,13 +11,14 @@
 # api_key, posthog-ruby silently drops all events. In development the app
 # logs a loud warning so you know events are being lost.
 
-posthog_token = ENV.fetch("POSTHOG_PROJECT_TOKEN", nil)
+posthog_token = Rails.application.credentials.posthog_project_token unless Rails.env.test?
+Rails.configuration.x.posthog_project_token = posthog_token
 
 if posthog_token.blank? && Rails.env.development?
   Rails.logger.warn(
-    "POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or " \
-    "un-configured, this causes events to be silently missed. " \
-    "This error stops appearing once POSTHOG_PROJECT_TOKEN is configured."
+    "The posthog_project_token Rails credential required by PostHog is " \
+    "missing or unconfigured, which causes events to be silently missed. " \
+    "This warning stops appearing once the credential is configured."
   )
 end
 

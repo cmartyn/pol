@@ -7,6 +7,11 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /2026 midterms forecast/
   end
 
+  test "does not load PostHog in the test environment" do
+    get root_path
+    assert_select "script", text: /posthog\.init/, count: 0
+  end
+
   test "does not require authentication" do
     get root_path
     assert_response :success
