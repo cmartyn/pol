@@ -38,6 +38,19 @@ class SendDispatchEmailJob < ApplicationJob
     delivery.update!(status: :sent, resend_email_id: resend_id, sent_at: Time.current, last_error: nil)
   rescue Resend::Client::PermanentError, Resend::Client::ConfigurationError => error
     delivery&.update!(status: :failed, failed_at: Time.current, last_error: error.message)
+
+    # PostHog: Track permanent email delivery failures
+    if delivery
+      PostHog.capture(
+        distinct_id: "subscriber:#{delivery.subscriber_id}",
+        event: "email_send_failed",
+        properties: {
+          error_class: error.class.name,
+          dispatch_id: delivery.dispatch_id,
+          delivery_id: delivery.id
+        }
+      )
+    end
   end
 
   private

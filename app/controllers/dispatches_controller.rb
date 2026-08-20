@@ -15,5 +15,16 @@ class DispatchesController < PublicController
     @cited_polls = Poll.where(id: @dispatch.cited_poll_ids)
                        .includes(:pollster, :race)
                        .order(field_end: :desc)
+
+    # PostHog: Track dispatch reads (key content engagement event)
+    PostHog.capture(
+      distinct_id: session.id.to_s,
+      event: "dispatch_viewed",
+      properties: {
+        dispatch_id: @dispatch.id,
+        dispatch_kind: @dispatch.kind,
+        race_slug: @dispatch.race&.slug
+      }
+    )
   end
 end

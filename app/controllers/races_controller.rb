@@ -35,5 +35,16 @@ class RacesController < PublicController
     # so a cache hit skips all of it rather than this controller loading it
     # unconditionally on every request. See app/views/races/show.html.erb.
     @latest_dispatch = @race.dispatches.published.recent_first.first
+
+    # PostHog: Track race detail page views (top-of-funnel engagement)
+    PostHog.capture(
+      distinct_id: session.id.to_s,
+      event: "race_viewed",
+      properties: {
+        race_slug: @race.slug,
+        race_state: @race.state,
+        race_office: @race.office
+      }
+    )
   end
 end

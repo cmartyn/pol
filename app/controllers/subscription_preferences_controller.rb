@@ -10,6 +10,12 @@ class SubscriptionPreferencesController < PublicController
       SubscriberMailer.with(subscriber: subscriber).manage.deliver_later if subscriber&.subscribed?
     end
 
+    # PostHog: Track email preferences requests (engagement with subscription management)
+    PostHog.capture(
+      distinct_id: session.id.to_s,
+      event: "email_preferences_requested"
+    )
+
     redirect_to email_preferences_path,
                 notice: "If that address is subscribed, a secure unsubscribe link is on its way.",
                 status: :see_other

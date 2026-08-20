@@ -12,6 +12,14 @@ class ApplicationController < ActionController::Base
   # "404s for unknown slugs render cleanly" per the Phase 4 brief.
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
+  # Provides a current_user helper used by posthog-rails for automatic
+  # user context in error reports. Delegates to Current.user which is
+  # populated by the Authentication concern via the session cookie.
+  def current_user
+    Current.user
+  end
+  helper_method :current_user
+
   private
     def redirect_to_canonical_host
       canonical_host = ENV["CANONICAL_HOST"]

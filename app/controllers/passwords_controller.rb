@@ -9,6 +9,12 @@ class PasswordsController < ApplicationController
   def create
     if user = User.find_by(email_address: params[:email_address])
       PasswordsMailer.reset(user).deliver_later
+
+      # PostHog: Track password reset requests (user needs help signing in)
+      PostHog.capture(
+        distinct_id: user.posthog_distinct_id,
+        event: "password_reset_requested"
+      )
     end
 
     redirect_to new_session_path, notice: "Password reset instructions sent (if user with that email address exists)."
@@ -20,6 +26,13 @@ class PasswordsController < ApplicationController
   def update
     if @user.update(params.permit(:password, :password_confirmation))
       @user.sessions.destroy_all
+
+      # PostHog: Track successful password resets
+      PostHog.capture(
+        distinct_id: @user.posthog_distinct_id,
+        event: "password_reset_completed"
+      )
+
       redirect_to new_session_path, notice: "Password has been reset."
     else
       redirect_to edit_password_path(params[:token]), alert: "Passwords did not match."
