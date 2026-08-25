@@ -337,7 +337,10 @@ class Ingest::PollTableParserTest < ActiveSupport::TestCase
   test "a state with one at-large district needs no district heading to read" do
     result = parse_district("house_alaska.html", default_district: 1)
 
-    assert_equal 7, result.rows.size
+    # Nine as of the fixture's last refresh — the count moves whenever the page
+    # gains a poll, which is what a refreshed fixture is for. What the case is
+    # actually about is the district number, and that never moves.
+    assert_equal 9, result.rows.size
     assert_equal [ 1 ], result.rows.map(&:district).uniq
   end
 
