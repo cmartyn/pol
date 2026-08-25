@@ -28,6 +28,10 @@
             <th colspan="7" class="py-2 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <%= group.first.matchup_heading %>
               <span class="font-normal normal-case text-slate-400">&middot; <%= pluralize(group.size, "poll") %></span>
+              <% if earlier_matchup?(race, key) %>
+                <span class="ml-1 rounded bg-slate-100 px-2 py-0.5 text-xs font-medium normal-case text-slate-600"
+                      data-testid="earlier-matchup-tag">Polled before the field was set</span>
+              <% end %>
             </th>
           </tr>
           <%= render partial: "races/poll_row", collection: group, as: :poll,

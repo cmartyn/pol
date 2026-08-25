@@ -213,11 +213,29 @@ namespace :pol do
       # North Carolina polls its congressional vote statewide, under no
       # district at all.
       { file: "house_north_carolina.html", title: district_title("NC"), districts: /\A(Statewide polling|District 1)\z/ },
+      # Minnesota and Massachusetts are here for HouseCandidatesParser rather
+      # than for polling. Minnesota is the settled case with the party label
+      # that has bitten this codebase before — its Democrats are "Democratic
+      # (DFL)" in every infobox — and its 2nd district is the open seat whose
+      # incumbent is not on the ballot, so the fixture carries an incumbent
+      # nominee and a non-incumbent one. Massachusetts votes in September, so
+      # on an August page every one of its districts is still "TBD" or
+      # "(presumptive)": the unsettled shape the parser has to refuse. Neither
+      # state's kept sections hold a polling table, so what survives the trim
+      # is the district infoboxes and little else.
+      { file: "house_minnesota.html",      title: district_title("MN"), districts: /\ADistrict (1|2)\z/ },
+      { file: "house_massachusetts.html",  title: district_title("MA"), districts: /\ADistrict (1|3)\z/ },
       # The two worst matchup tangles on the board: Maine's 2nd runs four
       # different Democrats against Paul LePage across thirteen polls, and
       # Florida's 25th has four polls and four matchups.
       { file: "house_maine.html",          title: district_title("ME"), districts: /\ADistrict 2\z/ },
-      { file: "house_florida.html",        title: district_title("FL"), districts: /\ADistrict 25\z/ },
+      # Florida's 10th and 26th are here for the candidate parser and carry no
+      # polling at all: the 10th is the uncontested case, a field of one marked
+      # "(Uncontested)" whose infobox has swapped its Incumbent line for the
+      # after-the-fact "before election" wording, and the 26th spells its
+      # incumbent "Mario Diaz-Balart" against a nominee spelled "Mario
+      # Díaz-Balart", which is what an incumbent check has to survive.
+      { file: "house_florida.html",        title: district_title("FL"), districts: /\ADistrict (10|25|26)\z/ },
       # Delaware's page has no polling section of any kind — and does have
       # fundraising and ratings tables, which is the point: those must not be
       # counted as tables we refused.
@@ -242,7 +260,8 @@ namespace :pol do
       printf("  %-30s %8.1f KB  %s\n", fixture[:file], trimmed.bytesize / 1024.0, fixture[:title])
     end
     printf("  %-30s %8.1f KB\n", "total", total / 1024.0)
-    puts "  (poll_table_malformed.html is hand-edited and is not refreshed here)"
+    puts "  (poll_table_malformed.html and house_candidates_malformed.html are hand-edited " \
+         "and are not refreshed here)"
   end
 end
 
@@ -291,15 +310,21 @@ def trim_district_sections(html, pattern)
 
   sections.each do |section|
     section.css("section").each { |nested| nested.remove if nested.css("table.wikitable").none?(&polling) }
+    boxes = election_infoboxes(section)
     section.css("p, ul, ol, dl, figure, style, link, blockquote, table").each do |node|
       next if node.name == "table" && node["class"].to_s.split.include?("wikitable") && polling.call(node)
+      next if inside_kept_infobox?(node, boxes)
 
       node.remove
     end
-    section.css("div").each { |node| node.remove if node.css("table.wikitable").empty? }
+    section.css("div").each do |node|
+      next if inside_kept_infobox?(node, boxes)
+
+      node.remove if node.css("table.wikitable").empty?
+    end
   end
 
-  wrap_fixture(sections)
+  wrap_fixture(sections, lead_infoboxes(document))
 end
 
 # Keeps only the <section> elements whose heading matches, which is what turns a
@@ -323,6 +348,8 @@ def trim_sections(html, pattern, max_rows: nil)
   ancestors = matched.flat_map { |section| section.ancestors("section").to_a }.uniq - matched
   kept = matched + ancestors
 
+  # Lifted out before the sweep below deletes the lead section they live in.
+  lead = lead_infoboxes(document)
   document.css("section").to_a.each { |section| section.remove unless kept.include?(section) }
   # An ancestor is scaffolding: its heading is what a nested table's context is
   # read from, and everything else it holds belongs to some other subsection.
@@ -340,13 +367,50 @@ def trim_sections(html, pattern, max_rows: nil)
 
   # The outermost survivors: every section still standing is one we kept, so a
   # section with no section above it is the root of a chain worth emitting.
-  wrap_fixture(kept.reject { |section| section.ancestors("section").any? })
+  wrap_fixture(kept.reject { |section| section.ancestors("section").any? }, lead)
 end
 
-def wrap_fixture(sections)
+# A district's election infobox — the "Nominee / Party / Incumbent" box at the
+# top of a "District 7" section, and the only place on these pages that states
+# the general-election field in one shape every state uses. Identified by the
+# parser's own field-row pattern rather than by the ib-election class, so that
+# the trim cannot start keeping a different set of boxes than
+# Ingest::HouseCandidatesParser reads.
+def election_infoboxes(node)
+  node.css("table.infobox").select do |table|
+    table.css("th").any? { |th| th.text.strip.match?(Ingest::HouseCandidatesParser::FIELD_ROW) }
+  end
+end
+
+# An infobox is kept whole, and the ordinary strip rules must not reach inside
+# it: the incumbent's name sits in a <p>, and the Nominee and Party rows sit in
+# a <table> nested in the box, so both would otherwise be thrown away and the
+# box left saying nothing.
+def inside_kept_infobox?(node, boxes)
+  boxes.any? { |box| box == node || node.ancestors.include?(box) }
+end
+
+# On a state with a single at-large district there are no "District N" sections
+# to keep, and the one infobox sits in the lead — section 0, which has no
+# heading and so matches no fixture pattern. Emitted alongside the kept
+# sections, in a heading-less section of its own, so the fixture reproduces the
+# live page's "infobox under no district heading" shape rather than inventing a
+# district heading the parser would then read.
+#
+# "In the lead" is what the heading test means: on a fifty-district page every
+# district's infobox is in a section of its own, and the ones whose section was
+# trimmed away must stay trimmed away rather than pile up here.
+def lead_infoboxes(document)
+  election_infoboxes(document).reject do |box|
+    box.ancestors("section").any? { |section| section.at_css("h1,h2,h3,h4,h5") }
+  end
+end
+
+def wrap_fixture(sections, lead = [])
   <<~HTML
     <html><head><meta charset="utf-8"><title>pol test fixture</title></head>
     <body>
+    #{lead.map { |box| "<section>#{box.to_html}</section>" }.join("\n")}
     #{sections.map(&:to_html).join("\n")}
     </body></html>
   HTML

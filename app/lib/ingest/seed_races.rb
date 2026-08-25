@@ -68,40 +68,13 @@ module Ingest
             unsettled: entry.fetch("unsettled", false)
           )
           race.save!
-          sync_candidates(race, entry.fetch("candidates", []))
+          Ingest::CandidateSync.apply(race, entry.fetch("candidates", []), warnings: @warnings)
           race
         end
       end
 
       def senate_slug(state, special)
         "senate-#{cycle}-#{state.downcase}#{'-special' if special}"
-      end
-
-      def sync_candidates(race, entries)
-        entries.each do |entry|
-          candidate = race.candidates.find_or_initialize_by(name: entry.fetch("name"))
-          candidate.update!(
-            party: entry.fetch("party"),
-            caucus_with: entry["caucus_with"],
-            incumbent: entry.fetch("incumbent", false)
-          )
-        end
-
-        prune_candidates(race, entries.map { |entry| entry.fetch("name") })
-      end
-
-      # A candidate who has dropped off the verified list is removed so that the
-      # poll parser's "column must name a real candidate" rule keeps rejecting
-      # stale matchups — unless polls already point at them, in which case the
-      # historical link is worth more than the tidiness.
-      def prune_candidates(race, names)
-        race.candidates.where.not(name: names).find_each do |stale|
-          if PollResult.exists?(candidate_id: stale.id)
-            @warnings << "kept #{race.slug} candidate #{stale.name.inspect}: referenced by existing poll results"
-          else
-            stale.destroy!
-          end
-        end
       end
 
       # lean = mean over 2024 and 2020 of (state margin − national margin),

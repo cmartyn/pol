@@ -184,6 +184,33 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='ambiguous-matchup-note']", text: /the district's 2024 result/
   end
 
+  # A group whose matchup no longer matches the race's current candidate set
+  # (a poll taken before the field was set) gets a small tag on its heading;
+  # a group that still matches the current candidates doesn't.
+  test "show tags a stale matchup group and leaves the current one untagged" do
+    race = races(:house_ny_17)
+    create_poll(
+      pollster: pollsters(:beacon_polling), race: race, field_end: Date.current, sample_size: 600,
+      results: { dem: 51.0, rep: 45.0 }, matchup_key: "dem:nolan|rep:halloran",
+      raw_payload: { "columns" => { "Casey Nolan (D)" => "51%", "Drew Halloran (R)" => "45%" } }
+    )
+    create_poll(
+      pollster: pollsters(:cardinal_research), race: race, field_end: Date.current - 30, sample_size: 500,
+      results: { dem: 44.0, rep: 48.0 }, matchup_key: "dem:jones|rep:halloran",
+      raw_payload: { "columns" => { "Pat Jones (D)" => "44%", "Drew Halloran (R)" => "48%" } }
+    )
+
+    get race_path(race.slug)
+
+    headings = css_select("[data-testid='poll-matchup-heading']")
+    current = headings.find { |row| row["data-matchup"] == "dem:nolan|rep:halloran" }
+    stale = headings.find { |row| row["data-matchup"] == "dem:jones|rep:halloran" }
+
+    assert_empty current.css("[data-testid='earlier-matchup-tag']"), "current matchup should carry no tag"
+    assert_equal 1, stale.css("[data-testid='earlier-matchup-tag']").size
+    assert_match "Polled before the field was set", stale.text
+  end
+
   test "show leaves a single-matchup race's poll table ungrouped" do
     get race_path(races(:senate_maine).slug)
 
