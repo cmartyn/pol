@@ -22,6 +22,18 @@ Rails.application.configure do
       class: "Ingest::ScrapeAllJob",
       description: "Sweep every Wikipedia poll source and ingest new polls"
     },
+    # Once a day rather than on the poll sweep's cadence: a nominee settles
+    # when a primary is called, not every two hours, and unlike pol_scrape
+    # this reads every state with a House race — Sources::DISTRICT_POLL_STATES
+    # is the poll sweep's list of states worth fetching every two hours, not
+    # a bound on where a candidate can settle. 05:00 Eastern is ahead of the
+    # 06:30 model-run floor and the 07:00 brief below, so a nominee settled
+    # overnight is already seeded by the time either reads the board.
+    pol_house_candidates: {
+      cron: "0 5 * * * America/New_York",
+      class: "Ingest::SyncHouseCandidatesJob",
+      description: "Sync House candidates from each state's Wikipedia election page"
+    },
     # Ingestion queues a run whenever it finds new polls, so on a busy day the
     # model runs often — but on a quiet day nothing re-ran it at all, and the
     # site's "as of" timestamp aged while the forecast sat still. This is the

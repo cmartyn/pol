@@ -58,4 +58,36 @@ module WikipediaStubHelper
       </section></body></html>
     HTML
   end
+
+  # One election infobox per district — structurally faithful to the field
+  # Ingest::HouseCandidatesParser reads: a Nominee row, a Party row, and (if
+  # given) an Incumbent line naming the sitting member as one cell, the way a
+  # real infobox joins "Incumbent U.S. Representative" and the name into a
+  # single <td> rather than a labelled row of its own.
+  #
+  # districts: [ { number:, nominees: [ [name, party_label], ... ], incumbent: name_or_nil }, ... ]
+  # at_large: true omits every "District N" heading — HouseCandidatesParser
+  # reads "no such heading anywhere on the page" as a single at-large seat.
+  def house_candidates_page_html(districts:, at_large: false)
+    sections = districts.map do |district|
+      names = district.fetch(:nominees).map(&:first)
+      parties = district.fetch(:nominees).map(&:last)
+      incumbent_cell = district[:incumbent] ? "Incumbent U.S. Representative #{district[:incumbent]}" : ""
+      heading = at_large ? "" : "<h2>District #{district.fetch(:number)}</h2>"
+
+      <<~HTML
+        <section>#{heading}
+          <table class="infobox">
+            <tbody>
+              <tr><td>#{incumbent_cell}</td></tr>
+              <tr><th>Nominee</th>#{names.map { |name| "<td>#{name}</td>" }.join}</tr>
+              <tr><th>Party</th>#{parties.map { |party| "<td>#{party}</td>" }.join}</tr>
+            </tbody>
+          </table>
+        </section>
+      HTML
+    end
+
+    "<html><body>#{sections.join}</body></html>"
+  end
 end
