@@ -8,13 +8,13 @@ Rails.application.configure do
   # cannot drift.
   cadence_hours = YAML.safe_load_file(Rails.root.join("config/model_params.yml")).fetch("scrape").fetch("cadence_hours")
 
-  # The two daily entries carry an explicit timezone as fugit's sixth cron
+  # The three daily entries carry an explicit timezone as fugit's sixth cron
   # field (good_job parses cron with fugit, which reads a trailing zone name
   # and resolves DST for it). Without it the schedule would follow the
   # server's clock, and an election site whose morning brief lands at 3am
   # half the year is a bug that only shows up after a deploy to a UTC box.
   # These are publication times rather than model parameters, so unlike the
-  # scrape cadence they are literals here — with a test pinning both.
+  # scrape cadence they are literals here — with a test pinning all three.
   config.good_job.enable_cron = true
   config.good_job.cron = {
     pol_scrape: {

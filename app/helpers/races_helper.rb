@@ -109,12 +109,19 @@ module RacesHelper
   end
 
   # A poll table group is "earlier" — taken before the field was set — when
-  # its matchup key names, for any party, a surname not among the race's
-  # *current* candidates of that party. Silent for a race with no candidates
-  # (an unsettled House district has nothing yet to call "earlier" than) and
-  # for a group with no key (a generic/placeholder group, not a matchup).
-  # Both sides are run through PollTableParser.surname so a spelling variant
-  # of the same person doesn't false-flag.
+  # its matchup key names, for a party the race actually HAS candidates of,
+  # a surname not among that party's *current* candidates. A party the race
+  # holds zero candidates of never contributes to staleness: the House
+  # parser seeds only the infobox's leading candidates, so a real finalist
+  # whose party was never seeded (Alaska's Democratic finalist, say) must
+  # not be tagged just because there's nothing on the "current" side to
+  # compare against — the same leniency PollTableParser.match_candidates
+  # applies when matching a poll's column against a race's roster: an
+  # unseeded party stands on the party alone. Silent for a race with no
+  # candidates at all (an unsettled House district has nothing yet to call
+  # "earlier" than) and for a group with no key (a generic/placeholder
+  # group, not a matchup). Both sides are run through PollTableParser.surname
+  # so a spelling variant of the same person doesn't false-flag.
   def earlier_matchup?(race, matchup_key)
     return false if race.candidates.blank? || matchup_key.nil?
 
@@ -123,7 +130,7 @@ module RacesHelper
     end
 
     Ingest::Matchup.parse(matchup_key).any? do |party, surname|
-      current_surnames.fetch(party, []).exclude?(surname)
+      current_surnames.key?(party) && current_surnames.fetch(party).exclude?(surname)
     end
   end
 

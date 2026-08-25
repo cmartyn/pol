@@ -168,6 +168,10 @@ class Ingest::SyncHouseCandidatesJobTest < ActiveJob::TestCase
 
     Ingest::SyncHouseCandidatesJob.perform_now
 
+    ak_run = ScrapeRun.find_by!(source: ALASKA)
+    assert_equal 1, ak_run.new_count,
+                 "the sync must actually have run against Alaska, or the asserts below hold vacuously"
+
     bill_hill = race.candidates.find_by!(name: "Bill Hill")
     assert_equal "dem", bill_hill.caucus_with,
                  "the parser carries no caucus_with key; the job must merge the hand-set value forward"
