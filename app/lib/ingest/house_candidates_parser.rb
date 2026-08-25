@@ -321,8 +321,13 @@ module Ingest
         return false if line.blank?
 
         wanted = normalize(name)
-        wanted.present? && line.match?(/(?<!\p{L})#{Regexp.escape(wanted)}(?!\p{L})/)
+        wanted.present? && line.match?(/(?<!#{NAME_CHARACTER})#{Regexp.escape(wanted)}(?!#{NAME_CHARACTER})/)
       end
+
+      # What may not sit against either end of a matched name. The hyphen and
+      # the apostrophe are in it so that a challenger called "Mario Diaz" does
+      # not match an incumbent line naming "Mario Diaz-Balart".
+      NAME_CHARACTER = /[\p{L}'’-]/
 
       def normalize(text)
         text.to_s.unicode_normalize(:nfd).gsub(/\p{Mn}/, "").downcase.gsub(/\s+/, " ").strip
