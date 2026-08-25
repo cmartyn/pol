@@ -231,6 +231,8 @@ module Ingest
 
         nominees = nominees_in(number, names)
         return nil if nominees.blank?
+        return refuse(number, "party row is short of the nominees, so which party is whose " \
+                              "cannot be told; district skipped") if unaligned?(nominees, parties)
 
         entries = entries_for(number, nominees, parties, incumbent_line(box))
         return nil if entries.empty?
@@ -242,13 +244,28 @@ module Ingest
         refuse(number, "two #{duplicated} candidates in the general (#{named.join(', ')}); district skipped")
       end
 
-      # A row's cells by grid column, label included, so that the field row and
-      # the party row can be read off the same column index. TableGrid pads
-      # every row to the table's width, which is what makes that safe when one
-      # row carries a trailing empty cell the other does not.
+      # A row's TableGrid cells by grid column, label included, so that the
+      # field row and the party row can be read off the same column index. The
+      # cells are kept rather than reduced to their text because two things
+      # only they can say are load-bearing here: a cell with no node is one
+      # TableGrid padded in because the row was short (see #unaligned?), and
+      # Cell#blank? counts a dash placeholder as empty where String#blank?
+      # would hand back a candidate named "—".
       def row_of(grid, label)
-        row = grid.rows.find { |cells| cells.first.text.match?(label) }
-        row&.map(&:text)
+        grid.rows.find { |cells| cells.first.text.match?(label) }
+      end
+
+      # A party row short of the field row is not a party row we can use.
+      # TableGrid pads the shortfall, and padding at the end is all a missing
+      # cell leaves behind wherever it went missing from: a party row that lost
+      # its first cell reads exactly like one that lost its last, with every
+      # remaining party sitting a column to the left of the nominee it belongs
+      # to. Which of the two happened decides whose name goes on a race, so the
+      # district is refused rather than guessed at. Only columns a nominee
+      # actually stands in matter — the trailing empty cell these boxes carry
+      # on the field row and not on the party row is the ordinary shape.
+      def unaligned?(nominees, parties)
+        nominees.any? { |_name, column| parties[column].node.nil? }
       end
 
       # [[name, column], ...] for a settled field, or nil for one that is not
@@ -257,8 +274,10 @@ module Ingest
         found = []
         uncontested = false
 
-        names.each_with_index do |text, column|
-          next if column.zero? || text.blank?
+        names.each_with_index do |cell, column|
+          next if column.zero? || cell.blank?
+
+          text = cell.text
           return nil if text.match?(UNSETTLED_NOMINEE)
 
           if text.match?(UNCONTESTED_NOMINEE)
@@ -279,9 +298,14 @@ module Ingest
 
       def entries_for(number, nominees, parties, incumbent)
         nominees.filter_map do |name, column|
-          party = party_for(parties[column])
+          # The cell is there — #unaligned? has already refused the district if
+          # it was not — so an empty or unrecognised label is this candidate's
+          # problem and not the district's: they are dropped and the rest of
+          # the field stands.
+          label = parties[column].text
+          party = party_for(label)
           if party.nil?
-            warn(number, "unreadable party #{parties[column].to_s.inspect} for #{name.inspect}; candidate skipped")
+            warn(number, "unreadable party #{label.inspect} for #{name.inspect}; candidate skipped")
             next
           end
 
@@ -289,9 +313,10 @@ module Ingest
         end
       end
 
+      # Every pattern is anchored at the start of the label, so an empty label
+      # falls through them all and is reported the same way an unrecognised one
+      # is. Neither is guessed at.
       def party_for(label)
-        return nil if label.blank?
-
         PARTIES.find { |_party, pattern| label.match?(pattern) }&.first
       end
 

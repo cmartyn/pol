@@ -152,14 +152,62 @@ class Ingest::HouseCandidatesParserTest < ActiveSupport::TestCase
   # Infoboxes we cannot read
   # ---------------------------------------------------------------------
 
-  # Hand-edited from the Minnesota fixture, and not refreshed by
-  # pol:refresh_fixtures: its 1st district's Party row was filled in for one
-  # nominee only, and its 2nd district's infobox has no Party row at all.
-  test "a candidate whose party we cannot read is dropped, and the rest of the district kept" do
+  # house_candidates_malformed.html is five real Minnesota district infoboxes,
+  # hand-edited and not refreshed by pol:refresh_fixtures — a refresh would undo
+  # the edits. One mutation each:
+  #
+  #   1  Party row's second cell present but empty
+  #   2  no Party row at all
+  #   3  Party row's first cell removed, so the row is short
+  #   4  Party row's second label reads "Working Families"
+  #   5  a dash where the second nominee's name belongs
+  #
+  # Districts 1 and 4 are the two ways one candidate's party can be unreadable
+  # while the district's other candidate is fine; 2 and 3 are the two ways the
+  # party row as a whole stops being usable.
+  test "a candidate whose party is empty is dropped, and the rest of the district kept" do
     districts, warnings = parse("house_candidates_malformed.html")
 
     assert_equal [ entry("Brad Finstad", "rep", incumbent: true) ], districts.fetch(1)
     assert_includes warnings, "#{PAGE_URL} district 1: unreadable party \"\" for \"Jake Johnson\"; candidate skipped"
+  end
+
+  # A label we do not map is reported rather than filed under "other": the one
+  # we have never seen is likelier to be a Democratic variant we failed to learn
+  # than a genuine minor party, and a Democrat read as "other" is a race whose
+  # polls stop matching a candidate.
+  test "a candidate whose party label we do not recognise is dropped the same way" do
+    districts, warnings = parse("house_candidates_malformed.html")
+
+    assert_equal [ entry("Betty McCollum", "dem", incumbent: true) ], districts.fetch(4)
+    assert_includes warnings,
+                    "#{PAGE_URL} district 4: unreadable party \"Working Families\" for " \
+                    "\"Paul Wikstrom\"; candidate skipped"
+  end
+
+  # A short party row is padded out by TableGrid, and padding at the end is all
+  # a missing cell leaves behind wherever it went missing from. The 3rd lost its
+  # first party cell, so the one label left — "Republican", Tyler Bass's — now
+  # sits under Kelly Morrison, a DFL incumbent. Read as written it makes her a
+  # Republican, which is the reason this is refused and not patched up.
+  test "a party row too short to line up against the nominees is refused whole" do
+    districts, warnings = parse("house_candidates_malformed.html")
+
+    assert_not districts.key?(3)
+    assert_includes warnings, "#{PAGE_URL} district 3: party row is short of the nominees, " \
+                              "so which party is whose cannot be told; district skipped"
+  end
+
+  # TableGrid's Cell#blank? counts a dash as an empty cell; String#blank? does
+  # not, and reading the text alone would seed a candidate called "—" with the
+  # party in the column beside them.
+  test "a dash where a nominee's name belongs is not a nominee" do
+    districts, warnings = parse("house_candidates_malformed.html")
+
+    assert_not districts.key?(5),
+               "one real name and a dash is a field of one, which is not a field we read"
+    assert(warnings.none? { |warning| warning.include?("district 5") },
+           "and an unnamed nominee is the unsettled case, which does not warn")
   end
 
   test "an infobox that does not say who is of what party is refused whole" do
