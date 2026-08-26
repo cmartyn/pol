@@ -1,0 +1,7 @@
+<%# Answering in place rather than redirecting: the page this was submitted
+    from is edge-cached, so a redirect_back would land on a copy Cloudflare
+    already holds and the flash would never render. %>
+<%= turbo_stream.replace "subscription-form-#{@source}" do %>
+  <%= render "shared/subscription_form",
+        source: @source, compact: @compact, notice: @notice, alert: @alert %>
+<% end %>

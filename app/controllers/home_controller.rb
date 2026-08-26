@@ -1,6 +1,8 @@
 # The dashboard (root): both chambers at a glance, the national environment,
 # the biggest movers since last week, and the newsroom's latest output.
 class HomeController < PublicController
+  edge_cache
+
   def index
     @latest_run = ModelRun.succeeded.latest.first
 

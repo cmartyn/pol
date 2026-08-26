@@ -9,6 +9,7 @@ require_relative "test_helpers/poll_factory"
 require_relative "test_helpers/newsroom_stub_helper"
 require_relative "test_helpers/query_counting"
 require_relative "test_helpers/fragment_caching_helper"
+require_relative "test_helpers/forgery_protection_helper"
 
 # Nothing in this suite is allowed to reach the network. Wikipedia is always
 # WebMock-stubbed (see WikipediaStubHelper); localhost stays open for the
@@ -30,5 +31,6 @@ module ActiveSupport
     include NewsroomStubHelper
     include QueryCounting
     include FragmentCachingHelper
+    include ForgeryProtectionHelper
   end
 end

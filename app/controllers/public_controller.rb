@@ -3,5 +3,7 @@
 # session-based auth ApplicationController requires by default is for
 # Phase 6's admin only; the public site has no login.
 class PublicController < ApplicationController
+  include EdgeCacheable
+
   allow_unauthenticated_access
 end

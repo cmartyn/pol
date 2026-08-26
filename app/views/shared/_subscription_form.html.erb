@@ -1,20 +1,33 @@
+<%# The id is what the turbo_stream response targets. Both the footer copy
+    and an in-page copy render on the dashboard and on dispatch pages, so the
+    id has to name which one was submitted — see SubscriptionsController. %>
 <% compact = local_assigns.fetch(:compact, false) %>
-<section class="<%= compact ? "" : "rounded-lg border border-amber-200 bg-amber-50 p-5" %>" data-testid="subscription-form">
+<% notice = local_assigns[:notice] %>
+<% alert = local_assigns[:alert] %>
+<section id="subscription-form-<%= source %>" class="<%= compact ? "" : "rounded-lg border border-amber-200 bg-amber-50 p-5" %>" data-testid="subscription-form">
   <h2 class="font-serif <%= compact ? "text-lg" : "text-xl" %> font-semibold text-slate-900">Get every dispatch by email</h2>
-  <p class="mt-1 <%= compact ? "text-xs" : "text-sm" %> text-slate-600">
-    The newsroom publishes automatically. No digest and no confirmation step — the next new dispatch goes straight to your inbox.
-  </p>
+  <% if notice || alert %>
+    <p role="<%= notice ? "status" : "alert" %>" data-testid="subscription-result"
+       class="mt-1 <%= compact ? "text-xs" : "text-sm" %> <%= notice ? "text-emerald-800" : "text-red-800" %>">
+      <%= notice || alert %>
+    </p>
+  <% else %>
+    <p class="mt-1 <%= compact ? "text-xs" : "text-sm" %> text-slate-600">
+      The newsroom publishes automatically. No digest and no confirmation step — the next new dispatch goes straight to your inbox.
+    </p>
 
-  <%= form_with url: subscription_path, scope: :subscriber, class: "mt-3 flex flex-col gap-2 sm:flex-row" do |form| %>
-    <%= hidden_field_tag :source, source %>
-    <div class="hidden" aria-hidden="true">
-      <%= label_tag :website, "Website" %>
-      <%= text_field_tag :website, nil, tabindex: -1, autocomplete: "off" %>
-    </div>
-    <%= form.label :email_address, "Email address", class: "sr-only" %>
-    <%= form.email_field :email_address, required: true, autocomplete: "email", placeholder: "you@example.com",
-          class: "min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200" %>
-    <%= form.submit "Subscribe", class: "rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" %>
+    <%= form_with url: subscription_path, scope: :subscriber, class: "mt-3 flex flex-col gap-2 sm:flex-row" do |form| %>
+      <%= hidden_field_tag :source, source %>
+      <%= hidden_field_tag :compact, compact %>
+      <div class="hidden" aria-hidden="true">
+        <%= label_tag :website, "Website" %>
+        <%= text_field_tag :website, nil, tabindex: -1, autocomplete: "off" %>
+      </div>
+      <%= form.label :email_address, "Email address", class: "sr-only" %>
+      <%= form.email_field :email_address, required: true, autocomplete: "email", placeholder: "you@example.com",
+            class: "min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200" %>
+      <%= form.submit "Subscribe", class: "rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" %>
+    <% end %>
   <% end %>
 
   <p class="mt-2 text-xs text-slate-500">

@@ -1,5 +1,7 @@
 # The reverse-chron feed of every published dispatch.
 class DispatchesController < PublicController
+  edge_cache
+
   def index
     @dispatches = Dispatch.published.recent_first.includes(:race)
   end

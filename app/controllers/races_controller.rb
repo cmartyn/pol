@@ -1,6 +1,8 @@
 # The three race-facing public pages: the sortable Senate table, the
 # searchable 435-district House table, and a single race's detail page.
 class RacesController < PublicController
+  edge_cache
+
   def senate
     @latest_run = ModelRun.succeeded.latest.first
     # Normalizes sort/direction only (no query) — the view calls
