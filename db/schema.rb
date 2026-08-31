@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_31_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -35,7 +35,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
     t.float "p_rep_control", null: false
     t.jsonb "seat_histogram"
     t.datetime "updated_at", null: false
-    t.index ["model_run_id", "chamber"], name: "index_chamber_forecasts_on_model_run_id_and_chamber", unique: true
+    t.integer "variant", default: 0, null: false
+    t.index ["model_run_id", "chamber", "variant"], name: "idx_on_model_run_id_chamber_variant_67c6d1cb0a", unique: true
     t.index ["model_run_id"], name: "index_chamber_forecasts_on_model_run_id"
   end
 
@@ -81,6 +82,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
     t.index ["status", "published_at"], name: "index_dispatches_on_status_and_published_at"
   end
 
+  create_table "feed_snapshots", force: :cascade do |t|
+    t.binary "body", null: false
+    t.datetime "created_at", null: false
+    t.string "digest", null: false
+    t.datetime "fetched_at", null: false
+    t.string "source", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source", "digest"], name: "index_feed_snapshots_on_source_and_digest", unique: true
+  end
+
   create_table "forecasts", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.float "effective_poll_weight", default: 0.0, null: false
@@ -92,7 +103,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
     t.float "p_rep_win", null: false
     t.bigint "race_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["model_run_id", "race_id"], name: "index_forecasts_on_model_run_id_and_race_id", unique: true
+    t.integer "variant", default: 0, null: false
+    t.index ["model_run_id", "race_id", "variant"], name: "index_forecasts_on_model_run_id_and_race_id_and_variant", unique: true
     t.index ["model_run_id"], name: "index_forecasts_on_model_run_id"
     t.index ["race_id"], name: "index_forecasts_on_race_id"
   end
@@ -257,6 +269,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
     t.date "field_end", null: false
     t.date "field_start"
     t.string "matchup_key"
+    t.string "methodology"
+    t.string "nyt_poll_id"
+    t.string "nyt_question_id"
+    t.integer "partisan", default: 0, null: false
     t.bigint "pollster_id", null: false
     t.integer "population", default: 3, null: false
     t.bigint "race_id"
@@ -267,6 +283,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
     t.datetime "updated_at", null: false
     t.index ["dedup_digest"], name: "index_polls_on_dedup_digest", unique: true
     t.index ["field_end"], name: "index_polls_on_field_end"
+    t.index ["nyt_poll_id"], name: "index_polls_on_nyt_poll_id"
+    t.index ["nyt_question_id"], name: "index_polls_on_nyt_question_id", unique: true
     t.index ["pollster_id"], name: "index_polls_on_pollster_id"
     t.index ["race_id", "matchup_key"], name: "index_polls_on_race_id_and_matchup_key"
     t.index ["race_id"], name: "index_polls_on_race_id"
@@ -275,8 +293,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_000003) do
   create_table "pollsters", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
+    t.string "nyt_pollster_id"
     t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.index ["nyt_pollster_id"], name: "index_pollsters_on_nyt_pollster_id", unique: true
     t.index ["slug"], name: "index_pollsters_on_slug", unique: true
   end
 

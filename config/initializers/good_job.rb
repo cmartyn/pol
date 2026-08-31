@@ -6,7 +6,9 @@ Rails.application.configure do
   # adds app/ to the autoload paths, so no application constant is reachable
   # here yet. A test asserts this entry still matches Pol::Params, so the two
   # cannot drift.
-  cadence_hours = YAML.safe_load_file(Rails.root.join("config/model_params.yml")).fetch("scrape").fetch("cadence_hours")
+  params_file = YAML.safe_load_file(Rails.root.join("config/model_params.yml"))
+  cadence_hours = params_file.fetch("scrape").fetch("cadence_hours")
+  feed_cadence_hours = params_file.fetch("feed").fetch("cadence_hours")
 
   # The three daily entries carry an explicit timezone as fugit's sixth cron
   # field (good_job parses cron with fugit, which reads a trailing zone name
@@ -17,6 +19,14 @@ Rails.application.configure do
   # scrape cadence they are literals here — with a test pinning all three.
   config.good_job.enable_cron = true
   config.good_job.cron = {
+    # The NYT feed is the poll corpus; this is the sweep the model-run floor
+    # at :30 waits on. The Wikipedia sweep below still runs as the warm
+    # fallback until the rollout demotes it (see the feed migration spec).
+    pol_nyt_sync: {
+      cron: "0 */#{feed_cadence_hours} * * *",
+      class: "Ingest::NytSyncJob",
+      description: "Fetch the NYT poll CSVs and ingest new polls"
+    },
     pol_scrape: {
       cron: "0 */#{cadence_hours} * * *",
       class: "Ingest::ScrapeAllJob",

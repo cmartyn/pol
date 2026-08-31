@@ -309,7 +309,47 @@ scrape:
   # growing unwatched. Anything past it is skipped and named in the log.
   # citation: docs/BUILD_NOTES.md Phase 8 §A (state-by-state district survey)
   max_district_sources: 40
+feed:
+  # The NYT poll files (the FiveThirtyEight database, continued) are the poll
+  # corpus. Same cadence as the Wikipedia sweep it replaced: the files gain a
+  # handful of polls a day, so two hours is generous, and the model-run floor
+  # at :30 already assumes ingestion lands at :00.
+  cadence_hours: 2
+  # The files carry no API contract, so silence has to be a signal. In August
+  # 2026 they gained ~2 polls a day; three days with an unchanged content
+  # digest means the Times most likely moved or stopped the file, and the
+  # sync records a partial run to say so.
+  staleness_alarm_days: 3
+internals:
+  # How partisan-sponsored polls enter the incl_internals variant. The default
+  # variant excludes them entirely; these constants only touch the toggled-on
+  # view, so nothing here can move the headline forecast.
+  #
+  # Released internals historically run friendlier to their sponsor's side —
+  # analyses of published campaign polling put the gap anywhere from two to
+  # six points of margin, with release selection (commission many, publish
+  # the flattering ones) as the mechanism. Three points is the middle of that
+  # range and the prior the per-run empirical estimate is shrunk toward.
+  # citation: https://fivethirtyeight.com/features/when-internal-polls-mislead-a-whole-campaign-may-be-to-blame/
+  prior_shift: 3.0
+  # Weight multiplier for a flagged poll once adjusted. Half, so an internal
+  # is evidence but never outvotes an independent poll of the same race —
+  # the same posture 538's models took.
+  weight_factor: 0.5
+  # A flagged poll pairs with unflagged polls of the same race and matchup
+  # whose field end lands within this many days of its own; the margin gaps
+  # of those pairs are what the empirical estimate is made of. Three weeks
+  # trades pair count against the risk of reading real movement as bias.
+  pair_window_days: 21
+  # Pair-count shrinkage toward prior_shift, same shape as house_effects.
+  # shrinkage_k: an estimate from n pairs keeps n/(n+k) of its own signal.
+  shrinkage_k: 10.0
 site:
+  # How long the dashboard's data-source note stays up after the NYT poll
+  # corpus first lands in an environment. The note arms itself off the first
+  # feed poll's created_at and retires on its own — no deploy-day config and
+  # no cleanup commit; this is only the length of the run.
+  corpus_note_days: 7
   # Rolling comparison window for the dashboard's "Movers" module: the latest
   # succeeded model run is compared against the succeeded run closest to this
   # many days before it (closest, not "within" — history is short right now,

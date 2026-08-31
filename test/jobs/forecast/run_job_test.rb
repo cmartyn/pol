@@ -8,7 +8,7 @@ class Forecast::RunJobTest < ActiveJob::TestCase
 
     run = ModelRun.latest.first
     assert_equal "ingest", run.trigger
-    assert_equal Race.where(office: %i[senate house]).count, run.forecasts.count
+    assert_equal Race.where(office: %i[senate house]).count, run.forecasts.excl_internals.count
   end
 
   test "the trigger defaults to ingest, which is where most runs come from" do
@@ -125,9 +125,16 @@ class Forecast::RunJobTest < ActiveJob::TestCase
   end
 
   test "the ingest seam queues a run rather than running one inline, carrying the new poll ids" do
+    polls = [
+      create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 3),
+                  race: races(:senate_maine), entry_mode: :nyt),
+      create_poll(pollster: pollsters(:cardinal_research), field_end: Date.new(2026, 7, 4),
+                  race: races(:senate_maine), entry_mode: :nyt)
+    ]
+
     assert_no_difference "ModelRun.count" do
-      assert_enqueued_with(job: Forecast::RunJob, args: [ { trigger: :ingest, poll_ids: [ 7, 9 ] } ]) do
-        Ingest.after_new_polls!([ 7, 9 ])
+      assert_enqueued_with(job: Forecast::RunJob, args: [ { trigger: :ingest, poll_ids: polls.map(&:id) } ]) do
+        Ingest.after_new_polls!(polls.map(&:id))
       end
     end
   end
@@ -178,7 +185,11 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     assert_enqueued_jobs 0, only: [ Newsroom::PollReactionsJob, Newsroom::MovementNotesJob ]
   end
 
-  test "a scrape that found new polls ends with a forecast queued" do
+  # The Wikipedia sweep still writes rows as the warm fallback, but its rows
+  # left the model corpus — a run over an unchanged corpus would reproduce
+  # the same numbers, and worse, the newsroom would react to polls no public
+  # surface lists. The seam filters them.
+  test "a scrape of the retired source queues no forecast run" do
     stub_wikipedia_page("2026 United States Senate election in Maine", body: poll_page_html(rows: [
       { pollster: "Harbor Analytics", dates: "July 8–10, 2026", sample: "600 (LV)", dem: "48%", rep: "44%" }
     ]))
@@ -186,8 +197,10 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     stub_wikipedia_page("2026 United States elections", body: poll_page_html(rows: [], dem_column: "Democratic", rep_column: "Republican"))
     stub_district_pages
 
-    assert_enqueued_jobs 1, only: Forecast::RunJob do
-      Ingest::ScrapeAllJob.perform_now
+    assert_no_enqueued_jobs only: Forecast::RunJob do
+      assert_difference "Poll.scraped.count", 1 do
+        Ingest::ScrapeAllJob.perform_now
+      end
     end
   end
 end

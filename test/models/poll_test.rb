@@ -169,4 +169,43 @@ class PollTest < ActiveSupport::TestCase
     assert_not_predicate polls(:maine_poll_two), :placeholder_opponent?
     assert_equal "Matchup not recorded", polls(:maine_poll_two).matchup_heading
   end
+
+  test "the digest salt separates rows the base fields cannot" do
+    base = { pollster_slug: "harbor", race_id: 1,
+             field_start: Date.new(2026, 7, 8), field_end: Date.new(2026, 7, 10),
+             results: [ { party: "dem", pct: 48.0 }, { party: "rep", pct: 44.0 } ] }
+
+    assert_equal Poll.compute_digest(**base), Poll.compute_digest(**base, salt: nil)
+    assert_not_equal Poll.compute_digest(**base, salt: "q-1"), Poll.compute_digest(**base, salt: "q-2")
+  end
+
+  test "model_corpus reads feed and manual rows, never scraped ones" do
+    scraped = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 1),
+                          race: races(:senate_maine), entry_mode: :scraped)
+    manual = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 2),
+                         race: races(:senate_maine), entry_mode: :manual)
+    feed = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 3),
+                       race: races(:senate_maine), entry_mode: :nyt)
+
+    corpus = Poll.model_corpus
+    assert_includes corpus, manual
+    assert_includes corpus, feed
+    assert_not_includes corpus, scraped
+  end
+
+  test "a generic-ballot poll is never a placeholder matchup, whatever its answers are named" do
+    poll = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 8, 1),
+                       results: { dem: 49.7, rep: 42.8 }, entry_mode: :nyt,
+                       raw_payload: { "columns" => { "Generic Democrat (D)" => "49.7",
+                                                     "Generic Republican (R)" => "42.8" } })
+
+    assert_not_predicate poll, :placeholder_opponent?
+  end
+
+  test "the admin doors are in the corpus; only retired scraped rows are out" do
+    csv_poll = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 4),
+                           race: races(:senate_maine), entry_mode: :csv)
+
+    assert_includes Poll.model_corpus, csv_poll
+  end
 end

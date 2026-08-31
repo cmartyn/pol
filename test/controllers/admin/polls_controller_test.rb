@@ -31,13 +31,15 @@ class Admin::PollsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index filters by entry_mode" do
+    # The fixture polls are all manual now (they model the corpus the model
+    # reads), so the mode filtered for is the feed's.
     Ingest::RecordPoll.call(
-      { pollster_name: "Manual Pollster", race: races(:senate_maine), field_end: Date.new(2026, 8, 1),
-        source_url: "https://example.com/manual-1" },
-      results: [ { party: :dem, pct: 50.0 }, { party: :rep, pct: 40.0 } ], entry_mode: :manual
+      { pollster_name: "Feed Pollster", race: races(:senate_maine), field_end: Date.new(2026, 8, 1),
+        source_url: "https://example.com/nyt-1" },
+      results: [ { party: :dem, pct: 50.0 }, { party: :rep, pct: 40.0 } ], entry_mode: :nyt
     )
 
-    get admin_polls_path, params: { entry_mode: "manual" }
+    get admin_polls_path, params: { entry_mode: "nyt" }
     assert_select "[data-testid='admin-poll-row']", count: 1
   end
 

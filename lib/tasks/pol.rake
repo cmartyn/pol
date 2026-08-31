@@ -19,6 +19,27 @@ namespace :pol do
     puts
   end
 
+  desc "Fetch the NYT poll CSVs once and ingest new polls (first run doubles as the backfill)"
+  task nyt_sync: :environment do
+    outcomes = Ingest::Nyt::Sync.new.call
+
+    puts
+    printf("  %-20s %-10s %6s %5s %5s %5s %5s\n", "Source", "Status", "Qs", "New", "Dup", "Skip", "Ref")
+    puts "  " + "-" * 62
+    outcomes.each do |outcome|
+      printf("  %-20s %-10s %6d %5d %5d %5d %5d\n", outcome.source, outcome.status,
+             outcome.fetched, outcome.created, outcome.duplicate, outcome.skipped, outcome.refused)
+      puts "      #{outcome.error}" if outcome.error.present?
+      next if outcome.refusals.blank?
+
+      puts "      refused: " + outcome.refusals.sort.map { |reason, count| "#{reason} ×#{count}" }.join(", ")
+    end
+    puts "  " + "-" * 62
+    printf("  %-20s %-10s %6d %5d %5d %5d %5d\n", "TOTAL", "",
+           outcomes.sum(&:fetched), outcomes.sum(&:created), outcomes.sum(&:duplicate),
+           outcomes.sum(&:skipped), outcomes.sum(&:refused))
+  end
+
   desc "Scrape every Wikipedia poll source once and ingest new polls"
   task scrape: :environment do
     outcomes = Ingest::Scraper.new.call
@@ -100,12 +121,12 @@ namespace :pol do
     printf("  %-30s %30s\n", "  from", "#{runner.generic_ballot.poll_count} polls, W = " \
                                        "#{runner.generic_ballot.weight.round(2)}, " \
                                        "#{runner.generic_ballot.window_days}-day window")
-    printf("  %-30s %30s\n", "Races forecast", "#{run.forecasts.count} " \
+    printf("  %-30s %30s\n", "Races forecast", "#{run.forecasts.excl_internals.count} " \
                                                "(#{Race.senate.count} senate, #{Race.house.count} house)")
     printf("  %-30s %30.4f\n", "Error inflation (t)", runner.simulation.time_multiplier)
     puts "  " + "-" * 62
 
-    run.chamber_forecasts.order(:chamber).each do |chamber|
+    run.chamber_forecasts.excl_internals.order(:chamber).each do |chamber|
       neither = 1.0 - chamber.p_dem_control - chamber.p_rep_control
       printf("  %-10s D %5.1f%%   R %5.1f%%%s   mean D seats %6.1f\n",
              chamber.chamber.capitalize, 100 * chamber.p_dem_control, 100 * chamber.p_rep_control,
@@ -275,13 +296,13 @@ end
 # the dashboard's Movers module uses — so the rake task and the site agree on
 # what "moved" means rather than each carrying its own cutoff.
 def biggest_movers(run, previous, limit: 10)
-  before = previous.forecasts.pluck(:race_id, :p_dem_win).to_h
+  before = previous.forecasts.excl_internals.pluck(:race_id, :p_dem_win).to_h
   names = Race.where(id: before.keys).pluck(:id, :state, :district, :office).to_h do |id, state, district, office|
     [ id, office == "house" ? "#{state}-#{format('%02d', district)}" : "#{state} #{office.capitalize}" ]
   end
   floor_pp = Pol::Params.fetch!(:site, :movers_floor_pp)
 
-  run.forecasts
+  run.forecasts.excl_internals
      .where(race_id: before.keys)
      .pluck(:race_id, :p_dem_win)
      .map { |race_id, now| [ names[race_id], 100 * (now - before[race_id]), now ] }

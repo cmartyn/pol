@@ -37,7 +37,7 @@ module Admin
       digest = Poll.compute_digest(
         pollster_slug: pollster.slug, race_id: race_id,
         field_start: @attrs[:field_start], field_end: @attrs[:field_end],
-        results: digest_results
+        results: digest_results, salt: @poll.nyt_question_id
       )
 
       colliding = Poll.where.not(id: @poll.id).find_by(dedup_digest: digest)

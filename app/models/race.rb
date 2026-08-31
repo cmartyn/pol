@@ -49,7 +49,7 @@ class Race < ApplicationRecord
   # exists yet. Rendering many races at once (Phase 4 list pages) should
   # prefer Forecast.latest_for_races directly instead of calling this in a
   # loop, to avoid N+1 queries.
-  def latest_forecast
-    Forecast.latest_for_races.find_by(race_id: id)
+  def latest_forecast(variant: :excl_internals)
+    Forecast.latest_for_races(variant: variant).find_by(race_id: id)
   end
 end

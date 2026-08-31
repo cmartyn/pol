@@ -34,7 +34,7 @@ module Site
 
       private
         def forecasts
-          Forecast.where(race_id: @race.id)
+          Forecast.excl_internals.where(race_id: @race.id)
             .joins(:model_run).merge(ModelRun.succeeded)
             .includes(:model_run)
             .order("model_runs.started_at ASC")

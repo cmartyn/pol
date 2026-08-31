@@ -41,7 +41,14 @@ class ScrapeRun < ApplicationRecord
     "no_party_columns" => "no party-labelled columns",
     "no_candidate_column_match" => "named nobody we hold",
     "layout_unrecognized" => "table layout not recognised",
-    "district_unresolved" => "no district on the table"
+    "district_unresolved" => "no district on the table",
+    # NYT feed reasons — per question rather than per table.
+    "unknown_race" => "no race on the board matches",
+    "ambiguous_senate_race" => "two senate races share the state",
+    "generic_candidate" => "placeholder candidate answer",
+    "too_few_parties" => "fewer than two parties answered",
+    "missing_field_dates" => "no usable field dates",
+    "record_invalid" => "mapped but failed validation"
   }.freeze
 
   # [[reason, count, label], ...] — most-refused first, then alphabetical, so

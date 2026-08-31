@@ -13,7 +13,12 @@ module Ingest
   # one created two hours ago look identical in the table. Forecast::RunJob
   # carries them through to Newsroom.after_model_run! once the run succeeds.
   def self.after_new_polls!(poll_ids)
-    poll_ids = Array(poll_ids)
+    # Only polls the model actually reads get to queue a run — and, through
+    # it, a newsroom reaction. The Wikipedia sweep keeps writing scraped
+    # rows as the warm fallback, and without this filter every scraped twin
+    # of a feed poll would trigger a run that reproduces the same numbers
+    # and a published dispatch about a poll no public surface lists.
+    poll_ids = Poll.model_corpus.where(id: Array(poll_ids)).pluck(:id)
     return if poll_ids.empty?
 
     Rails.logger.info("Ingest: #{poll_ids.size} new poll(s); queueing a forecast run")

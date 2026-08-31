@@ -35,7 +35,7 @@
     freshness, so a new poll for a pollster with no estimate still changes
     the page. Site::PollsterTable.build's three queries live inside the
     block so a cache hit skips them. %>
-<% cache [ "pollster-table", @latest_run, Site::CacheKey.collection_freshness(Poll.all) ] do %>
+<% cache [ "pollster-table", @latest_run, Site::CacheKey.collection_freshness(Poll.model_corpus) ] do %>
   <% rows = Site::PollsterTable.build(model_run: @latest_run) %>
   <% estimated = rows.count(&:estimated?) %>
 

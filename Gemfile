@@ -48,6 +48,9 @@ gem "ruby_llm"
 # HTML/XML parsing for Wikipedia ingestion [https://nokogiri.org]
 gem "nokogiri"
 
+# Not a default gem since Ruby 3.4; the NYT poll feed is CSV.
+gem "csv"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

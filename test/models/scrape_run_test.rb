@@ -66,8 +66,10 @@ class ScrapeRunTest < ActiveSupport::TestCase
     assert_equal [ [ "reason_from_the_future", 2, "reason_from_the_future" ] ], run.refusals
   end
 
-  test "every reason the parser can emit has a label" do
-    assert_equal Ingest::PollTableParser::REFUSAL_REASONS.map(&:to_s).sort,
-                 ScrapeRun::REASON_LABELS.keys.sort
+  test "every reason the parser or the feed mapper can emit has a label" do
+    emittable = Ingest::PollTableParser::REFUSAL_REASONS.map(&:to_s) +
+                Ingest::Nyt::Mapper::REFUSAL_REASONS.map(&:to_s)
+
+    assert_equal emittable.sort.uniq, ScrapeRun::REASON_LABELS.keys.sort
   end
 end

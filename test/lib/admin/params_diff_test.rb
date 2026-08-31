@@ -56,4 +56,16 @@ class Admin::ParamsDiffTest < ActiveSupport::TestCase
     assert_empty diff[:removed]
     assert_empty diff[:changed]
   end
+
+  test "the run-computed internals estimate never shows up as a param change" do
+    base = { "averaging" => { "window_days" => 45 } }
+    current = base.merge("internals_estimate" => { "shift" => 3.31, "pair_count" => 4 })
+    previous = base.merge("internals_estimate" => { "shift" => 3.27, "pair_count" => 3 })
+
+    diff = Admin::ParamsDiff.call(current: current, previous: previous)
+
+    assert_empty diff[:added]
+    assert_empty diff[:removed]
+    assert_empty diff[:changed]
+  end
 end

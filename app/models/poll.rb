@@ -2,7 +2,11 @@ require "digest"
 
 class Poll < ApplicationRecord
   enum :population, { lv: 0, rv: 1, a: 2, unknown: 3 }, default: :unknown
-  enum :entry_mode, { scraped: 0, manual: 1, csv: 2 }
+  enum :entry_mode, { scraped: 0, manual: 1, csv: 2, nyt: 3 }
+
+  # Sponsor-party flag carried by the NYT feed. Prefixed because a bare
+  # `none` scope would collide with ActiveRecord::Relation#none.
+  enum :partisan, { none: 0, dem: 1, rep: 2, ind: 3, oth: 4 }, prefix: true
 
   belongs_to :pollster
   belongs_to :race, optional: true
@@ -25,8 +29,29 @@ class Poll < ApplicationRecord
   scope :for_generic_ballot, -> { where(race_id: nil) }
   scope :recent_first, -> { order(field_end: :desc, id: :desc) }
 
+  # The polls the model reads: every entry door except the retired
+  # Wikipedia-scraped rows, which stay in the table for provenance but must
+  # never mix back in — the two sources name pollsters differently, and
+  # letting both in would double-count every poll they share. Retirement is
+  # the marked case, so a new door (the admin CSV import, a future feed) is
+  # in the corpus unless it opts out.
+  scope :model_corpus, -> { where.not(entry_mode: :scraped) }
+
+  # Flagged as sponsored by a party-aligned client. What the internals
+  # toggle includes or excludes.
+  scope :internal, -> { where.not(partisan: :none) }
+
   def generic_ballot?
     race_id.nil?
+  end
+
+  # Sponsored by a party-aligned client — the polls the internals toggle is
+  # about. Broader than a campaign internal: the flag comes from the feed's
+  # `partisan` column (any party-aligned sponsor), NOT its `internal` column
+  # — wiring that narrower column in here would silently shrink the
+  # toggle's population.
+  def internal?
+    !partisan_none?
   end
 
   # "Matt Dunlap (D) vs Paul LePage (R)" — which contest this poll measured,
@@ -68,13 +93,19 @@ class Poll < ApplicationRecord
     # independent of the order results were passed in — two polls with the
     # same pollster/race/dates/results hash identically either way, which is
     # exactly what dedup needs.
-    def compute_digest(pollster_slug:, race_id:, field_start:, field_end:, results:)
+    # `salt` distinguishes rows the base fields cannot: two NYT questions in
+    # one poll (an LV and an RV read, say) can share pollster, race, dates
+    # and even toplines, and without the question id in the digest the second
+    # would be swallowed as a duplicate of the first. Legacy callers pass
+    # nothing and their digests are unchanged.
+    def compute_digest(pollster_slug:, race_id:, field_start:, field_end:, results:, salt: nil)
       pairs = results.map do |result|
         result = result.with_indifferent_access
         "#{result["party"]}:#{format("%.1f", result["pct"].to_f)}"
       end.sort
 
       raw = [ pollster_slug.to_s, race_id.to_s, field_start.to_s, field_end.to_s, pairs.join(",") ].join("|")
+      raw << "|#{salt}" if salt.present?
       Digest::SHA256.hexdigest(raw)
     end
   end

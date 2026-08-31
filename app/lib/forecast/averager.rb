@@ -34,9 +34,28 @@ class Forecast::Averager
   # Forecast::HouseEffects. Defaulting it to empty is what keeps every caller
   # that does not know about house effects (and every Phase 3 golden) reading
   # exactly the numbers it read before.
-  def initialize(as_of:, house_effects: {})
+  #
+  # `internals` is what this averager does with partisan-sponsored polls.
+  # :exclude — the default, and the default variant everywhere — drops them
+  # before anything counts them. :adjusted keeps them, shifts each margin
+  # `internals_shift` points toward the non-sponsor party (see
+  # Forecast::Internals for where that number comes from), and multiplies
+  # their weight by internals.weight_factor. A sponsor aligned with neither
+  # side (an IND-flagged poll of a D−R race) has no direction to shift
+  # toward and takes only the weight penalty.
+  def initialize(as_of:, house_effects: {}, internals: :exclude, internals_shift: nil)
     @as_of = as_of.to_date
     @house_effects = house_effects || {}
+    @internals = internals.to_sym
+    raise ArgumentError, "internals must be :exclude or :adjusted (#{internals.inspect})" unless %i[exclude adjusted].include?(@internals)
+    if @internals == :adjusted && internals_shift.nil?
+      # nil.to_f is 0.0 — an "adjusted" averager that silently applies no
+      # shift and only down-weights would produce plausible wrong numbers.
+      raise ArgumentError, "internals: :adjusted requires internals_shift"
+    end
+
+    @internals_shift = internals_shift.to_f
+    @internals_weight_factor = Pol::Params.fetch!(:internals, :weight_factor).to_f
     @window_days = Pol::Params.fetch!(:averaging, :window_days)
     @extended_window_days = Pol::Params.fetch!(:averaging, :extended_window_days)
     @min_polls_in_window = Pol::Params.fetch!(:averaging, :min_polls_in_window)
@@ -50,14 +69,16 @@ class Forecast::Averager
 
   # `polls` may be a relation or a plain array; callers that are about to
   # average hundreds of races should preload poll_results and pass arrays.
+  # Defaults read the model corpus — the feed plus manual entries — never the
+  # retired Wikipedia rows.
   def for_race(race, side_a: :dem, side_b: :rep, polls: nil)
-    call(polls: polls || race.polls.includes(:poll_results), side_a: side_a, side_b: side_b)
+    call(polls: polls || race.polls.model_corpus.includes(:poll_results), side_a: side_a, side_b: side_b)
   end
 
   # The national environment: the same machinery over generic-ballot polls,
   # whose results carry a party but no candidate.
   def for_generic_ballot(polls: nil)
-    call(polls: polls || Poll.for_generic_ballot.includes(:poll_results))
+    call(polls: polls || Poll.model_corpus.for_generic_ballot.includes(:poll_results))
   end
 
   def call(polls:, side_a: :dem, side_b: :rep)
@@ -65,8 +86,14 @@ class Forecast::Averager
 
     # A poll fielded after the as-of date does not exist yet as far as this
     # average is concerned; back-dated runs have to reproduce what the model
-    # would have said at the time.
-    in_hand = polls.select { |poll| poll.field_end.present? && poll.field_end <= as_of }
+    # would have said at the time. An excluded internal never existed either:
+    # filtered here, at the door, so it appears in no count this Result
+    # reports — the race page's "N polls, M skipped" describes the corpus the
+    # variant actually read.
+    in_hand = polls.select do |poll|
+      poll.field_end.present? && poll.field_end <= as_of &&
+        (@internals == :adjusted || !poll.internal?)
+    end
 
     # Polls that do not measure the modelled matchup are dropped before
     # anything else, including the one-per-pollster cut. The brief lists the
@@ -140,9 +167,12 @@ class Forecast::Averager
   end
 
   # exp(-ln2 × age / half_life) × sqrt(min(n, cap) / pivot). A poll with the
-  # pivot sample size and no age weighs exactly 1.
+  # pivot sample size and no age weighs exactly 1 — halved (by default) when
+  # it is a partisan internal an :adjusted averager let in.
   def weight_for(poll)
-    weight_at_age(age_days(poll), poll.sample_size)
+    weight = weight_at_age(age_days(poll), poll.sample_size)
+    weight *= @internals_weight_factor if @internals == :adjusted && poll.internal?
+    weight
   end
 
   # The same function on an age given explicitly, so Phase 9 can weigh a poll
@@ -223,7 +253,20 @@ class Forecast::Averager
       # lookup only ever holds effects the run decided to apply, which is why
       # there is no threshold test here.
       adjustment = @house_effects[poll.pollster_id].to_f
-      Measurement.new(poll: poll, margin: a - b - adjustment, adjustment: adjustment)
+      margin = a - b - adjustment + internals_shift_for(poll, side_a, side_b)
+      Measurement.new(poll: poll, margin: margin, adjustment: adjustment)
+    end
+
+    # The sponsor-lean discount, signed for this matchup's sides: a poll
+    # sponsored by side A's party overstates side A, so its margin comes
+    # down; side B's party, up. Zero unless this averager is :adjusted, the
+    # poll is flagged, and the sponsor aligns with one of the two sides.
+    def internals_shift_for(poll, side_a, side_b)
+      return 0.0 unless @internals == :adjusted && poll.internal?
+      return -@internals_shift if poll.partisan == side_a.to_s
+      return @internals_shift if poll.partisan == side_b.to_s
+
+      0.0
     end
 
     def top_pct(poll, party)

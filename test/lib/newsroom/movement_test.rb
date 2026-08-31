@@ -97,4 +97,16 @@ class Newsroom::MovementTest < ActiveSupport::TestCase
 
     assert_equal [ @other_race, @race ], Newsroom::Movement.call(model_run: @latest).races.map(&:race)
   end
+
+  test "movement reads only the published variant, never the internals one" do
+    previous = earlier_run(days_before: 7, p_dem_win: 0.62)
+    # A wild swing that exists only in the internals variant of both runs —
+    # the published (excl) rows are identical, so nothing moved.
+    Forecast.create!(model_run: previous, race: @race, variant: :incl_internals,
+                     p_dem_win: 0.10, p_rep_win: 0.90, mean_margin: 0.0)
+    Forecast.create!(model_run: @latest, race: @race, variant: :incl_internals,
+                     p_dem_win: 0.90, p_rep_win: 0.10, mean_margin: 0.0)
+
+    assert_empty Newsroom::Movement.call(model_run: @latest).races
+  end
 end

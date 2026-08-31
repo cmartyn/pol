@@ -36,7 +36,7 @@ module Site
       races = Race.house.order(:state, :district).to_a
       race_ids = races.map(&:id)
       forecasts = Forecast.latest_for_races.where(race_id: race_ids).index_by(&:race_id)
-      poll_stats = Poll.where(race_id: race_ids)
+      poll_stats = Poll.model_corpus.where(race_id: race_ids)
         .group(:race_id)
         .select(:race_id, "COUNT(*) AS poll_count", "MAX(field_end) AS last_poll_date")
         .index_by(&:race_id)

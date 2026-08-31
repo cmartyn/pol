@@ -10,13 +10,19 @@ module Admin
 
     Change = Struct.new(:key, :before, :after, keyword_init: true)
 
+    # Run-computed values that ride in the snapshot for audit but are data,
+    # not config: the internals estimate drifts a little every run, and
+    # diffing it would bury a real, deliberate param change under permanent
+    # noise.
+    RUN_DATA_KEYS = %w[internals_estimate].freeze
+
     # ParamsDiff.call(current: run.params_snapshot, previous: previous_run&.params_snapshot)
     # => { added: [Change...], removed: [Change...], changed: [Change...] }
     # Either snapshot may be nil (an old or failed run may have none) — nil
     # is treated the same as an empty snapshot rather than raising.
     def call(current:, previous:)
-      current_flat = flatten(current || {})
-      previous_flat = flatten(previous || {})
+      current_flat = flatten((current || {}).except(*RUN_DATA_KEYS))
+      previous_flat = flatten((previous || {}).except(*RUN_DATA_KEYS))
 
       {
         added: (current_flat.keys - previous_flat.keys).sort.map { |key| Change.new(key: key, before: nil, after: current_flat[key]) },

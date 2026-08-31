@@ -7,7 +7,7 @@
     and so a cache hit skips the ChamberForecast lookup and histogram build
     below rather than paying for them regardless. %>
 <% cache [ "chamber-card", chamber, model_run ] do %>
-  <% chamber_forecast = ChamberForecast.find_by(model_run_id: model_run.id, chamber: chamber) %>
+  <% chamber_forecast = ChamberForecast.excl_internals.find_by(model_run_id: model_run.id, chamber: chamber) %>
   <% histogram = chamber_forecast && Site::Charts::SeatHistogram.build(chamber_forecast) %>
   <div class="rounded-lg border border-slate-200 p-5" data-testid="chamber-card-<%= title.downcase %>">
     <%# A tracked label rather than a serif heading: on a card whose whole job

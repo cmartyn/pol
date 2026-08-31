@@ -31,7 +31,20 @@ class Forecast::Runner
 
   attr_reader :trigger, :as_of, :logger
   # Set during the run, for callers that want to report on it (bin/rails pol:model).
-  attr_reader :model_run, :national_env, :generic_ballot, :simulation, :race_models, :house_effects
+  # The un-suffixed readers carry the DEFAULT variant (internals excluded) —
+  # the published numbers — so nothing that reported on a run before variants
+  # existed has to know they do now. `variants` holds both.
+  attr_reader :model_run, :house_effects, :variants, :internals_estimate
+
+  def default_variant = variants&.fetch(:excl_internals, nil)
+  def generic_ballot = default_variant&.generic_ballot
+  def national_env = default_variant&.national_env
+  def race_models = default_variant&.race_models
+  def simulation = default_variant&.simulation
+
+  # Everything one variant computed, from its own averager: the corpus and
+  # the internals treatment differ, the seed and the race board do not.
+  Variant = Struct.new(:generic_ballot, :national_env, :race_models, :simulation, keyword_init: true)
 
   def call
     @model_run = start_run!
@@ -93,34 +106,62 @@ class Forecast::Runner
 
     def forecast!
       # Before any averaging, and from unadjusted averages — the single pass
-      # described in Forecast::HouseEffects. The lookup then threads through
-      # every average this run takes, the generic ballot and all 470 races,
-      # because one averager instance serves all of them.
+      # described in Forecast::HouseEffects. Estimated once, on the
+      # internals-excluded corpus, and applied in both variants; the
+      # internals shift is likewise one number per run.
       @house_effects = Forecast::HouseEffects.call(as_of: as_of)
-      averager = Forecast::Averager.new(as_of: as_of, house_effects: @house_effects.lookup)
-      @generic_ballot = averager.for_generic_ballot
-      @national_env = national_environment(@generic_ballot)
-      @race_models = build_race_models(averager)
-      @simulation = Forecast::Simulator.new(
-        entries: @race_models.map(&:to_entry),
+      @internals_estimate = Forecast::Internals.estimate(as_of: as_of)
+
+      # The default variant first, computed exactly as a run always computed:
+      # same averager construction, same race order, its own simulator on the
+      # run's seed. The incl_internals pass reuses the seed deliberately —
+      # identical shared-error draws make the toggle's delta a paired
+      # comparison of the two corpora, never resampling noise.
+      @variants = {
+        excl_internals: compute_variant(internals: :exclude),
+        incl_internals: compute_variant(internals: :adjusted)
+      }
+
+      # One transaction for both variants: the toggle must never find one
+      # published without the other.
+      ActiveRecord::Base.transaction do
+        write_house_effects
+        @variants.each do |variant, computed|
+          write_forecasts(variant, computed.simulation)
+          write_chamber_forecasts(variant, computed.simulation)
+        end
+        model_run.update!(
+          status: :succeeded, finished_at: Time.current,
+          params_snapshot: model_run.params_snapshot.merge("internals_estimate" => @internals_estimate.to_snapshot)
+        )
+      end
+
+      logger.info(
+        "Forecast::Runner: run #{model_run.id} (#{trigger}) forecast #{race_models.size} races ×2 variants, " \
+        "national env #{format('%+.2f', national_env)}, " \
+        "#{@house_effects.applied_count} of #{@house_effects.effects.size} house effects applied, " \
+        "internals shift #{format('%.2f', @internals_estimate.shift)} (#{@internals_estimate.pair_count} pairs), " \
+        "seed #{model_run.rng_seed}"
+      )
+    end
+
+    def compute_variant(internals:)
+      averager = Forecast::Averager.new(
+        as_of: as_of, house_effects: @house_effects.lookup,
+        internals: internals, internals_shift: @internals_estimate.shift
+      )
+      generic_ballot = averager.for_generic_ballot(polls: generic_polls)
+      national_env = national_environment(generic_ballot)
+      race_models = build_race_models(averager, national_env)
+      simulation = Forecast::Simulator.new(
+        entries: race_models.map(&:to_entry),
         seed: model_run.rng_seed,
         as_of: as_of,
         n_sims: @n_sims
       ).call
 
-      ActiveRecord::Base.transaction do
-        write_house_effects
-        write_forecasts
-        write_chamber_forecasts
-        model_run.update!(status: :succeeded, finished_at: Time.current)
-      end
-
-      logger.info(
-        "Forecast::Runner: run #{model_run.id} (#{trigger}) forecast #{@race_models.size} races, " \
-        "national env #{format('%+.2f', national_env)}, " \
-        "#{@house_effects.applied_count} of #{@house_effects.effects.size} house effects applied, " \
-        "seed #{model_run.rng_seed}"
-      )
+      Variant.new(generic_ballot: generic_ballot, national_env: national_env,
+                  race_models: race_models, simulation: simulation)
     end
 
     # The national environment is the generic-ballot average. With no
@@ -139,19 +180,29 @@ class Forecast::Runner
     # Races in id order: the simulator takes its draws in the order it is
     # handed the entries, so a stable order is part of what makes a seed
     # reproduce a run. Candidates and polls are loaded in two queries rather
-    # than 470 apiece.
-    def build_race_models(averager)
-      races = Race.where(office: MODELLED_OFFICES).includes(:candidates).order(:id).to_a
-      polls = Poll.where(race_id: races.map(&:id)).includes(:poll_results).group_by(&:race_id)
-
+    # than 470 apiece — once for the run, shared by both variants; each
+    # variant's averager decides what to do with the internals among them.
+    def build_race_models(averager, national_env)
       races.map do |race|
         Forecast::RaceModel.new(
           race: race,
           national_env: national_env,
           averager: averager,
-          polls: polls.fetch(race.id, [])
+          polls: race_polls.fetch(race.id, [])
         )
       end
+    end
+
+    def races
+      @races ||= Race.where(office: MODELLED_OFFICES).includes(:candidates).order(:id).to_a
+    end
+
+    def race_polls
+      @race_polls ||= Poll.model_corpus.where(race_id: races.map(&:id)).includes(:poll_results).group_by(&:race_id)
+    end
+
+    def generic_polls
+      @generic_polls ||= Poll.model_corpus.for_generic_ballot.includes(:poll_results).to_a
     end
 
     # In the run's own transaction, alongside the forecasts they produced, so
@@ -163,11 +214,12 @@ class Forecast::Runner
       HouseEffect.insert_all!(rows) if rows.any?
     end
 
-    def write_forecasts
+    def write_forecasts(variant, simulation)
       now = Time.current
       rows = simulation.races.map do |outcome|
         {
           model_run_id: model_run.id,
+          variant: ::Forecast.variants.fetch(variant.to_s),
           race_id: outcome.race_id,
           p_dem_win: outcome.p_dem_win,
           p_rep_win: outcome.p_rep_win,
@@ -204,11 +256,12 @@ class Forecast::Runner
     # same assumptions is inside sampling noise at 10,000 sims.
     # See docs/BUILD_NOTES.md Phase 10 §A and §C — and §H for the current
     # board, which is a different thing from that controlled comparison.
-    def write_chamber_forecasts
+    def write_chamber_forecasts(variant, simulation)
       now = Time.current
       rows = simulation.chambers.map do |outcome|
         {
           model_run_id: model_run.id,
+          variant: ChamberForecast.variants.fetch(variant.to_s),
           chamber: ChamberForecast.chambers.fetch(outcome.chamber.to_s),
           p_dem_control: outcome.p_dem_control,
           p_rep_control: outcome.p_rep_control,

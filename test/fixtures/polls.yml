@@ -12,7 +12,7 @@ maine_poll_one:
   population: lv
   source_url: https://example.com/polls/maine-1
   dedup_digest: fixture-digest-maine-poll-one
-  entry_mode: scraped
+  entry_mode: manual
   raw_payload:
     source_row: "Beacon Polling (7/10-7/14, LV 812): Ellis 47.5, Rivers 44.0"
 
@@ -25,7 +25,7 @@ maine_poll_two:
   population: rv
   source_url: https://example.com/polls/maine-2
   dedup_digest: fixture-digest-maine-poll-two
-  entry_mode: scraped
+  entry_mode: manual
 
 generic_ballot_poll:
   pollster: delta_metrics
@@ -35,4 +35,4 @@ generic_ballot_poll:
   population: lv
   source_url: https://example.com/polls/generic-1
   dedup_digest: fixture-digest-generic-ballot-one
-  entry_mode: scraped
+  entry_mode: manual

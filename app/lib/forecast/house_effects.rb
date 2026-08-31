@@ -102,13 +102,19 @@ class Forecast::HouseEffects
   end
 
   private
+    # The internals-excluded model corpus, in both queries: house effects are
+    # estimated once per run and applied in BOTH variants, and sponsor bias
+    # follows the sponsor rather than the pollster — letting flagged polls
+    # into this estimation would launder a client's lean into the firm's
+    # baseline correction and from there into the default variant's averages.
     def generic_ballot_polls
-      Poll.for_generic_ballot.where(field_end: ..as_of).includes(:poll_results).to_a
+      Poll.model_corpus.partisan_none.for_generic_ballot
+          .where(field_end: ..as_of).includes(:poll_results).to_a
     end
 
     def races_with_polls
       races = Race.where(office: MODELLED_OFFICES).includes(:candidates).order(:id).to_a
-      polls = Poll.where(race_id: races.map(&:id), field_end: ..as_of)
+      polls = Poll.model_corpus.partisan_none.where(race_id: races.map(&:id), field_end: ..as_of)
                   .includes(:poll_results).group_by(&:race_id)
 
       races.filter_map { |race| [ race, polls[race.id] ] if polls[race.id].present? }

@@ -162,4 +162,23 @@ class Admin::UpdatePollTest < ActiveSupport::TestCase
     assert result.invalid?
     assert_equal original_pct, @poll.reload.poll_results.find_by(party: :dem).pct
   end
+
+  test "editing a feed poll keeps its salted digest, so twin questions stay distinct" do
+    poll = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 10),
+                       race: races(:senate_maine), entry_mode: :nyt,
+                       nyt_question_id: "q-lv", results: { dem: 48.0, rep: 44.0 })
+    twin = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 10),
+                       race: races(:senate_maine), entry_mode: :nyt,
+                       nyt_question_id: "q-rv", results: { dem: 48.0, rep: 44.0 })
+
+    result = Admin::UpdatePoll.call(poll, {
+      pollster_name: poll.pollster.name, race_id: poll.race_id,
+      field_start: poll.field_start, field_end: poll.field_end,
+      sample_size: poll.sample_size, population: poll.population,
+      source_url: poll.source_url, sponsor: "Edited Sponsor"
+    }, results: [ { party: :dem, pct: 48.0 }, { party: :rep, pct: 44.0 } ])
+
+    assert result.updated?, result.message.to_s
+    assert_not_equal poll.reload.dedup_digest, twin.reload.dedup_digest
+  end
 end

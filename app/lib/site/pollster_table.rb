@@ -40,7 +40,7 @@ module Site
     end
 
     def build
-      counts = Poll.group(:pollster_id).count
+      counts = Poll.model_corpus.group(:pollster_id).count
       return [] if counts.empty?
 
       effects = @model_run ? HouseEffect.where(model_run_id: @model_run.id).index_by(&:pollster_id) : {}

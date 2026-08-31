@@ -35,10 +35,23 @@ module Ingest
       # "Democratic" (the generic ballot) names nobody, and one name alone is
       # not a matchup.
       def key(labels)
-        named = named_by_party(labels)
-        return nil if named.size < 2
+        build_key(named_by_party(labels))
+      end
 
-        named.sort.map { |party, surname| "#{party}#{PAIR}#{surname}" }.join(SEPARATOR)
+      # The key built from explicit party => full-name pairs, for a source
+      # that states each candidate's party outright (the NYT feed) instead of
+      # tagging it into a label. Runs the same surname normalisation as
+      # #key, which is the point: a feed key and a page key for the same
+      # contest must agree, or the averager would see two matchups where
+      # there is one. Where a party repeats, the first name offered wins —
+      # the rule #key already applies to a page's columns.
+      def key_from_parties(pairs)
+        named = pairs.each_with_object({}) do |(party, name), acc|
+          surname = PollTableParser.surname(name).presence
+          acc[party.to_s] ||= surname if surname
+        end
+
+        build_key(named)
       end
 
       # { "dem" => "conley", "rep" => "lawler" }
@@ -80,7 +93,14 @@ module Ingest
       # before it did and are still in the corpus. They carry no matchup key,
       # because a placeholder is not a name, so the ambiguity rule cannot see
       # them; the averager drops them on this instead.
+      #
+      # The generic ballot is exempt by definition: its polls measure the
+      # parties, not people, and the NYT feed writes its answers as "Generic
+      # Democrat" / "Generic Republican". A placeholder OPPONENT needs a race
+      # someone real is running in.
       def placeholder_opponent?(poll)
+        return false if poll.generic_ballot?
+
         columns = poll.raw_payload.is_a?(Hash) ? poll.raw_payload["columns"] : nil
         return false if columns.blank?
 
@@ -97,6 +117,16 @@ module Ingest
       end
 
       private
+        # The one serialisation both doors share: nil unless at least two
+        # parties named a person, else sorted party:surname pairs. Any change
+        # to the key's shape lands here or nowhere, which is what keeps a
+        # feed key and a page key for the same contest identical.
+        def build_key(named)
+          return nil if named.size < 2
+
+          named.sort.map { |party, surname| "#{party}#{PAIR}#{surname}" }.join(SEPARATOR)
+        end
+
         # One surname per party. Where a party has two columns — a top-two
         # general between two Democrats, a table carrying both a Libertarian
         # and a Green — the first is taken; no race the model runs reads a

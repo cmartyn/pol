@@ -50,11 +50,11 @@ module Newsroom
         def polls_since(race, previous_run)
           return Poll.none unless previous_run&.started_at
 
-          race.polls.where(created_at: previous_run.started_at..).includes(:pollster, poll_results: :candidate)
+          race.polls.model_corpus.where(created_at: previous_run.started_at..).includes(:pollster, poll_results: :candidate)
         end
 
         def recent_polls
-          Poll.recent_first
+          Poll.model_corpus.recent_first
               .limit(Pol::Params.fetch!(:newsroom, :brief_poll_count))
               .includes(:race, :pollster, poll_results: :candidate)
         end
@@ -149,7 +149,7 @@ module Newsroom
       def chamber_forecast(chamber)
         return nil unless model_run
 
-        @chamber_forecasts ||= model_run.chamber_forecasts.index_by(&:chamber)
+        @chamber_forecasts ||= model_run.chamber_forecasts.excl_internals.index_by(&:chamber)
         @chamber_forecasts[chamber.to_s]
       end
 
@@ -193,7 +193,7 @@ module Newsroom
       def forecast_for(run)
         return nil unless run && race
 
-        Forecast.find_by(model_run_id: run.id, race_id: race.id)
+        Forecast.excl_internals.find_by(model_run_id: run.id, race_id: race.id)
       end
 
       def forecast_section(forecast, candidates)

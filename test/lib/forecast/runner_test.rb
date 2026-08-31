@@ -14,17 +14,23 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     assert_not_nil run.started_at
     assert_not_nil run.finished_at
     assert_nil run.error_message
-    assert_equal Race.where(office: %i[senate house]).count, run.forecasts.count
-    assert_equal Race.where(office: %i[senate house]).order(:id).pluck(:id), run.forecasts.order(:race_id).pluck(:race_id)
-    assert_equal %w[senate house], run.chamber_forecasts.order(:chamber).map(&:chamber)
+    assert_equal Race.where(office: %i[senate house]).count, run.forecasts.excl_internals.count
+    assert_equal Race.where(office: %i[senate house]).count, run.forecasts.incl_internals.count
+    assert_equal Race.where(office: %i[senate house]).order(:id).pluck(:id), run.forecasts.excl_internals.order(:race_id).pluck(:race_id)
+    assert_equal %w[senate house], run.chamber_forecasts.excl_internals.order(:chamber).map(&:chamber)
+    assert_equal %w[senate house], run.chamber_forecasts.incl_internals.order(:chamber).map(&:chamber)
   end
 
   test "the run records everything needed to reproduce it" do
     run = Forecast::Runner.call(trigger: :cron, as_of: AS_OF, seed: SEED)
 
     assert_equal SEED, run.rng_seed
-    assert_equal Pol::Params.to_h.deep_stringify_keys, run.params_snapshot
+    assert_equal Pol::Params.to_h.deep_stringify_keys, run.params_snapshot.except("internals_estimate")
     assert_equal 10_000, run.params_snapshot.dig("simulation", "n_sims")
+    # The fixture world holds no partisan polls, so the recorded shift is the
+    # prior, from zero pairs.
+    assert_equal({ "shift" => 3.0, "prior" => 3.0, "empirical_mean" => nil, "pair_count" => 0 },
+                 run.params_snapshot.fetch("internals_estimate"))
   end
 
   test "a run with no seed given draws one and stores it" do
@@ -40,9 +46,10 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     first = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED)
     second = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED)
 
-    assert_equal first.forecasts.order(:race_id).pluck(*columns), second.forecasts.order(:race_id).pluck(*columns)
-    assert_equal first.chamber_forecasts.order(:chamber).pluck(:p_dem_control, :mean_dem_seats, :seat_histogram),
-                 second.chamber_forecasts.order(:chamber).pluck(:p_dem_control, :mean_dem_seats, :seat_histogram)
+    assert_equal first.forecasts.order(:variant, :race_id).pluck(*columns),
+                 second.forecasts.order(:variant, :race_id).pluck(*columns)
+    assert_equal first.chamber_forecasts.order(:variant, :chamber).pluck(:p_dem_control, :mean_dem_seats, :seat_histogram),
+                 second.chamber_forecasts.order(:variant, :chamber).pluck(:p_dem_control, :mean_dem_seats, :seat_histogram)
   end
 
   # --- The full-scenario golden -------------------------------------------
@@ -65,9 +72,9 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     assert_in_delta 2.0, runner.national_env, 1e-9
     assert_equal 1, runner.generic_ballot.poll_count
 
-    maine = run.forecasts.find_by(race_id: races(:senate_maine).id)
-    florida = run.forecasts.find_by(race_id: races(:senate_florida_special).id)
-    ny17 = run.forecasts.find_by(race_id: races(:house_ny_17).id)
+    maine = run.forecasts.excl_internals.find_by(race_id: races(:senate_maine).id)
+    florida = run.forecasts.excl_internals.find_by(race_id: races(:senate_florida_special).id)
+    ny17 = run.forecasts.excl_internals.find_by(race_id: races(:house_ny_17).id)
 
     # Maine: prior 3.5 + 2.0 − 1.5 = 4.0. Polls: +3.5 at 18 days on n=812
     # (weight 0.4771598) and +1.0 at 8 days on n=650 (weight 0.7004287),
@@ -107,7 +114,7 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     assert_in_delta Math.sqrt(53) * 1.5222222,
                     (ny17.margin_percentiles["95"] - ny17.margin_percentiles["5"]) / (2 * 1.6448536), 0.2
 
-    senate = run.chamber_forecasts.find_by(chamber: :senate)
+    senate = run.chamber_forecasts.excl_internals.find_by(chamber: :senate)
     # 34 holdovers plus the two seats up: 34 + 0.6743 + 0.1843. Nobody can
     # reach 51, or 50, from there.
     assert_in_delta 34.8586, senate.mean_dem_seats, 1e-9
@@ -115,7 +122,7 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     assert_equal 0.0, senate.p_rep_control
     assert_equal({ "34" => 2845, "35" => 5724, "36" => 1431 }, senate.seat_histogram)
 
-    house = run.chamber_forecasts.find_by(chamber: :house)
+    house = run.chamber_forecasts.excl_internals.find_by(chamber: :house)
     assert_in_delta 0.7446, house.mean_dem_seats, 1e-9
     assert_equal 0.0, house.p_dem_control
     assert_equal({ "0" => 2554, "1" => 7446 }, house.seat_histogram)
@@ -139,7 +146,7 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     # Every district sits at mu = baseline + swing = 0 + 4.6, so any
     # difference between their win probabilities is error, not fundamentals.
     run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED)
-    probability = ->(race) { run.forecasts.find_by(race_id: race.id).p_dem_win }
+    probability = ->(race) { run.forecasts.excl_internals.find_by(race_id: race.id).p_dem_win }
 
     assert_in_delta probability.call(maine), probability.call(also_maine), 0.02
     assert_operator (probability.call(maine) - probability.call(also_maine)).abs, :<,
@@ -164,7 +171,7 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     # error is sqrt(53) × 1.5222 = 11.08, so 2,000 draws put a standard error of
     # 0.25 on the simulated mean and 0.75 is three of them.
     assert_in_delta races(:house_ny_17).baseline_margin,
-                    runner.model_run.forecasts.find_by(race_id: races(:house_ny_17).id).mean_margin, 0.75
+                    runner.model_run.forecasts.excl_internals.find_by(race_id: races(:house_ny_17).id).mean_margin, 0.75
   end
 
   test "governor races are not part of the chamber model and get no forecast" do
@@ -172,7 +179,7 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
 
     run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 100)
 
-    assert_equal 3, run.forecasts.count
+    assert_equal 3, run.forecasts.excl_internals.count
     assert_empty run.forecasts.joins(:race).where(races: { office: Race.offices[:governor] })
   end
 
@@ -180,13 +187,13 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     races(:senate_maine).update!(uncontested: true, uncontested_party: :dem)
 
     run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 100)
-    maine = run.forecasts.find_by(race_id: races(:senate_maine).id)
+    maine = run.forecasts.excl_internals.find_by(race_id: races(:senate_maine).id)
 
     assert_equal 1.0, maine.p_dem_win
     assert_equal 0.0, maine.p_rep_win
     assert_equal maine.mean_margin, maine.margin_percentiles["50"]
     # 34 holdovers, Maine's certain seat, and whatever Florida's special does.
-    assert_operator run.chamber_forecasts.find_by(chamber: :senate).mean_dem_seats, :>=, 35.0
+    assert_operator run.chamber_forecasts.excl_internals.find_by(chamber: :senate).mean_dem_seats, :>=, 35.0
   end
 
   # --- House effects (Phase 9) ---------------------------------------------
@@ -477,5 +484,43 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     def info(message) = nil
     def warn(message) = nil
     def error(message) = @errors << message
+  end
+
+  # --- Dual variants (the internals toggle's engine) ------------------------
+
+  test "with no flagged polls the two variants are exactly equal" do
+    run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 200)
+    columns = %i[race_id p_dem_win p_rep_win p_other_win mean_margin margin_percentiles effective_poll_weight]
+
+    assert_equal run.forecasts.excl_internals.order(:race_id).pluck(*columns),
+                 run.forecasts.incl_internals.order(:race_id).pluck(*columns)
+    assert_equal run.chamber_forecasts.excl_internals.order(:chamber).pluck(:p_dem_control, :mean_dem_seats),
+                 run.chamber_forecasts.incl_internals.order(:chamber).pluck(:p_dem_control, :mean_dem_seats)
+  end
+
+  test "a flagged poll moves only the internals variant, and only its race" do
+    # A heavily Democratic internal on Maine. The default variant never sees
+    # it; the internals variant reads it shifted and half-weighted.
+    create_poll(pollster: pollsters(:delta_metrics), field_end: AS_OF - 1, sample_size: 900,
+                race: races(:senate_maine), matchup_key: polls(:maine_poll_one).matchup_key,
+                results: { dem: 58.0, rep: 38.0 }, partisan: :dem, entry_mode: :nyt)
+
+    runner = Forecast::Runner.new(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 200)
+    run = runner.call
+
+    maine_excl = run.forecasts.excl_internals.find_by(race_id: races(:senate_maine).id)
+    maine_incl = run.forecasts.incl_internals.find_by(race_id: races(:senate_maine).id)
+    ny_excl = run.forecasts.excl_internals.find_by(race_id: races(:house_ny_17).id)
+    ny_incl = run.forecasts.incl_internals.find_by(race_id: races(:house_ny_17).id)
+
+    assert_not_equal maine_excl.mean_margin, maine_incl.mean_margin
+    assert_operator maine_incl.mean_margin, :>, maine_excl.mean_margin
+    # Same seed, same generic ballot, same every-other-input: an unflagged
+    # race's numbers are bit-identical across the variants.
+    assert_equal ny_excl.mean_margin, ny_incl.mean_margin
+    assert_equal ny_excl.p_dem_win, ny_incl.p_dem_win
+    # The default variant's poll weight is unchanged by the flagged poll's
+    # existence; the internals variant carries the extra half-weight.
+    assert_operator maine_incl.effective_poll_weight, :>, maine_excl.effective_poll_weight
   end
 end

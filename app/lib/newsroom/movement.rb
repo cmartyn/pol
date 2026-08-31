@@ -49,8 +49,8 @@ module Newsroom
 
     private
       def moved_races(previous)
-        latest_forecasts = Forecast.where(model_run_id: model_run.id).index_by(&:race_id)
-        previous_forecasts = Forecast.where(model_run_id: previous.id).index_by(&:race_id)
+        latest_forecasts = Forecast.excl_internals.where(model_run_id: model_run.id).index_by(&:race_id)
+        previous_forecasts = Forecast.excl_internals.where(model_run_id: previous.id).index_by(&:race_id)
         common_race_ids = latest_forecasts.keys & previous_forecasts.keys
         return [] if common_race_ids.empty?
 

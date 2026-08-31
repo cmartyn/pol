@@ -38,7 +38,7 @@ module Ingest
       digest = Poll.compute_digest(
         pollster_slug: pollster.slug, race_id: race_id,
         field_start: @attrs[:field_start], field_end: @attrs[:field_end],
-        results: digest_results
+        results: digest_results, salt: @attrs[:digest_salt]
       )
 
       # Belt: the read that lets us report a duplicate without provoking an
@@ -65,6 +65,10 @@ module Ingest
             source_url: @attrs[:source_url],
             raw_payload: @attrs[:raw_payload],
             matchup_key: @attrs[:matchup_key],
+            partisan: @attrs[:partisan].presence || :none,
+            methodology: @attrs[:methodology].presence,
+            nyt_poll_id: @attrs[:nyt_poll_id].presence,
+            nyt_question_id: @attrs[:nyt_question_id].presence,
             entry_mode: @entry_mode,
             dedup_digest: digest
           )
@@ -113,10 +117,23 @@ module Ingest
         @race_id ||= @attrs[:race_id] || @attrs[:race]&.id
       end
 
+      # The NYT feed carries a stable pollster id; when one is present it is
+      # the identity, and the slug is only how a brand-new pollster gets
+      # named. Looked up by id first so a renamed pollster ("Siena College"
+      # becoming "Siena University") updates in place rather than splitting
+      # into two houses — the split is what slug-only lookup cannot prevent.
       def find_or_create_pollster
         name = @attrs[:pollster_name].to_s.strip
         slug = Pollster.canonicalize(name)
-        Pollster.find_by(slug: slug) || Pollster.create!(slug: slug, name: name)
+        nyt_id = @attrs[:nyt_pollster_id].presence
+
+        if nyt_id && (existing = Pollster.find_by(nyt_pollster_id: nyt_id))
+          return existing
+        end
+
+        pollster = Pollster.find_by(slug: slug) || Pollster.create!(slug: slug, name: name)
+        pollster.update!(nyt_pollster_id: nyt_id) if nyt_id && pollster.nyt_pollster_id.nil?
+        pollster
       rescue ActiveRecord::RecordNotUnique
         Pollster.find_by!(slug: slug)
       end

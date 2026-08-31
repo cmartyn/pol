@@ -582,4 +582,66 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     assert_operator result.mean_margin, :>, 2.0
     assert_operator result.mean_margin, :<, 5.0
   end
+
+  # --- Partisan internals (the toggle's math) ------------------------------
+
+  test "the default averager excludes flagged polls entirely" do
+    create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600,
+                results: { dem: 55.0, rep: 40.0 }, partisan: :dem)
+    plain = create_poll(pollster: @cardinal, field_end: AS_OF, sample_size: 600,
+                        results: { dem: 50.0, rep: 44.0 })
+
+    result = @averager.call(polls: [ plain.reload, Poll.internal.sole ])
+
+    # The flagged poll is not in the average, the poll count, or the skips —
+    # it never entered the corpus this variant read.
+    assert_equal 1, result.poll_count
+    assert_equal 0, result.skipped_count
+    assert_in_delta 6.0, result.mean_margin, 1e-9
+  end
+
+  test "an adjusted averager shifts a flagged margin toward the non-sponsor and halves its weight" do
+    dem_internal = create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600,
+                               results: { dem: 50.0, rep: 44.0 }, partisan: :dem)
+    adjusted = Forecast::Averager.new(as_of: AS_OF, internals: :adjusted, internals_shift: 3.0)
+
+    result = adjusted.call(polls: [ dem_internal ])
+
+    # Margin 6 comes down the full shift: 6 − 3 = 3. Weight is the plain
+    # weight_at_age (1.0 at age 0, n 600) times internals.weight_factor 0.5.
+    assert_in_delta 3.0, result.mean_margin, 1e-9
+    assert_in_delta 0.5, result.weight, 1e-9
+  end
+
+  test "a republican sponsor shifts the margin the other way" do
+    rep_internal = create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600,
+                               results: { dem: 47.0, rep: 44.0 }, partisan: :rep)
+    adjusted = Forecast::Averager.new(as_of: AS_OF, internals: :adjusted, internals_shift: 3.0)
+
+    result = adjusted.call(polls: [ rep_internal ])
+
+    assert_in_delta 6.0, result.mean_margin, 1e-9
+  end
+
+  test "a sponsor aligned with neither side takes only the weight penalty" do
+    ind_internal = create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600,
+                               results: { dem: 50.0, rep: 44.0 }, partisan: :ind)
+    adjusted = Forecast::Averager.new(as_of: AS_OF, internals: :adjusted, internals_shift: 3.0)
+
+    result = adjusted.call(polls: [ ind_internal ])
+
+    assert_in_delta 6.0, result.mean_margin, 1e-9
+    assert_in_delta 0.5, result.weight, 1e-9
+  end
+
+  test "an unflagged poll through an adjusted averager reads exactly as it always did" do
+    plain = create_poll(pollster: @beacon, field_end: AS_OF, sample_size: 600,
+                        results: { dem: 50.0, rep: 44.0 })
+    adjusted = Forecast::Averager.new(as_of: AS_OF, internals: :adjusted, internals_shift: 3.0)
+
+    result = adjusted.call(polls: [ plain ])
+
+    assert_in_delta 6.0, result.mean_margin, 1e-9
+    assert_in_delta 1.0, result.weight, 1e-9
+  end
 end

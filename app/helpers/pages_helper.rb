@@ -9,7 +9,9 @@ module PagesHelper
     simulation: "Simulation",
     election: "Election date",
     newsroom: "Newsroom (Phase 5)",
-    scrape: "Data collection",
+    scrape: "Data collection (Wikipedia fallback)",
+    feed: "Poll feed (New York Times)",
+    internals: "Partisan internal polls",
     site: "Site display rules"
   }.freeze
 
