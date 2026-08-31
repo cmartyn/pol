@@ -23,8 +23,9 @@
 module Site
   module Charts
     class PollsScatter
-      def self.build(race:, polls:, as_of: Time.current, house_effects: {})
-        new(race: race, polls: polls, as_of: as_of, house_effects: house_effects).build
+      def self.build(race:, polls:, as_of: Time.current, house_effects: {}, internals_shift: nil)
+        new(race: race, polls: polls, as_of: as_of, house_effects: house_effects,
+            internals_shift: internals_shift).build
       end
 
       # polls: an array (or loaded relation) of Poll, with poll_results and
@@ -37,11 +38,14 @@ module Site
       # on the page that no number elsewhere on the site agrees with. The
       # plotted points stay raw — they are what the pollster published, and
       # the poll table beneath shows each one's adjustment alongside it.
-      def initialize(race:, polls:, as_of:, house_effects: {})
+      # internals_shift: the sponsor-lean discount the run on show applied
+      # (ModelRun#internals_shift), for the toggled-on average.
+      def initialize(race:, polls:, as_of:, house_effects: {}, internals_shift: nil)
         @race = race
         @polls = polls.to_a
         @as_of = as_of
         @house_effects = house_effects || {}
+        @internals_shift = internals_shift || Pol::Params.fetch!(:internals, :prior_shift).to_f
       end
 
       def build
@@ -51,6 +55,10 @@ module Site
         average = Forecast::Averager.new(as_of: @as_of, house_effects: @house_effects).for_race(
           @race, side_a: side_a.to_sym, side_b: side_b.to_sym, polls: @polls
         )
+        incl_average = Forecast::Averager.new(
+          as_of: @as_of, house_effects: @house_effects,
+          internals: :adjusted, internals_shift: @internals_shift
+        ).for_race(@race, side_a: side_a.to_sym, side_b: side_b.to_sym, polls: @polls)
         points = @polls.filter_map { |poll| point(poll, side_a, side_b) }
         return nil if points.empty?
 
@@ -76,11 +84,27 @@ module Site
           # so rather than leaving a reader to wonder.
           average_reason: average.reason,
           matchups: average.matchups,
+          # The toggled-on view's reference line — same shape as the
+          # top-level average_* keys, which stay the published (excl) view
+          # so the payload's default reading is the page's default reading.
+          incl: incl_payload(incl_average, side_a, side_b),
           points: points
         }
       end
 
       private
+        def incl_payload(average, side_a, side_b)
+          margin = average.polled? ? average.mean_margin.round(2) : nil
+
+          {
+            average_margin: margin,
+            average_label: margin && "avg #{Site::Format.margin(margin, side_a_party: side_a, side_b_party: side_b)}",
+            average_party: margin && margin_party(margin, side_a, side_b),
+            average_reason: average.reason,
+            matchups: average.matchups
+          }
+        end
+
         def point(poll, side_a, side_b)
           a = top_pct(poll, side_a)
           b = top_pct(poll, side_b)
@@ -98,7 +122,9 @@ module Site
             source_url: poll.source_url,
             sample_size: poll.sample_size,
             sample_label: sample_label(poll),
-            population: poll.population
+            population: poll.population,
+            internal: poll.internal?,
+            partisan: poll.partisan
           }
         end
 

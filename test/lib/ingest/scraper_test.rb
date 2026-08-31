@@ -34,8 +34,10 @@ class Ingest::ScraperTest < ActiveSupport::TestCase
     end
   end
 
-  def scrape
-    Ingest::Scraper.new(logger: Logger.new(File::NULL)).call
+  # write: true — these tests prove the armed fallback's machinery. The
+  # production default is the dry canary, covered by its own test below.
+  def scrape(write: true)
+    Ingest::Scraper.new(logger: Logger.new(File::NULL), write: write).call
   end
 
   test "writes one ScrapeRun per source with the counts it actually saw" do
@@ -290,5 +292,21 @@ class Ingest::ScraperTest < ActiveSupport::TestCase
         </tbody></table>
       </section>
     HTML
+  end
+
+  test "the default sweep is the dry canary: full accounting, no rows, no run queued" do
+    outcomes = nil
+    assert_no_difference [ "Poll.count", "Pollster.count" ] do
+      assert_difference "ScrapeRun.count", 5 do
+        recording(Ingest, :after_new_polls!) do |calls|
+          outcomes = scrape(write: false)
+          assert_empty calls, "a dry sweep must never queue a forecast run"
+        end
+      end
+    end
+
+    maine = outcomes.find { |outcome| outcome.source == MAINE }
+    assert_equal 2, maine.created, "the canary still counts the polls a live sweep would have gained"
+    assert_empty maine.poll_ids
   end
 end

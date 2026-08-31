@@ -231,4 +231,25 @@ class Site::Charts::PollsScatterTest < ActiveSupport::TestCase
     assert_equal 2, payload[:points].size # still just the two two-sided polls
     assert_not_includes payload[:points].map { |p| p[:source_url] }, dem_only_poll.source_url
   end
+
+  test "the payload carries the internals view's average and flags each internal point" do
+    race = races(:senate_maine)
+    plain = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.current - 2,
+                        race: race, sample_size: 600, results: { dem: 50.0, rep: 44.0 })
+    internal = create_poll(pollster: pollsters(:cardinal_research), field_end: Date.current - 1,
+                           race: race, sample_size: 600, partisan: :dem,
+                           results: { dem: 56.0, rep: 40.0 })
+
+    payload = Site::Charts::PollsScatter.build(race: race, polls: [ plain, internal ],
+                                               internals_shift: 3.0)
+
+    # Published view: the internal poll is a dot, not part of the average.
+    assert_in_delta 6.0, payload[:average_margin], 0.01
+    # Internals view: margin 16 shifted to 13 at half weight against margin 6
+    # at (near) full weight moves the average up, but nowhere near 13.
+    assert_operator payload.dig(:incl, :average_margin), :>, payload[:average_margin]
+    assert_operator payload.dig(:incl, :average_margin), :<, 13.0
+    flags = payload[:points].to_h { |point| [ point[:pollster], point[:internal] ] }
+    assert_equal({ pollsters(:beacon_polling).name => false, pollsters(:cardinal_research).name => true }, flags)
+  end
 end

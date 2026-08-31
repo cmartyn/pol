@@ -352,4 +352,29 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     special = rows.find { |text| text.include?("special") }
     assert special, "a special election should be findable by typing 'special'"
   end
+
+  test "a race page renders both internals views of its forecast" do
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='forecast-detail'] [data-variant='excl_internals']", count: 1
+    assert_select "[data-testid='forecast-detail'] [data-variant='incl_internals']", count: 1
+  end
+
+  test "an internal poll is badged and the table carries the per-view note" do
+    create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 20),
+                race: races(:senate_maine), partisan: :dem, entry_mode: :nyt,
+                results: { dem: 52.0, rep: 41.0 })
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "tr[data-internal-poll] [data-testid='internal-poll-badge']", minimum: 1
+    assert_select "[data-testid='internals-note'] [data-variant='excl_internals']", count: 1
+    assert_select "[data-testid='internals-note'] [data-variant='incl_internals']", count: 1
+  end
+
+  test "the chamber tables carry both views of each forecast cell" do
+    get senate_path
+
+    assert_select "[data-testid='senate-race-row'] [data-testid='rating-word'] [data-variant='incl_internals']", minimum: 1
+  end
 end

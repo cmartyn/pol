@@ -17,8 +17,16 @@ class HomeController < PublicController
     # mixed-vintage pattern races/show.html.erb uses for PollsScatter), so
     # this matches methodology step 2 — a poll's lean is subtracted before it
     # enters any average this site publishes, not only the ones tied to a run.
+    house_effects = HouseEffect.applied_lookup(@latest_run)
     @national_environment = Forecast::Averager.new(
-      as_of: Time.current, house_effects: HouseEffect.applied_lookup(@latest_run)
+      as_of: Time.current, house_effects: house_effects
+    ).for_generic_ballot
+    # The toggled-on view of the same number, adjusted with the shift the
+    # run on show estimated (or the prior, before any run has).
+    @national_environment_incl = Forecast::Averager.new(
+      as_of: Time.current, house_effects: house_effects,
+      internals: :adjusted,
+      internals_shift: @latest_run&.internals_shift || Pol::Params.fetch!(:internals, :prior_shift).to_f
     ).for_generic_ballot
 
     @movers = Site::Movers.call

@@ -18,18 +18,21 @@
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="national-environment">
   <h2 class="font-serif text-xl font-semibold text-slate-900">National environment</h2>
-  <% if @national_environment.polled? %>
+  <%= each_variant do |variant| %>
+  <% environment = variant == :incl_internals ? @national_environment_incl : @national_environment %>
+  <% if environment.polled? %>
     <p class="mt-1 text-lg text-slate-800">
       Generic ballot:
-      <span class="font-figure font-bold tracking-tight <%= @national_environment.mean_margin.positive? ? "text-blue-700" : "text-red-700" %>">
-        <%= Site::Format.margin(@national_environment.mean_margin, side_a_party: "dem", side_b_party: "rep") %>
+      <span class="font-figure font-bold tracking-tight <%= environment.mean_margin.positive? ? "text-blue-700" : "text-red-700" %>">
+        <%= Site::Format.margin(environment.mean_margin, side_a_party: "dem", side_b_party: "rep") %>
       </span>
       <span class="text-sm text-slate-500">
-        (<%= pluralize(@national_environment.poll_count, "poll") %>, <%= @national_environment.window_days %>-day window, as of today)
+        (<%= pluralize(environment.poll_count, "poll") %>, <%= environment.window_days %>-day window, as of today)
       </span>
     </p>
   <% else %>
     <p class="mt-1 text-slate-500" data-testid="national-environment-empty">No generic-ballot polling in the current window.</p>
+  <% end %>
   <% end %>
 </section>
 

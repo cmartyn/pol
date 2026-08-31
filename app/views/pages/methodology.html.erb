@@ -81,6 +81,23 @@
   </p>
 </section>
 
+<section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="internals" data-testid="internals-policy">
+  <h2 class="font-serif text-xl font-semibold text-slate-900">Partisan internal polls, and the toggle</h2>
+  <p class="mt-3 text-slate-700">
+    About a quarter of the corpus is flagged as sponsored by a party-aligned client &mdash; campaigns,
+    PACs, partisan media. The forecast this site publishes <strong class="font-semibold text-slate-900">excludes
+    those polls entirely</strong>: the headline numbers rest on independent polling alone. The
+    &ldquo;Partisan internals&rdquo; switch in the header shows the same model with the flagged polls
+    included &mdash; not at face value, but shifted toward the non-sponsor party by an amount estimated
+    each run from how flagged polls compare with unflagged polls of the same race at the same moment
+    (shrunk toward a <%= Pol::Params.fetch!(:internals, :prior_shift) %>-point prior while the evidence
+    is thin) and carrying <%= (Pol::Params.fetch!(:internals, :weight_factor) * 100).round %>% of an
+    independent poll&rsquo;s weight. Both versions are computed in the same model run from the same
+    simulation draws, so the difference you see is the polls, never the dice. Flagged polls appear in
+    every poll table either way, labeled with their sponsor&rsquo;s side.
+  </p>
+</section>
+
 <section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="house-effects" data-testid="house-effects">
   <h2 class="font-serif text-xl font-semibold text-slate-900">Pollster house effects, in plain language</h2>
   <p class="mt-3 text-slate-700">

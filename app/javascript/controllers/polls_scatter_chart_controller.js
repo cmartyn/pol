@@ -46,6 +46,14 @@ const HOVER_RADIUS = 28
 // hovered dot's radius so the largest a dot ever draws still sits clear.
 const EDGE_INSET = HOVER_DOT_RADIUS + 2
 
+// Which view the internals toggle is showing (internals_toggle_controller
+// owns the attribute). The payload's top-level average_* keys are the
+// published view; the toggled-on view's line lives under payload.incl.
+// Points are never filtered — an internal poll is visible in both views —
+// but the published view draws it hollow: on the page, not in the math.
+const internalsOn = () => document.documentElement.dataset.internals === "on"
+
+
 export default class extends Controller {
   static targets = ["svg", "payload"]
 
@@ -58,15 +66,26 @@ export default class extends Controller {
     // click events lack pointerType in some engines; pointerdown never does,
     // so remember the last one seen and fall back to it.
     this.lastPointerType = "mouse"
+    this.onInternals = () => { if (this.lastWidth) this.render(this.lastWidth) }
+    window.addEventListener("internals:changed", this.onInternals)
     this.teardown = observeWidth(this.element, (width) => this.render(width))
   }
 
   disconnect() {
     if (this.teardown) this.teardown()
     if (this.tooltip) this.tooltip.destroy()
+    window.removeEventListener("internals:changed", this.onInternals)
+  }
+
+  // The reference-line values for the view currently showing.
+  activeAverage() {
+    if (internalsOn() && this.payload.incl) return this.payload.incl
+
+    return this.payload
   }
 
   render(containerWidth) {
+    this.lastWidth = containerWidth
     const svg = select(this.svgTarget)
     svg.selectAll("*").remove()
     this.hoverIndex = null
@@ -84,8 +103,12 @@ export default class extends Controller {
     // Symmetric domain so "Even" sits mid-chart and a lead either way reads
     // at the same scale; the average is included so its line can never leave
     // the plot.
+    // Both views' averages are in the domain so toggling never rescales the
+    // chart under the reader's pointer.
     const magnitudes = this.points.map((point) => Math.abs(point.margin))
     if (this.payload.average_margin !== null) magnitudes.push(Math.abs(this.payload.average_margin))
+    if (this.payload.incl && this.payload.incl.average_margin !== null) magnitudes.push(Math.abs(this.payload.incl.average_margin))
+    const average = this.activeAverage()
     const bound = Math.max(4, ...magnitudes) * 1.15
     const y = scaleLinear().domain([-bound, bound]).range([innerHeight, 0])
 
@@ -148,10 +171,10 @@ export default class extends Controller {
     // The average reference line — dashed because it is a reference, the one
     // place dashing means something here. Drawn under the dots; its label
     // goes on top of them, further down.
-    if (this.payload.average_margin !== null) {
+    if (average.average_margin !== null) {
       g.append("line")
         .attr("x1", 0).attr("x2", innerWidth)
-        .attr("y1", y(this.payload.average_margin)).attr("y2", y(this.payload.average_margin))
+        .attr("y1", y(average.average_margin)).attr("y2", y(average.average_margin))
         .attr("stroke", AVERAGE.line)
         .attr("stroke-width", 1.5)
         .attr("stroke-dasharray", "4,3")
@@ -168,19 +191,22 @@ export default class extends Controller {
       .attr("cx", (point) => x(point.date))
       .attr("cy", (point) => y(point.margin))
       .attr("r", DOT_RADIUS)
-      .attr("fill", (point) => partyColor(point.party))
-      .attr("fill-opacity", 0.8)
-      .attr("stroke", CHROME.ring)
+      // An internal poll in the published view is on the chart but out of
+      // the average — drawn hollow, its party color as a ring, so the dot
+      // itself says which polls the dashed line is not made of.
+      .attr("fill", (point) => point.internal && !internalsOn() ? "#ffffff" : partyColor(point.party))
+      .attr("fill-opacity", (point) => point.internal && !internalsOn() ? 1 : 0.8)
+      .attr("stroke", (point) => point.internal && !internalsOn() ? partyColor(point.party) : CHROME.ring)
       .attr("stroke-width", 1.5)
       .nodes()
 
     // The line's annotation lives in the right margin (so it cannot collide
     // with y ticks), clamped inside the plot's vertical bounds, with a halo
     // so dots crowding the right edge can't swallow it.
-    if (this.payload.average_label) {
+    if (average.average_label) {
       g.append("text")
         .attr("x", innerWidth + 6)
-        .attr("y", Math.max(6, Math.min(innerHeight - 6, y(this.payload.average_margin))))
+        .attr("y", Math.max(6, Math.min(innerHeight - 6, y(average.average_margin))))
         .attr("dominant-baseline", "central")
         .attr("font-size", CHROME.fontSize)
         .attr("font-weight", 600)
@@ -190,7 +216,7 @@ export default class extends Controller {
         .attr("stroke-width", 3)
         .attr("stroke-linejoin", "round")
         .style("font-variant-numeric", "tabular-nums")
-        .text(this.payload.average_label)
+        .text(average.average_label)
     }
 
     // One transparent rect over the whole plot owns every pointer event —
@@ -295,6 +321,7 @@ export default class extends Controller {
     if (point.sample_label) rows.push({ value: point.sample_label, label: "sample" })
     const footer = [
       point.sponsor && `Sponsor: ${point.sponsor}`,
+      point.internal && (internalsOn() ? "Partisan-sponsored — adjusted & down-weighted" : "Partisan-sponsored — not in this average"),
       point.source_url && "Click to open source ↗"
     ].filter(Boolean).join(" · ") || undefined
 

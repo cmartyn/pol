@@ -1,6 +1,19 @@
 <%# locals: race, poll, house_effects — one row of the poll table. %>
-<tr data-testid="poll-row">
-  <td class="py-2 pr-3 text-slate-700"><%= poll.pollster.name %></td>
+<%# data-internal-poll cues the CSS: the row mutes while the published view
+    is showing (its numbers are not in that view's average) and reads at
+    full strength when the toggle brings internals in. %>
+<tr data-testid="poll-row" <%= "data-internal-poll" if poll.internal? %>>
+  <td class="py-2 pr-3 text-slate-700">
+    <%= poll.pollster.name %>
+    <% if poll.internal? %>
+      <span class="mt-0.5 block" data-testid="internal-poll-badge">
+        <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide <%= { "dem" => "text-blue-700", "rep" => "text-red-700" }.fetch(poll.partisan, "text-slate-500") %>"
+              title="Sponsored by a party-aligned client — see the note above this table.">
+          <%= poll.partisan == "oth" ? "partisan" : poll.partisan %> sponsor
+        </span>
+      </span>
+    <% end %>
+  </td>
   <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
     <% if poll.field_start && poll.field_start != poll.field_end %>
       <%= poll.field_start.strftime("%b %-d") %>&ndash;<%= poll.field_end.strftime("%b %-d, %Y") %>

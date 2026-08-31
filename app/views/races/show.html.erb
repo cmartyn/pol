@@ -33,21 +33,28 @@
     </div>
   </div>
 
-  <% forecast = @race.latest_forecast %>
+  <%# Both internals views of the forecast render here; the header toggle
+      picks one (VariantsHelper). The published row stands in when a
+      pre-toggle run wrote only one variant. %>
+  <% forecasts = forecasts_by_variant(->(variant) { @race.latest_forecast(variant: variant) }) %>
+  <% forecast = forecasts[:excl_internals] %>
 
   <% if forecast %>
+    <%= each_variant do |variant| %>
+    <% variant_forecast = forecasts[variant] %>
     <p class="mt-4 max-w-2xl text-slate-700">
-      <% rating = rating_word_for(@race, forecast) %>
+      <% rating = rating_word_for(@race, variant_forecast) %>
       <% if rating == "Tossup" %>
         This race is a <strong class="font-semibold">Tossup</strong> — the leading side wins in
-        <%= Site::Format.x_in_100(leading_probability(forecast)) %> simulations.
+        <%= Site::Format.x_in_100(leading_probability(variant_forecast)) %> simulations.
       <% else %>
-        <strong class="font-semibold <%= party_text_color(leading_party(forecast)) %>">
-          <%= { "dem" => "Democrats", "rep" => "Republicans", "other" => "The independent" }.fetch(leading_party(forecast)) %>
+        <strong class="font-semibold <%= party_text_color(leading_party(variant_forecast)) %>">
+          <%= { "dem" => "Democrats", "rep" => "Republicans", "other" => "The independent" }.fetch(leading_party(variant_forecast)) %>
         </strong>
-        are favored, winning in <%= Site::Format.x_in_100(leading_probability(forecast)) %> simulations.
+        are favored, winning in <%= Site::Format.x_in_100(leading_probability(variant_forecast)) %> simulations.
       <% end %>
     </p>
+    <% end %>
   <% end %>
 
   <% if forecast %>
@@ -55,29 +62,32 @@
       <h2 class="font-serif text-xl font-semibold text-slate-900">Forecast detail</h2>
       <%= render "shared/as_of", time: @latest_run&.started_at %>
 
+      <%= each_variant do |variant| %>
+      <% variant_forecast = forecasts[variant] %>
       <div class="mt-3 flex flex-wrap items-baseline gap-x-10 gap-y-3">
         <div>
           <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Rating</p>
-          <p class="text-lg font-semibold text-slate-900" data-testid="rating-word"><%= rating %></p>
+          <p class="text-lg font-semibold text-slate-900" data-testid="rating-word"><%= rating_word_for(@race, variant_forecast) %></p>
         </div>
         <div>
           <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Win probability</p>
-          <p class="text-lg font-semibold"><%= probability_chip(forecast) %></p>
+          <p class="text-lg font-semibold"><%= probability_chip(variant_forecast) %></p>
         </div>
         <div>
           <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Estimated margin</p>
-          <p class="text-lg font-semibold <%= party_text_color(margin_party(@race, forecast.mean_margin)) %>">
-            <%= formatted_margin(@race, forecast.mean_margin) %>
+          <p class="text-lg font-semibold <%= party_text_color(margin_party(@race, variant_forecast.mean_margin)) %>">
+            <%= formatted_margin(@race, variant_forecast.mean_margin) %>
           </p>
         </div>
-        <% if forecast.margin_percentiles.present? %>
-          <% interval = Site::Format.percentile_interval(forecast.margin_percentiles, side_a_party: race_sides(@race).first, side_b_party: race_sides(@race).second) %>
+        <% if variant_forecast.margin_percentiles.present? %>
+          <% interval = Site::Format.percentile_interval(variant_forecast.margin_percentiles, side_a_party: race_sides(@race).first, side_b_party: race_sides(@race).second) %>
           <div data-testid="percentile-interval">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500"><%= interval[:label] %> interval</p>
             <p class="text-lg font-semibold text-slate-900"><%= interval[:low] %> to <%= interval[:high] %></p>
           </div>
         <% end %>
       </div>
+      <% end %>
     </section>
   <% else %>
     <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="forecast-empty">
@@ -101,7 +111,8 @@
         what the model did rather than each recomputing their own version. %>
     <% house_effects = HouseEffect.applied_lookup(@latest_run) %>
     <% polls_scatter = Site::Charts::PollsScatter.build(race: @race, polls: polls, as_of: Time.current,
-                                                        house_effects: house_effects) %>
+                                                        house_effects: house_effects,
+                                                        internals_shift: @latest_run&.internals_shift) %>
     <% if polls_scatter %>
       <%# Polling exists but measures contests that cannot all happen — a
           district whose nominees are unsettled gets a table per plausible

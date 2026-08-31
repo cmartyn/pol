@@ -75,6 +75,23 @@
           <%= nav_link "Methodology", methodology_path %>
           <%= nav_link "About", about_path %>
         </nav>
+
+        <%# The internals toggle. Off is the published forecast — independent
+            polling only; on is the same model with partisan-sponsored polls
+            included, adjusted and down-weighted. Every number on the site
+            follows it (both variants are in the page; CSS shows one), so it
+            lives in the header, not on any one chart. Hidden when JS is off:
+            a control that could never do anything is worse than none, and
+            the no-JS reader already has the published view. %>
+        <label class="hidden items-center gap-2 text-xs text-slate-600 [html[data-internals]_&]:flex"
+               data-controller="internals-toggle" data-testid="internals-toggle"
+               title="Include polls from partisan-aligned sponsors, adjusted toward the non-sponsor party and down-weighted — see Methodology.">
+          <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"
+                 data-action="internals-toggle#toggle">
+          <span class="relative h-4 w-7 shrink-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-amber-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-amber-600
+                       after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-3"></span>
+          <span class="whitespace-nowrap">Partisan internals</span>
+        </label>
       </div>
     </header>
 

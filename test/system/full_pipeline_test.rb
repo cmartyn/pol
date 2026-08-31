@@ -128,15 +128,18 @@ class FullPipelineTest < ApplicationSystemTestCase
   end
 
   private
-    # The same call Ingest::Scraper makes for every parsed row, with a poll big
-    # enough that the move it causes cannot be mistaken for simulation noise.
+    # The same call Ingest::Nyt::Sync makes for every mapped question — the
+    # feed is the corpus now, and a scraped-mode row would be filtered at the
+    # after_new_polls! seam — with a poll big enough that the move it causes
+    # cannot be mistaken for simulation noise.
     def record_poll
       result = Ingest::RecordPoll.call(
         { pollster_name: "Harbor Analytics", race: @race,
           field_start: Date.current - 3, field_end: Date.current,
           sample_size: 1_500, population: :lv,
           source_url: "https://example.com/polls/maine-harbor-august" },
-        results: [ { party: :dem, pct: 62.0 }, { party: :rep, pct: 33.0 } ]
+        results: [ { party: :dem, pct: 62.0 }, { party: :rep, pct: 33.0 } ],
+        entry_mode: :nyt
       )
 
       assert_predicate result, :created?, "the poll should have been recorded: #{result.message}"

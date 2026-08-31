@@ -12,6 +12,15 @@ class ModelRun < ApplicationRecord
   # .first to get the one run whose numbers the site should show.
   scope :latest, -> { order(started_at: :desc, id: :desc) }
 
+  # The sponsor-lean discount this run applied to its incl_internals variant,
+  # recorded in params_snapshot by Forecast::Runner. Falls back to the prior
+  # for runs from before the dual-variant model — the number a live adjusted
+  # average should use when this run is the one on show.
+  def internals_shift
+    params_snapshot&.dig("internals_estimate", "shift") ||
+      Pol::Params.fetch!(:internals, :prior_shift).to_f
+  end
+
   class << self
     # The succeeded run to compare `run` against for "what changed in the last
     # week": the one closest to window_days before it — closest, not "within",

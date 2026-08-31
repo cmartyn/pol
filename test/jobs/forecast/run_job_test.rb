@@ -198,7 +198,7 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     stub_district_pages
 
     assert_no_enqueued_jobs only: Forecast::RunJob do
-      assert_difference "Poll.scraped.count", 1 do
+      assert_no_difference "Poll.count" do
         Ingest::ScrapeAllJob.perform_now
       end
     end

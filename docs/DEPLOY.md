@@ -93,6 +93,25 @@ The encrypted `config/credentials.yml.enc` file is committed; its master key is
 not. `RESEND_API_KEY` and `RESEND_WEBHOOK_SECRET` remain supported as runtime
 overrides.
 
+## The poll feed, and the Wikipedia fallback
+
+The NYT poll CSVs are the corpus (see
+docs/superpowers/specs/2026-08-31-nyt-poll-feed-design.md). `pol_nyt_sync`
+fetches them 2-hourly; the first run in a fresh environment IS the backfill
+(`bin/rails pol:nyt_sync` runs one by hand). The Wikipedia sweep survives as
+a weekly dry canary — it parses every page and records scrape_runs so
+layout-rot alarms stay proven, but writes no polls.
+
+Re-arming the fallback (if the Times moves or stops the files):
+
+1. `scrape.write_enabled: true` in config/model_params.yml.
+2. Restore a frequent `pol_scrape` cron in config/initializers/good_job.rb
+   (it was `0 */2 * * *` when Wikipedia was the corpus).
+3. Decide what `Poll.model_corpus` should read — scraped rows are excluded
+   there by design, so a real switch-back also means widening that scope
+   deliberately, not just re-enabling writes.
+4. Deploy.
+
 ## Costs
 
 Droplet $12/mo + droplet backups ~$2.40/mo + registry $0 + Let's Encrypt $0.

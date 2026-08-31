@@ -5,6 +5,17 @@
     comparable with each other, and a reader scanning the margin column
     should be able to see why. %>
 <% groups = polls.group_by(&:matchup_key) %>
+<% if polls.any?(&:internal?) %>
+  <%# One line of provenance per view, swapped with the toggle: what this
+      view's average did with the flagged rows below. %>
+  <p class="mb-2 text-xs text-slate-500" data-testid="internals-note">
+    <%= variant_swap(
+          "Polls from partisan-aligned sponsors are shown but not in this view's average — flip “Partisan internals” in the header to include them.",
+          safe_join([ "Partisan-sponsored polls are in this view's average, shifted #{number_with_precision(@latest_run&.internals_shift || Pol::Params.fetch!(:internals, :prior_shift), precision: 1)} points toward the non-sponsor party and given half weight — ".html_safe,
+                      link_to("methodology", methodology_path(anchor: "internals")), "." ])
+        ) %>
+  </p>
+<% end %>
 <div class="overflow-x-auto">
   <table class="w-full min-w-[760px] text-left text-sm" data-testid="poll-table">
     <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">

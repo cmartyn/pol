@@ -1,12 +1,14 @@
 require "test_helper"
 
 class Ingest::ScrapeAllJobTest < ActiveJob::TestCase
-  test "the cron schedule runs this job at the cadence in model_params" do
+  test "the cron schedule runs the fallback canary weekly, dry" do
     entry = Rails.application.config.good_job.cron.fetch(:pol_scrape)
 
     assert_equal "Ingest::ScrapeAllJob", entry[:class]
-    assert_equal "0 */#{Pol::Params.fetch!(:scrape, :cadence_hours)} * * *", entry[:cron]
+    assert_equal "0 6 * * 0 America/New_York", entry[:cron]
     assert entry[:description].present?
+    assert_not Pol::Params.fetch!(:scrape, :write_enabled),
+               "the production sweep must be dry while the NYT feed is the corpus"
   end
 
   test "cron is switched on, or nothing would ever run" do
@@ -27,18 +29,19 @@ class Ingest::ScrapeAllJobTest < ActiveJob::TestCase
     stub_district_pages
 
     assert_difference "ScrapeRun.count", 4 do
-      assert_difference "Poll.count", 3 do
+      assert_no_difference "Poll.count" do
         Ingest::ScrapeAllJob.perform_now
       end
     end
 
     assert_equal %w[succeeded succeeded succeeded succeeded], ScrapeRun.order(:id).last(4).map(&:status)
+    # Dry: new_count is what a live sweep would have created, with no row written.
     assert_equal [ 1, 1, 1, 0 ], ScrapeRun.order(:id).last(4).map(&:new_count)
   end
 
-  # The ids, not just the count: the newsroom reacts to the polls this sweep
-  # created, and nothing downstream can work out which ones those were.
-  test "the job hands the ids of the polls it created to the model-run seam" do
+  # A dry sweep creates nothing, so nothing reaches the model-run seam — the
+  # newsroom can never react to a poll the canary merely counted.
+  test "the job hands nothing to the model-run seam while the sweep is dry" do
     stub_wikipedia_page("2026 United States Senate election in Maine", body: poll_page_html(rows: [
       { pollster: "Harbor Analytics", dates: "July 8–10, 2026", sample: "600 (LV)", dem: "48%", rep: "44%" }
     ]))
@@ -47,10 +50,11 @@ class Ingest::ScrapeAllJobTest < ActiveJob::TestCase
     stub_district_pages
 
     recording(Ingest, :after_new_polls!) do |calls|
-      Ingest::ScrapeAllJob.perform_now
+      assert_no_difference "Poll.count" do
+        Ingest::ScrapeAllJob.perform_now
+      end
 
-      assert_equal [ [ [ Poll.order(:id).last.id ] ] ], calls
-      assert_equal races(:senate_maine), Poll.order(:id).last.race
+      assert_empty calls
     end
   end
 

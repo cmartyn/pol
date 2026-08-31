@@ -16,16 +16,25 @@ module Site
       end
 
       def build
-        rows = forecasts.to_a
+        rows = forecasts(:excl_internals).to_a
         points = rows.map { |forecast| point(forecast) }
+
+        # The internals variant's series, aligned run-for-run with the
+        # published one so the two share an x-axis. Runs from before the
+        # dual-variant model wrote no internals row; the published point
+        # stands in there, so toggling shows an identical (rather than
+        # missing) past.
+        incl_by_run = forecasts(:incl_internals).index_by(&:model_run_id)
+        incl_points = rows.map { |forecast| point(incl_by_run[forecast.model_run_id] || forecast) }
 
         {
           points: points,
+          incl_points: incl_points,
           # A third line is only worth drawing when some point actually has a
           # visible non-major-party probability; otherwise it would just be a
           # flat line at zero cluttering the chart for the ~467 of 470 races
           # where it never happens.
-          show_other: rows.any? { |forecast| forecast.p_other_win >= 0.01 },
+          show_other: (rows + incl_by_run.values).any? { |forecast| forecast.p_other_win >= 0.01 },
           sparse: points.size < 2,
           tossup_low_pct: 100.0 - tossup_band_pp,
           tossup_high_pct: tossup_band_pp
@@ -33,8 +42,8 @@ module Site
       end
 
       private
-        def forecasts
-          Forecast.excl_internals.where(race_id: @race.id)
+        def forecasts(variant)
+          Forecast.where(variant: variant, race_id: @race.id)
             .joins(:model_run).merge(ModelRun.succeeded)
             .includes(:model_run)
             .order("model_runs.started_at ASC")

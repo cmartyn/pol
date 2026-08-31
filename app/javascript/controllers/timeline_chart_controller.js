@@ -46,12 +46,24 @@ const bisectDate = bisector((point) => point.date)
 // polls_scatter_chart_controller.js, where a system test caught it.
 const EDGE_INSET = 7
 
+// Which view the internals toggle is showing — see
+// internals_toggle_controller and polls_scatter_chart_controller.
+const internalsOn = () => document.documentElement.dataset.internals === "on"
+
 export default class extends Controller {
   static targets = ["svg", "payload"]
 
   connect() {
     const data = JSON.parse(this.payloadTarget.textContent)
-    this.points = data.points.map((point) => ({ ...point, date: new Date(point.t) }))
+    const parse = (points) => points.map((point) => ({ ...point, date: new Date(point.t) }))
+    // Two aligned series, one per internals view; the toggle swaps which one
+    // this.points names and re-renders. incl_points is absent from payloads
+    // cached before the toggle shipped — the published series stands in.
+    this.pointSets = {
+      excl: parse(data.points),
+      incl: parse(data.incl_points || data.points)
+    }
+    this.points = this.pointSets[internalsOn() ? "incl" : "excl"]
     if (this.points.length === 0) return
 
     this.series = data.show_other ? SERIES : SERIES.slice(0, 2)
@@ -70,10 +82,17 @@ export default class extends Controller {
     this.element.addEventListener("blur", this.onBlur)
     this.element.addEventListener("keydown", this.onKeydown)
 
+    this.onInternals = () => {
+      this.points = this.pointSets[internalsOn() ? "incl" : "excl"]
+      this.clearActive()
+      if (this.lastWidth) this.render(this.lastWidth)
+    }
+    window.addEventListener("internals:changed", this.onInternals)
     this.teardown = observeWidth(this.element, (width) => this.render(width))
   }
 
   disconnect() {
+    window.removeEventListener("internals:changed", this.onInternals)
     this.teardown?.()
     this.tooltip?.destroy()
     this.element.removeEventListener("focus", this.onFocus)
@@ -82,6 +101,7 @@ export default class extends Controller {
   }
 
   render(width) {
+    this.lastWidth = width
     // right: 68 is end-label room ("Other 12%" at 12px semibold just fits);
     // left: 44 fits "100%" at 11px with an 8px gutter.
     const { height, margin, innerWidth, innerHeight } = frame(width, {

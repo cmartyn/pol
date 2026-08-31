@@ -14,9 +14,16 @@ module Ingest
       keyword_init: true
     )
 
-    def initialize(client: WikipediaClient.new, logger: Rails.logger)
+    # `write` — whether parsed polls are recorded at all. Since the NYT feed
+    # became the corpus, the sweep's production job is canary duty: parse
+    # every page, account for every table in scrape_runs so layout rot still
+    # alarms, write nothing. scrape.write_enabled arms it back into a real
+    # fallback with one params flip (see docs/DEPLOY.md).
+    def initialize(client: WikipediaClient.new, logger: Rails.logger,
+                   write: Pol::Params.fetch!(:scrape, :write_enabled))
       @client = client
       @logger = logger
+      @write = write
     end
 
     # => [Outcome, ...], one per source, in the order they were scraped.
@@ -156,10 +163,29 @@ module Ingest
       end
 
       def record_poll(title, row, race, tally)
+        return dry_record(row, race, tally) unless @write
+
         outcome = RecordPoll.call(attributes_for(row, race), results: results_for(row), entry_mode: :scraped)
         tally[outcome.status == :created ? :created : outcome.status] += 1
         tally[:poll_ids] << outcome.poll.id if outcome.created?
         @logger.warn("Ingest::Scraper #{title}: rejected row — #{outcome.message}") if outcome.invalid?
+      end
+
+      # The canary's accounting: what a live sweep would have done, with no
+      # poll row written and no pollster created. `created` counts the
+      # would-creates — the number an operator reads as "the fallback still
+      # sees polls the corpus would have gained" — and poll_ids stays empty,
+      # so no forecast run is ever queued from a dry sweep.
+      def dry_record(row, race, tally)
+        attrs = attributes_for(row, race)
+        pollster = Pollster.find_by(slug: Pollster.canonicalize(attrs[:pollster_name].to_s))
+        digest = pollster && Poll.compute_digest(
+          pollster_slug: pollster.slug, race_id: race&.id,
+          field_start: attrs[:field_start], field_end: attrs[:field_end],
+          results: results_for(row).map { |result| { "party" => result[:party].to_s, "pct" => result[:pct] } }
+        )
+
+        tally[digest && Poll.exists?(dedup_digest: digest) ? :duplicate : :created] += 1
       end
 
       def attributes_for(row, race)

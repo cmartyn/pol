@@ -5,7 +5,13 @@
 # rows, which is cheap at Senate scale (35 races) and doesn't add a query.
 module Site
   class SenateTable
-    Row = Struct.new(:race, :forecast, :poll_count, :last_poll_date, keyword_init: true)
+    # `forecast` is the published (internals-excluded) variant — sorting and
+    # every default reading key off it. `incl_forecast` is the toggled-on
+    # view's row, rendered alongside in the same cells; the published row
+    # stands in when a pre-toggle run wrote only one variant. Sort order
+    # deliberately stays on the published numbers in both views: the toggle
+    # is a lens on the values, not a re-ranking.
+    Row = Struct.new(:race, :forecast, :incl_forecast, :poll_count, :last_poll_date, keyword_init: true)
 
     SORTS = %w[state rating probability margin lean polls last_poll].freeze
     DEFAULT_SORT = "state"
@@ -25,6 +31,8 @@ module Site
       races = Race.senate.includes(:candidates).to_a
       race_ids = races.map(&:id)
       forecasts = Forecast.latest_for_races.where(race_id: race_ids).index_by(&:race_id)
+      incl_forecasts = Forecast.latest_for_races(variant: :incl_internals)
+                               .where(race_id: race_ids).index_by(&:race_id)
       poll_stats = Poll.model_corpus.where(race_id: race_ids)
         .group(:race_id)
         .select(:race_id, "COUNT(*) AS poll_count", "MAX(field_end) AS last_poll_date")
@@ -35,6 +43,7 @@ module Site
         Row.new(
           race: race,
           forecast: forecasts[race.id],
+          incl_forecast: incl_forecasts[race.id] || forecasts[race.id],
           poll_count: stats ? stats.poll_count.to_i : 0,
           last_poll_date: stats&.last_poll_date
         )

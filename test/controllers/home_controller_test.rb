@@ -127,4 +127,16 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     get root_path
     assert_select "[data-testid='corpus-note']", count: 0
   end
+
+  test "the internals toggle and both variants of every number are in the page" do
+    get root_path
+
+    assert_select "[data-testid='internals-toggle']", count: 1
+    # Chamber cards and the national environment each carry both views; the
+    # CSS (keyed on html[data-internals]) shows one.
+    assert_select "[data-testid='chamber-card-senate'] [data-variant='excl_internals']"
+    assert_select "[data-testid='chamber-card-senate'] [data-variant='incl_internals']"
+    assert_select "[data-testid='national-environment'] [data-variant='excl_internals']", count: 1
+    assert_select "[data-testid='national-environment'] [data-variant='incl_internals']", count: 1
+  end
 end

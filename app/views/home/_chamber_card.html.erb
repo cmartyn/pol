@@ -7,8 +7,14 @@
     and so a cache hit skips the ChamberForecast lookup and histogram build
     below rather than paying for them regardless. %>
 <% cache [ "chamber-card", chamber, model_run ] do %>
-  <% chamber_forecast = ChamberForecast.excl_internals.find_by(model_run_id: model_run.id, chamber: chamber) %>
-  <% histogram = chamber_forecast && Site::Charts::SeatHistogram.build(chamber_forecast) %>
+  <%# Both internals views render into this one cached card; CSS shows the
+      one the toggle picked (VariantsHelper). The published row stands in
+      for the internals one on runs from before the dual-variant model. %>
+  <% excl_forecast = ChamberForecast.excl_internals.find_by(model_run_id: model_run.id, chamber: chamber) %>
+  <% chamber_forecasts = {
+       excl_internals: excl_forecast,
+       incl_internals: ChamberForecast.incl_internals.find_by(model_run_id: model_run.id, chamber: chamber) || excl_forecast
+     } %>
   <div class="rounded-lg border border-slate-200 p-5" data-testid="chamber-card-<%= title.downcase %>">
     <%# A tracked label rather than a serif heading: on a card whose whole job
         is the two probabilities below it, "Senate" is the caption and the
@@ -21,7 +27,10 @@
         figures without making it something you have to hunt for. %>
     <h2 class="eyebrow text-xs text-slate-700"><%= title %></h2>
 
-    <% if chamber_forecast %>
+    <% if excl_forecast %>
+      <%= each_variant do |variant| %>
+      <% chamber_forecast = chamber_forecasts[variant] %>
+      <% histogram = Site::Charts::SeatHistogram.build(chamber_forecast) %>
       <p class="mt-1 text-sm text-slate-600">
         <% leader = chamber_forecast.p_dem_control >= chamber_forecast.p_rep_control ? "Democrats" : "Republicans" %>
         <% leader_probability = [ chamber_forecast.p_dem_control, chamber_forecast.p_rep_control ].max %>
@@ -54,6 +63,7 @@
       <div class="mt-4">
         <%= render "races/seat_histogram", payload: histogram, title: title %>
       </div>
+      <% end %>
 
       <%# After the chart, not before it: this is a footnote about the figure,
           and wedged between the probability and the histogram it broke the

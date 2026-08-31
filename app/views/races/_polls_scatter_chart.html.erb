@@ -19,11 +19,14 @@
     <% [ payload[:side_a_party], payload[:side_b_party] ].each do |party| %>
       <span><span class="inline-block h-2 w-2 rounded-full <%= dot_class.fetch(party, "bg-slate-500") %>"></span> <%= side_word.fetch(party, "Other") %>-leaning poll</span>
     <% end %>
-    <% if payload[:average_margin] %>
-      <span>
-        <span class="inline-block h-0.5 w-3 bg-amber-600 align-middle"></span>
-        current average: <strong class="font-semibold text-slate-700"><%= formatted_margin(race, payload[:average_margin]) %></strong>
-      </span>
+    <%= each_variant(tag_name: :span) do |variant| %>
+      <% margin = variant == :incl_internals ? payload.dig(:incl, :average_margin) : payload[:average_margin] %>
+      <% if margin %>
+        <span>
+          <span class="inline-block h-0.5 w-3 bg-amber-600 align-middle"></span>
+          current average: <strong class="font-semibold text-slate-700"><%= formatted_margin(race, margin) %></strong>
+        </span>
+      <% end %>
     <% end %>
   </p>
 </div>

@@ -96,4 +96,21 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     assert_in_delta 100.0 - tossup_band_pp, payload[:tossup_low_pct]
     assert_in_delta tossup_band_pp, payload[:tossup_high_pct]
   end
+
+  test "the internals series aligns run-for-run, published points standing in where no internals row exists" do
+    old = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 3.days.ago, finished_at: 3.days.ago)
+    new_run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 1.day.ago, finished_at: 1.day.ago)
+    Forecast.create!(model_run: old, race: races(:senate_florida_special), p_dem_win: 0.20, p_rep_win: 0.80, mean_margin: -11.0)
+    Forecast.create!(model_run: new_run, race: races(:senate_florida_special), p_dem_win: 0.30, p_rep_win: 0.70, mean_margin: -9.0)
+    Forecast.create!(model_run: new_run, race: races(:senate_florida_special), variant: :incl_internals,
+                     p_dem_win: 0.40, p_rep_win: 0.60, mean_margin: -6.0)
+
+    payload = Site::Charts::Timeline.build(race: races(:senate_florida_special))
+
+    assert_equal payload[:points].size, payload[:incl_points].size
+    # The old run wrote no internals row: its incl point is the published one.
+    assert_equal payload[:points].first[:p_dem_win], payload[:incl_points].first[:p_dem_win]
+    assert_in_delta 0.40, payload[:incl_points].last[:p_dem_win]
+    assert_in_delta 0.30, payload[:points].last[:p_dem_win]
+  end
 end

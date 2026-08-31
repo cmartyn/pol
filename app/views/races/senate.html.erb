@@ -103,18 +103,25 @@
                   <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
                   <% if row.race.special? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">special</span><% end %>
                 </td>
-                <td class="py-2.5 pr-3 text-slate-700" data-testid="rating-word"><%= rating_word_for(row.race, row.forecast) || "—" %></td>
-                <td class="py-2.5 pr-3"><%= probability_chip(row.forecast) %></td>
+                <td class="py-2.5 pr-3 text-slate-700" data-testid="rating-word"><%= each_variant(tag_name: :span) do |variant|
+                  rating_word_for(row.race, variant == :incl_internals ? row.incl_forecast : row.forecast) || "—"
+                end %></td>
+                <td class="py-2.5 pr-3"><%= each_variant(tag_name: :span) do |variant|
+                  probability_chip(variant == :incl_internals ? row.incl_forecast : row.forecast)
+                end %></td>
                 <td class="py-2.5 pr-3 font-semibold">
-                  <% if row.forecast %>
-                    <span class="<%= party_text_color(margin_party(row.race, row.forecast.mean_margin)) %>">
-                      <%= formatted_margin(row.race, row.forecast.mean_margin) %>
-                    </span>
-                  <% else %>
-                    <span class="text-slate-300">—</span>
+                  <%= each_variant(tag_name: :span) do |variant| %>
+                    <% forecast = variant == :incl_internals ? row.incl_forecast : row.forecast %>
+                    <% if forecast %>
+                      <span class="<%= party_text_color(margin_party(row.race, forecast.mean_margin)) %>">
+                        <%= formatted_margin(row.race, forecast.mean_margin) %>
+                      </span>
+                    <% else %>
+                      <span class="text-slate-300">—</span>
+                    <% end %>
                   <% end %>
                 </td>
-                <td class="py-2.5 pr-3 hidden sm:table-cell"><%= render "races/margin_bar", race: row.race, value: row.forecast&.mean_margin %></td>
+                <td class="py-2.5 pr-3 hidden sm:table-cell"><%= each_variant(tag_name: :span) do |variant| %><%= render "races/margin_bar", race: row.race, value: (variant == :incl_internals ? row.incl_forecast : row.forecast)&.mean_margin %><% end %></td>
               <%# The state's partisan lean — Senate's equivalent of the
                   2024 baseline /house shows, and the fundamentals half of
                   every blended mu. It went unshown here until now. %>

@@ -81,8 +81,12 @@
                 <td class="py-2 pr-3">
                   <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
                 </td>
-                <td class="py-2 pr-3 text-slate-700" data-testid="rating-word"><%= rating_word_for(row.race, row.forecast) || "—" %></td>
-                <td class="py-2 pr-3"><%= probability_chip(row.forecast) %></td>
+                <td class="py-2 pr-3 text-slate-700" data-testid="rating-word"><%= each_variant(tag_name: :span) do |variant|
+                  rating_word_for(row.race, variant == :incl_internals ? row.incl_forecast : row.forecast) || "—"
+                end %></td>
+                <td class="py-2 pr-3"><%= each_variant(tag_name: :span) do |variant|
+                  probability_chip(variant == :incl_internals ? row.incl_forecast : row.forecast)
+                end %></td>
                 <%# The forecast's own margin, which this table lacked until
                     now: its only margin-ish column showed the 2024 baseline,
                     which is history rather than a forecast. Both earn their
@@ -91,15 +95,18 @@
                     Site::RaceSides deliberately (no candidates are preloaded
                     for House rows), so the forecast margin uses them too. %>
                 <td class="py-2 pr-3 font-semibold whitespace-nowrap">
-                  <% if row.forecast %>
-                    <span class="<%= party_text_color(house_margin_party(row.forecast.mean_margin)) %>">
-                      <%= house_margin(row.forecast.mean_margin) %>
-                    </span>
-                  <% else %>
-                    <span class="text-slate-300">—</span>
+                  <%= each_variant(tag_name: :span) do |variant| %>
+                    <% forecast = variant == :incl_internals ? row.incl_forecast : row.forecast %>
+                    <% if forecast %>
+                      <span class="<%= party_text_color(house_margin_party(forecast.mean_margin)) %>">
+                        <%= house_margin(forecast.mean_margin) %>
+                      </span>
+                    <% else %>
+                      <span class="text-slate-300">—</span>
+                    <% end %>
                   <% end %>
                 </td>
-                <td class="py-2 pr-3 hidden sm:table-cell"><%= render "races/margin_bar", race: row.race, value: row.forecast&.mean_margin %></td>
+                <td class="py-2 pr-3 hidden sm:table-cell"><%= each_variant(tag_name: :span) do |variant| %><%= render "races/margin_bar", race: row.race, value: (variant == :incl_internals ? row.incl_forecast : row.forecast)&.mean_margin %><% end %></td>
                 <td class="py-2 pr-3 whitespace-nowrap">
                   <span class="font-medium <%= party_text_color(house_margin_party(row.race.baseline_margin)) %>">
                     <%= house_margin(row.race.baseline_margin) || "—" %>

@@ -1,6 +1,6 @@
 module Ingest
-  # The scheduled sweep. GoodJob's cron runs this every
-  # scrape.cadence_hours hours (see config/initializers/good_job.rb).
+  # The scheduled sweep — weekly and dry since the NYT feed became the
+  # corpus (see config/initializers/good_job.rb and scrape.write_enabled).
   class ScrapeAllJob < ApplicationJob
     queue_as :default
 

@@ -7,7 +7,6 @@ Rails.application.configure do
   # here yet. A test asserts this entry still matches Pol::Params, so the two
   # cannot drift.
   params_file = YAML.safe_load_file(Rails.root.join("config/model_params.yml"))
-  cadence_hours = params_file.fetch("scrape").fetch("cadence_hours")
   feed_cadence_hours = params_file.fetch("feed").fetch("cadence_hours")
 
   # The three daily entries carry an explicit timezone as fugit's sixth cron
@@ -27,10 +26,14 @@ Rails.application.configure do
       class: "Ingest::NytSyncJob",
       description: "Fetch the NYT poll CSVs and ingest new polls"
     },
+    # Weekly, and a dry run (scrape.write_enabled is false): the Wikipedia
+    # sweep is the warm fallback now, kept parsing so the layout-rot alarms
+    # stay proven, writing nothing. Sunday 06:00 Eastern — clear of the
+    # 06:30 model floor and the 07:00 brief.
     pol_scrape: {
-      cron: "0 */#{cadence_hours} * * *",
+      cron: "0 6 * * 0 America/New_York",
       class: "Ingest::ScrapeAllJob",
-      description: "Sweep every Wikipedia poll source and ingest new polls"
+      description: "Weekly dry sweep of the Wikipedia poll sources (fallback canary)"
     },
     # Once a day rather than on the poll sweep's cadence: a nominee settles
     # when a primary is called, not every two hours, and unlike pol_scrape

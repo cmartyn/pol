@@ -65,3 +65,27 @@
   text-transform: uppercase;
   letter-spacing: 0.11em;
 }
+
+/* ---------------------------------------------------------------------------
+   Internals toggle
+
+   Every toggled surface renders both variants into the same HTML (see
+   VariantsHelper); these two rules are the entire switch. Keyed off
+   html[data-internals], which internals_toggle_controller sets from
+   localStorage / the #internals=on fragment — with no JS the attribute is
+   absent, the first rule hides the internals view, and the reader gets the
+   published (internals-excluded) numbers, which is the editorial default.
+   !important so no utility class on a variant node can pin it visible. */
+html:not([data-internals="on"]) [data-variant="incl_internals"] {
+  display: none !important;
+}
+html[data-internals="on"] [data-variant="excl_internals"] {
+  display: none !important;
+}
+
+/* Poll rows are never hidden by the toggle — an internal poll is visible in
+   both views; what changes is whether it is in the math. The row wears a
+   muted treatment while the published view is showing. */
+html:not([data-internals="on"]) tr[data-internal-poll] {
+  opacity: 0.55;
+}
