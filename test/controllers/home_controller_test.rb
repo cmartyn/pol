@@ -111,4 +111,20 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='dashboard-empty']"
     assert_select "[data-testid='chamber-card-senate']", count: 0
   end
+
+  test "the corpus note shows while the feed corpus is fresh and not after" do
+    get root_path
+    assert_select "[data-testid='corpus-note']", count: 0
+
+    Poll.first.update_columns(entry_mode: Poll.entry_modes.fetch("nyt"), created_at: 2.days.ago)
+
+    get root_path
+    assert_select "[data-testid='corpus-note']", count: 1
+    assert_select "[data-testid='corpus-note'] a[href=?]", methodology_path(anchor: "data-sources")
+
+    Poll.nyt.update_all(created_at: 8.days.ago)
+
+    get root_path
+    assert_select "[data-testid='corpus-note']", count: 0
+  end
 end

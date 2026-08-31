@@ -1,0 +1,17 @@
+<%# locals: note (a visible Site::CorpusNote). The one-time editorial note on
+    the data-source switch — deterministic copy for a one-time event, not a
+    newsroom dispatch. Self-retires; see Site::CorpusNote. %>
+<aside class="mt-6 max-w-3xl rounded-lg border border-blue-200 bg-blue-50 p-5 text-sm text-slate-700"
+       data-testid="corpus-note">
+  <p>
+    <strong class="font-semibold text-slate-900">A note on our numbers.</strong>
+    535 now draws its polls from The New York Times&rsquo; polling database, the continuation of the
+    FiveThirtyEight dataset, replacing the Wikipedia tables we launched with. The new feed is deeper
+    &mdash; more polls in nearly every race, partisan-sponsored surveys flagged as such, and districts
+    our old source never covered &mdash; and the forecast moved when it arrived. That movement reflects
+    better data, not news events, so treat week-over-week comparisons with care through
+    <%= note.expires_on.strftime("%B %-d") %>.
+    <%= link_to "How we read the data →", methodology_path(anchor: "data-sources"),
+                class: "font-medium text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-500" %>
+  </p>
+</aside>

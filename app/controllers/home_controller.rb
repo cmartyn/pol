@@ -23,5 +23,6 @@ class HomeController < PublicController
 
     @movers = Site::Movers.call
     @dispatches = Dispatch.published.recent_first.limit(5).includes(:race)
+    @corpus_note = Site::CorpusNote.new
   end
 end

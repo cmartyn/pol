@@ -3,6 +3,8 @@
 <h1 class="font-serif text-3xl font-semibold text-slate-900">2026 midterms forecast</h1>
 <%= render "shared/as_of", time: @latest_run&.started_at %>
 
+<%= render "home/corpus_note", note: @corpus_note if @corpus_note.visible? %>
+
 <% if @latest_run.nil? %>
   <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="dashboard-empty">
     No forecast run has completed yet. Once one has, the Senate and House pictures will appear here.
