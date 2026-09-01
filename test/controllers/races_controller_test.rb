@@ -86,6 +86,45 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='percentile-interval']"
   end
 
+  # --- The simulation-count sentence ------------------------------------
+  # These three branches are the whole of what a reader is told about how the
+  # probability was arrived at, and each states a literal count of simulated
+  # worlds — so each is asserted on the rendered string rather than trusted to
+  # the helper's unit test.
+
+  test "show states the run's own simulation count, not the configured one" do
+    # The fixture run drew 10,000. Raising simulation.n_sims must not relabel
+    # a forecast that was never drawn at the new count.
+    with_params(simulation: { n_sims: 500_000 }) do
+      get race_path(races(:senate_maine).slug)
+    end
+
+    assert_response :success
+    assert_select "p", text: /the leading side wins 6,200 of 10,000 simulated elections/
+    assert_select "p", text: /of 500,000/, count: 0
+  end
+
+  test "show gives a favoured race the winning-side wording" do
+    forecasts(:maine_forecast).update!(p_dem_win: 0.9527, p_rep_win: 0.0473)
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_response :success
+    assert_select "p", text: /Democrats\s+are favored, winning 9,527 of 10,000 simulated elections/
+  end
+
+  test "show claims no simulations for an uncontested race, because none were run" do
+    # Forecast::Simulator#certain_outcome awards the seat and draws no error
+    # at all, so the page must not print a tally of worlds it never simulated.
+    races(:senate_maine).update!(uncontested: true, uncontested_party: :dem)
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_response :success
+    assert_select "p", text: /only one candidate can win it, so the model awards the seat/
+    assert_select "p", text: /simulated elections/, count: 0
+  end
+
   test "show 404s cleanly on an unknown slug" do
     get race_path("not-a-real-race")
     assert_response :not_found

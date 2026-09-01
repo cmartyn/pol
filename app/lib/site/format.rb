@@ -28,8 +28,33 @@ module Site
     end
 
     # 0.7183 -> "72 in 100" — the "X in 100" phrasing the brief wants in leads.
+    #
+    # An odds phrase, and only that: it belongs in front of the noun "chance",
+    # which is how Newsroom::Prompts asks the writer to use it. It is NOT a
+    # count of simulations, and printing it in front of the word "simulations"
+    # (as this site's figures did until 2026-08-31) claims the model ran a
+    # hundred worlds. Site figures use #of_simulations below.
     def x_in_100(probability)
       "#{(probability * 100).round} in 100"
+    end
+
+    # 0.7183 at n_sims 100,000 -> "71,830 of 100,000 simulated elections".
+    #
+    # The literal tally the site prints beside its probabilities. The count is
+    # exact rather than estimated: a stored probability IS wins/n_sims (see
+    # Forecast::Simulator), so multiplying it back recovers the integer the
+    # simulator counted.
+    #
+    # `n_sims` must be the count THAT RUN drew — ModelRun#n_sims, read from
+    # the run's own params_snapshot — never the current configured value. The
+    # two differ for as long as forecasts written before a change to
+    # simulation.n_sims are still the ones on show, and rendering a row
+    # computed at 10,000 as a fraction of 100,000 would invent the very
+    # precision this phrasing exists to state honestly.
+    def of_simulations(probability, n_sims:)
+      wins = ActiveSupport::NumberHelper.number_to_delimited((probability * n_sims).round)
+
+      "#{wins} of #{ActiveSupport::NumberHelper.number_to_delimited(n_sims)} simulated elections"
     end
 
     # `value` is side_a minus side_b, in percentage points (the same

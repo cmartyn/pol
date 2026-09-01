@@ -28,6 +28,30 @@ class Site::FormatTest < ActiveSupport::TestCase
     assert_equal "1 in 100", Site::Format.x_in_100(0.009)
   end
 
+  test "of_simulations states a literal tally rather than odds" do
+    assert_equal "71,830 of 100,000 simulated elections",
+                 Site::Format.of_simulations(0.7183, n_sims: 100_000)
+    assert_equal "900 of 100,000 simulated elections",
+                 Site::Format.of_simulations(0.009, n_sims: 100_000)
+  end
+
+  test "of_simulations recovers the exact count the simulator tallied" do
+    # A stored probability IS wins/n_sims, so multiplying back is exact — the
+    # page prints the integer the simulator counted, not an approximation.
+    assert_equal "6,215 of 10,000 simulated elections",
+                 Site::Format.of_simulations(6_215 / 10_000.0, n_sims: 10_000)
+  end
+
+  test "of_simulations denominates by the run's own count, not a fixed one" do
+    # The same probability from two runs of different sizes. This is why the
+    # helper takes n_sims rather than reading Pol::Params: a forecast drawn at
+    # 10,000 must never be published as a fraction of 100,000.
+    assert_equal "6,200 of 10,000 simulated elections",
+                 Site::Format.of_simulations(0.62, n_sims: 10_000)
+    assert_equal "62,000 of 100,000 simulated elections",
+                 Site::Format.of_simulations(0.62, n_sims: 100_000)
+  end
+
   # --- margin ---------------------------------------------------------------
 
   test "margin renders a positive side_a value as D+x.x" do

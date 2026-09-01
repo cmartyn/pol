@@ -44,14 +44,23 @@
     <% variant_forecast = forecasts[variant] %>
     <p class="mt-4 max-w-2xl text-slate-700">
       <% rating = rating_word_for(@race, variant_forecast) %>
-      <% if rating == "Tossup" %>
-        This race is a <strong class="font-semibold">Tossup</strong> — the leading side wins in
-        <%= Site::Format.x_in_100(leading_probability(variant_forecast)) %> simulations.
+      <%# "Uncontested" is its own branch rather than falling through to the
+          favoured-side sentence, because that sentence now states a literal
+          simulation count and an uncontested race has none: Forecast::
+          Simulator#certain_outcome awards the seat and draws no error at all.
+          Printing "100,000 of 100,000 simulated elections" for it would be
+          precisely the invented tally this phrasing was changed to stop. %>
+      <% if rating == "Uncontested" %>
+        This race is <strong class="font-semibold">Uncontested</strong> — only one candidate can win it, so
+        the model awards the seat rather than simulating the race.
+      <% elsif rating == "Tossup" %>
+        This race is a <strong class="font-semibold">Tossup</strong> — the leading side wins
+        <%= Site::Format.of_simulations(leading_probability(variant_forecast), n_sims: @latest_run.n_sims) %>.
       <% else %>
         <strong class="font-semibold <%= party_text_color(leading_party(variant_forecast)) %>">
           <%= { "dem" => "Democrats", "rep" => "Republicans", "other" => "The independent" }.fetch(leading_party(variant_forecast)) %>
         </strong>
-        are favored, winning in <%= Site::Format.x_in_100(leading_probability(variant_forecast)) %> simulations.
+        are favored, winning <%= Site::Format.of_simulations(leading_probability(variant_forecast), n_sims: @latest_run.n_sims) %>.
       <% end %>
     </p>
     <% end %>

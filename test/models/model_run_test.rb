@@ -15,6 +15,28 @@ class ModelRunTest < ActiveSupport::TestCase
     end
   end
 
+  test "n_sims reads the run's own snapshot, not the current parameter" do
+    run = model_runs(:model_run_one)
+
+    with_params(simulation: { n_sims: 999_999 }) do
+      assert_equal 10_000, run.n_sims,
+                   "a forecast drawn at 10,000 must not be relabelled when the parameter moves"
+    end
+  end
+
+  test "n_sims falls back to the current parameter when the snapshot predates it" do
+    run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: "2026-07-01 00:00:00",
+                           params_snapshot: { "averaging" => { "half_life_days" => 14 } })
+
+    assert_equal Pol::Params.fetch!(:simulation, :n_sims), run.n_sims
+  end
+
+  test "n_sims falls back when there is no snapshot at all" do
+    run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: "2026-07-01 00:00:00")
+
+    assert_equal Pol::Params.fetch!(:simulation, :n_sims), run.n_sims
+  end
+
   test "succeeded scope returns only succeeded runs" do
     failed_run = ModelRun.create!(status: :failed, trigger: :manual, started_at: "2026-07-01 00:00:00")
 

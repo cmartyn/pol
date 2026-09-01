@@ -34,7 +34,7 @@
       <p class="mt-1 text-sm text-slate-600">
         <% leader = chamber_forecast.p_dem_control >= chamber_forecast.p_rep_control ? "Democrats" : "Republicans" %>
         <% leader_probability = [ chamber_forecast.p_dem_control, chamber_forecast.p_rep_control ].max %>
-        <%= leader %> favored to control &mdash; <%= Site::Format.x_in_100(leader_probability) %> simulations.
+        <%= leader %> control in <%= Site::Format.of_simulations(leader_probability, n_sims: model_run.n_sims) %>.
       </p>
 
       <%# The figure, set in three pieces: a tracked party letter, the numeral

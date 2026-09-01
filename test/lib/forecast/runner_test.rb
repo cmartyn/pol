@@ -26,11 +26,21 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
 
     assert_equal SEED, run.rng_seed
     assert_equal Pol::Params.to_h.deep_stringify_keys, run.params_snapshot.except("internals_estimate")
-    assert_equal 10_000, run.params_snapshot.dig("simulation", "n_sims")
+    assert_equal 100_000, run.params_snapshot.dig("simulation", "n_sims")
     # The fixture world holds no partisan polls, so the recorded shift is the
     # prior, from zero pairs.
     assert_equal({ "shift" => 3.0, "prior" => 3.0, "empirical_mean" => nil, "pair_count" => 0 },
                  run.params_snapshot.fetch("internals_estimate"))
+  end
+
+  test "an n_sims override is recorded in the snapshot, not the configured value" do
+    run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED, n_sims: 50)
+
+    assert_equal 50, run.params_snapshot.dig("simulation", "n_sims"),
+                 "the snapshot must describe the run that happened, not the configured one"
+    assert_equal 50, run.n_sims
+    assert_equal 100_000, Pol::Params.fetch!(:simulation, :n_sims),
+                 "the override must not leak into the memoized params"
   end
 
   test "a run with no seed given draws one and stores it" do
@@ -81,18 +91,27 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     # W = 1.1775884, average +2.0130020, w = W/3 = 0.3925295,
     # mu = 0.3925295 × 2.0130020 + 0.6074705 × 4.0 = 3.2200447.
     # A polled Senate race's total error is unchanged by Phase 10 — sqrt(3² +
-    # 2² + 2² + 2.2913²) × t = 4.7170 × 1.5222 = 7.1804 — so 10,000 draws
-    # around that mu still have a standard error of 0.07, and the simulated
-    # mean still lands within 0.01 of it.
+    # 2² + 2² + 2.2913²) × t = 4.7170 × 1.5222 = 7.1804 — so the 100,000 draws
+    # around that mu have a standard error of 0.023, and the simulated mean
+    # lands 0.032 from it, about 1.4 of those.
+    #
+    # The exact-value pins below moved when simulation.n_sims went 10,000 →
+    # 100,000 on 2026-08-31: ten times as many draws is a wholly different walk
+    # through the same seeded stream, not a longer prefix of the old one, so
+    # every Monte Carlo output is redrawn. p_dem_win went 0.6743 → 0.67456,
+    # inside the ~0.005 standard error the old count carried. The analytic
+    # anchors either side of them — the poll weight, mu, and the sigma
+    # recovered from the percentile spread — are unchanged, which is what says
+    # the model did not move and only its resolution did.
     assert_in_delta 1.1775884, maine.effective_poll_weight, 1e-7
     assert_in_delta 3.2200447, maine.mean_margin, 0.15
-    assert_equal 0.6743, maine.p_dem_win
-    assert_equal 0.3257, maine.p_rep_win
+    assert_equal 0.67456, maine.p_dem_win
+    assert_in_delta 0.32544, maine.p_rep_win, 1e-9
     assert_equal 0.0, maine.p_other_win
-    assert_in_delta 3.2165247, maine.mean_margin, 1e-6
-    assert_in_delta(-8.4489142, maine.margin_percentiles["5"], 1e-6)
-    assert_in_delta 3.1647114, maine.margin_percentiles["50"], 1e-6
-    assert_in_delta 14.9786476, maine.margin_percentiles["95"], 1e-6
+    assert_in_delta 3.2522153, maine.mean_margin, 1e-6
+    assert_in_delta(-8.5893115, maine.margin_percentiles["5"], 1e-6)
+    assert_in_delta 3.2666087, maine.margin_percentiles["50"], 1e-6
+    assert_in_delta 15.0532007, maine.margin_percentiles["95"], 1e-6
     # p95 − p5 over 2 × 1.6448536 recovers the sigma above from the output.
     assert_in_delta 4.7170 * 1.5222222,
                     (maine.margin_percentiles["95"] - maine.margin_percentiles["5"]) / (2 * 1.6448536), 0.15
@@ -101,13 +120,13 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     # the wider unpolled sigma.
     assert_equal 0.0, florida.effective_poll_weight
     assert_in_delta(-11.5, florida.mean_margin, 0.3)
-    assert_in_delta(-11.4566456, florida.mean_margin, 1e-6)
-    assert_equal 0.1843, florida.p_dem_win
+    assert_in_delta(-11.4998129, florida.mean_margin, 1e-6)
+    assert_equal 0.18383, florida.p_dem_win
 
     # NY-17: 2.7 + (2.0 − −2.6) = 7.3, no district polls.
     assert_in_delta 7.3, ny17.mean_margin, 0.3
-    assert_in_delta 7.2710386, ny17.mean_margin, 1e-6
-    assert_equal 0.7446, ny17.p_dem_win
+    assert_in_delta 7.2854653, ny17.mean_margin, 1e-6
+    assert_equal 0.74352, ny17.p_dem_win
     # The one total Phase 10 deliberately moved: a district's error is now
     # sqrt(17 + 6²) = 7.2801 where it was 6.5000, so NY-17's 5th-to-95th
     # spread widens with it.
@@ -115,17 +134,21 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
                     (ny17.margin_percentiles["95"] - ny17.margin_percentiles["5"]) / (2 * 1.6448536), 0.2
 
     senate = run.chamber_forecasts.excl_internals.find_by(chamber: :senate)
-    # 34 holdovers plus the two seats up: 34 + 0.6743 + 0.1843. Nobody can
+    # 34 holdovers plus the two seats up: 34 + 0.67456 + 0.18383. Nobody can
     # reach 51, or 50, from there.
-    assert_in_delta 34.8586, senate.mean_dem_seats, 1e-9
+    assert_in_delta 34.85839, senate.mean_dem_seats, 1e-9
     assert_equal 0.0, senate.p_dem_control
     assert_equal 0.0, senate.p_rep_control
-    assert_equal({ "34" => 2845, "35" => 5724, "36" => 1431 }, senate.seat_histogram)
+    # The bins are counts of simulated worlds, so they sum to n_sims, not to
+    # the 10,000 they summed to before the count was raised.
+    assert_equal({ "34" => 28_668, "35" => 56_825, "36" => 14_507 }, senate.seat_histogram)
+    assert_equal 100_000, senate.seat_histogram.values.sum
 
     house = run.chamber_forecasts.excl_internals.find_by(chamber: :house)
-    assert_in_delta 0.7446, house.mean_dem_seats, 1e-9
+    assert_in_delta 0.74352, house.mean_dem_seats, 1e-9
     assert_equal 0.0, house.p_dem_control
-    assert_equal({ "0" => 2554, "1" => 7446 }, house.seat_histogram)
+    assert_equal({ "0" => 25_648, "1" => 74_352 }, house.seat_histogram)
+    assert_equal 100_000, house.seat_histogram.values.sum
   end
 
   # End to end, through the real Race rows: the state a race sits in is a

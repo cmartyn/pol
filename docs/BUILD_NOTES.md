@@ -1808,14 +1808,33 @@ real-world fact still carries its URL — the Senate map and holdover arithmetic
    change, not a constant, and it is what would let the caveat come off the
    page. See Phase 3 §A4.
 4. **`n_sims` is tunable, and the noise floor moves with it.**
-   `simulation.n_sims` is 10,000, where run-to-run Monte Carlo noise on Senate
-   control measures ~1.4pp. Raising it costs run time roughly linearly (a full
-   470-race run is ~1.5s today) and shrinks the noise as 1/√n. Anything that
-   reads a *difference* between runs has to stay above that floor:
-   `site.movers_floor_pp` (1.5) does, and `newsroom.movement_threshold` (0.08 =
-   8 points) does comfortably. The mover list printed by `bin/rails pol:model`
-   does not — its 0.05pp cutoff reports noise as news, which is cosmetic but
-   misleading if read as signal.
+   `simulation.n_sims` is **100,000**, raised from 10,000 on 2026-08-31. At
+   10,000 the run-to-run Monte Carlo noise on Senate control measured ~1.4pp
+   (Phase 3 §8.2); noise shrinks as 1/√n, so it is now ~0.44pp. Cost is
+   roughly linear in both time and memory: a real 470-race run, both variants,
+   measures **36.5s and 378 MB peak RSS** (measured 2026-08-31). Memory, not
+   time, is what caps this — production is one 2GB droplet shared with
+   Postgres, and the simulator holds ~60 full-length shared-error series, so
+   500,000 sims lands near 700 MB and 1,000,000 near 1 GB. The per-n_sims
+   table is in `config/model_params.yml` above the constant.
+
+   Raising it does **not** make the forecast more accurate — 0.5pp of Monte
+   Carlo error was already an order of magnitude under the structural
+   uncertainty in §C3 above. It was raised for stability, because `rng_seed`
+   is fresh every run and the site republishes every two hours: a reader
+   refreshing against an unchanged corpus was seeing up to 1.4pp of movement
+   that was nothing but the seed.
+
+   Anything that reads a *difference* between runs still has to stay above the
+   floor. `site.movers_floor_pp` is **deliberately still 1.5**, not 0.5: a
+   mover compares against a run `site.movers_window_days` back, so until every
+   run inside that window was drawn at 100,000 the comparison is mixed-vintage
+   and still carries the old count's noise. Drop it to ~0.5 no sooner than
+   `movers_window_days` after the first 100,000-sim run reaches production.
+   `newsroom.movement_threshold` (0.08 = 8 points) clears the floor either
+   way. The mover list printed by `bin/rails pol:model` still does not — its
+   0.05pp cutoff reports noise as news, which is cosmetic but misleading if
+   read as signal.
 5. **Rotate the OpenRouter API key.** It was printed in plaintext twice on this
    machine during the build (Phase 0 §C). Nothing left the machine and nothing
    is in the repository, but the cheap, correct response to a key that has been

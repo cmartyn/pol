@@ -21,6 +21,22 @@ class ModelRun < ApplicationRecord
       Pol::Params.fetch!(:internals, :prior_shift).to_f
   end
 
+  # How many simulated elections this run actually drew, from its own
+  # params_snapshot — the denominator the site prints beside its
+  # probabilities (Site::Format.of_simulations).
+  #
+  # Read from the run, never from Pol::Params, and that distinction is the
+  # whole reason this exists. Raising simulation.n_sims does not recompute
+  # the forecasts already in the table, so between the deploy and the next
+  # run the site is showing rows drawn at the old count. Sourcing the
+  # denominator from the live config would relabel those rows as a fraction
+  # of a number of worlds that were never simulated — which is exactly the
+  # false claim the phrasing change was made to stop. Falls back to the
+  # current parameter only for runs from before the snapshot carried it.
+  def n_sims
+    params_snapshot&.dig("simulation", "n_sims") || Pol::Params.fetch!(:simulation, :n_sims)
+  end
+
   class << self
     # The succeeded run to compare `run` against for "what changed in the last
     # week": the one closest to window_days before it — closest, not "within",

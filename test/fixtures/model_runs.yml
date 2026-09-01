@@ -9,8 +9,13 @@ model_run_one:
   started_at: 2026-08-01 10:00:00
   finished_at: 2026-08-01 10:00:47
   status: succeeded
+  # Shaped like a real snapshot (Pol::Params.to_h), not flat: ModelRun#n_sims
+  # digs simulation.n_sims out of it to label the site's figures, and a flat
+  # fixture would silently exercise the fallback instead of the real path.
   params_snapshot:
-    n_sims: 10000
-    half_life_days: 14
+    simulation:
+      n_sims: 10000
+    averaging:
+      half_life_days: 14
   rng_seed: 20260801
   trigger: cron

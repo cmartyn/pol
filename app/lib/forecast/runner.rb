@@ -75,19 +75,35 @@ class Forecast::Runner
         status: :running,
         trigger: trigger,
         started_at: Time.current,
-        params_snapshot: Pol::Params.to_h,
+        params_snapshot: effective_params,
         rng_seed: @seed || SecureRandom.random_number(2**62)
       )
     rescue ActiveRecord::RecordNotUnique
       raise AlreadyRunning, "a forecast run is already in flight"
     end
 
+    # The parameter tree the run actually ran on. Identical to Pol::Params
+    # except when a caller overrode n_sims (a console run, a system test
+    # pinning its numbers): the simulator draws the override, so the snapshot
+    # has to record the override too. ModelRun#n_sims reads this to label the
+    # site's figures, and a snapshot describing a run that did not happen
+    # would put a denominator on the page that nothing ever counted.
+    #
+    # Both merges build new hashes — Pol::Params.to_h is memoized per process
+    # and must not be mutated.
+    def effective_params
+      snapshot = Pol::Params.to_h
+      return snapshot unless @n_sims
+
+      snapshot.merge(simulation: snapshot.fetch(:simulation).merge(n_sims: @n_sims))
+    end
+
     # Without this, one killed worker freezes the forecast permanently: the row
     # it left behind says `running`, the unique index refuses every later run,
     # and the site keeps serving plausible stale numbers with nothing to
     # indicate anything is wrong. A run older than stale_run_minutes cannot be
-    # alive — a full run takes under two seconds — so the next run fails it and
-    # takes over. The row keeps its own error_message, so the wreck is visible
+    # alive — a full run is tens of seconds at simulation.n_sims, two orders of
+    # magnitude inside the cutoff — so the next run fails it and takes over. The row keeps its own error_message, so the wreck is visible
     # afterwards rather than silently swept away.
     def release_stale_run!
       cutoff = Pol::Params.fetch!(:simulation, :stale_run_minutes).minutes.ago

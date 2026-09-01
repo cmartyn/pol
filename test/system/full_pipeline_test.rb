@@ -29,14 +29,15 @@ class FullPipelineTest < ApplicationSystemTestCase
 
   test "a poll arrives, the model re-runs, the newsroom writes it up, and the page shows all three" do
     # ---- before ------------------------------------------------------------
-    # The fixture forecast: a 62-in-100 Democrat, which at a 65-point tossup
-    # band the site still calls a tossup.
+    # The fixture forecast: a Democrat at 0.62, which at a 65-point tossup band
+    # the site still calls a tossup. The fixture run drew 10,000, so that — not
+    # the current simulation.n_sims — is the denominator the page must print.
     visit race_path(@race.slug)
 
     assert_selector "[data-testid=race-name]", text: @race.name
     assert_selector "[data-testid=rating-word]", text: "Tossup"
     assert_selector "[data-testid=probability-chip]", text: "D 62%"
-    assert_text "62 in 100"
+    assert_text "6,200 of 10,000 simulated elections"
     assert_no_text "Harbor Analytics"
 
     # ---- the poll ----------------------------------------------------------
@@ -82,7 +83,10 @@ class FullPipelineTest < ApplicationSystemTestCase
 
     assert_selector "[data-testid=rating-word]", text: "Favors Dem"
     assert_selector "[data-testid=probability-chip]", text: "D #{Site::Format.percent(after.p_dem_win)}"
-    assert_text Site::Format.x_in_100(after.p_dem_win)
+    # n_sims off the RUN, exactly as the view reads it: this test pins the run
+    # to 2,000 draws, so the page must say 2,000 and not the configured 100,000.
+    assert_text Site::Format.of_simulations(after.p_dem_win, n_sims: run.n_sims)
+    assert_equal N_SIMS, run.n_sims
     assert_selector "[data-testid=forecast-detail]",
                     text: Site::Format.margin(after.mean_margin, side_a_party: "dem", side_b_party: "rep")
     assert_selector "[data-testid=forecast-detail]", text: Site::Format.as_of(run.started_at)

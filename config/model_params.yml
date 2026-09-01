@@ -228,13 +228,45 @@ chambers:
   # 435 seats; a majority is 218.
   house_majority_seats: 218
 simulation:
-  n_sims: 10000
+  # Simulated elections per variant. A run draws the board TWICE — once
+  # excluding partisan internals, once including them (Forecast::Runner
+  # #forecast!) — so a model run is 2 x n_sims draws of 470 races.
+  #
+  # Raised from 10,000 on 2026-08-31. Not for accuracy: Monte Carlo error at
+  # 10,000 was already ~0.5pp on a 50/50 probability, an order of magnitude
+  # under the structural uncertainty this model admits to elsewhere on the
+  # methodology page (the missing demographic-cluster term is worth "a point
+  # or so, and at the outside three"). More draws cannot fix that and this
+  # change does not claim to.
+  #
+  # It was raised for STABILITY, because the site republishes every two hours
+  # and rng_seed is fresh each run (Forecast::Runner#start_run!). At 10,000 a
+  # reader refreshing against an unchanged poll corpus saw the Senate figure
+  # move up to 1.4pp for no reason but the seed — measured across five seeds
+  # on identical inputs, BUILD_NOTES Phase 3 SS8.2. Noise falls as 1/sqrt(n),
+  # so 100,000 puts that at ~0.44pp, and the run-to-run wobble drops below
+  # the resolution the page prints.
+  #
+  # THE COST, measured 2026-08-31 on a 470-race board (35 Senate + 435 House),
+  # one variant, per n_sims - seconds and peak RSS:
+  #     10,000    1.6s   166 MB       250,000   45.6s   360 MB
+  #     50,000    8.6s   254 MB       500,000   92.9s   683 MB
+  #    100,000   17.6s   270 MB     1,000,000  190.6s  1004 MB
+  # Double the seconds for a run (two variants). Time is not the constraint —
+  # even 250,000 finishes in minutes against a 2-hour cadence and the
+  # stale_run_minutes cutoff below. MEMORY is: production is one 2GB droplet
+  # running web, worker, Postgres and the proxy together (docs/DEPLOY.md), and
+  # the simulator holds ~60 full-length shared-error series (1 national + 9
+  # divisions + 50 states), so RSS climbs linearly with n_sims. 100,000 sits
+  # at 270 MB with room to spare; 500,000 and up is an OOM waiting for a bad
+  # moment on that box, and is the reason this is not higher.
+  n_sims: 100000
   # How long a run may sit in `running` before the next run treats it as dead,
-  # marks it failed and takes over. A full run measures 1.6 seconds, so 30
-  # minutes is about a thousand times the observed runtime — no healthy run is
-  # still going — while staying well inside the 2-hour scrape cadence, so a
-  # process killed mid-run costs at most one cycle rather than freezing the
-  # forecast until someone notices.
+  # marks it failed and takes over. A full run measures tens of seconds at the
+  # n_sims above, so 30 minutes is two orders of magnitude past the observed
+  # runtime — no healthy run is still going — while staying well inside the
+  # 2-hour scrape cadence, so a process killed mid-run costs at most one cycle
+  # rather than freezing the forecast until someone notices.
   stale_run_minutes: 30
 election:
   date: "2026-11-03"
@@ -361,9 +393,18 @@ site:
   # a handful of runs, so the module has to work with whatever exists).
   movers_window_days: 7
   # Below this many points of |Δ p_dem_win|, a shift is Monte Carlo noise, not
-  # a mover. Five same-seed reruns of the live board measured ~1.4pp of
-  # run-to-run noise on the Senate control probability at n_sims=10,000; 1.5
-  # sits just above that floor.
+  # a mover. Five seeds on identical inputs measured ~1.4pp of run-to-run
+  # noise on the Senate control probability at n_sims=10,000; 1.5 sits just
+  # above that floor.
+  #
+  # STILL 1.5 after simulation.n_sims went to 100,000 on 2026-08-31, and this
+  # is a deliberate lag rather than an oversight. The noise this floor guards
+  # against is now ~0.44pp, so the floor could fall to about 0.5 — but a mover
+  # is a DIFFERENCE between two runs, and ModelRun.comparison_run reaches back
+  # movers_window_days for the other one. Until every run inside that window
+  # was drawn at the new count, the comparison is mixed-vintage and still
+  # carries the old run's 1.4pp. Drop this to ~0.5 no sooner than
+  # movers_window_days after the first 100,000-sim run reaches production.
   # citation: docs/BUILD_NOTES.md Phase 3 §8.2 (10,000-sim noise measurement)
   movers_floor_pp: 1.5
   # How many races the dashboard's Movers module shows.
