@@ -50,4 +50,25 @@ class RacesHelperTest < ActionView::TestCase
 
     refute earlier_matchup?(race, key)
   end
+
+  # A generic-ballot poll has no race, so no candidates to take its sides
+  # from — but Site::RaceSides already answers dem/rep for an empty field,
+  # which is the right answer for a poll whose whole question is which party.
+  # Handling nil here means every caller gets race-less polls for free rather
+  # than each surface growing its own dem-minus-rep branch.
+  test "race_sides answers dem and rep for no race at all" do
+    assert_equal %w[dem rep], race_sides(nil)
+  end
+
+  test "poll_margin measures a generic-ballot poll dem minus rep" do
+    poll = polls(:generic_ballot_poll) # Dem 46.5, Rep 44.5
+
+    assert_equal({ label: "D+2.0", party: "dem" }, poll_margin(poll, nil))
+  end
+
+  test "poll_margin reports no margin for a poll that asked about only one party" do
+    poll = create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 8, 1), results: { dem: 46.0 })
+
+    assert_nil poll_margin(poll, nil)
+  end
 end

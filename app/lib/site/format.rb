@@ -123,5 +123,17 @@ module Site
     def last_updated(time)
       "Updated #{time.strftime('%b %-d, %-I:%M %p %Z')}"
     end
+
+    # A poll's field period: "Jul 10–Jul 14, 2026", "Aug 1, 2026" for a
+    # single day (or an unknown start), and both years when the period
+    # crosses one — "Dec 28, 2025–Jan 3, 2026" rather than a "Dec 28–Jan 3,
+    # 2026" that reads as a week inside 2026. The one place this rule lives;
+    # the race page, the feed and the admin table all print through it.
+    def field_dates(field_start, field_end)
+      return field_end.strftime("%b %-d, %Y") if field_start.nil? || field_start == field_end
+
+      start_format = field_start.year == field_end.year ? "%b %-d" : "%b %-d, %Y"
+      "#{field_start.strftime(start_format)}–#{field_end.strftime('%b %-d, %Y')}"
+    end
   end
 end

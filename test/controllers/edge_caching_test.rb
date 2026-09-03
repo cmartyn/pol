@@ -161,6 +161,7 @@ class EdgeCachingTest < ActionDispatch::IntegrationTest
         root_path, senate_path, house_path,
         race_path(races(:senate_maine).slug),
         dispatches_path, dispatch_path(dispatches(:maine_poll_reaction)),
+        polls_path,
         pollsters_path, methodology_path, about_path, privacy_path
       ]
     end

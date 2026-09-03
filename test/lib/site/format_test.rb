@@ -158,4 +158,22 @@ class Site::FormatTest < ActiveSupport::TestCase
     assert_equal "Updated Aug 1, 6:00 AM EDT", Site::Format.last_updated(time)
     assert_equal "as of Aug 1, 2026, 6:00 AM EDT", Site::Format.as_of(time)
   end
+
+  # One rule for a field period wherever it is printed. Three views carried
+  # their own copies, and the admin one had already drifted into printing
+  # "Aug 1–Aug 1, 2026" for a single-day poll.
+  test "field_dates prints a range within one year with the year once" do
+    assert_equal "Jul 10–Jul 14, 2026", Site::Format.field_dates(Date.new(2026, 7, 10), Date.new(2026, 7, 14))
+  end
+
+  test "field_dates prints a single day as one date" do
+    assert_equal "Aug 1, 2026", Site::Format.field_dates(Date.new(2026, 8, 1), Date.new(2026, 8, 1))
+    assert_equal "Aug 1, 2026", Site::Format.field_dates(nil, Date.new(2026, 8, 1))
+  end
+
+  # A poll fielded over New Year is exactly the late-arriving kind the feed
+  # surfaces, and "Dec 28–Jan 3, 2026" reads as a week inside 2026.
+  test "field_dates keeps both years when the period crosses one" do
+    assert_equal "Dec 28, 2025–Jan 3, 2026", Site::Format.field_dates(Date.new(2025, 12, 28), Date.new(2026, 1, 3))
+  end
 end

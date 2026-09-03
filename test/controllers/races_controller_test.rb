@@ -406,7 +406,7 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     get race_path(races(:senate_maine).slug)
 
-    assert_select "tr[data-internal-poll] [data-testid='internal-poll-badge']", minimum: 1
+    assert_select "tr[data-internal-poll] [data-testid='sponsor-badge']", minimum: 1
     assert_select "[data-testid='internals-note'] [data-variant='excl_internals']", count: 1
     assert_select "[data-testid='internals-note'] [data-variant='incl_internals']", count: 1
   end

@@ -1,0 +1,14 @@
+<%# locals: poll — renders nothing unless the poll is partisan-sponsored.
+    The one badge both poll tables (a race page's, the feed's) wear, so a
+    change to how sponsorship is shown lands on both. This is what tells a
+    reader a poll is not in the published average, and the site-wide
+    internals toggle keys off the same flag. %>
+<% if poll.internal? %>
+  <span class="mt-0.5 block">
+    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide <%= { "dem" => "text-blue-700", "rep" => "text-red-700" }.fetch(poll.partisan, "text-slate-500") %>"
+          data-testid="sponsor-badge"
+          title="Sponsored by a party-aligned client — not in the published average.">
+      <%= poll.partisan == "oth" ? "partisan" : poll.partisan %> sponsor
+    </span>
+  </span>
+<% end %>

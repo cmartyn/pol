@@ -40,21 +40,8 @@ module Admin
       Site::Format.margin(dem - rep, side_a_party: "dem", side_b_party: "rep")
     end
 
-    # poll.source_url is stored free-form (Poll validates only its
-    # presence — scraped rows trust Wikipedia's own links, but manual entry
-    # and CSV import both accept whatever an editor typed). Rendering it
-    # straight into link_to's href is exactly the shape Brakeman's
-    # LinkToHref check warns about: a stored value, not a literal, used as
-    # a URL — javascript:/data: schemes render fine and execute on click.
-    # Both admin poll views that link to a source go through here instead
-    # of calling link_to on the raw column directly, so a non-http(s) value
-    # renders as inert text rather than a clickable href built from it.
-    def safe_external_link(url, text = url, **html_options)
-      if url.to_s.match?(%r{\Ahttps?://}i)
-        link_to text, url, **html_options
-      else
-        content_tag(:span, text, class: html_options[:class], data: html_options[:data])
-      end
-    end
+    # safe_external_link, which both admin poll views use for the source
+    # link, lives in ApplicationHelper now that the public poll rows need
+    # the same guard.
   end
 end

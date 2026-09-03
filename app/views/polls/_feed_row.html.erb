@@ -1,0 +1,50 @@
+<%# locals: poll — preloaded with :pollster, race: :candidates and
+    poll_results: :candidate. %>
+<%# data-internal-poll is the same hook the race-page rows use: the site-wide
+    internals toggle mutes these rows while the published view is showing, and
+    brings them back to full strength when partisan-sponsored polls are in the
+    math. The selector is tr[data-internal-poll], so this has to stay a row. %>
+<tr data-testid="poll-feed-row" data-poll-id="<%= poll.id %>" <%= "data-internal-poll" if poll.internal? %>>
+  <td class="py-2 pr-3 text-slate-700">
+    <%= poll.pollster.name %>
+    <%= render "polls/sponsor_badge", poll: poll %>
+  </td>
+  <td class="py-2 pr-3 text-slate-700" data-testid="poll-feed-race">
+    <% if poll.race %>
+      <%= link_to poll.race.name, race_path(poll.race.slug), class: "hover:text-amber-700" %>
+    <% else %>
+      <span class="text-slate-500">Generic ballot</span>
+    <% end %>
+  </td>
+  <td class="py-2 pr-3 whitespace-nowrap text-slate-600" data-testid="poll-feed-dates">
+    <%= Site::Format.field_dates(poll.field_start, poll.field_end) %>
+  </td>
+  <td class="py-2 pr-3 whitespace-nowrap text-slate-600" data-testid="poll-feed-sample">
+    <%= poll.sample_size ? number_with_delimiter(poll.sample_size) : "n/a" %>
+    <span class="uppercase text-slate-400"><%= poll.population %></span>
+  </td>
+  <td class="py-2 pr-3 text-slate-700" data-testid="poll-feed-results">
+    <% poll.poll_results.sort_by { |result| -result.pct }.each do |result| %>
+      <span class="mr-2 whitespace-nowrap">
+        <%= result.candidate&.name || result.party.capitalize %>
+        <span class="font-medium <%= party_text_color(result.party) %>"><%= number_with_precision(result.pct, precision: 1) %>%</span>
+      </span>
+    <% end %>
+  </td>
+  <%# poll_margin takes its sides from the race's candidates, or dem/rep for
+      a generic-ballot poll with no race — the same helper the race page
+      uses, so the two can never disagree about which letter a positive
+      number belongs to. %>
+  <td class="py-2 pr-3 whitespace-nowrap font-semibold" data-testid="poll-feed-margin">
+    <% margin = poll_margin(poll, poll.race) %>
+    <% if margin %>
+      <span class="<%= party_text_color(margin[:party]) %>"><%= margin[:label] %></span>
+    <% else %>
+      <span class="text-slate-400">&mdash;</span>
+    <% end %>
+  </td>
+  <td class="py-2">
+    <%= safe_external_link(poll.source_url, "Source", class: "text-amber-700 hover:text-amber-800", target: "_blank",
+                           rel: "noopener nofollow", data: { testid: "poll-feed-source" }) %>
+  </td>
+</tr>

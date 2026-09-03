@@ -27,6 +27,11 @@ Rails.application.routes.draw do
   # the admin retract button promises.
   get "dispatches/:id", to: "dispatches#show", as: :dispatch
 
+  # The corpus itself, newest arrival first — every poll the model reads, in
+  # the order it landed in our table. /pollsters publishes what we do to the
+  # polls; this publishes the polls.
+  get "polls", to: "polls#index"
+
   # Phase 9. Every pollster in the corpus, its estimated lean, and whether the
   # model is acting on it. An adjustment readers cannot inspect is the secret
   # sauce this project promised not to have.

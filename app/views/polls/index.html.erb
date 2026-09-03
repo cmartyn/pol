@@ -1,0 +1,97 @@
+<% content_for :title, "Polls · 535" %>
+<% content_for :description, "Every poll in the 535 forecast's corpus, in the order it arrived — pollster, field dates, sample, results and source for each." %>
+
+<h1 class="font-serif text-3xl font-semibold text-slate-900">Polls</h1>
+<p class="mt-2 max-w-3xl text-slate-600" data-testid="poll-feed-scope-note">
+  Every poll this model reads, newest arrival first.
+</p>
+<%= render "shared/as_of", time: @latest_run&.started_at %>
+
+<section class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700"
+         data-testid="poll-feed-note">
+  <p>
+    <strong class="font-semibold text-slate-900">Ordered by when each poll reached us, not when it was
+    taken.</strong> A poll fielded in May that arrives today sits at the top; the dates in the
+    &ldquo;Fielded&rdquo; column are the ones the pollster was in the field. Race pages order the same polls
+    the other way, by field date, because there the question is what the numbers say now.
+  </p>
+  <p class="mt-3 text-slate-600">
+    Polls from partisan-aligned sponsors are listed and labelled, but are not in the published average &mdash;
+    flip &ldquo;Partisan internals&rdquo; in the header to bring them in.
+    <%= link_to "How they are treated", methodology_path(anchor: "internals"),
+                class: "font-medium text-amber-700 hover:text-amber-800" %>.
+  </p>
+</section>
+
+<%# Keyed on the page and on the corpus's own freshness, so a newly ingested
+    poll changes every page's key at once — which is right, because a new
+    arrival at the top shifts every later page by one row. Keyed on races and
+    pollsters too: the rows print pollster names, race names and candidate
+    names, and take each margin's party letter from the race's candidates,
+    none of which is a poll row — and a candidate edit reaches races through
+    Candidate's touch: true. Two cheap MAX()es over small tables, so a
+    renamed pollster or a newly added nominee is on this page at once rather
+    than after the next sweep. Site::PollFeed.build runs inside the block so a
+    cache hit skips its queries, same shape as /pollsters. %>
+<% cache [ "poll-feed", @page, Site::CacheKey.collection_freshness(Poll.model_corpus),
+           Race.maximum(:updated_at), Pollster.maximum(:updated_at) ] do %>
+  <% feed = Site::PollFeed.build(page: @page) %>
+
+  <% if feed.total.zero? %>
+    <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="poll-feed-empty">
+      No polls have been collected yet.
+    </p>
+  <% else %>
+    <p class="mt-8 text-sm text-slate-500" data-testid="poll-feed-summary">
+      <%= feed_poll_count(feed.total) %> in the corpus
+      <% if feed.pages > 1 %>
+        &middot; page <%= feed.page %> of <%= feed.pages %>
+      <% end %>
+    </p>
+
+    <div class="mt-3 overflow-x-auto">
+      <table class="w-full min-w-[900px] text-left text-sm" data-testid="poll-feed-table">
+        <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="py-2 pr-3 font-medium">Pollster</th>
+            <th class="py-2 pr-3 font-medium">Race</th>
+            <th class="py-2 pr-3 font-medium">Fielded</th>
+            <th class="py-2 pr-3 font-medium">Sample</th>
+            <th class="py-2 pr-3 font-medium">Results</th>
+            <th class="py-2 pr-3 font-medium">Margin</th>
+            <th class="py-2 font-medium">Source</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% feed.days.each do |day| %>
+            <tr class="bg-slate-50">
+              <th colspan="7" class="py-2 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
+                  data-testid="poll-feed-day" data-date="<%= day.date.iso8601 %>">
+                <%= feed_day_heading(day.date) %>
+                <span class="font-normal normal-case text-slate-400">&middot; <%= feed_poll_count(day.total) %></span>
+              </th>
+            </tr>
+            <%= render partial: "polls/feed_row", collection: day.polls, as: :poll %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if feed.pages > 1 %>
+      <%# ml-auto on the older link: a lone "Older" lands right, a lone "Newer"
+          lands left, both together sit at either end — no spacer markup. %>
+      <nav class="mt-6 flex items-center text-sm" aria-label="Pagination" data-testid="poll-feed-pager">
+        <% if feed.previous_page %>
+          <%= link_to "&larr; Newer".html_safe, feed_page_path(feed.previous_page), rel: "prev",
+                      class: "font-medium text-amber-700 hover:text-amber-800",
+                      data: { testid: "poll-feed-newer" } %>
+        <% end %>
+        <% if feed.next_page %>
+          <%= link_to "Older &rarr;".html_safe, feed_page_path(feed.next_page), rel: "next",
+                      class: "ml-auto font-medium text-amber-700 hover:text-amber-800",
+                      data: { testid: "poll-feed-older" } %>
+        <% end %>
+      </nav>
+    <% end %>
+  <% end %>
+<% end %>

@@ -114,7 +114,7 @@
 
   <section class="mt-10">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Polls</h2>
-    <% polls = @race.polls.model_corpus.recent_first.includes(:poll_results, :pollster) %>
+    <% polls = @race.polls.model_corpus.recent_first.includes(:pollster, poll_results: :candidate) %>
     <%# The same adjustments the run on show actually applied, so the poll
         table's arithmetic and the reference line on the chart both match
         what the model did rather than each recomputing their own version. %>

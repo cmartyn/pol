@@ -68,7 +68,7 @@
             <% end %>
           </td>
           <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
-            <%= poll.field_start&.strftime("%b %-d") %><%= "–" if poll.field_start %><%= poll.field_end.strftime("%b %-d, %Y") %>
+            <%= Site::Format.field_dates(poll.field_start, poll.field_end) %>
           </td>
           <td class="py-2 pr-3 text-slate-600"><%= poll.sample_size || "—" %></td>
           <td class="py-2 pr-3 uppercase text-slate-500"><%= poll.population %></td>

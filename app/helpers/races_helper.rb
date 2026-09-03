@@ -15,9 +15,12 @@ module RacesHelper
 
   # [side_a_party, side_b_party] ("dem"/"rep"/"ind"/"other") for a race, from
   # its preloaded candidates — see Site::RaceSides for why this isn't always
-  # just "dem"/"rep".
+  # just "dem"/"rep". nil is a generic-ballot poll's race: no candidates to
+  # ask, and Site::RaceSides' dem/rep default is exactly the right answer for
+  # a poll whose whole question is which party — so every margin helper below
+  # handles race-less polls without growing a branch of its own.
   def race_sides(race)
-    Site::RaceSides.for(race.candidates)
+    Site::RaceSides.for(race&.candidates || [])
   end
 
   # A margin value (side_a - side_b, in points) formatted as "D+3.2" and

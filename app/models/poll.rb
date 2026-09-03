@@ -29,6 +29,16 @@ class Poll < ApplicationRecord
   scope :for_generic_ballot, -> { where(race_id: nil) }
   scope :recent_first, -> { order(field_end: :desc, id: :desc) }
 
+  # Deliberately not recent_first. That orders by field_end — when a poll was
+  # *taken* — which is the right axis for a race page arguing about what the
+  # numbers say now. This one orders by when the poll landed in our table,
+  # which is the only axis that answers "what did this sweep bring in": two
+  # polls fielded a month apart can arrive in the same run, and a poll
+  # fielded yesterday can arrive weeks late. Nothing links a poll to the run
+  # that ingested it (see Ingest.after_new_polls! for why the ids are
+  # transient), so created_at is what we have — and it is exactly true.
+  scope :newest_ingested, -> { order(created_at: :desc, id: :desc) }
+
   # The polls the model reads: every entry door except the retired
   # Wikipedia-scraped rows, which stay in the table for provenance but must
   # never mix back in — the two sources name pollsters differently, and
