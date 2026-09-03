@@ -63,11 +63,6 @@ class Site::SenateTableTest < ActiveSupport::TestCase
   end
 
   test "a bounded number of queries regardless of row count" do
-    # Deliberately no warm-up call: an uncounted call immediately before the
-    # counted one can make the *second* (identical) query get served from
-    # Active Record's query cache and undercount. Measuring cold and busting
-    # the cache with real writes before the second measurement keeps both
-    # counts honest.
     baseline = count_queries { Site::SenateTable.build(sort: nil, direction: "asc") }
 
     %w[ZA ZB ZC].each { |state| create_race("extra-senate-#{state}", state: state) }

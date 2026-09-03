@@ -15,43 +15,37 @@ require "test_helper"
 # Each surface's expensive part — Site::SenateTable.build, Site::HouseTable
 # .build, the ChamberForecast lookup + histogram build, and the race page's
 # forecast/timeline/polls/dispatches queries — lives *inside* its cache
-# block specifically so a hit skips it; count_queries (test/test_helpers/
-# query_counting.rb) is what makes that provable rather than assumed.
+# block specifically so a hit skips it; counting queries across two requests
+# is what makes that provable rather than assumed.
+#
+# Two kinds of test here, and they are falsified by different mutations. The
+# four reuse tests (assert_fragment_reused) fail when perform_caching is
+# flipped off in FragmentCachingHelper — verified. The five busting tests
+# below them cannot fail that way: they assert content *changes* after a
+# write, which a disabled cache trivially satisfies. They fail instead when
+# the thing they guard is broken — a key that drops @latest_run/@sort or
+# @latest_dispatch, `touch: true` removed from Candidate, the explicit race
+# touch removed from Admin::DispatchesController — each verified by mutation.
+#
+# The reuse tests were vacuous until count_queries learned to clear the AR
+# query cache (see test/test_helpers/query_counting.rb): the second GET was
+# answered from that cache, counted zero, and `second < first` held for a
+# page with no fragment caching at all.
 class FragmentCachingTest < ActionDispatch::IntegrationTest
   test "the Senate table skips Site::SenateTable.build's queries on a cache hit" do
-    with_fragment_caching do
-      first = count_queries { get senate_path }
-      second = count_queries { get senate_path }
-
-      assert_operator second, :<, first
-    end
+    assert_fragment_reused senate_path
   end
 
   test "the House table skips Site::HouseTable.build's queries on a cache hit" do
-    with_fragment_caching do
-      first = count_queries { get house_path }
-      second = count_queries { get house_path }
-
-      assert_operator second, :<, first
-    end
+    assert_fragment_reused house_path
   end
 
   test "a race page's core content is not rebuilt on a cache hit" do
-    with_fragment_caching do
-      first = count_queries { get race_path(races(:senate_maine).slug) }
-      second = count_queries { get race_path(races(:senate_maine).slug) }
-
-      assert_operator second, :<, first
-    end
+    assert_fragment_reused race_path(races(:senate_maine).slug)
   end
 
   test "dashboard chamber cards are not rebuilt on a cache hit" do
-    with_fragment_caching do
-      first = count_queries { get root_path }
-      second = count_queries { get root_path }
-
-      assert_operator second, :<, first
-    end
+    assert_fragment_reused root_path
   end
 
   test "a differently-sorted Senate table is never served from the wrong sort's cache entry" do
@@ -137,4 +131,23 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
       assert_select "[data-testid='dispatch-card']", count: 1
     end
   end
+
+  private
+    # Fetch `path` twice with a real fragment store in place and prove the
+    # second render did less database work than the first — i.e. that the
+    # page's `<% cache %>` block actually held, and that the queries it wraps
+    # are inside it rather than in the controller.
+    def assert_fragment_reused(path)
+      with_fragment_caching do
+        first = count_queries { get path }
+        second = count_queries { get path }
+
+        assert_response :success
+        assert_operator first, :>, 0,
+          "#{path} made no queries at all, so this proves nothing about caching"
+        assert_operator second, :<, first,
+          "#{path} cost #{second} queries on a warm cache and #{first} on a cold one — " \
+          "its expensive queries are not inside the cache block"
+      end
+    end
 end

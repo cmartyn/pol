@@ -82,11 +82,6 @@ class Site::HouseTableTest < ActiveSupport::TestCase
   end
 
   test "a bounded number of queries regardless of row count (the 435-district page's core risk)" do
-    # Deliberately no warm-up call here: an uncounted call immediately
-    # before the counted one can make the *second* (identical) query get
-    # served from Active Record's query cache and undercount. Measuring cold
-    # and busting the cache with real writes before the second measurement
-    # (below) keeps both counts honest.
     baseline = count_queries { Site::HouseTable.build }
 
     5.times { |i| create_house_race("house-table-test-extra-#{i}", state: "ZZ", district: 90 + i) }
