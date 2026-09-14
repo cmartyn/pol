@@ -62,16 +62,49 @@ module Newsroom
     def movement_cooldown(kind, race, now)
       return nil unless kind.to_sym == :movement_note && race
 
-      days = Pol::Params.fetch!(:newsroom, :movement_note_cooldown_days)
+      days = movement_cooldown_days(now)
       previous = Dispatch.movement_note
                          .where(race_id: race.id)
                          .where(published_at: (now - days.days)..now)
                          .recent_first.first
       return nil unless previous
 
+      out = days_to_election(now)
       [ :cap_reached,
         "a movement note for #{race.slug} was published #{previous.published_at.to_date} " \
-        "(##{previous.id}); the cooldown is #{days} days" ]
+        "(##{previous.id}); the cooldown is #{days} #{'day'.pluralize(days)}, " \
+        "#{out} #{'day'.pluralize(out)} out from the election" ]
+    end
+
+    # How many whole days a race stays quiet after a movement note, on the day
+    # `now` falls in. Not one number: a ceiling far from the election, a floor
+    # in its final days, and a ramp between them, all read from
+    # newsroom.movement_note_cooldown_{max,min,scale}_days — the same idea as
+    # Forecast::Simulator#time_multiplier, which widens the forecast's error by
+    # days to election. A summer race is one story a week; in the final
+    # stretch, when polls land daily, movement earns a note far sooner. A short
+    # cooldown cannot re-tell one move, because Newsroom::Movement measures a
+    # race the newsroom has written up from that note's run, not from last week.
+    #
+    # clamp(ceil(days_to_election / scale), min, max): at a scale of 8 the
+    # ceiling holds until forty days out, then the cooldown loses a day every
+    # eight days and sits at the floor through the final week and after.
+    # Rounded up rather than to nearest, so each step keeps the longer
+    # cooldown until the day it is fully earned.
+    def movement_cooldown_days(now = Time.current)
+      max = Pol::Params.fetch!(:newsroom, :movement_note_cooldown_max_days)
+      min = Pol::Params.fetch!(:newsroom, :movement_note_cooldown_min_days)
+      scale = Pol::Params.fetch!(:newsroom, :movement_note_cooldown_scale_days)
+
+      days_to_election(now).fdiv(scale).ceil.clamp(min, max)
+    end
+
+    # Whole Eastern calendar days from the day `now` falls in to election day,
+    # floored at zero like Forecast::Simulator#time_multiplier: the ramp has
+    # nowhere further to go once the election has happened.
+    def days_to_election(now = Time.current)
+      election = Pol::Params.fetch!(:election, :date).to_date
+      [ (election - now.in_time_zone(Newsroom::ZONE).to_date).to_i, 0 ].max
     end
 
     # The reason ingestion can safely re-present a poll: if anything already

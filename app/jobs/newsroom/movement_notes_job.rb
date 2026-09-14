@@ -1,7 +1,8 @@
 module Newsroom
   # After every successful model run — ingest-triggered or the 06:30 cron one —
-  # check whether any race has moved far enough since last week to be worth a
-  # note. Most runs find nothing and write nothing.
+  # check whether any race has moved far enough since last week, or since the
+  # newsroom last wrote about it, to be worth a note. Most runs find nothing
+  # and write nothing.
   class MovementNotesJob < ApplicationJob
     queue_as :default
 
@@ -15,14 +16,17 @@ module Newsroom
       return log("no earlier run to compare run #{model_run.id} against") unless comparison
       return log("nothing moved past the threshold in run #{model_run.id}") if comparison.races.empty?
 
-      comparison.races.each { |moved| write(moved, model_run, comparison.previous_run) }
+      comparison.races.each { |moved| write(moved, model_run) }
     end
 
     private
       # Most runs find nothing moved and reach none of this. The kill switch is
       # checked here, once per race that actually cleared the threshold, so a
       # quiet week under a disabled newsroom writes no skip rows at all.
-      def write(moved, model_run, previous_run)
+      # The note is measured, and written, from the race's own baseline run —
+      # last week's, or the last note's (Newsroom::Movement) — not from the
+      # comparison run shared across the board.
+      def write(moved, model_run)
         race = moved.race
         return unless Newsroom.clear_to_write?(kind: KIND, race: race)
 
@@ -36,7 +40,7 @@ module Newsroom
           kind: KIND,
           race: race,
           model_run: model_run,
-          payload: Context.movement_note(race: race, model_run: model_run, previous_run: previous_run)
+          payload: Context.movement_note(race: race, model_run: model_run, previous_run: moved.baseline_run)
         )
       end
 

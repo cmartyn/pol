@@ -43,10 +43,18 @@ class Pol::ParamsTest < ActiveSupport::TestCase
 
   test "the newsroom's caps and bounds are all present and positive" do
     %i[max_output_tokens max_dispatches_per_race_per_day max_dispatches_per_day movement_threshold
-       movement_note_cooldown_days brief_poll_count recent_headline_count headline_max_chars
-       dek_max_chars body_words_backstop].each do |key|
+       movement_note_cooldown_max_days movement_note_cooldown_min_days movement_note_cooldown_scale_days
+       brief_poll_count recent_headline_count headline_max_chars dek_max_chars body_words_backstop].each do |key|
       assert_operator Pol::Params.fetch!(:newsroom, key), :>, 0, "newsroom.#{key}"
     end
+  end
+
+  # The movement-note cooldown ramps from its ceiling far out to its floor in
+  # the election's final days (Newsroom::Caps.movement_cooldown_days). A floor
+  # above the ceiling would run that ramp backwards.
+  test "the movement cooldown's floor is no longer than its ceiling" do
+    assert_operator Pol::Params.fetch!(:newsroom, :movement_note_cooldown_min_days), :<=,
+                    Pol::Params.fetch!(:newsroom, :movement_note_cooldown_max_days)
   end
 
   # Phase 2 verified these three against the sources recorded in

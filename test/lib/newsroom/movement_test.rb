@@ -15,6 +15,12 @@ class Newsroom::MovementTest < ActiveSupport::TestCase
     run
   end
 
+  # A movement note the newsroom wrote about `race` from `run`.
+  def note_from(run, race: @race, status: :published)
+    Dispatch.create!(kind: :movement_note, race: race, model_run: run, status: status,
+                     published_at: run.started_at + 1.hour, headline: "#{race.name} moved", body_markdown: "Body.")
+  end
+
   test "with no earlier run there is nothing to compare and nothing to say" do
     assert_nil Newsroom::Movement.call(model_run: @latest)
   end
@@ -27,6 +33,7 @@ class Newsroom::MovementTest < ActiveSupport::TestCase
     assert_equal previous, comparison.previous_run
     moved = comparison.races.sole
     assert_equal @race, moved.race
+    assert_equal previous, moved.baseline_run
     assert_in_delta 0.12, moved.delta
     assert_in_delta 12.0, moved.delta_pp
   end
@@ -106,6 +113,85 @@ class Newsroom::MovementTest < ActiveSupport::TestCase
                      p_dem_win: 0.10, p_rep_win: 0.90, mean_margin: 0.0)
     Forecast.create!(model_run: @latest, race: @race, variant: :incl_internals,
                      p_dem_win: 0.90, p_rep_win: 0.10, mean_margin: 0.0)
+
+    assert_empty Newsroom::Movement.call(model_run: @latest).races
+  end
+
+  # The cooldown ramps down toward election day (Newsroom::Caps), and a
+  # shorter cooldown against a fixed seven-day window would re-tell the same
+  # move every run for as long as it stayed inside the window. So a race the
+  # newsroom has already written up is measured from the run that note was
+  # written from: the reader has been told about everything before it.
+  test "a race written up since the comparison run is measured from its note's run, not from last week" do
+    earlier_run(days_before: 7, p_dem_win: 0.30)
+    note_from earlier_run(days_before: 3, p_dem_win: 0.60)
+
+    assert_empty Newsroom::Movement.call(model_run: @latest).races
+  end
+
+  test "new movement since the last note is reported against that note's run" do
+    week_ago = earlier_run(days_before: 7, p_dem_win: 0.30)
+    noted = earlier_run(days_before: 3, p_dem_win: 0.50)
+    note_from noted
+
+    comparison = Newsroom::Movement.call(model_run: @latest)
+    moved = comparison.races.sole
+    assert_equal noted, moved.baseline_run
+    assert_in_delta 0.12, moved.delta
+    assert_equal week_ago, comparison.previous_run, "the week-ago comparison run is unchanged; only this race's baseline moved"
+  end
+
+  # Same rule as the cooldown's (Caps): an editor who pulled the piece must
+  # not get it regenerated, so a retracted note still sets the baseline.
+  test "a retracted note still sets the baseline, so a pulled piece is not regenerated" do
+    earlier_run(days_before: 7, p_dem_win: 0.30)
+    note_from earlier_run(days_before: 3, p_dem_win: 0.60), status: :retracted
+
+    assert_empty Newsroom::Movement.call(model_run: @latest).races
+  end
+
+  test "a note older than the comparison run does not reach back past it" do
+    note_from earlier_run(days_before: 20, p_dem_win: 0.10)
+    week_ago = earlier_run(days_before: 7, p_dem_win: 0.30)
+
+    moved = Newsroom::Movement.call(model_run: @latest).races.sole
+    assert_equal week_ago, moved.baseline_run
+    assert_in_delta 0.32, moved.delta
+  end
+
+  test "a note with no run recorded cannot be measured from, so the comparison run stays the baseline" do
+    week_ago = earlier_run(days_before: 7, p_dem_win: 0.30)
+    Dispatch.create!(kind: :movement_note, race: @race, status: :published,
+                     published_at: 2.days.before(@latest.started_at), headline: "Maine moved", body_markdown: "Body.")
+
+    moved = Newsroom::Movement.call(model_run: @latest).races.sole
+    assert_equal week_ago, moved.baseline_run
+  end
+
+  test "a note whose run has no forecast for the race cannot be measured from either" do
+    week_ago = earlier_run(days_before: 7, p_dem_win: 0.30)
+    note_from earlier_run(days_before: 3, p_dem_win: 0.60, race: @other_race)
+
+    moved = Newsroom::Movement.call(model_run: @latest).races.sole
+    assert_equal week_ago, moved.baseline_run
+  end
+
+  test "baselines are per race: one race's note does not silence another race's move" do
+    week_ago = earlier_run(days_before: 7, p_dem_win: 0.30)
+    Forecast.create!(model_run: week_ago, race: @other_race, p_dem_win: 0.10, p_rep_win: 0.90, mean_margin: -20.0)
+    Forecast.create!(model_run: @latest, race: @other_race, p_dem_win: 0.40, p_rep_win: 0.60, mean_margin: -3.0)
+    note_from earlier_run(days_before: 3, p_dem_win: 0.60)
+
+    moved = Newsroom::Movement.call(model_run: @latest).races.sole
+    assert_equal @other_race, moved.race
+    assert_equal week_ago, moved.baseline_run
+  end
+
+  # A job retried after a crash mid-loop sees the notes it already wrote from
+  # this very run: measured from it, nothing has moved, and nothing is redone.
+  test "a note already written from this run means there is nothing new to say" do
+    earlier_run(days_before: 7, p_dem_win: 0.30)
+    note_from @latest
 
     assert_empty Newsroom::Movement.call(model_run: @latest).races
   end

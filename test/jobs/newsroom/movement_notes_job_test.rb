@@ -15,6 +15,17 @@ class Newsroom::MovementNotesJobTest < ActiveJob::TestCase
     previous
   end
 
+  # A run the newsroom already wrote a movement note from, `days_before` the
+  # run under test, with Maine at `p_dem_win` then.
+  def noted_run(days_before:, p_dem_win:)
+    started_at = days_before.days.before(@run.started_at)
+    run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: started_at, finished_at: started_at)
+    Forecast.create!(model_run: run, race: @race, p_dem_win: p_dem_win, p_rep_win: 1 - p_dem_win, mean_margin: 0.0)
+    Dispatch.create!(kind: :movement_note, race: @race, model_run: run, status: :published,
+                     published_at: started_at + 1.hour, headline: "Maine moved", body_markdown: "Body.")
+    run
+  end
+
   def perform
     Newsroom::MovementNotesJob.perform_now(model_run_id: @run.id)
   end
@@ -66,20 +77,59 @@ class Newsroom::MovementNotesJobTest < ActiveJob::TestCase
     assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
   end
 
+  # Pinned to a date ninety days out, where the cooldown is still its ceiling
+  # (it ramps down toward election day; see Newsroom::CapsTest). The note
+  # here carries no run of its own, so the newsroom cannot measure movement
+  # from it and the time cooldown is what keeps the race quiet.
   test "a race written up this week is not written up again" do
-    moved_by(0.20)
-    Dispatch.create!(kind: :movement_note, race: @race, status: :published, published_at: 2.days.ago,
-                     headline: "Maine drifted", body_markdown: "Body.")
+    travel_to Time.utc(2026, 8, 5, 16) do
+      moved_by(0.20)
+      Dispatch.create!(kind: :movement_note, race: @race, status: :published, published_at: 2.days.ago,
+                       headline: "Maine drifted", body_markdown: "Body.")
 
-    assert_no_difference "Dispatch.count" do
+      assert_no_difference "Dispatch.count" do
+        with_api_key { perform }
+      end
+
+      assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
+      skip = NewsroomSkip.sole
+      assert_predicate skip, :cap_reached?
+      assert_predicate skip, :movement_note?
+      assert_match(/cooldown is #{Pol::Params.fetch!(:newsroom, :movement_note_cooldown_max_days)} days/, skip.detail)
+    end
+  end
+
+  # The cooldown shortens toward election day, and a shorter cooldown alone
+  # would have the newsroom re-tell last week's move every run. Movement is
+  # measured from the last note instead, so a race that has not moved since
+  # is not a story — and not a skip either: nothing was decided against.
+  test "a race with no new movement since its last note is left alone, with no note and no skip row" do
+    moved_by(0.20)
+    noted_run(days_before: 3, p_dem_win: 0.60)
+
+    assert_no_difference [ "Dispatch.count", "NewsroomSkip.count" ] do
       with_api_key { perform }
     end
 
     assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
-    skip = NewsroomSkip.sole
-    assert_predicate skip, :cap_reached?
-    assert_predicate skip, :movement_note?
-    assert_match(/cooldown is #{Pol::Params.fetch!(:newsroom, :movement_note_cooldown_days)} days/, skip.detail)
+  end
+
+  test "a second note is written against the last note's run, not against last week's" do
+    moved_by(0.20)
+    noted_run(days_before: 3, p_dem_win: 0.50)
+    stub_openrouter(dispatch_json(cited_poll_ids: []))
+
+    with_api_key do
+      recording_openrouter do |requests|
+        assert_difference "Dispatch.movement_note.count", 1 do
+          perform
+        end
+
+        payload = requests.sole[:body]["messages"].last["content"]
+        assert_match(/\+12.0 points of Democratic win probability/, payload)
+        assert_no_match(/\+20.0 points/, payload)
+      end
+    end
   end
 
   test "the kill switch stops movement notes too" do

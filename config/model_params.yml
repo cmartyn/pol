@@ -304,11 +304,24 @@ newsroom:
   max_dispatches_per_race_per_day: 3
   max_dispatches_per_day: 40
   movement_threshold: 0.08
-  # A race that moved gets at most one movement note per this many days. The
-  # window the movement itself is measured over is site.movers_window_days;
-  # this is the separate question of how often the same race may be written
-  # up, and a rolling week means a race that drifts every day is news once.
-  movement_note_cooldown_days: 7
+  # A race that moved gets at most one movement note per cooldown, and the
+  # cooldown shortens as election day nears: movement is worth spotting more
+  # often when polls land daily than in the summer. Whole days, ramped between
+  # a ceiling and a floor by Newsroom::Caps.movement_cooldown_days —
+  #   cooldown = clamp(days_to_election / scale_days, min_days, max_days)
+  # — the same idea as error_model.time_scale_days above. At a scale of 8 the
+  # ceiling holds until forty days out, then the cooldown loses a day roughly
+  # every eight days and reaches the floor in the final week. max_days is the
+  # summer setting: 5, down from the 7 the site launched with, which was
+  # conservative even for August.
+  #
+  # The window the movement itself is measured over is site.movers_window_days,
+  # a separate question. A race the newsroom has already written up is measured
+  # from that note's run instead (Newsroom::Movement), so a short cooldown
+  # cannot re-tell one move for as long as it stays inside the window.
+  movement_note_cooldown_max_days: 5
+  movement_note_cooldown_min_days: 1
+  movement_note_cooldown_scale_days: 8
   # How many recent polls the daily brief is shown to choose from, and how
   # many recent headlines any piece is shown so it doesn't repeat itself.
   brief_poll_count: 12

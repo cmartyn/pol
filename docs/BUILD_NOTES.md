@@ -3410,3 +3410,64 @@ target, the brief gets more room than a single-race piece, every kind in
 regression test for this incident — and an invariant test asserts the backstop
 stays at least twice every target, so re-tightening it fails the suite rather
 than a morning's brief.
+
+## J. The movement cooldown ramps toward election day, 2026-09-12
+
+"One movement note per race per rolling week" was the summer setting, and
+seven days was conservative even for the summer. Closer to the election polls
+land daily, and a race that moves eight points on Tuesday and eight more on
+Friday is two stories, not one. So the cooldown is no longer one number.
+
+### J1. Three parameters instead of one
+
+`newsroom.movement_note_cooldown_days: 7` became a ceiling, a floor and a
+scale: `movement_note_cooldown_max_days: 5`, `movement_note_cooldown_min_days:
+1` and `movement_note_cooldown_scale_days: 8`. `Newsroom::Caps
+.movement_cooldown_days` turns them into whole days for the Eastern day a run
+falls on: `clamp(ceil(days_to_election / scale), min, max)`, rounded up so
+each step keeps the longer cooldown until it is fully earned. That is
+the same idea as the error model's `time_scale_days`: the ceiling holds until
+forty days out, then the cooldown loses a day roughly every eight days and
+reaches the floor in the final week. The tests pin the contract rather than
+the shape — the ceiling ninety days out and in mid-September, the floor on
+election eve and after election day, a monotone ramp in whole days with at
+least one setting between the ends — so the shape can change without the
+tests changing. All three parameters are scalars, so the methodology page
+renders them without a change, and the skip detail now names both the cooldown
+in force and the days to the election, so a skip read in October explains
+itself.
+
+### J2. Why a shorter cooldown needed a second change
+
+Movement was measured against the run closest to seven days ago, and the
+cooldown was also seven days, so one move produced one note. Shorten the
+cooldown alone and an eight-point jump stays inside the seven-day window for a
+week: the job would have written "moved eight points since last week" every
+day until the jump slid out of the window — exactly the "one story, not seven"
+failure the cooldown exists to prevent.
+
+So `Newsroom::Movement` now measures a race the newsroom has already written
+up from the run that note was written from (dispatches record their
+`model_run_id`), when that run is no earlier than the comparison run and
+carries a forecast for the race. The reader has been told about everything
+before that run; a second note fires only on eight new points since the last
+one, and the payload's `since` and `days_between` describe that span, so the
+prose follows. Retracted notes count, as they do for the cooldown, so an editor
+who pulls a piece does not get it back. A note the newsroom cannot measure
+from — no run recorded, or a run with no forecast for the race — is ignored,
+and the time cooldown is what keeps that race quiet. The dashboard's movers
+module is untouched: it still shows the week's movers; the newsroom writes
+about what is new since it last spoke. A side effect worth having: a job
+retried after a crash mid-loop sees the notes it already wrote from this run,
+measures nothing new, and redoes nothing — no skip row either.
+
+### Tests
+
+`test/lib/newsroom/caps_test.rb` pins dates rather than reading the clock, so
+the suite means the same thing in August as in November. `movement_test.rb`
+covers the last-note baseline: measured from the note's run, new movement since
+it, retracted notes, notes older than the comparison run, notes that cannot be
+measured from, per-race independence, and a note already written from this
+run. `movement_notes_job_test.rb` has the two ends of the story: a race with no
+new movement since its note writes nothing and records no skip, and a second
+note is written against the note's run rather than last week's.

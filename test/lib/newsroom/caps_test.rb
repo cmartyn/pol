@@ -105,35 +105,122 @@ class Newsroom::CapsTest < ActiveSupport::TestCase
     end
   end
 
+  # The movement cooldown is not one number: it is a ceiling far from the
+  # election, a floor in its final days, and a ramp between them
+  # (Newsroom::Caps.movement_cooldown_days). These tests pin dates rather than
+  # reading the clock, so the suite means the same thing in August as in
+  # November.
+  FAR_OUT = Time.utc(2026, 8, 5, 16)        # 90 days before 2026-11-03; noon Eastern (EDT)
+  ELECTION_EVE = Time.utc(2026, 11, 2, 17)  # noon Eastern (EST by then)
+
+  def cooldown_max
+    Pol::Params.fetch!(:newsroom, :movement_note_cooldown_max_days)
+  end
+
+  def cooldown_min
+    Pol::Params.fetch!(:newsroom, :movement_note_cooldown_min_days)
+  end
+
   # F3 fix: a retracted movement note used to fall out of the cooldown scope
   # entirely (it was `Dispatch.published.movement_note`), so the very next
   # 2-hourly run would regenerate the piece an editor had just pulled — the
   # delta that prompted it hadn't gone anywhere. The cooldown must survive
   # retraction even though the day caps above deliberately do not.
   test "a retracted movement note still holds its cooldown, so a later run does not regenerate it" do
-    retracted = publish(kind: :movement_note, at: 1.day.ago)
-    retracted.update!(status: :retracted)
+    travel_to FAR_OUT do
+      retracted = publish(kind: :movement_note, at: 1.day.ago)
+      retracted.update!(status: :retracted)
 
-    reason, detail = Newsroom::Caps.blocking(kind: :movement_note, race: @race)
-    assert_equal :cap_reached, reason
-    assert_match(/##{retracted.id}/, detail)
+      reason, detail = Newsroom::Caps.blocking(kind: :movement_note, race: @race)
+      assert_equal :cap_reached, reason
+      assert_match(/##{retracted.id}/, detail)
+    end
   end
 
   test "movement notes are capped to one per race per cooldown window" do
-    days = Pol::Params.fetch!(:newsroom, :movement_note_cooldown_days)
-    recent = publish(kind: :movement_note, at: (days - 1).days.ago)
+    travel_to FAR_OUT do
+      recent = publish(kind: :movement_note, at: (cooldown_max - 1).days.ago)
 
-    reason, detail = Newsroom::Caps.blocking(kind: :movement_note, race: @race)
-    assert_equal :cap_reached, reason
-    assert_match(/movement note for senate-me-2026 was published/, detail)
-    assert_match(/##{recent.id}/, detail)
+      reason, detail = Newsroom::Caps.blocking(kind: :movement_note, race: @race)
+      assert_equal :cap_reached, reason
+      assert_match(/movement note for senate-me-2026 was published/, detail)
+      assert_match(/##{recent.id}/, detail)
+      assert_match(/the cooldown is #{cooldown_max} days, 90 days out from the election/, detail)
+    end
   end
 
   test "once the cooldown has passed the same race may move again" do
-    days = Pol::Params.fetch!(:newsroom, :movement_note_cooldown_days)
-    publish(kind: :movement_note, at: (days + 1).days.ago)
+    travel_to FAR_OUT do
+      publish(kind: :movement_note, at: (cooldown_max + 1).days.ago)
 
-    assert_nil Newsroom::Caps.blocking(kind: :movement_note, race: @race)
+      assert_nil Newsroom::Caps.blocking(kind: :movement_note, race: @race)
+    end
+  end
+
+  test "far from the election the cooldown is its ceiling" do
+    travel_to(FAR_OUT) { assert_equal cooldown_max, Newsroom::Caps.movement_cooldown_days }
+  end
+
+  # "Start it at five days now": mid-September, seven weeks out, is still the
+  # summer setting. The ramp begins after this.
+  test "seven weeks out the cooldown is still its ceiling" do
+    travel_to(Time.utc(2026, 9, 12, 16)) { assert_equal cooldown_max, Newsroom::Caps.movement_cooldown_days }
+  end
+
+  test "on the eve of the election the cooldown is its floor" do
+    travel_to(ELECTION_EVE) { assert_equal cooldown_min, Newsroom::Caps.movement_cooldown_days }
+  end
+
+  test "after election day the cooldown holds at the floor rather than falling to zero" do
+    travel_to(Time.utc(2026, 11, 10, 17)) { assert_equal cooldown_min, Newsroom::Caps.movement_cooldown_days }
+  end
+
+  # The floor is a day, not nothing: on election eve a note from this morning
+  # still holds the race until tomorrow — and the skip says so in the singular.
+  test "on election eve a note from this morning still blocks, because the floor is a day rather than nothing" do
+    travel_to ELECTION_EVE do
+      publish(kind: :movement_note, at: 6.hours.ago)
+
+      reason, detail = Newsroom::Caps.blocking(kind: :movement_note, race: @race)
+      assert_equal :cap_reached, reason
+      assert_match(/1 day out from the election/, detail)
+      assert_match(/the cooldown is #{cooldown_min} day,/, detail)
+    end
+  end
+
+  # Whatever shape the ramp takes: it may only shorten as the election nears,
+  # it stays inside its bounds in whole days, and it is a ramp rather than a
+  # cliff — at least one setting lies between the ceiling and the floor.
+  test "the cooldown only ever shortens as election day approaches, in whole days within its bounds" do
+    election = Pol::Params.fetch!(:election, :date).to_date
+    settings = 120.downto(0).map do |days_out|
+      noon = (election - days_out).in_time_zone(Newsroom::ZONE) + 12.hours
+      Newsroom::Caps.movement_cooldown_days(noon)
+    end
+
+    settings.each { |days| assert_kind_of Integer, days }
+    assert_equal settings.sort.reverse, settings, "the cooldown lengthened somewhere on the way to election day"
+    assert_equal cooldown_max, settings.first
+    assert_equal cooldown_min, settings.last
+    assert_operator (settings.uniq - [ cooldown_max, cooldown_min ]).size, :>=, 1, "a cliff, not a ramp"
+  end
+
+  test "days to the election are counted in Eastern calendar days" do
+    # 02:00 UTC on November 3 is still 10pm on November 2 in New York.
+    assert_equal 1, Newsroom::Caps.days_to_election(Time.utc(2026, 11, 3, 2))
+    assert_equal 0, Newsroom::Caps.days_to_election(Time.utc(2026, 11, 3, 5))
+  end
+
+  test "a note three days old blocks in August but not in the final days, once the cooldown has ramped down" do
+    travel_to FAR_OUT do
+      publish(kind: :movement_note, at: 3.days.ago)
+      assert Newsroom::Caps.blocking(kind: :movement_note, race: @race), "ninety days out the cooldown is days long"
+    end
+
+    travel_to ELECTION_EVE do
+      publish(kind: :movement_note, at: 3.days.ago)
+      assert_nil Newsroom::Caps.blocking(kind: :movement_note, race: @race), "on election eve it is a day"
+    end
   end
 
   test "the cooldown is a movement-note rule, not a poll-reaction one" do
