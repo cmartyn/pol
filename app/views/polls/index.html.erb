@@ -29,12 +29,14 @@
     pollsters too: the rows print pollster names, race names and candidate
     names, and take each margin's party letter from the race's candidates,
     none of which is a poll row — and a candidate edit reaches races through
-    Candidate's touch: true. Two cheap MAX()es over small tables, so a
-    renamed pollster or a newly added nominee is on this page at once rather
-    than after the next sweep. Site::PollFeed.build runs inside the block so a
-    cache hit skips its queries, same shape as /pollsters. %>
+    Candidate's touch: true. Two cheap MAX()es over small tables, keyed to
+    the microsecond (Site::CacheKey.timestamp — Rails alone keys a Time to
+    the second), so a renamed pollster or a newly added nominee is on this
+    page at once rather than after the next sweep. Site::PollFeed.build runs
+    inside the block so a cache hit skips its queries, same shape as /pollsters. %>
 <% cache [ "poll-feed", @page, Site::CacheKey.collection_freshness(Poll.model_corpus),
-           Race.maximum(:updated_at), Pollster.maximum(:updated_at) ] do %>
+           Site::CacheKey.timestamp(Race.maximum(:updated_at)),
+           Site::CacheKey.timestamp(Pollster.maximum(:updated_at)) ] do %>
   <% feed = Site::PollFeed.build(page: @page) %>
 
   <% if feed.total.zero? %>

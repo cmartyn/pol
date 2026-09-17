@@ -210,6 +210,25 @@ class PollsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The test above only passed when the rename happened to land in a later
+  # second than the fixtures did. Rails keys a Time to the second, so a write
+  # inside the same second as the last render kept serving the old fragment
+  # — on a fast machine, most runs. Site::CacheKey.timestamp keys to the
+  # microsecond; this pins the same-second case deliberately.
+  test "a rename in the same second as the previous render still busts the fragment" do
+    with_fragment_caching do
+      second = 1.day.from_now.change(usec: 0)
+      travel_to(second) { pollsters(:beacon_polling).touch }
+      get polls_path
+      assert_select "[data-testid='poll-feed-row']", text: /Beacon Polling/
+
+      travel_to(second + 0.5, with_usec: true) { pollsters(:beacon_polling).update!(name: "Beacon Renamed") }
+      get polls_path
+      assert_select "[data-testid='poll-feed-row']", text: /Beacon Renamed/
+      assert_select "[data-testid='poll-feed-row']", text: /Beacon Polling/, count: 0
+    end
+  end
+
   private
     def create_poll_with_named_results(race:, dem:, rep:, created_at:)
       poll = create_poll(pollster: pollsters(:beacon_polling), race: race, field_end: Date.new(2026, 8, 1), created_at: created_at)

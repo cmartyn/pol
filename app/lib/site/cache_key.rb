@@ -19,7 +19,19 @@ module Site
     # independently from, Site::SenateTable/HouseTable so a fragment-cache
     # hit can skip calling either of those entirely.
     def collection_freshness(relation)
-      [ relation.maximum(:updated_at), relation.count ]
+      [ timestamp(relation.maximum(:updated_at)), relation.count ]
+    end
+
+    # A Time as a cache-key component at full precision. Left to itself, Rails
+    # expands a Time in a key through #to_a — seconds, minutes, hours and so
+    # on, no fraction — so every write inside one wall-clock second keys
+    # identically, and a pollster renamed a moment after the previous render
+    # was served from that render's fragment (the /polls busting test failed
+    # on any machine fast enough to load fixtures and render inside one
+    # second). Microseconds are what Postgres stores, so use all of them.
+    # nil — an empty collection — stays nil.
+    def timestamp(time)
+      time&.to_fs(:usec)
     end
   end
 end
