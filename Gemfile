@@ -81,3 +81,5 @@ end
 
 gem "posthog-ruby", "~> 3.23"
 gem "posthog-rails", "~> 3.18"
+
+gem "rails_mind", git: "https://github.com/cmartyn/rails_mind.git", branch: "main"
