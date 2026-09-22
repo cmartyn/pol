@@ -9,13 +9,14 @@ module Site
       WIDTH = 960
       TOLERANCE = 0.5
 
-      def self.build(key: "house", tolerance: TOLERANCE)
-        new(key: key, tolerance: tolerance).build
+      def self.build(key: "house", tolerance: TOLERANCE, interactive: true)
+        new(key: key, tolerance: tolerance, interactive: interactive).build
       end
 
-      def initialize(key:, tolerance:)
+      def initialize(key:, tolerance:, interactive:)
         @key = key
         @tolerance = tolerance
+        @interactive = interactive
       end
 
       def build
@@ -36,12 +37,12 @@ module Site
             clip_id: "#{@key}-clip-#{outline.state}",
             outline_id: "#{@key}-outline-#{outline.state}",
             outline_d: canvas.path(outline),
-            shapes: districts.map { |district| DistrictShape.build(district, canvas, races[[ district.state, district.district ]], forecasts) },
+            shapes: districts.map { |district| DistrictShape.build(district, canvas, races[[ district.state, district.district ]], forecasts, interactive: @interactive) },
             highlight_d: nil
           }
         end
 
-        { key: @key, view_box: canvas.view_box, aria_label: aria_label, interactive: true, groups: groups, legend: Palette.legend }
+        { key: @key, view_box: canvas.view_box, aria_label: aria_label, interactive: @interactive, groups: groups, legend: Palette.legend }
       end
 
       private

@@ -9,15 +9,18 @@ module Site
 
       module_function
 
-      def build(boundary, canvas, race, forecasts)
+      def build(boundary, canvas, race, forecasts, interactive: true)
         cx, cy = canvas.centroid(boundary)
         attributes = { key: "#{boundary.state}-#{boundary.district}", d: canvas.path(boundary), cx: cx, cy: cy }
         return Shape.new(**attributes, fills: Forecasts::VARIANTS.index_with { Palette::NO_RACE }) unless race
 
+        fills = Forecasts::VARIANTS.index_with { |variant| Palette.fill(race: race, forecast: forecasts[variant][race.id]) }
+        return Shape.new(**attributes, fills: fills) unless interactive
+
         Shape.new(
           **attributes,
           slug: race.slug,
-          fills: Forecasts::VARIANTS.index_with { |variant| Palette.fill(race: race, forecast: forecasts[variant][race.id]) },
+          fills: fills,
           tips: Forecasts::VARIANTS.index_with { |variant| Tips.for(race, forecasts[variant][race.id], sides: SIDES) }
         )
       end

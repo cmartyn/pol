@@ -146,8 +146,10 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     create_boundary(state: "NY", district: 17, box: [ -74.2, 41.0, -73.5, 41.6 ])
 
     get root_path
-    assert_select "[data-testid='chamber-card-map'] [data-testid='map-dashboard-senate']"
-    assert_select "[data-testid='chamber-card-map'] [data-testid='map-dashboard-house']"
+    assert_select "[data-testid='chamber-card-map-link'][href='/senate'] [data-testid='map-dashboard-senate']"
+    assert_select "[data-testid='chamber-card-map-link'][href='/house'] [data-testid='map-dashboard-house']"
+    assert_select "[data-testid='chamber-card-map'] a[data-key]", count: 0
+    assert_select "[data-testid='chamber-card-map'] script[type='application/json']", count: 0
 
     get senate_path
     assert_select "[data-testid='chamber-card-map']", count: 0

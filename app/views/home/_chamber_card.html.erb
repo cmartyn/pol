@@ -67,12 +67,19 @@
       </div>
       <% end %>
 
-      <%# Outside each_variant: the map carries both variants' fills itself. %>
+      <%# Outside each_variant: the map carries both variants' fills itself.
+          Static preview linking to the full map — the dashboard is the most-
+          visited page, and per-shape hover data for 435 districts outweighed it. %>
       <% if map %>
-        <% chamber_map = house ? Site::Maps::HouseMap.build(key: "dashboard-house", tolerance: Site::Maps::Canvas::SMALL_TOLERANCE) : Site::Maps::SenateMap.build(key: "dashboard-senate", tolerance: Site::Maps::Canvas::SMALL_TOLERANCE) %>
+        <% chamber_map = house ? Site::Maps::HouseMap.build(key: "dashboard-house", tolerance: Site::Maps::Canvas::SMALL_TOLERANCE, interactive: false) : Site::Maps::SenateMap.build(key: "dashboard-senate", tolerance: Site::Maps::Canvas::SMALL_TOLERANCE, interactive: false) %>
         <% if chamber_map %>
           <div class="mt-4" data-testid="chamber-card-map">
-            <%= render "races/map", payload: chamber_map, show_legend: false %>
+            <%= link_to house ? house_path : senate_path,
+                  class: "block rounded-md transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600",
+                  aria: { label: "Open the full #{title} map" },
+                  data: { testid: "chamber-card-map-link" } do %>
+              <%= render "races/map", payload: chamber_map, show_legend: false %>
+            <% end %>
           </div>
         <% end %>
       <% end %>

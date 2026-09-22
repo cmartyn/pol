@@ -48,4 +48,12 @@ class Site::Maps::HouseMapTest < ActiveSupport::TestCase
 
     assert_nil Site::Maps::HouseMap.build
   end
+
+  test "interactive: false drops tips and slugs on every shape" do
+    payload = Site::Maps::HouseMap.build(interactive: false)
+    shapes = payload[:groups].flat_map { |group| group[:shapes] }
+
+    assert_not payload[:interactive]
+    assert shapes.all? { |shape| shape.tips.nil? && shape.slug.nil? }
+  end
 end

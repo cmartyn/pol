@@ -75,4 +75,11 @@ class Site::Maps::SenateMapTest < ActiveSupport::TestCase
 
     assert_equal Site::Maps::Palette.fill(race: governor, forecast: forecast), shapes(payload)["ME"].fills[:excl_internals]
   end
+
+  test "interactive: false drops tips and slugs on every shape" do
+    payload = Site::Maps::SenateMap.build(interactive: false)
+
+    assert_not payload[:interactive]
+    assert shapes(payload).values.all? { |shape| shape.tips.nil? && shape.slug.nil? }
+  end
 end

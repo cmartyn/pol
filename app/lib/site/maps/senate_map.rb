@@ -10,18 +10,20 @@ module Site
       LOCATOR_TOLERANCE = 3.0
       NO_RACE_LABEL = "No Senate race this year".freeze
 
-      def self.build(highlight: nil, key: nil, tolerance: nil)
+      def self.build(highlight: nil, key: nil, tolerance: nil, interactive: true)
         new(
           highlight: highlight,
           key: key || (highlight ? "senate-locator" : "senate"),
-          tolerance: tolerance || (highlight ? LOCATOR_TOLERANCE : TOLERANCE)
+          tolerance: tolerance || (highlight ? LOCATOR_TOLERANCE : TOLERANCE),
+          interactive: interactive
         ).build
       end
 
-      def initialize(highlight:, key:, tolerance:)
+      def initialize(highlight:, key:, tolerance:, interactive:)
         @highlight = highlight
         @key = key
         @tolerance = tolerance
+        @interactive = interactive && highlight.nil?
       end
 
       def build
@@ -42,7 +44,7 @@ module Site
           key: @key,
           view_box: canvas.view_box,
           aria_label: aria_label,
-          interactive: @highlight.nil?,
+          interactive: @interactive,
           groups: [ { state: nil, clip_id: nil, outline_id: nil, outline_d: nil, shapes: shapes, highlight_d: highlight_d(shapes) } ],
           legend: @highlight ? nil : Palette.legend(no_race_label: NO_RACE_LABEL)
         }
@@ -57,12 +59,15 @@ module Site
           race = races.min_by { |candidate| closeness(forecasts[:excl_internals][candidate.id]) }
           return Shape.new(**attributes, fills: Forecasts::VARIANTS.index_with { Palette::NO_RACE }) unless race
 
+          fills = Forecasts::VARIANTS.index_with { |variant| Palette.fill(race: race, forecast: forecasts[variant][race.id]) }
+          return Shape.new(**attributes, fills: fills) unless @interactive
+
           sides = Site::RaceSides.for(race.candidates)
           others = (races - [ race ]).map { |other| display_name(other) }.to_sentence.presence
           Shape.new(
             **attributes,
             slug: race.slug,
-            fills: Forecasts::VARIANTS.index_with { |variant| Palette.fill(race: race, forecast: forecasts[variant][race.id]) },
+            fills: fills,
             tips: Forecasts::VARIANTS.index_with { |variant| Tips.for(race, forecasts[variant][race.id], sides: sides, also: others) }
           )
         end
