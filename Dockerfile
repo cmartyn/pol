@@ -39,7 +39,12 @@ RUN apt-get update -qq && \
 COPY vendor/* ./vendor/
 COPY Gemfile Gemfile.lock ./
 
-RUN bundle install && \
+# GITHUB_TOKEN is mounted for this command only so Bundler can clone the
+# private rails_mind gem. The cache and git checkouts that could retain it
+# are removed before the layer ends.
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    BUNDLE_GITHUB__COM=x-access-token:$(cat /run/secrets/GITHUB_TOKEN) \
+    bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
     bundle exec bootsnap precompile -j 1 --gemfile
