@@ -14,7 +14,7 @@ module Site
       end
 
       def self.state(outline, width: 600, max_height: 480, tolerance: 0.5, padding: 4)
-        projection = Projection.fitted(outline.rings)
+        projection = Projection.fitted(Projection.inset_rings(outline.state, outline.rings))
         new([ outline ], projector: ->(_boundary) { projection },
             width: width, max_height: max_height, padding: padding, tolerance: tolerance)
       end
@@ -23,6 +23,7 @@ module Site
         @projector = projector
         @tolerance = tolerance
         @projected = {}
+        @pixels = {}
         @width = width
 
         xs = []
@@ -62,6 +63,8 @@ module Site
       # hover snapping and keyboard stepping can still reach it.
       def path(boundary)
         rings = pixel_rings(boundary)
+        return "" if rings.empty?
+
         kept = rings.reject { |ring| tiny?(ring) }.filter_map do |ring|
           simple = Path.simplify(ring, @tolerance)
           simple if simple.uniq.size >= 3
@@ -71,19 +74,22 @@ module Site
       end
 
       def centroid(boundary)
-        Path.centroid(pixel_rings(boundary))&.map { |value| value.round(1) }
+        rings = pixel_rings(boundary)
+        return nil if rings.empty?
+
+        Path.centroid(rings)&.map { |value| value.round(1) }
       end
 
       private
         def projected_rings(boundary)
           @projected[boundary] ||= begin
             projection = @projector.call(boundary)
-            boundary.rings.map { |ring| ring.map { |lon, lat| projection.call(lon, lat) } }
+            Projection.inset_rings(boundary.state, boundary.rings).map { |ring| ring.map { |lon, lat| projection.call(lon, lat) } }
           end
         end
 
         def pixel_rings(boundary)
-          projected_rings(boundary).map do |ring|
+          @pixels[boundary] ||= projected_rings(boundary).map do |ring|
             ring.map { |x, y| [ @offset_x + ((x - @min_x) * @scale), @offset_y + ((y - @min_y) * @scale) ] }
           end
         end

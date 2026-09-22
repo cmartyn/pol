@@ -78,7 +78,7 @@ module Site
         best_sq = -1.0
         ((first + 1)...last).each do |index|
           px, py = points[index]
-          # fdiv: integer lon/lat fixtures must not truncate the projection parameter.
+          # fdiv: integer coordinates must not truncate the projection parameter.
           t = length_sq.zero? ? 0.0 : ((((px - ax) * dx) + ((py - ay) * dy)).fdiv(length_sq)).clamp(0.0, 1.0)
           ex = px - (ax + (t * dx))
           ey = py - (ay + (t * dy))

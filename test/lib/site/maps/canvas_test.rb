@@ -47,4 +47,26 @@ class Site::Maps::CanvasTest < ActiveSupport::TestCase
     assert_operator alaska_x, :<, maine_x
     assert_operator alaska_y, :>, maine_y
   end
+
+  test "a Hawaii state canvas centers on the main islands, not a Kure speck" do
+    main = [ [ -160.5, 18.9 ], [ -154.8, 18.9 ], [ -154.8, 22.3 ], [ -160.5, 22.3 ], [ -160.5, 18.9 ] ]
+    kure = [ [ -178.4, 28.3 ], [ -178.3, 28.3 ], [ -178.3, 28.4 ], [ -178.4, 28.4 ], [ -178.4, 28.3 ] ]
+    outline = Region.new("HI", [ main, kure ])
+    canvas = Site::Maps::Canvas.state(outline, width: 600, max_height: 480)
+
+    assert_in_delta canvas.width / 2.0, canvas.centroid(outline).first, 1.0
+  end
+
+  test "a national canvas frames the same with or without a Hawaii Kure speck" do
+    base = [
+      box("CA", -124.4, 32.5, -114.1, 42.0), box("ME", -71.1, 43.0, -66.9, 47.5),
+      box("AK", -170.0, 52.0, -130.0, 71.0)
+    ]
+    main = [ [ -160.5, 18.9 ], [ -154.8, 18.9 ], [ -154.8, 22.3 ], [ -160.5, 22.3 ], [ -160.5, 18.9 ] ]
+    kure = [ [ -178.4, 28.3 ], [ -178.3, 28.3 ], [ -178.3, 28.4 ], [ -178.4, 28.4 ], [ -178.4, 28.3 ] ]
+    without = Site::Maps::Canvas.national(base + [ Region.new("HI", [ main ]) ], width: 960)
+    with = Site::Maps::Canvas.national(base + [ Region.new("HI", [ main, kure ]) ], width: 960)
+
+    assert_equal without.view_box, with.view_box
+  end
 end

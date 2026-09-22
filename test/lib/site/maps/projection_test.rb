@@ -30,4 +30,28 @@ class Site::Maps::ProjectionTest < ActiveSupport::TestCase
     assert_in_delta 0.0, projection.call(-71.0, 44.0).first, 1e-12
     assert_in_delta(-projection.call(-72.0, 44.0).first, projection.call(-70.0, 44.0).first, 1e-12)
   end
+
+  def ring_box(west, south, east, north)
+    [ [ west, south ], [ east, south ], [ east, north ], [ west, north ], [ west, south ] ]
+  end
+
+  test "inset_rings keeps Hawaii's main islands and drops a Kure Atoll speck" do
+    main = ring_box(-160.5, 18.9, -154.8, 22.3)
+    kure = ring_box(-178.4, 28.3, -178.3, 28.4)
+
+    assert_equal [ main ], Site::Maps::Projection.inset_rings("HI", [ main, kure ])
+  end
+
+  test "inset_rings keeps Alaska's mainland and an Attu-like Aleutian box" do
+    mainland = ring_box(-170, 52, -130, 71)
+    attu = ring_box(172.5 - 360, 52.7, 173.5 - 360, 53.1)
+
+    assert_equal [ mainland, attu ], Site::Maps::Projection.inset_rings("AK", [ mainland, attu ])
+  end
+
+  test "inset_rings keeps a Colorado box for the lower 48" do
+    colorado = ring_box(-109.0, 37.0, -102.0, 41.0)
+
+    assert_equal [ colorado ], Site::Maps::Projection.inset_rings("CO", [ colorado ])
+  end
 end
