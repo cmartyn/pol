@@ -24,6 +24,34 @@ class Ingest::TigerwebClientTest < ActiveSupport::TestCase
     assert_raises(Ingest::TigerwebClient::LayerNotFound) { @client.layer_id(SERVICE, "121st Congressional Districts") }
   end
 
+  test "skips label layers that repeat a data layer's name" do
+    stub_request(:get, "#{SERVICE_URL}?f=json").to_return(status: 200, body: {
+      layers: [
+        { id: 0, name: "Labels", type: "Group Layer", parentLayerId: -1, subLayerIds: [ 1, 5 ] },
+        { id: 1, name: "States", type: "Group Layer", parentLayerId: 0, subLayerIds: [ 2, 3, 4 ] },
+        { id: 2, name: "States 500K", type: "Feature Layer", parentLayerId: 1, subLayerIds: nil },
+        { id: 6, name: "States", type: "Group Layer", parentLayerId: -1, subLayerIds: [ 7, 8, 9 ] },
+        { id: 7, name: "States 500K", type: "Feature Layer", parentLayerId: 6, subLayerIds: nil }
+      ]
+    }.to_json)
+
+    assert_equal 7, @client.layer_id(SERVICE, "States 500K")
+  end
+
+  test "two data layers with the same name is an error, not a guess" do
+    stub_request(:get, "#{SERVICE_URL}?f=json").to_return(status: 200, body: {
+      layers: [
+        { id: 10, name: "Group A", type: "Group Layer", parentLayerId: -1, subLayerIds: [ 11 ] },
+        { id: 11, name: "119th Congressional Districts", type: "Feature Layer", parentLayerId: 10, subLayerIds: nil },
+        { id: 20, name: "Group B", type: "Group Layer", parentLayerId: -1, subLayerIds: [ 21 ] },
+        { id: 21, name: "119th Congressional Districts", type: "Feature Layer", parentLayerId: 20, subLayerIds: nil }
+      ]
+    }.to_json)
+
+    error = assert_raises(Ingest::TigerwebClient::LayerNotFound) { @client.layer_id(SERVICE, "119th Congressional Districts") }
+    assert_includes error.message, "2 layers"
+  end
+
   test "features returns the exact query url and the GeoJSON features" do
     stub = stub_request(:get, %r{\A#{Regexp.escape(SERVICE_URL)}/0/query})
       .with(query: hash_including("where" => "STATE='44'", "outFields" => "STATE,CD120", "outSR" => "4326",

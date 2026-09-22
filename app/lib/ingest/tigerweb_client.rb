@@ -15,9 +15,8 @@ module Ingest
     Error = Class.new(StandardError)
     FetchFailed = Class.new(Error)
     # TIGERweb renumbers layers between releases, so layers are found by
-    # name. A name that isn't there means the service changed shape, or the
-    # cycle moved to a Congress it hasn't published yet — nothing should
-    # guess at a replacement.
+    # name. A name that isn't there, or that matches more than one data
+    # layer, means the service changed shape — nothing should guess.
     LayerNotFound = Class.new(Error)
 
     BASE = "https://tigerweb.geo.census.gov/arcgis/rest/services/".freeze
@@ -27,6 +26,11 @@ module Ingest
     ATTEMPTS = 3
     MIN_INTERVAL = 1.0
     BACKOFF_BASE = 0.5
+
+    # ArcGIS label layers repeat their data layer's name (State_County's
+    # "Labels" group has its own "States 500K", and queries against it fail),
+    # so only layers outside that group count.
+    LABELS_GROUP = "Labels".freeze
 
     RETRIABLE_ERRORS = [
       Net::OpenTimeout, Net::ReadTimeout, Errno::ECONNRESET, Errno::ECONNREFUSED,
@@ -48,11 +52,15 @@ module Ingest
     end
 
     def layer_id(service, layer_name)
-      json = get_json(URI("#{self.class.service_url(service)}?f=json"))
-      layer = Array(json["layers"]).find { |candidate| candidate["name"] == layer_name }
-      raise LayerNotFound, "#{service} has no layer named #{layer_name.inspect}" unless layer
+      layers = Array(get_json(URI("#{self.class.service_url(service)}?f=json"))["layers"])
+      by_id = layers.index_by { |layer| layer["id"] }
+      matches = layers.select do |layer|
+        layer["name"] == layer_name && layer["type"] != "Group Layer" && !inside_labels?(layer, by_id)
+      end
+      raise LayerNotFound, "#{service} has no layer named #{layer_name.inspect}" if matches.empty?
+      raise LayerNotFound, "#{service} has #{matches.size} layers named #{layer_name.inspect}" if matches.size > 1
 
-      layer.fetch("id")
+      matches.first.fetch("id")
     end
 
     # [query_url, features]. The URL is what each stored row cites as its
@@ -68,6 +76,16 @@ module Ingest
     end
 
     private
+      def inside_labels?(layer, by_id)
+        parent = by_id[layer["parentLayerId"]]
+        while parent
+          return true if parent["name"] == LABELS_GROUP
+
+          parent = by_id[parent["parentLayerId"]]
+        end
+        false
+      end
+
       def query_uri(service, layer_id, where:, out_fields:, max_allowable_offset:)
         params = {
           where: where,

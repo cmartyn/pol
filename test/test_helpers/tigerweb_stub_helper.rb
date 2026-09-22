@@ -3,10 +3,10 @@
 # repository. Each state is a box; its districts are equal vertical strips of
 # that box, one per district code.
 #
-#   stub_tigerweb(
+#   stub_tigerweb({
 #     "DE" => { fips: "10", box: [ -75.8, 38.4, -75.0, 39.8 ], districts: %w[00] },
 #     "RI" => { fips: "44", box: [ -71.9, 41.1, -71.1, 42.0 ], districts: %w[01 02] }
-#   )
+#   })
 module TigerwebStubHelper
   STATE_LAYER_ID = 7
   DISTRICT_LAYER_ID = 0
@@ -16,7 +16,12 @@ module TigerwebStubHelper
     district_url = Ingest::TigerwebClient.service_url(Ingest::BoundarySync::DISTRICT_SERVICE)
 
     stub_request(:get, "#{state_url}?f=json").to_return(tigerweb_json(
-      "layers" => [ { "id" => 3, "name" => "States 5M" }, { "id" => STATE_LAYER_ID, "name" => Ingest::BoundarySync::STATE_LAYER } ]
+      "layers" => [
+        { "id" => 0, "name" => "Labels", "type" => "Group Layer", "parentLayerId" => -1 },
+        { "id" => 2, "name" => Ingest::BoundarySync::STATE_LAYER, "type" => "Feature Layer", "parentLayerId" => 0 },
+        { "id" => 3, "name" => "States 5M", "type" => "Feature Layer", "parentLayerId" => -1 },
+        { "id" => STATE_LAYER_ID, "name" => Ingest::BoundarySync::STATE_LAYER, "type" => "Feature Layer", "parentLayerId" => -1 }
+      ]
     ))
     stub_request(:get, "#{district_url}?f=json").to_return(tigerweb_json(
       "layers" => [ { "id" => 4, "name" => "119th Congressional Districts" }, { "id" => DISTRICT_LAYER_ID, "name" => district_layer } ]
