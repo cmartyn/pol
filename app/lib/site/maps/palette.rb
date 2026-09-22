@@ -4,8 +4,9 @@ module Site
     # PARTY, so a map and the charts beside it cannot disagree about Dem-blue.
     module Palette
       PARTY = { "dem" => "#1d4ed8", "rep" => "#b91c1c", "other" => "#64748b" }.freeze
-      NO_FORECAST = "#e2e8f0".freeze
-      NO_RACE = "#f8fafc".freeze
+      # Neutral grays: slate's blue cast reads as the palest Democratic tint.
+      NO_FORECAST = "#d4d4d4".freeze
+      NO_RACE = "#e5e5e5".freeze
       # How far a dead-even race is mixed from white toward its leader's
       # hue; the remaining 1 − FLOOR is spread linearly across a 50% to 100%
       # win probability.

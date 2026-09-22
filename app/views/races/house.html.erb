@@ -26,7 +26,7 @@
 <% cache [ "house-map", @latest_run, Site::CacheKey.collection_freshness(Boundary.all), Site::CacheKey.collection_freshness(Race.house) ] do %>
   <% house_map = Site::Maps::HouseMap.build %>
   <% if house_map %>
-    <section class="mt-8" data-testid="house-map-section">
+    <section class="mt-8 max-w-4xl" data-testid="house-map-section">
       <%= render "races/map", payload: house_map %>
     </section>
   <% end %>

@@ -172,8 +172,8 @@ a `party`, not a color; the controller maps party to hex through
 - The leading side is `Site::Format.leader` (new; `rating_word` is refactored
   onto it). The mix toward its hue is m = 0.2 + 0.8 · clamp((p_lead − 0.5) / 0.5, 0, 1),
   blended with white in sRGB.
-- Uncontested seats get full party color. No forecast is `#e2e8f0`
-  (slate-200). No race is `#f8fafc` (slate-50).
+- Uncontested seats get full party color. No forecast is `#d4d4d4`
+  and no race is `#e5e5e5`: neutral grays, because slate's blue cast reads as the palest Democratic tint.
 - The legend has two ramps (Dem, Rep) and swatches for no forecast and no race.
   Its caption states the tossup band from `site.tossup_band_pp`.
 - The vocabulary stays the site's own: "Tossup", "Favors Dem", "Uncontested".
