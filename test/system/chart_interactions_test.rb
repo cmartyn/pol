@@ -74,4 +74,25 @@ class ChartInteractionsTest < ApplicationSystemTestCase
       assert_text "218 = majority"
     end
   end
+
+  test "senate map: hovering a state reads out its race, and the internals toggle recolors it" do
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    create_boundary(state: "FL", box: [ -87.6, 24.5, -80.0, 31.0 ])
+    Forecast.create!(model_run: model_runs(:model_run_one), race: races(:senate_maine), variant: :incl_internals,
+                     p_dem_win: 0.2, p_rep_win: 0.8, p_other_win: 0.0, mean_margin: -6.0)
+
+    visit senate_path
+
+    within "[data-testid=map-senate]" do
+      find("a[data-key='ME'] path").hover
+      assert_selector "[data-testid=chart-tooltip]", text: "Maine Senate"
+      assert_selector "[data-testid=chart-tooltip]", text: "62%"
+    end
+
+    fill = "getComputedStyle(document.querySelector(\"[data-testid=map-senate] a[data-key='ME'] path\")).fill"
+    published = evaluate_script(fill)
+    find("[data-testid=internals-toggle]").click
+    assert_selector "html[data-internals='on']", visible: :all
+    assert_not_equal published, evaluate_script(fill)
+  end
 end

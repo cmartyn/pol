@@ -416,4 +416,29 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-testid='senate-race-row'] [data-testid='rating-word'] [data-variant='incl_internals']", minimum: 1
   end
+
+  # --- maps -----------------------------------------------------------------
+
+  test "senate shows the map once boundaries exist, and no map before" do
+    get senate_path
+    assert_select "[data-testid='map-senate']", count: 0
+
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    get senate_path
+
+    assert_select "[data-testid='map-senate'] a[data-key='ME'][href='#{race_path(races(:senate_maine).slug)}']"
+    assert_select "[data-testid='map-senate'] script[type='application/json']", text: /Maine Senate/
+    assert_select "[data-testid='map-senate'] [data-testid='map-legend']"
+  end
+
+  test "house draws each district inside its state's clip" do
+    create_boundary(state: "NY", box: [ -79.8, 40.5, -71.8, 45.0 ])
+    create_boundary(state: "NY", district: 17, box: [ -74.2, 41.0, -73.5, 41.6 ])
+
+    get house_path
+
+    assert_select "[data-testid='map-house'] [id='house-clip-NY']"
+    assert_select "[data-testid='map-house'] g[clip-path='url(#house-clip-NY)'] a[data-key='NY-17']"
+    assert_select "[data-testid='map-house'] use.map-outline"
+  end
 end

@@ -35,6 +35,20 @@
   </p>
 <% end %>
 
+<%# The map is its own fragment: keyed on the run its colors come from, the
+    boundaries it is drawn from (so seeding them shows the map without
+    waiting for the next run), and the Senate race collection. The builder
+    runs inside the block so a hit skips its queries; it returns nil until
+    boundaries exist, and then this renders nothing. %>
+<% cache [ "senate-map", @latest_run, Site::CacheKey.collection_freshness(Boundary.all), Site::CacheKey.collection_freshness(Race.senate) ] do %>
+  <% senate_map = Site::Maps::SenateMap.build %>
+  <% if senate_map %>
+    <section class="mt-8" data-testid="senate-map-section">
+      <%= render "races/map", payload: senate_map %>
+    </section>
+  <% end %>
+<% end %>
+
 <%# The heaviest surface on this page — a 35-row table each pulling a
     forecast and poll stats — is cache-keyed on the run those forecasts come
     from, the sort/direction actually in effect (so a hit never serves a

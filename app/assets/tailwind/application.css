@@ -89,3 +89,38 @@ html[data-internals="on"] [data-variant="excl_internals"] {
 html:not([data-internals="on"]) tr[data-internal-poll] {
   opacity: 0.55;
 }
+
+/* ---------------------------------------------------------------------------
+   Maps (app/views/races/_map.html.erb)
+
+   Every shape carries both variants' fills as custom properties, and this is
+   the same html[data-internals] switch the rest of the toggle uses, so the
+   geometry is sent once. Outlines are <use> clones of each clip's path and
+   inherit fill and stroke from .map-outline; vector-effect doesn't inherit
+   into a clone, so their width is in viewBox units and thins with the map. */
+.map-shape {
+  fill: var(--fill-excl);
+  stroke: #ffffff;
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+}
+html[data-internals="on"] .map-shape {
+  fill: var(--fill-incl);
+}
+a[data-active] > .map-shape {
+  stroke: #0f172a;
+  stroke-width: 1.5px;
+}
+.map-outline {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 0.75;
+  pointer-events: none;
+}
+.map-highlight {
+  fill: none;
+  stroke: #0f172a;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}

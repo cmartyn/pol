@@ -1,0 +1,47 @@
+<%# locals: (payload:, show_legend: true) -%>
+<%# Renders any Site::Maps payload. Each shape is drawn once and carries both
+    variants' fills as custom properties; application.css picks one off
+    html[data-internals]. District shapes sit inside their state's clip (the
+    legal lines run out into water), and the outline is stroked on top as a
+    <use> of the same path the clip uses. Tooltip words ride in one JSON
+    script per map, not per-shape attributes; map_chart_controller reads it. %>
+<% interactive = payload[:interactive] %>
+<div class="relative w-full" data-testid="map-<%= payload[:key] %>"
+     <% if interactive %>
+       data-controller="map-chart" tabindex="0" role="group"
+       aria-label="<%= payload[:aria_label] %>; left and right arrow keys step through races, Enter opens one"
+     <% end %>>
+  <svg viewBox="<%= payload[:view_box] %>" class="block h-auto w-full" role="img" aria-label="<%= payload[:aria_label] %>">
+    <defs>
+      <% payload[:groups].each do |group| %>
+        <% next unless group[:outline_id] %>
+        <path id="<%= group[:outline_id] %>" d="<%= group[:outline_d] %>" fill-rule="evenodd" />
+        <clipPath id="<%= group[:clip_id] %>" clip-rule="evenodd"><use href="#<%= group[:outline_id] %>" /></clipPath>
+      <% end %>
+    </defs>
+    <% payload[:groups].each do |group| %>
+      <g<% if group[:clip_id] %> clip-path="url(#<%= group[:clip_id] %>)"<% end %>>
+        <% group[:shapes].each do |shape| %>
+          <% style = "--fill-excl:#{shape.fills[:excl_internals]};--fill-incl:#{shape.fills[:incl_internals]}" %>
+          <% if interactive && shape.slug %>
+            <a href="<%= race_path(shape.slug) %>" tabindex="-1" data-map-chart-target="shape" data-key="<%= shape.key %>" data-cx="<%= shape.cx %>" data-cy="<%= shape.cy %>"><path class="map-shape" d="<%= shape.d %>" fill-rule="evenodd" style="<%= style %>" /></a>
+          <% else %>
+            <path class="map-shape" d="<%= shape.d %>" fill-rule="evenodd" style="<%= style %>" data-key="<%= shape.key %>" />
+          <% end %>
+        <% end %>
+        <% if group[:highlight_d] %>
+          <path class="map-highlight" d="<%= group[:highlight_d] %>" fill-rule="evenodd" />
+        <% end %>
+      </g>
+    <% end %>
+    <% payload[:groups].each do |group| %>
+      <% if group[:outline_id] %><use href="#<%= group[:outline_id] %>" class="map-outline" /><% end %>
+    <% end %>
+  </svg>
+  <% if interactive %>
+    <script type="application/json" data-map-chart-target="tips"><%= map_tips_json(payload) %></script>
+  <% end %>
+  <% if show_legend && payload[:legend] %>
+    <%= render "races/map_legend", legend: payload[:legend] %>
+  <% end %>
+</div>
