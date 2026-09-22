@@ -3,10 +3,6 @@
 # config/model_params.yml (newsroom.writer_model / newsroom.brief_model) so a
 # model swap is a one-string config change, not a code change.
 RubyLLM.configure do |config|
-  # Opt into RubyLLM's current association-based acts_as API so boot doesn't
-  # emit the legacy-API deprecation warning on every load.
-  config.use_new_acts_as = true
-
   # The credential is the source of truth; ENV is the escape hatch for a
   # container that has no master key. A missing key must NOT raise here:
   # boot has to succeed on a machine with no credentials at all (CI, a fresh

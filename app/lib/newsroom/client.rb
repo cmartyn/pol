@@ -2,19 +2,20 @@ module Newsroom
   # The whole of this app's contact with an LLM: one chat, against one
   # OpenRouter model, asking for one JSON object.
   #
-  # ruby_llm 1.16 mechanics this leans on, all read out of the installed gem
+  # ruby_llm 2.0 mechanics this leans on, all read out of the installed gem
   # rather than remembered:
   #   * `RubyLLM.chat(model:, provider: :openrouter, assume_model_exists: true)`
   #     skips the bundled model registry (which does not carry OpenRouter's
   #     catalogue) and goes straight to the provider — see Models.resolve.
   #   * `#with_schema(hash)` becomes OpenRouter's
-  #     `response_format: {type: "json_schema", json_schema: {...}}`, and
-  #     Chat#normalize_schema_response JSON-parses the reply for us, so
-  #     `message.content` comes back as a Hash with string keys.
-  #   * `#with_params(max_tokens:)` is deep-merged into the request body by
-  #     Provider#complete, which is how the output bound gets applied.
-  #   * The reply's `model_id` is OpenRouter's own `model` field — the model
+  #     `response_format: {type: "json_schema", json_schema: {...}}`. The
+  #     reply's JSON text is `message.content`; the parsed Hash is
+  #     `message.parsed`.
+  #   * `#with_provider_options(max_tokens:)` is merged into the request body,
+  #     which is how the output bound gets applied.
+  #   * The reply's `model` is OpenRouter's own `model` field — the model
   #     that actually served the request, which is what the byline should say.
+  #     Token counts live on `message.tokens`.
   #   * Faraday maps HTTP failures to RubyLLM::Error subclasses
   #     (UnauthorizedError, RateLimitError, ServerError, ...) via
   #     ErrorMiddleware, and retries 429/5xx/timeouts config.max_retries times
@@ -73,13 +74,13 @@ module Newsroom
       content = message.content
 
       Reply.new(
-        data: content.is_a?(Hash) ? content : parse(content),
+        data: parsed_hash(message),
         text: content.is_a?(String) ? content : nil,
         # Fall back to the configured slug: OpenRouter always reports the
         # serving model, but a byline is not worth an exception.
-        model_id: message.model_id.presence || slug,
-        input_tokens: message.input_tokens,
-        output_tokens: message.output_tokens
+        model_id: message.model.presence || slug,
+        input_tokens: message.tokens&.input,
+        output_tokens: message.tokens&.output
       )
     rescue RubyLLM::Error, RubyLLM::ConfigurationError, Faraday::Error, Timeout::Error => error
       raise Error, self.class.sanitize("#{error.class}: #{error.message}")
@@ -97,16 +98,14 @@ module Newsroom
           .chat(model: slug, provider: PROVIDER, assume_model_exists: true)
           .with_instructions(@instructions)
           .with_schema(@schema)
-          .with_params(max_tokens: Pol::Params.fetch!(:newsroom, :max_output_tokens))
+          .with_provider_options(max_tokens: Pol::Params.fetch!(:newsroom, :max_output_tokens))
       end
 
       # A model that ignores the schema and answers in prose is a validation
       # problem, not an exception: nil data flows into Newsroom::Validation,
       # which rejects it with a message the retry turn can act on.
-      def parse(content)
-        return nil if content.blank?
-
-        parsed = JSON.parse(content)
+      def parsed_hash(message)
+        parsed = message.parsed
         parsed.is_a?(Hash) ? parsed : nil
       rescue JSON::ParserError
         nil
