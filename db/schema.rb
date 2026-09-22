@@ -10,9 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "boundaries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "district"
+    t.jsonb "geometry", null: false
+    t.string "source_url", null: false
+    t.string "state", null: false
+    t.datetime "updated_at", null: false
+    t.index ["state", "district"], name: "index_boundaries_on_state_and_district", unique: true, where: "(district IS NOT NULL)"
+    t.index ["state"], name: "index_boundaries_on_state_outline", unique: true, where: "(district IS NULL)"
+  end
 
   create_table "candidates", force: :cascade do |t|
     t.integer "caucus_with"

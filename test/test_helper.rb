@@ -11,6 +11,8 @@ require_relative "test_helpers/query_counting"
 require_relative "test_helpers/fragment_caching_helper"
 require_relative "test_helpers/forgery_protection_helper"
 require_relative "test_helpers/nyt_csv_helper"
+require_relative "test_helpers/tigerweb_stub_helper"
+require_relative "test_helpers/boundary_factory"
 
 # Nothing in this suite is allowed to reach the network. Wikipedia is always
 # WebMock-stubbed (see WikipediaStubHelper); localhost stays open for the
@@ -34,5 +36,7 @@ module ActiveSupport
     include FragmentCachingHelper
     include ForgeryProtectionHelper
     include NytCsvHelper
+    include TigerwebStubHelper
+    include BoundaryFactory
   end
 end

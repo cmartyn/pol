@@ -27,7 +27,7 @@ Kamal builds from git HEAD — commit before deploying.
 ## First-boot / rebuild checklist
 
 1. `bin/kamal setup` (installs docker on the host, boots Postgres, deploys).
-2. Seed the world: `bin/kamal app exec 'bin/rails pol:seed_races pol:scrape pol:model'`.
+2. Seed the world: `bin/kamal app exec 'bin/rails pol:seed_races pol:seed_boundaries pol:scrape pol:model'`.
 3. The editor account: on a fresh boot the entrypoint's `db:prepare`
    CREATES the database and therefore runs `db/seeds.rb` — so the account
    already exists and its generated password was printed once into the web
@@ -111,6 +111,21 @@ Re-arming the fallback (if the Times moves or stops the files):
    there by design, so a real switch-back also means widening that scope
    deliberately, not just re-enabling writes.
 4. Deploy.
+
+## Maps
+
+Every map is drawn at render time from the `boundaries` table, which
+`bin/rails pol:seed_boundaries` fills from the Census Bureau's TIGERweb API
+(shoreline-clipped state outlines, and the congressional district lines in
+effect for the cycle). No boundary data is in the repository or the image.
+Until it has run, pages render without maps. Run it once per environment:
+
+    bin/kamal app exec 'bin/rails pol:seed_boundaries'
+
+Re-run it only if the Census corrects the lines (a court-ordered redraw) or
+for a new cycle, which moves the derived Congress number. If TIGERweb has not
+yet published that Congress's layer, the task fails loudly and the existing
+boundaries stay.
 
 ## Costs
 

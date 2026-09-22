@@ -19,6 +19,20 @@ namespace :pol do
     puts
   end
 
+  desc "Fetch state outlines and the cycle's congressional district lines from the Census Bureau (TIGERweb) into boundaries"
+  task seed_boundaries: :environment do
+    summary = Ingest::BoundarySync.new.call
+
+    puts
+    puts "  Boundaries (#{Ingest::Sources.cycle})"
+    puts "  " + "-" * 46
+    printf("  %-28s %16d\n", "State outlines", summary.outlines)
+    printf("  %-28s %16d\n", "Districts", summary.districts)
+    printf("  %-28s %16d\n", "Points stored", summary.points)
+    puts "  " + "-" * 46
+    puts
+  end
+
   desc "Fetch the NYT poll CSVs once and ingest new polls (first run doubles as the backfill)"
   task nyt_sync: :environment do
     outcomes = Ingest::Nyt::Sync.new.call
