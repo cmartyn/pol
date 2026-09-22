@@ -127,7 +127,8 @@ export default class extends Controller {
   render(index) {
     const shape = this.shapeTargets[index]
     const variant = document.documentElement.dataset.internals === "on" ? "incl_internals" : "excl_internals"
-    const tip = this.tips[shape.dataset.key]?.[variant]
+    const tips = this.tips[shape.dataset.key]
+    const tip = tips?.[variant] ?? tips?.excl_internals
     const matrix = this.svg.getScreenCTM()
     if (!tip || !matrix) return
 

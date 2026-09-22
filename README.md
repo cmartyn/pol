@@ -46,6 +46,7 @@ An empty database gives you an empty site. To fill it:
 bin/rails pol:seed_races   # the race board
 bin/rails pol:scrape       # polls
 bin/rails pol:model        # a forecast
+bin/rails pol:seed_boundaries   # map boundaries (Census; needs network)
 ```
 
 Run the tests with `bin/rails test` (fast, no network at all), the end-to-end

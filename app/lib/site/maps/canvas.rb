@@ -8,6 +8,10 @@ module Site
     class Canvas
       attr_reader :width, :height
 
+      # For maps drawn at about half their 960-unit frame, such as the
+      # dashboard cards, 2 units is about 1 CSS pixel.
+      SMALL_TOLERANCE = 2.0
+
       def self.national(outlines, width: 960, tolerance: 0.5, padding: 2)
         new(outlines, projector: ->(boundary) { Projection.albers_usa(boundary.state) },
             width: width, max_height: nil, padding: padding, tolerance: tolerance)

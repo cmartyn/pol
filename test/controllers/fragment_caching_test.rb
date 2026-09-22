@@ -147,6 +147,18 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the dashboard chamber card map appears once boundaries exist" do
+    with_fragment_caching do
+      get root_path
+      assert_select "[data-testid='chamber-card-map']", count: 0
+
+      create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+
+      get root_path
+      assert_select "[data-testid='chamber-card-map'] [data-testid='map-dashboard-senate']"
+    end
+  end
+
   private
     # Fetch `path` twice with a real fragment store in place and prove the
     # second render did less database work than the first — i.e. that the

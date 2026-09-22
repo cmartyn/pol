@@ -7,7 +7,7 @@ module Site
     class SenateMap
       WIDTH = 960
       TOLERANCE = 0.5
-      LOCATOR_TOLERANCE = 1.0
+      LOCATOR_TOLERANCE = 3.0
       NO_RACE_LABEL = "No Senate race this year".freeze
 
       def self.build(highlight: nil, key: nil, tolerance: nil)
@@ -29,9 +29,14 @@ module Site
         return nil if outlines.empty?
 
         canvas = Canvas.national(outlines, width: WIDTH, tolerance: @tolerance)
-        races_by_state = Race.senate.includes(:candidates).order(:slug).to_a.group_by(&:state)
-        forecasts = Forecasts.latest_by_variant(races_by_state.values.flatten.map(&:id))
-        shapes = outlines.map { |outline| shape_for(outline, canvas, races_by_state.fetch(outline.state, []), forecasts) }
+        shapes = if @highlight
+          forecasts = Forecasts.latest_by_variant([ @highlight.id ])
+          outlines.map { |outline| shape_for(outline, canvas, [], forecasts) }
+        else
+          races_by_state = Race.senate.includes(:candidates).order(:slug).to_a.group_by(&:state)
+          forecasts = Forecasts.latest_by_variant(races_by_state.values.flatten.map(&:id))
+          outlines.map { |outline| shape_for(outline, canvas, races_by_state.fetch(outline.state, []), forecasts) }
+        end
 
         {
           key: @key,

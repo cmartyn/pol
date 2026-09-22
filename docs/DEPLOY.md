@@ -27,7 +27,9 @@ Kamal builds from git HEAD — commit before deploying.
 ## First-boot / rebuild checklist
 
 1. `bin/kamal setup` (installs docker on the host, boots Postgres, deploys).
-2. Seed the world: `bin/kamal app exec 'bin/rails pol:seed_races pol:seed_boundaries pol:scrape pol:model'`.
+2. Seed the world: `bin/kamal app exec 'bin/rails pol:seed_races pol:scrape pol:model'`, then
+   `bin/kamal app exec 'bin/rails pol:seed_boundaries'`. Boundaries come from the Census
+   Bureau and must not block polls and the model on first boot if Census is down.
 3. The editor account: on a fresh boot the entrypoint's `db:prepare`
    CREATES the database and therefore runs `db/seeds.rb` — so the account
    already exists and its generated password was printed once into the web

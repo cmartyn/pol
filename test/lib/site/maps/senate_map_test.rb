@@ -66,4 +66,13 @@ class Site::Maps::SenateMapTest < ActiveSupport::TestCase
     assert shapes(payload).values.all? { |shape| shape.slug.nil? && shape.tips.nil? }
     assert_equal shapes(payload)["ME"].d, payload[:groups].sole[:highlight_d]
   end
+
+  test "a governor race's locator fills from that race's forecast, not the Senate board" do
+    governor = Race.create!(office: :governor, state: "ME", cycle: 2026, slug: "governor-me-locator-map-test", lean: 3.5)
+    forecast = Forecast.create!(model_run: model_runs(:model_run_one), race: governor,
+                                p_dem_win: 0.7, p_rep_win: 0.3, p_other_win: 0.0, mean_margin: 4.0)
+    payload = Site::Maps::SenateMap.build(highlight: governor)
+
+    assert_equal Site::Maps::Palette.fill(race: governor, forecast: forecast), shapes(payload)["ME"].fills[:excl_internals]
+  end
 end

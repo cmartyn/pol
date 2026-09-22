@@ -42,4 +42,10 @@ class Site::Maps::HouseMapTest < ActiveSupport::TestCase
 
     assert_equal "dashboard-house-clip-NY", group[:clip_id]
   end
+
+  test "nil until boundaries exist" do
+    Boundary.delete_all
+
+    assert_nil Site::Maps::HouseMap.build
+  end
 end
