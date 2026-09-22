@@ -468,4 +468,18 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-testid='race-map']", count: 0
   end
+
+  test "the senate map svg is hidden from screen readers" do
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    get senate_path
+
+    assert_select "[data-testid='map-senate'] svg[aria-hidden='true']"
+  end
+
+  test "a Senate race locator svg keeps role img" do
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='map-senate-locator'] svg[role='img']"
+  end
 end

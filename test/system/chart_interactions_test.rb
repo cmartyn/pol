@@ -95,4 +95,28 @@ class ChartInteractionsTest < ApplicationSystemTestCase
     assert_selector "html[data-internals='on']", visible: :all
     assert_not_equal published, evaluate_script(fill)
   end
+
+  test "senate map: clicking a state is a Turbo visit, not a full page load" do
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+
+    visit senate_path
+    execute_script("window.__mapVisit = 'kept'")
+    within "[data-testid=map-senate]" do
+      find("a[data-key='ME'] path").click
+    end
+
+    assert_current_path race_path(races(:senate_maine).slug)
+    assert_equal "kept", evaluate_script("window.__mapVisit")
+  end
+
+  test "senate map: hovering a no-race state shows no readout" do
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    create_boundary(state: "VT", box: [ -73.4, 42.7, -71.5, 45.0 ])
+
+    visit senate_path
+    within "[data-testid=map-senate]" do
+      find("path[data-key='VT']").hover
+      assert_no_selector "[data-testid=chart-tooltip]", visible: :visible
+    end
+  end
 end

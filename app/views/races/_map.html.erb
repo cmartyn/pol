@@ -11,7 +11,8 @@
        data-controller="map-chart" tabindex="0" role="group"
        aria-label="<%= payload[:aria_label] %>; left and right arrow keys step through races, Enter opens one"
      <% end %>>
-  <svg viewBox="<%= payload[:view_box] %>" class="block h-auto w-full" role="img" aria-label="<%= payload[:aria_label] %>">
+  <svg viewBox="<%= payload[:view_box] %>" class="block h-auto w-full"
+       <% if interactive %>aria-hidden="true" focusable="false"<% else %>role="img" aria-label="<%= payload[:aria_label] %>"<% end %>>
     <defs>
       <% payload[:groups].each do |group| %>
         <% next unless group[:outline_id] %>

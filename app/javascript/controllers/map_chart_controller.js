@@ -30,9 +30,10 @@ export default class extends Controller {
       // opens the race, so only a mouse clears on leave.
       if (event.pointerType === "mouse") this.clear()
     }
+    this.onClick = (event) => this.followLink(event)
     this.onKeydown = (event) => this.handleKeydown(event)
     this.onFocus = () => {
-      if (this.activeIndex === null) this.show(0)
+      if (this.activeIndex === null && this.element.matches(":focus-visible")) this.show(0)
     }
     this.onBlur = () => this.clear()
     this.onVariantChange = () => {
@@ -41,6 +42,7 @@ export default class extends Controller {
 
     this.svg.addEventListener("pointermove", this.onPointer)
     this.svg.addEventListener("pointerleave", this.onPointerLeave)
+    this.svg.addEventListener("click", this.onClick)
     this.element.addEventListener("keydown", this.onKeydown)
     this.element.addEventListener("focus", this.onFocus)
     this.element.addEventListener("blur", this.onBlur)
@@ -53,6 +55,7 @@ export default class extends Controller {
     this.clear() // so Turbo's page-cache snapshot has no highlighted shape
     this.svg.removeEventListener("pointermove", this.onPointer)
     this.svg.removeEventListener("pointerleave", this.onPointerLeave)
+    this.svg.removeEventListener("click", this.onClick)
     this.element.removeEventListener("keydown", this.onKeydown)
     this.element.removeEventListener("focus", this.onFocus)
     this.element.removeEventListener("blur", this.onBlur)
@@ -61,9 +64,33 @@ export default class extends Controller {
     this.tooltip = null
   }
 
+  // turbo-rails reads link.href as a string, but an SVG <a>'s href is an
+  // SVGAnimatedString, so Turbo's own click handler throws on these links and
+  // the browser falls back to a full page load. Visiting here and preventing
+  // the default means Turbo's handler (on window, later in the bubble) skips.
+  followLink(event) {
+    if (event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+
+    const link = event.target.closest("[data-map-chart-target~='shape']")
+    if (!link) return
+
+    event.preventDefault()
+    Turbo.visit(link.getAttribute("href"))
+  }
+
   showAtPointer(event) {
-    const direct = event.target.closest("[data-map-chart-target~='shape']")
-    const index = direct ? this.shapeTargets.indexOf(direct) : this.nearestIndex(event.clientX, event.clientY)
+    const overShape = event.target.closest(".map-shape")
+    if (overShape) {
+      const direct = overShape.closest("[data-map-chart-target~='shape']")
+      if (direct) {
+        this.show(this.shapeTargets.indexOf(direct))
+        return
+      }
+      if (event.pointerType === "mouse") this.clear()
+      return
+    }
+
+    const index = this.nearestIndex(event.clientX, event.clientY)
     if (index === null || index < 0) {
       if (event.pointerType === "mouse") this.clear()
       return
@@ -123,7 +150,7 @@ export default class extends Controller {
     if (event.altKey || event.ctrlKey || event.metaKey) return // Alt+Left is the browser's Back
 
     const last = this.shapeTargets.length - 1
-    const from = this.activeIndex ?? 0
+    const from = this.activeIndex ?? -1
     switch (event.key) {
       case "ArrowLeft": this.show(Math.max(0, from - 1)); break
       case "ArrowRight": this.show(Math.min(last, from + 1)); break
