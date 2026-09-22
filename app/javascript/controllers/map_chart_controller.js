@@ -64,15 +64,16 @@ export default class extends Controller {
     this.tooltip = null
   }
 
-  // turbo-rails reads link.href as a string, but an SVG <a>'s href is an
-  // SVGAnimatedString, so Turbo's own click handler throws on these links and
-  // the browser falls back to a full page load. Visiting here and preventing
-  // the default means Turbo's handler (on window, later in the bubble) skips.
+  // Turbo's <html> LinkInterceptor reads link.href as a string and throws on
+  // SVG <a> links (href is an SVGAnimatedString), even for clicks already
+  // prevented — so stopPropagation keeps the click off that listener.
+  // Visiting ourselves keeps plain primary clicks as Turbo navigations.
   followLink(event) {
-    if (event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
-
     const link = event.target.closest("[data-map-chart-target~='shape']")
     if (!link) return
+
+    event.stopPropagation()
+    if (event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
 
     event.preventDefault()
     Turbo.visit(link.getAttribute("href"))

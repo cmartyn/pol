@@ -101,12 +101,14 @@ class ChartInteractionsTest < ApplicationSystemTestCase
 
     visit senate_path
     execute_script("window.__mapVisit = 'kept'")
+    execute_script("window.__mapErrors = []; window.addEventListener('error', (event) => window.__mapErrors.push(event.message))")
     within "[data-testid=map-senate]" do
       find("a[data-key='ME'] path").click
     end
 
     assert_current_path race_path(races(:senate_maine).slug)
     assert_equal "kept", evaluate_script("window.__mapVisit")
+    assert_equal [], evaluate_script("window.__mapErrors")
   end
 
   test "senate map: hovering a no-race state shows no readout" do
