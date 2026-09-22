@@ -441,4 +441,31 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='map-house'] g[clip-path='url(#house-clip-NY)'] a[data-key='NY-17']"
     assert_select "[data-testid='map-house'] use.map-outline"
   end
+
+  test "a Senate race page shows a locator with its state outlined" do
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    create_boundary(state: "VT", box: [ -73.4, 42.7, -71.5, 45.0 ])
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='race-map'] [data-testid='map-senate-locator'] path.map-highlight"
+    assert_select "[data-testid='map-senate-locator'] a", count: 0
+  end
+
+  test "a House race page shows its state's districts with its own outlined" do
+    create_boundary(state: "NY", box: [ -79.8, 40.5, -71.8, 45.0 ])
+    create_boundary(state: "NY", district: 17, box: [ -74.2, 41.0, -73.5, 41.6 ])
+    create_boundary(state: "NY", district: 18, box: [ -74.9, 41.2, -74.2, 41.9 ])
+
+    get race_path(races(:house_ny_17).slug)
+
+    assert_select "[data-testid='race-map'] [data-testid='map-state-NY'] g[clip-path='url(#state-NY-clip)'] path.map-highlight"
+    assert_select "[data-testid='map-state-NY'] a[data-key='NY-17']"
+  end
+
+  test "a race page without boundaries renders no map" do
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='race-map']", count: 0
+  end
 end

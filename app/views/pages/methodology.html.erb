@@ -79,6 +79,14 @@
     (text available under CC&nbsp;BY-SA). Neither source endorses this site or its forecasts; every
     aggregation choice, adjustment, and mistake here is ours.
   </p>
+  <p class="mt-3 text-slate-700" data-testid="map-sources">
+    The maps are drawn from the U.S. Census Bureau&rsquo;s
+    <a href="https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html" class="underline decoration-slate-300 underline-offset-2 hover:decoration-slate-500">TIGERweb</a>
+    boundaries: each state&rsquo;s shoreline-clipped outline, and the congressional districts of the
+    <%= Ingest::BoundarySync.congress_for(Ingest::Sources.cycle).ordinalize %> Congress &mdash; the lines the states
+    submitted for the <%= Ingest::Sources.cycle %> election, including those redrawn mid-decade. We fetch them once and
+    draw every map ourselves.
+  </p>
 </section>
 
 <section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="internals" data-testid="internals-policy">

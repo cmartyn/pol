@@ -132,6 +132,21 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "seeding boundaries after a cached render shows the maps without a new model run" do
+    with_fragment_caching do
+      get senate_path
+      get race_path(races(:senate_maine).slug)
+      assert_select "[data-testid='race-map']", count: 0
+
+      create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+
+      get senate_path
+      assert_select "[data-testid='map-senate']"
+      get race_path(races(:senate_maine).slug)
+      assert_select "[data-testid='map-senate-locator']"
+    end
+  end
+
   private
     # Fetch `path` twice with a real fragment store in place and prove the
     # second render did less database work than the first — i.e. that the

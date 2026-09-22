@@ -176,4 +176,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
                     message: "expected the header stamp on #{path}"
     end
   end
+
+  test "methodology names the Census boundaries the maps are drawn from" do
+    get methodology_path
+
+    assert_select "[data-testid='map-sources']", text: /TIGERweb/
+    assert_select "[data-testid='map-sources']", text: /#{Ingest::BoundarySync.congress_for(Ingest::Sources.cycle).ordinalize} Congress/
+  end
 end

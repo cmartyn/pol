@@ -139,4 +139,17 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='national-environment'] [data-variant='excl_internals']", count: 1
     assert_select "[data-testid='national-environment'] [data-variant='incl_internals']", count: 1
   end
+
+  test "the dashboard's chamber cards carry small maps once boundaries exist, and /senate's card does not" do
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    create_boundary(state: "NY", box: [ -79.8, 40.5, -71.8, 45.0 ])
+    create_boundary(state: "NY", district: 17, box: [ -74.2, 41.0, -73.5, 41.6 ])
+
+    get root_path
+    assert_select "[data-testid='chamber-card-map'] [data-testid='map-dashboard-senate']"
+    assert_select "[data-testid='chamber-card-map'] [data-testid='map-dashboard-house']"
+
+    get senate_path
+    assert_select "[data-testid='chamber-card-map']", count: 0
+  end
 end

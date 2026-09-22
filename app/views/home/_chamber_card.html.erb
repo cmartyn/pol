@@ -1,12 +1,14 @@
 <%# locals: model_run (a succeeded ModelRun — callers only render this partial
-    once one exists), chamber ("senate"/"house"), title, house (boolean).
+    once one exists), chamber ("senate"/"house"), title, house (boolean),
+    map (optional, default false: only the dashboard shows the card's map; /senate and /house already carry a full-size one).
     Self-contained rather than taking a precomputed chamber_forecast/histogram:
     this partial is the "dashboard cards" heavy surface from the brief's
     Performance section, cached here (not by the caller) so both call sites —
     the dashboard's two cards and /house's chamber summary — get it for free,
     and so a cache hit skips the ChamberForecast lookup and histogram build
     below rather than paying for them regardless. %>
-<% cache [ "chamber-card", chamber, model_run ] do %>
+<% map = local_assigns.fetch(:map, false) %>
+<% cache [ "chamber-card", chamber, model_run, map, (Site::CacheKey.collection_freshness(Boundary.all) if map) ] do %>
   <%# Both internals views render into this one cached card; CSS shows the
       one the toggle picked (VariantsHelper). The published row stands in
       for the internals one on runs from before the dual-variant model. %>
@@ -63,6 +65,16 @@
       <div class="mt-4">
         <%= render "races/seat_histogram", payload: histogram, title: title %>
       </div>
+      <% end %>
+
+      <%# Outside each_variant: the map carries both variants' fills itself. %>
+      <% if map %>
+        <% chamber_map = house ? Site::Maps::HouseMap.build(key: "dashboard-house", tolerance: 1.0) : Site::Maps::SenateMap.build(key: "dashboard-senate", tolerance: 1.0) %>
+        <% if chamber_map %>
+          <div class="mt-4" data-testid="chamber-card-map">
+            <%= render "races/map", payload: chamber_map, show_legend: false %>
+          </div>
+        <% end %>
       <% end %>
 
       <%# After the chart, not before it: this is a footnote about the figure,
