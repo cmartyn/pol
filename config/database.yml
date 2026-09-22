@@ -56,7 +56,9 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: pol_test
+  # POL_TEST_DATABASE lets two checkouts (git worktrees) run the suite at
+  # once without sharing a database; parallel workers still append -N.
+  database: <%= ENV.fetch("POL_TEST_DATABASE", "pol_test") %>
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
