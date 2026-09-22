@@ -85,6 +85,12 @@ module Site
       margin(value, side_a_party: "dem", side_b_party: "rep")
     end
 
+    # ["dem", 0.62]: whichever of the three win probabilities is highest,
+    # ties going to dem, then rep.
+    def leader(p_dem_win:, p_rep_win:, p_other_win:)
+      [ [ "dem", p_dem_win ], [ "rep", p_rep_win ], [ "other", p_other_win ] ].max_by { |_, probability| probability }
+    end
+
     # "Tossup" when the leading side's win probability is at or under the
     # tossup band (site.tossup_band_pp, e.g. 65.0); otherwise
     # "Favors {Party}". `tossup_band_pp` is points (0..100), matching how
@@ -92,10 +98,10 @@ module Site
     # Race-level fact this function doesn't see — callers special-case it
     # before reaching here.
     def rating_word(p_dem_win:, p_rep_win:, p_other_win:, tossup_band_pp:)
-      leader = [ [ "dem", p_dem_win ], [ "rep", p_rep_win ], [ "other", p_other_win ] ].max_by { |_, p| p }
-      return "Tossup" if leader.last * 100.0 <= tossup_band_pp
+      party, probability = leader(p_dem_win: p_dem_win, p_rep_win: p_rep_win, p_other_win: p_other_win)
+      return "Tossup" if probability * 100.0 <= tossup_band_pp
 
-      "Favors #{PARTY_LABEL.fetch(leader.first)}"
+      "Favors #{PARTY_LABEL.fetch(party)}"
     end
 
     # The percentile-interval strip: "5th–95th" plus each end formatted as a

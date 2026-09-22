@@ -110,6 +110,12 @@ class Site::FormatTest < ActiveSupport::TestCase
     assert_equal "Favors the independent", word
   end
 
+  test "leader is the highest win probability, ties going to dem, then rep" do
+    assert_equal [ "rep", 0.6 ], Site::Format.leader(p_dem_win: 0.4, p_rep_win: 0.6, p_other_win: 0.0)
+    assert_equal [ "dem", 0.5 ], Site::Format.leader(p_dem_win: 0.5, p_rep_win: 0.5, p_other_win: 0.0)
+    assert_equal [ "other", 0.7 ], Site::Format.leader(p_dem_win: 0.1, p_rep_win: 0.2, p_other_win: 0.7)
+  end
+
   # --- percentile_interval ----------------------------------------------------
 
   test "percentile_interval labels the strip and formats each end as a margin" do
