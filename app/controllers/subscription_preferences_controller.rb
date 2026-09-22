@@ -10,11 +10,10 @@ class SubscriptionPreferencesController < PublicController
       SubscriberMailer.with(subscriber: subscriber).manage.deliver_later if subscriber&.subscribed?
     end
 
-    # PostHog: Track email preferences requests (engagement with subscription management)
-    PostHog.capture(
-      distinct_id: session.id.to_s,
-      event: "email_preferences_requested"
-    )
+    # Distinct id comes from the PostHog tracing header when the browser sends
+    # one, so this lines up with that reader's pageviews. No header means a
+    # personless event — a Rails session id would invent a second person.
+    PostHog.capture(event: "email_preferences_requested")
 
     redirect_to email_preferences_path,
                 notice: "If that address is subscribed, a secure unsubscribe link is on its way.",

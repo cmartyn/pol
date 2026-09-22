@@ -40,6 +40,17 @@ module Admin
 
     def retract
       @dispatch.update!(status: :retracted)
+      if @dispatch.saved_change_to_status?
+        PostHog.capture(
+          distinct_id: Current.user.posthog_distinct_id,
+          event: "dispatch_retracted",
+          properties: {
+            dispatch_id: @dispatch.id,
+            dispatch_kind: @dispatch.kind,
+            race_slug: @dispatch.race&.slug
+          }.compact
+        )
+      end
       touch_race_for_cache
       redirect_to admin_dispatch_path(@dispatch), notice: "Dispatch retracted."
     end

@@ -1,7 +1,7 @@
 <% content_for :title, "#{@dispatch.headline} · 535" %>
 <% content_for :description, @dispatch.dek.presence || truncate(@dispatch.body_markdown, length: 155, separator: " ") %>
 
-<article class="max-w-2xl" data-testid="dispatch-article">
+<article class="max-w-2xl" data-testid="dispatch-article" data-controller="analytics-event" data-analytics-event-name-value="dispatch_viewed" data-analytics-event-properties-value="<%= { dispatch_id: @dispatch.id, dispatch_kind: @dispatch.kind, race_slug: @dispatch.race&.slug }.compact.to_json %>">
   <p class="text-sm">
     <%= link_to "← All dispatches", dispatches_path, class: "font-medium text-amber-700 hover:text-amber-800" %>
   </p>

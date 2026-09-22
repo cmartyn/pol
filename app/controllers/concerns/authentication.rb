@@ -42,11 +42,15 @@ module Authentication
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip).tap do |session|
         Current.session = session
         cookies.signed.permanent[:session_id] = { value: session.id, httponly: true, same_site: :lax }
+        # Readable by the PostHog snippet so a cached public page can identify
+        # the editor without embedding their id in HTML Cloudflare would store.
+        cookies.permanent[:editor_analytics_id] = { value: user.posthog_distinct_id, httponly: false, same_site: :lax }
       end
     end
 
     def terminate_session
       Current.session.destroy
       cookies.delete(:session_id)
+      cookies.delete(:editor_analytics_id)
     end
 end

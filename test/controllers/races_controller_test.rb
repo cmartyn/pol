@@ -81,6 +81,7 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-testid='race-name']", text: races(:senate_maine).name
+    assert_select "[data-analytics-event-name-value='race_viewed']"
     assert_select "[data-testid='forecast-detail']"
     assert_select "[data-testid='timeline-chart']"
     assert_select "[data-testid='percentile-interval']"

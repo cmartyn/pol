@@ -19,6 +19,8 @@ class UnsubscribesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to email_preferences_path
     assert_predicate @subscriber.reload, :unsubscribed?
+    follow_redirect!
+    assert_select "[data-posthog-identify-distinct-id-value=?]", @subscriber.posthog_distinct_id
   end
 
   test "one-click provider POST unsubscribes and returns an empty success" do

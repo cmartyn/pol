@@ -13,6 +13,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to root_path
     assert cookies[:session_id]
+    assert_equal @user.posthog_distinct_id, cookies[:editor_analytics_id]
   end
 
   test "create with invalid credentials" do
@@ -29,5 +30,6 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_session_path
     assert_empty cookies[:session_id]
+    assert_nil cookies[:editor_analytics_id]
   end
 end

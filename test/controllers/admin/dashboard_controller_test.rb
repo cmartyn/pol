@@ -16,6 +16,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='admin-card-last-scrape']"
     assert_select "[data-testid='admin-card-last-run']"
     assert_select "[data-testid='admin-card-publishing-today']"
+    assert_select "[data-testid='admin-card-subscribers']"
     assert_select "[data-testid='admin-card-skips-today']"
     assert_select "[data-testid='admin-card-kill-switch']"
     assert_select "[data-testid='admin-card-quick-links']"
@@ -30,6 +31,15 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     get admin_root_path
     assert_select "[data-testid='admin-senate-control']", text: "55%"
     assert_select "[data-testid='admin-house-control']", text: "48%"
+  end
+
+  test "counts people currently subscribed to dispatches" do
+    Subscriber.subscribe!(email_address: "reader@example.com")
+    Subscriber.subscribe!(email_address: "former@example.com").unsubscribe!
+
+    get admin_root_path
+
+    assert_select "[data-testid='admin-subscriber-count']", text: "1"
   end
 
   test "counts today's published dispatches (ET) and excludes older ones" do

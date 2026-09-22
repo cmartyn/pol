@@ -8,15 +8,19 @@ class UnsubscribesController < PublicController
   end
 
   def create
-    @subscriber&.unsubscribe!
-
-    # PostHog: Track unsubscribe (key churn event)
     if @subscriber
-      PostHog.capture(
-        distinct_id: "subscriber:#{@subscriber.id}",
-        event: "subscriber_unsubscribed",
-        properties: { via: params[:browser_confirmation].present? ? "browser" : "one_click" }
-      )
+      @subscriber.unsubscribe!
+      if @subscriber.saved_change_to_status?
+        @subscriber.capture_posthog(
+          "subscriber_unsubscribed",
+          { via: params[:browser_confirmation].present? ? "browser" : "one_click" }
+        )
+        # Email-preferences is not edge-cached, so this id is safe to render
+        # there. One-click unsubscribes have no browser to identify.
+        if params[:browser_confirmation].present? && !Current.user
+          flash[:posthog_identify] = @subscriber.posthog_distinct_id
+        end
+      end
     end
 
     if params[:browser_confirmation].present?

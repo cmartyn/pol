@@ -59,6 +59,7 @@ class DispatchesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-testid='dispatch-headline']", text: dispatch.headline
+    assert_select "[data-analytics-event-name-value='dispatch_viewed']"
     assert_select "[data-testid='dispatch-dek']", text: dispatch.dek
     # The feed truncates; the permalink is the place the whole piece exists.
     assert_select "[data-testid='dispatch-body']", text: /Cardinal Research found a tighter/

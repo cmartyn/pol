@@ -79,6 +79,18 @@ module Newsroom
           "(#{reply.input_tokens.to_i} in / #{reply.output_tokens.to_i} out tokens)"
         )
 
+        PostHog.capture(
+          distinct_id: "newsroom",
+          event: "dispatch_published",
+          properties: {
+            dispatch_id: dispatch.id,
+            dispatch_kind: dispatch.kind,
+            race_slug: dispatch.race&.slug,
+            model_slug: dispatch.model_slug,
+            "$process_person_profile" => false
+          }
+        )
+
         Result.new(dispatch: dispatch)
       end
 

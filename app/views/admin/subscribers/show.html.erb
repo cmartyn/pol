@@ -1,0 +1,56 @@
+<% content_for :title, "#{@subscriber.email_address} · Admin · 535" %>
+
+<p class="text-sm">
+  <%= link_to "← Subscribers", admin_subscribers_path(status: @subscriber.status), class: "font-medium text-amber-700 hover:text-amber-800" %>
+</p>
+
+<h1 class="mt-3 font-serif text-2xl font-semibold text-slate-900" data-testid="admin-subscriber-email"><%= @subscriber.email_address %></h1>
+<p class="mt-1 text-sm font-medium <%= subscriber_status_class(@subscriber) %>" data-testid="admin-subscriber-status"><%= @subscriber.status %></p>
+
+<dl class="mt-6 grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border border-slate-200 bg-white p-5 text-sm sm:grid-cols-4">
+  <div>
+    <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Source</dt>
+    <dd class="mt-0.5" data-testid="admin-subscriber-source"><%= @subscriber.source.presence || "—" %></dd>
+  </div>
+  <div>
+    <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Subscribed</dt>
+    <dd class="mt-0.5"><%= @subscriber.subscribed_at.strftime("%b %-d, %Y %-I:%M %p") %></dd>
+  </div>
+  <div>
+    <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Left</dt>
+    <dd class="mt-0.5"><%= @subscriber.unsubscribed_at&.strftime("%b %-d, %Y %-I:%M %p") || "—" %></dd>
+  </div>
+  <div>
+    <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Suppression</dt>
+    <dd class="mt-0.5" data-testid="admin-subscriber-suppression"><%= @subscriber.suppression_reason.presence || "—" %></dd>
+  </div>
+</dl>
+
+<section class="mt-6">
+  <h2 class="text-sm font-semibold text-slate-900">Recent deliveries</h2>
+  <div class="mt-3 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <table class="w-full min-w-[640px] text-left text-sm" data-testid="admin-subscriber-deliveries">
+      <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="py-2 pl-4 pr-3 font-medium">Dispatch</th>
+          <th class="py-2 pr-3 font-medium">Status</th>
+          <th class="py-2 pr-4 font-medium">Sent</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% @deliveries.each do |delivery| %>
+          <tr data-testid="admin-subscriber-delivery">
+            <td class="py-2 pl-4 pr-3">
+              <%= link_to delivery.dispatch.headline, admin_dispatch_path(delivery.dispatch), class: "font-medium text-slate-900 hover:text-amber-700" %>
+            </td>
+            <td class="py-2 pr-3 text-slate-600"><%= delivery.status %></td>
+            <td class="py-2 pr-4 whitespace-nowrap text-slate-500"><%= delivery.sent_at&.strftime("%b %-d, %Y %-I:%M %p") || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @deliveries.empty? %>
+      <p class="p-4 text-sm text-slate-500" data-testid="admin-subscriber-deliveries-empty">No dispatch has been sent to this address yet.</p>
+    <% end %>
+  </div>
+</section>

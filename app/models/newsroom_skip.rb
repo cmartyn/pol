@@ -33,6 +33,18 @@ class NewsroomSkip < ApplicationRecord
       )
 
       logger.info("Newsroom: no #{kind}#{race ? " for #{race.slug}" : ''} — #{reason}: #{detail}")
+
+      PostHog.capture(
+        distinct_id: "newsroom",
+        event: "dispatch_skipped",
+        properties: {
+          dispatch_kind: skip.kind,
+          reason: skip.reason,
+          race_slug: skip.race&.slug,
+          "$process_person_profile" => false
+        }
+      )
+
       skip
     end
 

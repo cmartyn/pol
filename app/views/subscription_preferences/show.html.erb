@@ -1,6 +1,7 @@
 <% content_for :title, "Email preferences · 535" %>
 
 <div class="max-w-xl">
+  <%= render "shared/posthog_identify", distinct_id: flash[:posthog_identify] %>
   <h1 class="font-serif text-3xl font-semibold text-slate-900">Email preferences</h1>
   <p class="mt-3 text-slate-600">
     Every dispatch email has a one-click unsubscribe link. If you do not have one handy, enter your address and we will send you a secure link.

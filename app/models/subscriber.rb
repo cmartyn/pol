@@ -51,6 +51,26 @@ class Subscriber < ApplicationRecord
     self
   end
 
+  # Stable across email changes. Prefixed so a subscriber never collides with
+  # an editor's numeric user id in PostHog.
+  def posthog_distinct_id
+    "subscriber:#{id}"
+  end
+
+  # Person properties. Email stays here, off the event payload.
+  def posthog_properties
+    {
+      email: email_address,
+      subscription_status: status,
+      subscription_source: source
+    }.compact
+  end
+
+  def capture_posthog(event, properties = {})
+    PostHog.identify(distinct_id: posthog_distinct_id, properties: posthog_properties)
+    PostHog.capture(distinct_id: posthog_distinct_id, event: event, properties: properties)
+  end
+
   def unsubscribe_token
     self.class.unsubscribe_verifier.generate(
       { "id" => id, "version" => token_version },

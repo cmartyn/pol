@@ -1,0 +1,6 @@
+<%# Links this browser to the subscriber. Callers must be responses Cloudflare
+    will not cache — a distinct id baked into an edge-cached page would
+    identify every later reader as this subscriber. %>
+<% if distinct_id.present? %>
+  <span hidden data-controller="posthog-identify" data-posthog-identify-distinct-id-value="<%= distinct_id %>"></span>
+<% end %>

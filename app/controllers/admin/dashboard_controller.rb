@@ -9,6 +9,7 @@ module Admin
       @last_run_chamber_forecasts = @last_run&.succeeded? ? @last_run.chamber_forecasts.excl_internals.index_by(&:chamber) : {}
 
       @dispatches_today = Newsroom::Caps.published_today.count
+      @subscriber_count = Subscriber.subscribed.count
       @skips_today_by_reason = NewsroomSkip.where(created_at: Newsroom::Caps.day_range).group(:reason).count
 
       @kill_switch = KillSwitchStatus.call

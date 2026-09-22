@@ -66,6 +66,8 @@ Rails.application.routes.draw do
       member { post :retract }
     end
 
+    resources :subscribers, only: [ :index, :show ]
+
     resources :newsroom_skips, only: [ :index ]
 
     resources :races, only: [ :index, :edit, :update ] do

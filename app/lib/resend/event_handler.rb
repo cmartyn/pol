@@ -25,6 +25,7 @@ module Resend
         delivery.update!(status: :delayed) unless delivery.delivered?
       when "email.failed"
         delivery.update!(status: :failed, failed_at: occurred_at, last_error: event_detail)
+        delivery.subscriber.capture_posthog("email_delivery_failed", delivery_properties(delivery))
       when "email.bounced"
         suppress!(delivery, :bounced, occurred_at)
       when "email.complained"
@@ -42,6 +43,14 @@ module Resend
       def suppress!(delivery, status, occurred_at)
         delivery.update!(status: status, failed_at: occurred_at, last_error: event_detail)
         delivery.subscriber.suppress!(reason: status, occurred_at: occurred_at)
+        delivery.subscriber.capture_posthog(
+          "subscriber_suppressed",
+          delivery_properties(delivery).merge(reason: status.to_s)
+        )
+      end
+
+      def delivery_properties(delivery)
+        { dispatch_id: delivery.dispatch_id, delivery_id: delivery.id }
       end
 
       def event_detail

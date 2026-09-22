@@ -5,3 +5,8 @@
   <%= render "shared/subscription_form",
         source: @source, compact: @compact, notice: @notice, alert: @alert %>
 <% end %>
+<% if @posthog_distinct_id.present? %>
+  <%= turbo_stream.append "subscription-form-#{@source}" do %>
+    <%= render "shared/posthog_identify", distinct_id: @posthog_distinct_id %>
+  <% end %>
+<% end %>

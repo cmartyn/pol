@@ -10,7 +10,7 @@ class PasswordsController < ApplicationController
     if user = User.find_by(email_address: params[:email_address])
       PasswordsMailer.reset(user).deliver_later
 
-      # PostHog: Track password reset requests (user needs help signing in)
+      PostHog.identify(distinct_id: user.posthog_distinct_id, properties: user.posthog_properties)
       PostHog.capture(
         distinct_id: user.posthog_distinct_id,
         event: "password_reset_requested"
@@ -27,7 +27,7 @@ class PasswordsController < ApplicationController
     if @user.update(params.permit(:password, :password_confirmation))
       @user.sessions.destroy_all
 
-      # PostHog: Track successful password resets
+      PostHog.identify(distinct_id: @user.posthog_distinct_id, properties: @user.posthog_properties)
       PostHog.capture(
         distinct_id: @user.posthog_distinct_id,
         event: "password_reset_completed"

@@ -21,6 +21,7 @@ class SessionsController < ApplicationController
 
       redirect_to after_authentication_url
     else
+      PostHog.capture(event: "user_login_failed")
       redirect_to new_session_path, alert: "Try another email address or password."
     end
   end

@@ -1,5 +1,10 @@
 <% content_for :title, "#{@race.name} · 535" %>
 
+<%# Outside the fragment cache on purpose: this only tells the browser which
+    event to send. The page is edge-cached, so a server-side capture would
+    miss every Cloudflare hit. %>
+<div hidden data-controller="analytics-event" data-analytics-event-name-value="race_viewed" data-analytics-event-properties-value="<%= { race_slug: @race.slug, race_state: @race.state, race_office: @race.office }.to_json %>"></div>
+
 <%# "Race page core" from the brief's Performance section: everything below
     is keyed on the race itself (candidates, slug, name — Rails turns @race
     into an id+updated_at key on its own), the run its forecast/timeline

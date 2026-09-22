@@ -15,15 +15,14 @@ class SubscriptionsController < PublicController
       source: params[:source]
     )
 
-    # PostHog: Track email subscription (key conversion event)
-    PostHog.capture(
-      distinct_id: "subscriber:#{subscriber.id}",
-      event: "subscriber_signed_up",
-      properties: { source: params[:source].to_s.presence || "direct" }
-    )
-
+    track_subscription(subscriber)
     confirm_subscription
   rescue ActiveRecord::RecordInvalid
+    # A rejected address is not a person. The count is still useful.
+    PostHog.capture(
+      event: "subscriber_signup_rejected",
+      properties: { "$process_person_profile" => false }
+    )
     reject_subscription
   end
 
@@ -49,6 +48,20 @@ class SubscriptionsController < PublicController
         format.turbo_stream { render :create, status: :unprocessable_entity }
         format.html { redirect_back fallback_location: root_path, alert: @alert, status: :see_other }
       end
+    end
+
+    def track_subscription(subscriber)
+      event = if subscriber.previously_new_record?
+        "subscriber_signed_up"
+      elsif subscriber.saved_change_to_status?
+        "subscriber_resubscribed"
+      end
+      return unless event
+
+      subscriber.capture_posthog(event, { source: subscriber.source.presence || "direct" })
+      # The turbo response identifies the browser. Skip that when an editor is
+      # signed in, so their PostHog person is not merged into the subscriber.
+      @posthog_distinct_id = subscriber.posthog_distinct_id unless Current.user
     end
 
     def subscriber_params
