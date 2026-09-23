@@ -82,6 +82,8 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[data-testid='race-name']", text: races(:senate_maine).name
     assert_select "[data-analytics-event-name-value='race_viewed']"
+    assert_select "[data-testid='race-masthead'] [data-testid='rating-word']", text: "Tossup"
+    assert_select "[data-testid='race-masthead'] [data-testid='win-probability']", text: /62%/
     assert_select "[data-testid='forecast-detail']"
     assert_select "[data-testid='timeline-chart']"
     assert_select "[data-testid='percentile-interval']"
@@ -396,6 +398,8 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
   test "a race page renders both internals views of its forecast" do
     get race_path(races(:senate_maine).slug)
 
+    assert_select "[data-testid='race-masthead'] [data-variant='excl_internals']", count: 1
+    assert_select "[data-testid='race-masthead'] [data-variant='incl_internals']", count: 1
     assert_select "[data-testid='forecast-detail'] [data-variant='excl_internals']", count: 1
     assert_select "[data-testid='forecast-detail'] [data-variant='incl_internals']", count: 1
   end

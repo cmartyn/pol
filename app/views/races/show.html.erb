@@ -16,8 +16,14 @@
     polls-scatter payload, the dispatches feed) is built inside the block so
     a cache hit skips all of them, not just the rendering. %>
 <% cache [ "race-core", @race, @latest_run, @latest_dispatch, Site::CacheKey.collection_freshness(Boundary.all) ] do %>
-  <div class="flex flex-wrap items-start justify-between gap-4">
-    <div>
+  <%# Both internals views of the forecast render here; the header toggle
+      picks one (VariantsHelper). The published row stands in when a
+      pre-toggle run wrote only one variant. %>
+  <% forecasts = forecasts_by_variant(->(variant) { @race.latest_forecast(variant: variant) }) %>
+  <% forecast = forecasts[:excl_internals] %>
+
+  <div class="flex flex-wrap items-start justify-between gap-x-10 gap-y-6 sm:items-center">
+    <div class="min-w-0 flex-1">
       <div class="flex flex-wrap items-center gap-2">
         <h1 class="font-serif text-3xl font-semibold text-slate-900" data-testid="race-name"><%= @race.name %></h1>
         <% if @race.special? %>
@@ -36,49 +42,60 @@
           </li>
         <% end %>
       </ul>
+
+      <%# The masthead is the forecast: the rating labels it, the win
+          probability is the figure, and the simulation count is the caption.
+          Margin and the percentile interval stay in the detail card below.
+          "Uncontested" has no figure — Forecast::Simulator#certain_outcome
+          awards the seat and draws no error, so a percentage here would be
+          the invented tally the caption was written to stop. %>
+      <% if forecast %>
+        <div class="mt-6 border-t border-slate-200 pt-5" data-testid="race-masthead">
+          <% if rating_word_for(@race, forecast) == "Uncontested" %>
+            <p class="eyebrow text-xs text-slate-700" data-testid="rating-word">Uncontested</p>
+            <p class="mt-2 max-w-2xl text-slate-600">
+              This race is <strong class="font-semibold">Uncontested</strong> — only one candidate can win it, so
+              the model awards the seat rather than simulating the race.
+            </p>
+          <% else %>
+            <%= each_variant do |variant| %>
+              <% variant_forecast = forecasts[variant] %>
+              <% rating = rating_word_for(@race, variant_forecast) %>
+              <% party = leading_party(variant_forecast) %>
+              <% probability = leading_probability(variant_forecast) %>
+              <% party_name = { "dem" => "Democrats", "rep" => "Republicans", "other" => "The independent" }.fetch(party) %>
+              <p class="eyebrow text-xs <%= rating == "Tossup" ? "text-slate-700" : party_text_color(party) %>" data-testid="rating-word"><%= rating %></p>
+              <%# The chamber card's figure at the same proportions. Inline
+                  spans, not flex: flex items would each read as their own
+                  line rather than as "D 72%". %>
+              <p class="mt-1 font-figure font-bold <%= party_text_color(party) %>" data-testid="win-probability">
+                <span class="sr-only"><%= party_name %></span><span class="mr-1.5 text-lg tracking-[0.18em]" aria-hidden="true"><%= RacesHelper::PARTY_LETTER.fetch(party) %></span><span class="text-5xl tracking-tighter"><%= Site::Format.percent_value(probability) %></span><span class="ml-0.5 text-2xl opacity-45">%</span>
+              </p>
+              <p class="mt-2 max-w-2xl text-slate-600">
+                <% if rating == "Tossup" %>
+                  This race is a <strong class="font-semibold">Tossup</strong> — the leading side wins
+                  <%= Site::Format.of_simulations(probability, n_sims: @latest_run.n_sims) %>.
+                <% else %>
+                  <strong class="font-semibold <%= party_text_color(party) %>">
+                    <%= party_name %>
+                  </strong>
+                  <%= party == "other" ? "is" : "are" %> favored, winning <%= Site::Format.of_simulations(probability, n_sims: @latest_run.n_sims) %>.
+                <% end %>
+              </p>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
     <%# A Senate race gets a locator; a House race gets its state's districts
         with its own outlined. Both return nil until boundaries are seeded. %>
     <% race_map = @race.house? ? Site::Maps::StateMap.build(@race) : Site::Maps::SenateMap.build(highlight: @race) %>
     <% if race_map %>
-      <div class="w-full <%= @race.house? ? "sm:w-80 lg:w-96" : "sm:w-60" %>" data-testid="race-map">
+      <div class="w-full shrink-0 <%= @race.house? ? "sm:w-80 lg:w-96" : "map-locator sm:w-64 lg:w-80" %>" data-testid="race-map">
         <%= render "races/map", payload: race_map, show_legend: false %>
       </div>
     <% end %>
   </div>
-
-  <%# Both internals views of the forecast render here; the header toggle
-      picks one (VariantsHelper). The published row stands in when a
-      pre-toggle run wrote only one variant. %>
-  <% forecasts = forecasts_by_variant(->(variant) { @race.latest_forecast(variant: variant) }) %>
-  <% forecast = forecasts[:excl_internals] %>
-
-  <% if forecast %>
-    <%= each_variant do |variant| %>
-    <% variant_forecast = forecasts[variant] %>
-    <p class="mt-4 max-w-2xl text-slate-700">
-      <% rating = rating_word_for(@race, variant_forecast) %>
-      <%# "Uncontested" is its own branch rather than falling through to the
-          favoured-side sentence, because that sentence now states a literal
-          simulation count and an uncontested race has none: Forecast::
-          Simulator#certain_outcome awards the seat and draws no error at all.
-          Printing "100,000 of 100,000 simulated elections" for it would be
-          precisely the invented tally this phrasing was changed to stop. %>
-      <% if rating == "Uncontested" %>
-        This race is <strong class="font-semibold">Uncontested</strong> — only one candidate can win it, so
-        the model awards the seat rather than simulating the race.
-      <% elsif rating == "Tossup" %>
-        This race is a <strong class="font-semibold">Tossup</strong> — the leading side wins
-        <%= Site::Format.of_simulations(leading_probability(variant_forecast), n_sims: @latest_run.n_sims) %>.
-      <% else %>
-        <strong class="font-semibold <%= party_text_color(leading_party(variant_forecast)) %>">
-          <%= { "dem" => "Democrats", "rep" => "Republicans", "other" => "The independent" }.fetch(leading_party(variant_forecast)) %>
-        </strong>
-        are favored, winning <%= Site::Format.of_simulations(leading_probability(variant_forecast), n_sims: @latest_run.n_sims) %>.
-      <% end %>
-    </p>
-    <% end %>
-  <% end %>
 
   <% if forecast %>
     <section class="mt-8 rounded-lg border border-slate-200 p-5" data-testid="forecast-detail">
@@ -88,14 +105,6 @@
       <%= each_variant do |variant| %>
       <% variant_forecast = forecasts[variant] %>
       <div class="mt-3 flex flex-wrap items-baseline gap-x-10 gap-y-3">
-        <div>
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Rating</p>
-          <p class="text-lg font-semibold text-slate-900" data-testid="rating-word"><%= rating_word_for(@race, variant_forecast) %></p>
-        </div>
-        <div>
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Win probability</p>
-          <p class="text-lg font-semibold"><%= probability_chip(variant_forecast) %></p>
-        </div>
         <div>
           <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Estimated margin</p>
           <p class="text-lg font-semibold <%= party_text_color(margin_party(@race, variant_forecast.mean_margin)) %>">

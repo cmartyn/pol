@@ -97,11 +97,15 @@ html:not([data-internals="on"]) tr[data-internal-poll] {
    the same html[data-internals] switch the rest of the toggle uses, so the
    geometry is sent once. Outlines are <use> clones of each clip's path and
    inherit fill and stroke from .map-outline; vector-effect doesn't inherit
-   into a clone, so their width is in viewBox units and thins with the map. */
+   into a clone, so their width is in viewBox units and thins with the map.
+
+   Joins are round: the default miter stretches a sharp corner (a simplified
+   coastline, a highlighted state) well past the stroke width. */
 .map-shape {
   fill: var(--fill-excl);
   stroke: #ffffff;
   stroke-width: 0.5px;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 html[data-internals="on"] .map-shape {
@@ -115,12 +119,24 @@ a[data-active] > .map-shape {
   fill: none;
   stroke: #94a3b8;
   stroke-width: 0.75;
+  stroke-linejoin: round;
   pointer-events: none;
 }
 .map-highlight {
   fill: none;
   stroke: #0f172a;
   stroke-width: 2px;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
+}
+
+/* A Senate race page's locator is drawn at a third of its frame or less,
+   where a half-pixel border lands on some edges as a hairline and on others
+   as a smudge. A full pixel reads as one width everywhere. */
+.map-locator .map-shape {
+  stroke-width: 1px;
+}
+.map-locator .map-highlight {
+  stroke-width: 1.5px;
 }

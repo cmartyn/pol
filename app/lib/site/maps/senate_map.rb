@@ -7,7 +7,10 @@ module Site
     class SenateMap
       WIDTH = 960
       TOLERANCE = 0.5
-      LOCATOR_TOLERANCE = 3.0
+      # Each state is simplified on its own, so a shared border can come out
+      # as two lines up to twice this far apart. At 3 that gap was wide
+      # enough to show as a thicker border along Tennessee and the Northeast.
+      LOCATOR_TOLERANCE = 2.0
       NO_RACE_LABEL = "No Senate race this year".freeze
 
       def self.build(highlight: nil, key: nil, tolerance: nil, interactive: true)
