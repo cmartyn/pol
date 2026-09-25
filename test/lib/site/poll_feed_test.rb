@@ -20,7 +20,7 @@ class Site::PollFeedTest < ActiveSupport::TestCase
     assert_equal [ older.id ], days.second.polls.map(&:id)
   end
 
-  # The sweep runs every two hours, so it lands polls after midnight UTC —
+  # The sweep runs every hour, so it lands polls after midnight UTC —
   # 8pm Eastern the evening before — several times a week. Grouping those on
   # the database's UTC date would file an 8pm poll under tomorrow and print a
   # heading whose count does not match the rows under it.

@@ -90,8 +90,7 @@ module Site
       # `timestamp without time zone` holding UTC, so a bare date() would file
       # a poll that arrived at 8pm Eastern under the following day, and print
       # a heading whose count disagreed with the rows beneath it. The sweep
-      # runs every two hours, so that is not a rare case: it happens most
-      # nights.
+      # runs every hour, so that is not a rare case: it happens most nights.
       #
       # Bounded to the page's span rather than the whole table: the page's
       # newest and oldest arrivals are already in hand, and every day on the

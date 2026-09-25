@@ -124,6 +124,40 @@ class Forecast::RunJobTest < ActiveJob::TestCase
     assert_operator fires.last - day, :<=, 24 * 60 * 60
   end
 
+  # The feed sweep queues a run the moment it finds polls, and a run that
+  # starts while the floor's is still going steps aside and drops those polls'
+  # reactions (#perform). A floor run takes two to three minutes on the
+  # droplet, so no sweep may fire in the ten minutes after one starts — three
+  # times the slowest run production has seen. The hourly sweep clears that by
+  # twenty minutes; a sweep every 30 or 15 minutes would land on :30, and this
+  # is where it would show. Checked on both sides of the November clock
+  # change, because the floor's cron carries a zone and the sweep's does not.
+  test "the feed sweep never fires while a floor run is still going" do
+    cron = Rails.application.config.good_job.cron
+    floor = Fugit.parse_cron(cron.fetch(:pol_model_run)[:cron])
+    sweep = Fugit.parse_cron(cron.fetch(:pol_nyt_sync)[:cron])
+
+    fires = lambda do |entry, day|
+      times = []
+      cursor = day
+      while (cursor = entry.next_time(cursor).to_utc_time) < day + 1.day
+        times << cursor
+      end
+      times
+    end
+
+    # Eastern midnight in daylight time, then in standard time.
+    [ Time.utc(2026, 9, 24, 4), Time.utc(2026, 11, 2, 5) ].each do |day|
+      sweeps = fires.call(sweep, day)
+      refute_empty sweeps, "no sweeps found, so nothing below would be checked"
+
+      fires.call(floor, day).each do |started|
+        clash = sweeps.find { |at| at >= started && at < started + 10.minutes }
+        assert_nil clash, "a sweep at #{clash} would start while the #{started} floor run is going"
+      end
+    end
+  end
+
   test "the ingest seam queues a run rather than running one inline, carrying the new poll ids" do
     polls = [
       create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 3),

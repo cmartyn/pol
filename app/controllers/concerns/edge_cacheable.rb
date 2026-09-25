@@ -14,9 +14,10 @@
 module EdgeCacheable
   extend ActiveSupport::Concern
 
-  # How long Cloudflare may serve a page before asking the origin again. The
-  # model runs every two hours, so this is not about freshness — it is about
-  # how much of an unexpected traffic spike a single droplet has to absorb.
+  # How long Cloudflare may serve a page before asking the origin again. New
+  # numbers land at most a couple of times an hour, so this is not about
+  # freshness — it is about how much of an unexpected traffic spike a single
+  # droplet has to absorb.
   EDGE_TTL = 180
 
   # After EDGE_TTL, keep serving the expired page for this long while the

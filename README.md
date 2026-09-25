@@ -1,8 +1,8 @@
 # pol
 
 **pol** is a forecast of the 2026 U.S. midterms — all 35 Senate races and all
-435 House districts — that writes about itself. Polls are scraped from
-Wikipedia every two hours, a correlated Monte Carlo model turns them into win
+435 House districts — that writes about itself. Polls come from the New York
+Times' poll files every hour, a correlated Monte Carlo model turns them into win
 probabilities and seat distributions, and an agent newsroom publishes short
 pieces about what changed: a reaction when new polls land on a race, a note
 when a race moves, a national brief every morning. Nothing waits in an
@@ -74,16 +74,19 @@ process. In production, run a worker of your own:
 bundle exec good_job start
 ```
 
-Three cron entries, defined in `config/initializers/good_job.rb`:
+Five cron entries, defined in `config/initializers/good_job.rb`:
 
 | Job | Schedule | Why |
 |---|---|---|
-| `Ingest::ScrapeAllJob` | every 2 hours (`0 */2 * * *`, server time) | The cadence is read from `scrape.cadence_hours` in `config/model_params.yml`. |
+| `Ingest::NytSyncJob` | every hour on the hour (`0 */1 * * *`, server time) | The cadence is read from `feed.cadence_hours` in `config/model_params.yml`. A sweep that finds polls queues its own model run, so this sets how soon a new poll reaches the site. |
 | `Forecast::RunJob` | **every 2 hours at :30 America/New_York** (`30 */2 * * *`) | New polls already trigger a run; this is the floor, so a day with no polling still gets fresh numbers instead of an ageing "as of". `*/2` from midnight includes 06:30, which is the slot the brief depends on. |
 | `Newsroom::DailyBriefJob` | **07:00 America/New_York** | Half an hour after a model run, so the morning brief always has same-day numbers. |
+| `Ingest::SyncHouseCandidatesJob` | 05:00 America/New_York | Settles House nominees from each state's Wikipedia election page before the 06:30 run and the brief read the board. |
+| `Ingest::ScrapeAllJob` | Sundays 06:00 America/New_York | A dry run of the old Wikipedia poll sweep, kept so its layout-rot alarms stay proven; it writes no polls while `scrape.write_enabled` is false. |
 
-Both timed entries carry an explicit timezone (fugit's sixth cron field), so a
-deploy to a UTC box does not move the morning brief to the middle of the night.
+The entries pinned to a clock time carry an explicit timezone (fugit's sixth
+cron field), so a deploy to a UTC box does not move the morning brief to the
+middle of the night.
 The queue dashboard is at `/admin/good_job`.
 
 ## Credentials

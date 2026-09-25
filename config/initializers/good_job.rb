@@ -18,9 +18,13 @@ Rails.application.configure do
   # scrape cadence they are literals here — with a test pinning all three.
   config.good_job.enable_cron = true
   config.good_job.cron = {
-    # The NYT feed is the poll corpus; this is the sweep the model-run floor
-    # at :30 waits on. The Wikipedia sweep below still runs as the warm
-    # fallback until the rollout demotes it (see the feed migration spec).
+    # The NYT feed is the poll corpus, and every sweep that finds new polls
+    # queues its own model run, so this cadence sets how soon a new poll
+    # reaches the site (why hourly: config/model_params.yml). It fires on the
+    # hour and has to stay clear of the floor's :30 — a run that starts while
+    # another is in flight steps aside and drops its polls' reactions
+    # (Forecast::RunJob), and a floor run is in flight for two to three
+    # minutes. A test pins that gap.
     pol_nyt_sync: {
       cron: "0 */#{feed_cadence_hours} * * *",
       class: "Ingest::NytSyncJob",
@@ -50,9 +54,15 @@ Rails.application.configure do
     # Ingestion queues a run whenever it finds new polls, so on a busy day the
     # model runs often — but on a quiet day nothing re-ran it at all, and the
     # site's "as of" timestamp aged while the forecast sat still. This is the
-    # floor under those ingest-triggered runs, on the scrape's own 2-hourly
-    # cadence at the half hour, so a sweep at :00 has finished before the run
-    # at :30 reads what it found.
+    # floor under those ingest-triggered runs, at the half hour so a sweep at
+    # :00 has finished before the run at :30 reads what it found.
+    #
+    # Every two hours, deliberately half the feed sweep's rate. The sweep
+    # already runs the model whenever polls arrive, so the floor only has to
+    # stop "as of" ageing on a quiet day, and each run keeps the droplet's
+    # single CPU busy for two to three minutes (133s median in production).
+    # An hourly floor would double that to republish numbers that differ from
+    # the last run's by Monte Carlo noise alone.
     #
     # */2 from midnight is deliberate rather than incidental: it puts a run at
     # 06:30, the slot the 07:00 brief depends on for same-day numbers. A */3
