@@ -3509,11 +3509,14 @@ other changes:
 | `~anthropic/claude-opus-latest` (5.5), retry turn | 2,000 | 29 | 1,112 | published on the second turn | +5.4¢ |
 | `~anthropic/claude-opus-latest` (5.5) | 8,000 | 1,246 | 2,413 | published first turn, 457 words | 7.2¢ |
 
-Production was surviving on the retry. The validator reads a truncated draft
-as a citation error, the retry turn reasons for a few dozen tokens and fits,
-and the brief publishes at nearly double the cost. The two briefs in the job
-container's logs had cleared the cap on the first turn with 1,841 and 1,948
-tokens. The cap is now 8,000, about three times the measured complete brief.
+The two briefs in the job container's logs, which reach back only to the
+previous deploy, cleared the cap on the first turn with 1,841 and 1,948
+tokens. A brief that runs past it is saved only by the retry: the validator
+reads the truncated draft as a citation error, the retry turn reasons for a
+few dozen tokens and fits, and the piece publishes at nearly double the cost.
+That is what happened to both models on this payload; how often it happened
+in production before now is not in the logs. The cap is now 8,000, about
+three times the measured complete brief.
 Tokens bill as used, so the headroom costs nothing until a reply needs it. The
 runaway guard is `body_words_backstop`, as it already was in practice; the
 params file's comments on both keys now say so.
