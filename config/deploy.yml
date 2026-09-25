@@ -84,9 +84,6 @@ asset_path: /rails/public/assets
 # Apple Silicon builds cross-compile to the droplet's architecture.
 builder:
   arch: amd64
-  # Private rails_mind gem. The token is a build secret, not a runtime env var.
-  secrets:
-    - GITHUB_TOKEN
 
 # Postgres on the same droplet, data on a named docker directory that
 # survives redeploys. No port mapping on purpose: the database is reachable
