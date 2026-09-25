@@ -32,7 +32,7 @@ module Newsroom
 
         reason, detail = Caps.blocking(kind: KIND, race: race)
         if reason
-          NewsroomSkip.record!(kind: KIND, race: race, reason: reason, detail: detail)
+          record_hold(race, reason, detail)
           return
         end
 
@@ -42,6 +42,22 @@ module Newsroom
           model_run: model_run,
           payload: Context.movement_note(race: race, model_run: model_run, previous_run: moved.baseline_run)
         )
+      end
+
+      # A cap or a cooldown holds a race for hours or days, and this job runs
+      # after every model run, so recording each re-detection wrote the same
+      # hold over and over: by 2026-09-25 these were 2,273 of the skip log's
+      # 2,389 rows, one race 42 times in 56 hours, and the dashboard's "cap
+      # reached today" was counting runs rather than races held. One row per
+      # race and reason per Eastern day — Caps.day_range, the same day the
+      # dashboard counts — says what all of those said. The repeats still go
+      # to the log, so none of them is silent.
+      def record_hold(race, reason, detail)
+        if NewsroomSkip.where(kind: KIND, race: race, reason: reason, created_at: Caps.day_range).exists?
+          return log("#{race.slug} is still held (#{reason}); today's skip log already has it")
+        end
+
+        NewsroomSkip.record!(kind: KIND, race: race, reason: reason, detail: detail)
       end
 
       def log(message)

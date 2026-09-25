@@ -26,6 +26,15 @@ class Newsroom::MovementNotesJobTest < ActiveJob::TestCase
     run
   end
 
+  # Maine moved twenty points this week and a note went out two days ago, so
+  # the cooldown holds the next one. The note carries no run, so movement is
+  # still measured from last week (see the cooldown test below).
+  def held_by_cooldown
+    moved_by(0.20)
+    Dispatch.create!(kind: :movement_note, race: @race, status: :published, published_at: 2.days.ago,
+                     headline: "Maine drifted", body_markdown: "Body.")
+  end
+
   def perform
     Newsroom::MovementNotesJob.perform_now(model_run_id: @run.id)
   end
@@ -96,6 +105,57 @@ class Newsroom::MovementNotesJobTest < ActiveJob::TestCase
       assert_predicate skip, :cap_reached?
       assert_predicate skip, :movement_note?
       assert_match(/cooldown is #{Pol::Params.fetch!(:newsroom, :movement_note_cooldown_max_days)} days/, skip.detail)
+    end
+  end
+
+  # This job runs after every model run, and a cooldown holds a race for days,
+  # so recording every re-detection wrote the same hold again and again — one
+  # race 42 times in 56 hours in production. One row a day says what they all
+  # said.
+  test "a race still held later the same day adds no second skip row" do
+    travel_to(Time.utc(2026, 8, 5, 16)) do
+      held_by_cooldown
+      with_api_key { perform }
+    end
+
+    travel_to(Time.utc(2026, 8, 5, 18)) do
+      assert_no_difference "NewsroomSkip.count" do
+        with_api_key { perform }
+      end
+    end
+
+    assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
+  end
+
+  # The day is the newsroom's Eastern one, as for the caps and the admin's
+  # "skips today" count: 11:30pm and 12:30am Eastern share a UTC date here,
+  # and a hold still standing after midnight belongs to the new day's count.
+  test "a race still held on the next Eastern day gets a fresh row" do
+    travel_to(Time.utc(2026, 8, 6, 3, 30)) do # 11:30pm Eastern, August 5
+      held_by_cooldown
+      with_api_key { perform }
+    end
+
+    travel_to(Time.utc(2026, 8, 6, 4, 30)) do # 12:30am Eastern, August 6
+      assert_difference "NewsroomSkip.where(kind: :movement_note, reason: :cap_reached, race: @race).count", 1 do
+        with_api_key { perform }
+      end
+    end
+  end
+
+  # Only the same hold counts as already logged: this race, this kind of
+  # piece, this reason. Another race's hold, this race's poll reaction, or a
+  # kill-switch row from earlier in the day says nothing about this one.
+  test "today's rows for another race, kind or reason do not count as the hold already logged" do
+    travel_to(Time.utc(2026, 8, 5, 16)) do
+      held_by_cooldown
+      NewsroomSkip.create!(kind: :movement_note, reason: :cap_reached, race: races(:senate_florida_special))
+      NewsroomSkip.create!(kind: :poll_reaction, reason: :cap_reached, race: @race)
+      NewsroomSkip.create!(kind: :movement_note, reason: :agents_disabled, race: @race)
+
+      assert_difference "NewsroomSkip.where(kind: :movement_note, reason: :cap_reached, race: @race).count", 1 do
+        with_api_key { perform }
+      end
     end
   end
 
