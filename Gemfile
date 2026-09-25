@@ -40,7 +40,10 @@ gem "thruster", require: false
 gem "image_processing", "~> 2.1"
 # image_processing 2.0 made its backends opt-in. Active Storage's default
 # variant processor is vips, and the Dockerfile installs libvips.
-gem "ruby-vips"
+# require: false because Active Storage requires ruby-vips itself, rescuing
+# a missing libvips; Bundler's require wouldn't, and CI's scan_js job boots
+# the app without libvips.
+gem "ruby-vips", require: false
 
 # Postgres-backed Active Job backend [https://github.com/bensheldon/good_job]
 gem "good_job"
