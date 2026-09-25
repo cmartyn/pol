@@ -32,12 +32,14 @@ class Pol::ParamsTest < ActiveSupport::TestCase
 
   # Phase 5 verified both slugs against OpenRouter's live model list; the
   # newsroom reads them without allow_nil, so a regression to null has to fail
-  # here rather than at publication time.
+  # here rather than at publication time. A leading `~` is OpenRouter's mark
+  # for a floating alias (`~anthropic/claude-opus-latest`), which is a slug
+  # like any other as far as the API is concerned.
   test "the Phase 5 newsroom model slugs are filled in with verified slugs" do
     %i[writer_model brief_model].each do |key|
       slug = Pol::Params.fetch!(:newsroom, key)
       assert_kind_of String, slug
-      assert_match(%r{\A[\w.-]+/[\w.:-]+\z}, slug, "#{key} should be an OpenRouter vendor/model slug")
+      assert_match(%r{\A~?[\w.-]+/[\w.:-]+\z}, slug, "#{key} should be an OpenRouter vendor/model slug or alias")
     end
   end
 

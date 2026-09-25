@@ -3471,3 +3471,67 @@ measured from, per-race independence, and a note already written from this
 run. `movement_notes_job_test.rb` has the two ends of the story: a race with no
 new movement since its note writes nothing and records no skip, and a second
 note is written against the note's run rather than last week's.
+
+## K. The newsroom follows the newest Opus, and its output cap makes room for reasoning, 2026-09-25
+
+Both newsroom slugs were pinned to `anthropic/claude-opus-5`. They are now
+OpenRouter's floating alias, `~anthropic/claude-opus-latest`, which "always
+redirects to the latest model in the Claude Opus family" and on this date
+resolved to `anthropic/claude-opus-5.5` ($4/M input and $20/M output, against
+Opus 5's $5 and $25). The next Opus will start writing the day OpenRouter
+repoints the alias, without a deploy.
+
+### K1. What keeps a floating model honest
+
+The byline. `Newsroom::Client` has always stored the model OpenRouter reports
+as having served the request, not the slug it asked for, and the alias does not
+report itself: a live call came back as `anthropic/claude-opus-5.5`. So
+`Dispatch#model_slug`, the byline and the `dispatch_published` event in PostHog
+all name the exact model that wrote each piece, and the day the alias moves is
+visible in the data rather than inferred. The methodology page shows the alias,
+because that is what the params file asks for. The slug-format test in
+`test/lib/pol/params_test.rb` now accepts OpenRouter's leading `~`.
+
+### K2. The cap was sized for an answer, and the model is also reasoning
+
+Checking the alias against a real payload turned up a problem that predates
+it. `max_output_tokens: 2000` was sized for the answer alone (Phase 5's
+"roughly 700 tokens of JSON", and D4's warning that the margin was only about
+1.4x). But OpenRouter turns reasoning on by default for Opus 5 and makes it
+mandatory from Opus 5.5, and reasoning tokens count against `max_tokens`. That
+morning's production brief payload, sent through `Newsroom::Client` with no
+other changes:
+
+| model | cap | reasoning | total out | result | cost |
+|---|---|---|---|---|---|
+| `anthropic/claude-opus-5` | 2,000 | 1,184 | 2,000 | cut off before `cited_poll_ids` | 7.9¢ |
+| `~anthropic/claude-opus-latest` (5.5) | 2,000 | 1,016 | 2,000 | cut off before `cited_poll_ids` | 6.3¢ |
+| `~anthropic/claude-opus-latest` (5.5), retry turn | 2,000 | 29 | 1,112 | published on the second turn | +5.4¢ |
+| `~anthropic/claude-opus-latest` (5.5) | 8,000 | 1,246 | 2,413 | published first turn, 457 words | 7.2¢ |
+
+Production was surviving on the retry. The validator reads a truncated draft
+as a citation error, the retry turn reasons for a few dozen tokens and fits,
+and the brief publishes at nearly double the cost. The two briefs in the job
+container's logs had cleared the cap on the first turn with 1,841 and 1,948
+tokens. The cap is now 8,000, about three times the measured complete brief.
+Tokens bill as used, so the headroom costs nothing until a reply needs it. The
+runaway guard is `body_words_backstop`, as it already was in practice; the
+params file's comments on both keys now say so.
+
+### K3. What this leaves for later
+
+- **A truncated reply still parses.** The cut-off Opus 5 draft above ends
+  mid-sentence ("…fielded September 15-22, had") and `JSON.parse` accepted it
+  anyway: what came back from OpenRouter was a closed JSON object, not the
+  broken string the Phase 5 comments assume truncation produces. The draft was
+  rejected only because `cited_poll_ids` is the last property in
+  `Prompts::SCHEMA`, so it is the one a truncation drops, and the validator
+  requires it. That ordering is currently the whole defence against
+  publishing a brief that stops mid-sentence. `message.finish_reason` is
+  `:max_tokens` in exactly this case, so the guard is small: treat a
+  truncated reply as a failed draft, and tell the retry turn why instead of
+  letting the validator report a citation problem.
+- Reasoning effort is OpenRouter's default (`high` for both models today). A
+  floating alias makes that one more thing that can change without a deploy;
+  pinning it would be one params key and one option in
+  `Newsroom::Client#chat`.

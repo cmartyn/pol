@@ -271,19 +271,30 @@ simulation:
 election:
   date: "2026-11-03"
 newsroom:
-  # Both slugs verified live on 2026-08-12 against OpenRouter's public model
-  # list: `anthropic/claude-opus-5` (canonical
-  # `anthropic/claude-opus-5-20260723`, 1M context, 128k max completion,
-  # $5/M input and $25/M output) advertises `structured_outputs`,
-  # `response_format` and `max_tokens` — the three things Newsroom::Client
-  # depends on — and a live A/B against the same brief payload confirmed all
-  # three work in practice, not just in the catalogue.
+  # Both slugs are OpenRouter's floating alias for the newest Claude Opus, not a
+  # pinned version: `~anthropic/claude-opus-latest` "always redirects to the
+  # latest model in the Claude Opus family". Checked live on 2026-09-25 against
+  # OpenRouter's public model list, it resolved to `anthropic/claude-opus-5.5`
+  # (canonical `anthropic/claude-opus-5.5-20260921`, 1M context, 128k max
+  # completion, $4/M input and $20/M output) and advertises
+  # `structured_outputs`, `response_format` and `max_tokens` — the three things
+  # Newsroom::Client depends on. That day's production brief payload, sent
+  # through Newsroom::Client, confirmed all three work in practice, retry turn
+  # included, not just in the catalogue.
+  #
+  # The alias trades a pinned model for automatic upgrades: the next Opus
+  # starts writing the day OpenRouter repoints the alias, with no deploy. The
+  # byline is what keeps that honest. OpenRouter reports the model that served
+  # each request — the alias came back as `anthropic/claude-opus-5.5`, not as
+  # itself — and that is what Dispatch#model_slug stores and the byline prints,
+  # so every piece still names the exact model that wrote it. Pinning again is
+  # a matter of putting a versioned slug back here.
   #
   # These stay two keys rather than one because the roles differ. The brief is
   # one flagship piece a day where causal explanation earns its cost; reactions
   # run at volume (23 in six minutes on 2026-08-12) where it mostly does not.
-  # Both are Opus today by choice, not by coupling: either is a one-string swap
-  # and nothing in the code knows which model it is talking to.
+  # Both follow the Opus alias today by choice, not by coupling: either is a
+  # one-string swap and nothing in the code knows which model it is talking to.
   #
   # Measured on an identical 12-poll brief payload (2026-08-12): Opus explained
   # the 51-vs-50 Senate asymmetry as the cause of the probability gap, attached
@@ -291,16 +302,27 @@ newsroom:
   # House overstatement is unmeasured. Sonnet enumerated the same facts, left
   # one Alaska margin ambiguous as to who led, and used the "X in 100" phrasing
   # four times against a style guide that asks for one.
-  # citation: https://openrouter.ai/api/v1/models (retrieved 2026-08-12)
-  writer_model: "anthropic/claude-opus-5"
-  brief_model: "anthropic/claude-opus-5"
-  # A dispatch is a headline, a dek and a few hundred words of prose — the
-  # longest target (Newsroom::Prompts::BODY_WORD_TARGETS) is roughly 700 tokens
-  # of JSON. 2000 leaves room for a piece that overruns without leaving room
-  # for a runaway one: it truncates around 1,400 words, above the
-  # body_words_backstop below, so a runaway is rejected as a word count rather
-  # than as JSON that stops mid-string.
-  max_output_tokens: 2000
+  # citation: https://openrouter.ai/api/v1/models (retrieved 2026-09-25)
+  writer_model: "~anthropic/claude-opus-latest"
+  brief_model: "~anthropic/claude-opus-latest"
+  # The cap has to hold the model's reasoning as well as its answer.
+  # OpenRouter turns reasoning on by default for Opus 5 and makes it mandatory
+  # from Opus 5.5, and reasoning tokens count against max_tokens. On the
+  # 2026-09-25 production brief payload, a complete 457-word brief took 2,413
+  # tokens: 1,246 of reasoning and about 1,170 of answer. The old cap of 2000
+  # was sized for the answer alone. It cut both Opus 5 and 5.5 off mid-JSON on
+  # that payload, and the last two briefs published under it had used 1,841
+  # and 1,948 of their 2,000.
+  #
+  # 8000 is about three times that measured total. Tokens are billed as used,
+  # not as capped, so the headroom costs nothing until a reply needs it, and a
+  # reply that fills it costs 16 cents of output at today's $20/M. The cap is
+  # no longer what stops a runaway piece; body_words_backstop below is. At the
+  # measured run's rate (about 2.3 tokens a word, reasoning of that size paid
+  # first) this cap truncates near 2,900 words, far above the backstop, so a
+  # runaway is still rejected as a word count rather than as JSON that stops
+  # mid-string.
+  max_output_tokens: 8000
   max_dispatches_per_race_per_day: 3
   max_dispatches_per_day: 40
   movement_threshold: 0.08
@@ -341,8 +363,8 @@ newsroom:
   #
   # 1000 is a bit over twice the largest target and roughly three times the
   # longest piece this site has published, so only runaway output reaches it.
-  # It also sits below the ~1,400 words max_output_tokens truncates at, so a
-  # runaway is caught as a word count rather than as unparseable JSON.
+  # It also sits far below the ~2,900 words max_output_tokens truncates at, so
+  # a runaway is caught as a word count rather than as unparseable JSON.
   body_words_backstop: 1000
 scrape:
   # The Wikipedia sweep is the warm fallback since the NYT feed became the
