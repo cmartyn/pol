@@ -35,7 +35,9 @@ class FullPipelineTest < ApplicationSystemTestCase
     visit race_path(@race.slug)
 
     assert_selector "[data-testid=race-name]", text: @race.name
-    assert_selector "[data-testid=rating-word]", text: "Tossup"
+    # Case-insensitive, anchored: the rating word is an uppercase eyebrow, and
+    # Capybara reads rendered text (see the chamber cards below).
+    assert_selector "[data-testid=rating-word]", text: /\Atossup\z/i
     assert_selector "[data-testid=win-probability]", text: "62%"
     assert_text "6,200 of 10,000 simulated elections"
     assert_no_text "Harbor Analytics"
@@ -81,7 +83,7 @@ class FullPipelineTest < ApplicationSystemTestCase
     # the newsroom actually published.
     visit race_path(@race.slug)
 
-    assert_selector "[data-testid=rating-word]", text: "Favors Dem"
+    assert_selector "[data-testid=rating-word]", text: /\Afavors dem\z/i
     assert_selector "[data-testid=win-probability]", text: Site::Format.percent(after.p_dem_win)
     # n_sims off the RUN, exactly as the view reads it: this test pins the run
     # to 2,000 draws, so the page must say 2,000 and not the configured 100,000.
