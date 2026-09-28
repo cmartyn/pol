@@ -10,9 +10,10 @@ module Site
       module_function
 
       def latest_by_variant(race_ids)
-        published = Forecast.latest_for_races.where(race_id: race_ids).index_by(&:race_id)
-        internals = Forecast.latest_for_races(variant: :incl_internals).where(race_id: race_ids).index_by(&:race_id)
-        { excl_internals: published, incl_internals: published.merge(internals) }
+        published, internals = Forecast.latest_for_races(variant: VARIANTS)
+          .where(race_id: race_ids).partition(&:excl_internals?)
+        published = published.index_by(&:race_id)
+        { excl_internals: published, incl_internals: published.merge(internals.index_by(&:race_id)) }
       end
     end
   end

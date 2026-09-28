@@ -25,6 +25,55 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='chamber-card-house']"
     assert_select "[data-testid='seat-histogram-senate']"
     assert_select "[data-testid='seat-histogram-house']"
+
+    # Pre-toggle runs have no internals rows; both views use the published row.
+    %w[excl_internals incl_internals].each do |variant|
+      assert_select "[data-testid='chamber-card-senate'] [data-variant='#{variant}'] [aria-label='Democrats 55%']"
+      assert_select "[data-testid='chamber-card-house'] [data-variant='#{variant}'] [aria-label='Democrats 48%']"
+    end
+  end
+
+  test "loads both forecast variants together for each dashboard card and map" do
+    run = model_runs(:model_run_one)
+    %i[senate_chamber_forecast house_chamber_forecast].each do |fixture|
+      chamber_forecasts(fixture).dup.update!(variant: :incl_internals, p_dem_control: 0.20, p_rep_control: 0.80)
+    end
+    %i[senate_maine senate_florida_special house_ny_17].each do |fixture|
+      race = races(fixture)
+      Forecast.find_or_initialize_by(model_run: run, race: race, variant: :excl_internals)
+        .update!(p_dem_win: 0.60, p_rep_win: 0.40, mean_margin: 2.0)
+      Forecast.create!(model_run: run, race: race, variant: :incl_internals,
+                       p_dem_win: 0.20, p_rep_win: 0.80, mean_margin: -5.0)
+    end
+    create_boundary(state: "ME", box: [ -71.1, 43.0, -66.9, 47.5 ])
+    create_boundary(state: "FL", box: [ -87.6, 24.5, -80.0, 31.0 ])
+    create_boundary(state: "NY", box: [ -79.8, 40.5, -71.8, 45.0 ])
+    create_boundary(state: "NY", district: 17, box: [ -74.2, 41.0, -73.5, 41.6 ])
+
+    forecast_queries = /\ASELECT .* FROM "(?:chamber_forecasts|forecasts)"/
+    with_fragment_caching do
+      # Two cards and two maps each need one bulk query, regardless of how
+      # many races or variants they render. No comparison run exists here.
+      ActiveRecord::Base.connection.clear_query_cache
+      assert_queries_match(forecast_queries, count: 4) { get root_path }
+
+      assert_response :success
+      { "senate" => 55, "house" => 48 }.each do |chamber, published_percent|
+        assert_select "[data-testid='chamber-card-#{chamber}']" do
+          assert_select "[data-variant='excl_internals'] [aria-label='Democrats #{published_percent}%']"
+          assert_select "[data-variant='incl_internals'] [aria-label='Democrats 20%']"
+        end
+      end
+      fills = "--fill-excl:#{Site::Maps::Palette.shade('dem', 0.60)};--fill-incl:#{Site::Maps::Palette.shade('rep', 0.80)}"
+      %w[ME FL NY-17].each do |key|
+        assert_select ".map-shape[data-key='#{key}'][style=?]", fills, count: 1
+      end
+
+      # Keep the reads inside the fragment so a hit does no forecast work.
+      ActiveRecord::Base.connection.clear_query_cache
+      assert_no_queries_match(forecast_queries) { get root_path }
+      assert_response :success
+    end
   end
 
   # The caveat has been reworded twice and the marker has outlived both: Phase
