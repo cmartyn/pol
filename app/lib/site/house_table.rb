@@ -1,13 +1,13 @@
 # The /house table: all 435 districts with their baseline, latest forecast,
-# district poll count and last poll date, sortable by column. Three bulk
-# queries total — races (no candidates preload needed: every modelled House
-# race runs on generic dem/rep sides, Forecast::RaceModel#side_a/#side_b fall
-# back to the party itself when no candidate is seeded, so Site::RaceSides
-# never has to look at a House race's candidates), latest forecasts, and one
-# aggregate poll query — and none of the three scales with row count, so this
-# is exactly as many queries at 435 districts as at 4. Sorting happens in Ruby
-# over the loaded rows, so a different sort costs no extra query. Search is
-# client-side (Stimulus), so this one query set serves every search state.
+# district poll count and last poll date, sortable by column. A fixed set of
+# bulk queries — races with their candidates (preloaded because the shared
+# margin-bar partial asks Site::RaceSides whose margin a forecast is, which
+# reads race.candidates; left lazy, that ran once per forecast district),
+# latest forecasts, and one aggregate poll query — and none of them scales
+# with row count, so this is exactly as many queries at 435 districts as at
+# 4. Sorting happens in Ruby over the loaded rows, so a different sort costs
+# no extra query. Search is client-side (Stimulus), so this one query set
+# serves every search state.
 #
 # Deliberately a sibling of Site::SenateTable rather than a shared base class:
 # the two chambers are expected to diverge on which columns they carry, and
@@ -39,7 +39,7 @@ module Site
     attr_reader :sort, :direction
 
     def build
-      races = Race.house.order(:state, :district).to_a
+      races = Race.house.includes(:candidates).order(:state, :district).to_a
       race_ids = races.map(&:id)
       forecasts = Forecast.latest_for_races.where(race_id: race_ids).index_by(&:race_id)
       incl_forecasts = Forecast.latest_for_races(variant: :incl_internals)

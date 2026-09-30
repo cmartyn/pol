@@ -74,6 +74,23 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_equal baseline, with_extra_rows
   end
 
+  test "house table query count does not scale with the number of forecast districts" do
+    # The test above adds districts with no forecast, whose margin bar renders
+    # "—" without ever asking whose margin it is. A forecast district's bar
+    # goes through race_sides, which reads the race's candidates — and every
+    # district has a forecast in production, where this ran once per row.
+    baseline = count_queries { get house_path }
+
+    5.times do |i|
+      race = Race.create!(office: :house, state: "ZZ", district: 60 + i, cycle: 2026, slug: "house-controller-test-forecast-#{i}", baseline_margin: 1.0)
+      Forecast.create!(model_run: model_runs(:model_run_one), race: race, p_dem_win: 0.6, p_rep_win: 0.4, mean_margin: 2.0)
+    end
+
+    with_forecast_rows = count_queries { get house_path }
+
+    assert_equal baseline, with_forecast_rows
+  end
+
   # --- /races/:slug --------------------------------------------------------
 
   test "show renders a polled race with its candidates, forecast and timeline" do
