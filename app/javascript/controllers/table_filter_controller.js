@@ -71,7 +71,7 @@ export default class extends Controller {
   }
 
   sort(event) {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return // a new tab or window, not this page
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return // a new tab or window, not this page
 
     const href = event.currentTarget.href
     if (href === this.pendingHref) {
