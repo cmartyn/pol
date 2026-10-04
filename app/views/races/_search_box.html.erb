@@ -16,5 +16,7 @@
   </label>
   <p class="whitespace-nowrap text-sm text-slate-500">
     <span data-table-filter-target="count"><%= total %></span> of <%= total %> <%= noun %>
+    <span class="sr-only" role="status" data-table-filter-target="status"
+          data-action="pageshow@window->table-filter#clearPending"></span>
   </p>
 </div>

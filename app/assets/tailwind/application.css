@@ -90,6 +90,15 @@ html:not([data-internals="on"]) tr[data-internal-poll] {
   opacity: 0.55;
 }
 
+/* A /senate or /house table whose sort link was clicked and whose next page
+   has not arrived yet (table_filter_controller#sort sets aria-busy). Dimmed
+   at once, so the reader can see the click took instead of clicking again. */
+[data-controller~="table-filter"][aria-busy="true"] table {
+  opacity: 0.5;
+  cursor: progress;
+  transition: opacity 150ms;
+}
+
 /* ---------------------------------------------------------------------------
    Maps (app/views/races/_map.html.erb)
 

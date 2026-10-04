@@ -376,6 +376,22 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # A slow sort used to look like a dead click: the old table stayed put, and
+  # each repeat click made Turbo abort the request and start it again.
+  # table-filter#sort is what dims the table and holds that repeat click back,
+  # and the status region is where a screen reader hears that the sort is on
+  # its way, so both hooks have to be in the markup.
+  test "every sort link marks the table as sorting, with a status region to announce it" do
+    [ senate_path, house_path ].each do |path|
+      get path
+      css_select("thead a").each do |link|
+        assert_equal "table-filter#sort", link["data-action"],
+                     "#{path}: a sort link without the action gives no feedback while the next page loads"
+      end
+      assert_select "[data-controller='table-filter'] [role='status'][data-table-filter-target='status']", count: 1
+    end
+  end
+
   test "house rows carry the forecast margin and last poll date the parity pass added" do
     run = model_runs(:model_run_one)
     Forecast.create!(model_run: run, race: races(:house_ny_17), p_dem_win: 0.71, p_rep_win: 0.29, mean_margin: 6.4)
