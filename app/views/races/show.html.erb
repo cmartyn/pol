@@ -86,6 +86,14 @@
           <% end %>
         </div>
       <% end %>
+
+      <%# Under the masthead rather than in a headline row: the map has the
+          right-hand side, and in this column a phone reaches it before the
+          map, inside the first screen. Its heading says every race — see
+          the partial. %>
+      <div class="mt-6 max-w-md">
+        <%= render "shared/subscription_form", source: "race", layout: "inline" %>
+      </div>
     </div>
     <%# A Senate race gets a locator; a House race gets its state's districts
         with its own outlined. Both return nil until boundaries are seeded. %>

@@ -1,11 +1,9 @@
 <% content_for :title, "Dispatches · 535" %>
 
-<h1 class="font-serif text-3xl font-semibold text-slate-900">Dispatches</h1>
-<p class="mt-1 text-slate-600">Every note the newsroom has published, newest first.</p>
-
-<div class="mt-6 max-w-3xl">
-  <%= render "shared/subscription_form", source: "dispatches-index" %>
-</div>
+<%= render layout: "shared/headline_row", locals: { source: "dispatches-index" } do %>
+  <h1 class="font-serif text-3xl font-semibold text-slate-900">Dispatches</h1>
+  <p class="mt-1 text-slate-600">Every note the newsroom has published, newest first.</p>
+<% end %>
 
 <%# Full container width, like every other index page — the cards' own rules
     then span the same measure as the heading above them instead of stopping

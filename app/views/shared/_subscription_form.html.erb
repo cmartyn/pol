@@ -6,20 +6,26 @@
     "inline" is the dashboard's unboxed row beside the headline, kept to a
     label and a field so it fits above the fold on every phone and laptop —
     it leaves the unsubscribe and privacy line to the footer copy on the same
-    page; "compact" is the footer's unboxed, smaller copy. It round-trips as
-    a hidden field so the reply re-renders the submitted copy in the shape it
-    left in.
+    page; "compact" is the footer's unboxed, smaller copy; "dialog" is the
+    header link's modal, unboxed because the dialog is the box. It
+    round-trips as a hidden field so the reply re-renders the submitted copy
+    in the shape it left in.
 
     No pitch under the heading. What a subscriber gets is what the site
-    already lists, and "every dispatch by email" says it. %>
+    already lists, and "every dispatch by email" says it — except on a race
+    page, whose reader came for one race and could fairly read it as every
+    dispatch about that one. The newsletter is every race, so there it says
+    so. Keyed on source rather than passed in, so the reply, which only
+    knows the source, keeps the wording. %>
 <% layout = local_assigns.fetch(:layout, "card") %>
 <% inline = layout == "inline" %>
 <% notice = local_assigns[:notice] %>
 <% alert = local_assigns[:alert] %>
-<% heading_class = { "card" => "font-serif text-xl", "compact" => "font-serif text-lg", "inline" => "text-sm" }.fetch(layout, "font-serif text-xl") %>
+<% heading_class = { "card" => "font-serif text-xl", "compact" => "font-serif text-lg", "inline" => "text-sm", "dialog" => "font-serif text-xl pr-8" }.fetch(layout, "font-serif text-xl") %>
+<% heading = source == "race" ? "Get every dispatch, on every race, by email" : "Get every dispatch by email" %>
 <section id="subscription-form-<%= source %>" data-layout="<%= layout %>" data-testid="subscription-form"
          class="<%= "rounded-lg border border-amber-200 bg-amber-50 p-5" if layout == "card" %>">
-  <h2 class="<%= heading_class %> font-semibold text-slate-900">Get every dispatch by email</h2>
+  <h2 id="subscription-form-<%= source %>-heading" class="<%= heading_class %> font-semibold text-slate-900"><%= heading %></h2>
   <% if notice || alert %>
     <p role="<%= notice ? "status" : "alert" %>" data-testid="subscription-result"
        class="mt-1 <%= layout == "card" ? "text-sm" : "text-xs" %> <%= notice ? "text-emerald-800" : "text-red-800" %>">
