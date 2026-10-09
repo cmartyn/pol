@@ -27,4 +27,27 @@ class SubscriptionFormTest < ApplicationSystemTestCase
     assert_selector "#subscription-form-homepage input[type=email]"
     assert_equal "reader@example.com", Subscriber.last.email_address
   end
+
+  # The header link used to jump to the footer, which on a long page like
+  # /house is a long way from where the reader was. It opens a dialog now,
+  # and the dialog answers in place like every other copy of the form.
+  test "the header's Subscribe link opens a dialog that subscribes in place and closes on Escape" do
+    visit senate_path
+    assert_no_selector "dialog[open]"
+
+    within("header") { click_on "Subscribe" }
+
+    within "dialog[open]" do
+      assert_equal "subscriber[email_address]", page.evaluate_script("document.activeElement.name"),
+                   "the email field should have focus when the dialog opens"
+      fill_in "Email address", with: "dialog@example.com"
+      click_on "Subscribe"
+      assert_text(/subscribed/i)
+    end
+    assert_equal "dialog", Subscriber.find_by!(email_address: "dialog@example.com").source
+    assert_equal senate_path, current_path
+
+    page.send_keys(:escape)
+    assert_no_selector "dialog[open]"
+  end
 end

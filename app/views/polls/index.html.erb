@@ -1,11 +1,13 @@
 <% content_for :title, "Polls · 535" %>
 <% content_for :description, "Every poll in the 535 forecast's corpus, in the order it arrived — pollster, field dates, sample, results and source for each." %>
 
-<h1 class="font-serif text-3xl font-semibold text-slate-900">Polls</h1>
-<p class="mt-2 max-w-3xl text-slate-600" data-testid="poll-feed-scope-note">
-  Every poll this model reads, newest arrival first.
-</p>
-<%= render "shared/as_of", time: @latest_run&.started_at %>
+<%= render layout: "shared/headline_row", locals: { source: "polls" } do %>
+  <h1 class="font-serif text-3xl font-semibold text-slate-900">Polls</h1>
+  <p class="mt-2 max-w-3xl text-slate-600" data-testid="poll-feed-scope-note">
+    Every poll this model reads, newest arrival first.
+  </p>
+  <%= render "shared/as_of", time: @latest_run&.started_at %>
+<% end %>
 
 <section class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700"
          data-testid="poll-feed-note">

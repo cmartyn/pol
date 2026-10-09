@@ -1,6 +1,8 @@
 <% content_for :title, "About · 535" %>
 
-<h1 class="font-serif text-3xl font-semibold text-slate-900">About 535</h1>
+<%= render layout: "shared/headline_row", locals: { source: "about" } do %>
+  <h1 class="font-serif text-3xl font-semibold text-slate-900">About 535</h1>
+<% end %>
 
 <div class="mt-6 max-w-2xl space-y-4 text-slate-700">
   <p>

@@ -1,0 +1,19 @@
+<%# locals: source — which page's signup this is (subscription_form's id and
+    the subscriber's recorded source).
+
+    A page's title block with the email signup beside it — the page renders
+    this as a layout around its title, h1 through as-of line:
+    render layout: "shared/headline_row", locals: { source: "senate" } do … end
+
+    Beside the title from laptop width up, where that costs no height, and
+    under it on narrower screens, where it costs one row. That's the one spot
+    that clears the fold on every phone and laptop: below the title, the
+    pages' own content — cards, maps, tables — fills the first screen. %>
+<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+  <div class="min-w-0">
+    <%= yield %>
+  </div>
+  <div class="lg:w-[26rem] lg:shrink-0">
+    <%= render "shared/subscription_form", source: source, layout: "inline" %>
+  </div>
+</div>
