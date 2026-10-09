@@ -100,13 +100,13 @@ class SubscriptionsControllerTest < ActionDispatch::IntegrationTest
 
   # The reply replaces the submitted form wholesale, so a layout the reply
   # does not know about would snap the box into a different shape mid-page.
-  test "a wide form comes back wide, on success and on a rejected address" do
+  test "an inline form comes back inline, on success and on a rejected address" do
     [ "friend@example.com", "nope" ].each do |email_address|
       post subscription_path,
-           params: { subscriber: { email_address: email_address }, source: "homepage", layout: "wide" },
+           params: { subscriber: { email_address: email_address }, source: "homepage", layout: "inline" },
            headers: { "Accept" => "text/vnd.turbo-stream.html" }
 
-      assert_select "section#subscription-form-homepage[data-layout='wide']", { count: 1 }, "#{email_address} reply lost the wide layout"
+      assert_select "section#subscription-form-homepage[data-layout='inline']", { count: 1 }, "#{email_address} reply lost the inline layout"
     end
   end
 

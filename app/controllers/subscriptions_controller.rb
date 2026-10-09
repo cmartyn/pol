@@ -5,7 +5,7 @@ class SubscriptionsController < PublicController
 
   # The shapes shared/_subscription_form knows how to draw. Anything else
   # coming back from a form is a typo or a probe, and gets the plain card.
-  FORM_LAYOUTS = %w[card wide compact].freeze
+  FORM_LAYOUTS = %w[card inline compact].freeze
 
   before_action :set_form_context, only: :create
 

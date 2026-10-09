@@ -50,19 +50,23 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # Right after the answer the reader came for, ahead of everything else the
-  # dashboard says — not under the movers, where it sat two screens down.
-  test "the subscribe box sits directly under the chamber cards" do
+  # In the headline row, so it's above the fold on every phone and laptop —
+  # under the cards it was a screen or more down on all of them, because the
+  # cards and their maps fill the first screen. One in-page copy only; the
+  # footer's is the other.
+  test "the subscribe form sits in the headline row, ahead of the chamber cards" do
     get root_path
 
     body = response.body
-    cards = body.index("data-testid=\"chamber-cards\"")
+    headline = body.index("<h1")
     form = body.index("id=\"subscription-form-homepage\"")
-    environment = body.index("data-testid=\"national-environment\"")
+    cards = body.index("data-testid=\"chamber-cards\"")
 
-    assert cards && form && environment
-    assert_operator cards, :<, form
-    assert_operator form, :<, environment
+    assert headline && form && cards
+    assert_operator headline, :<, form
+    assert_operator form, :<, cards
+    assert_select "main [data-testid='subscription-form']", count: 1
+    assert_select "#subscription-form-homepage[data-layout='inline'] input[type=email]", count: 1
   end
 
   test "the header links to the footer's subscribe form on every page" do
