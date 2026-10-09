@@ -18,10 +18,19 @@ import { Controller } from "@hotwired/stimulus"
 // have to happen client-side: baking params[:q] into a sort link inside the
 // cached table fragment would leak whichever reader's search happened to
 // populate that cache entry into every other reader's links.
+//
+// That reload can be slow, and until it lands the old table and its old
+// arrow stay on screen. sort() marks the table busy on the click itself, and
+// holds back a repeat click on the same pending link: Turbo would otherwise
+// abort the request in flight and start it again on every click, so a reader
+// who clicks again because nothing seems to happen only makes the wait
+// longer.
 export default class extends Controller {
-  static targets = [ "input", "row", "count", "noResults", "sortLink" ]
+  static targets = [ "input", "row", "count", "noResults", "sortLink", "status" ]
 
   connect() {
+    this.clearPending() // a Turbo cache snapshot can carry the busy state back in
+
     if (!this.hasInputTarget) return // the no-rows empty state renders no search box at all
 
     const q = new URLSearchParams(window.location.search).get("q")
@@ -59,5 +68,25 @@ export default class extends Controller {
       }
       link.href = url.toString()
     })
+  }
+
+  sort(event) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return // a new tab or window, not this page
+
+    const href = event.currentTarget.href
+    if (href === this.pendingHref) {
+      event.preventDefault()
+      return
+    }
+
+    this.pendingHref = href
+    this.element.setAttribute("aria-busy", "true")
+    if (this.hasStatusTarget) this.statusTarget.textContent = "Sorting the table…"
+  }
+
+  clearPending() {
+    this.pendingHref = null
+    this.element.removeAttribute("aria-busy")
+    if (this.hasStatusTarget) this.statusTarget.textContent = ""
   }
 }

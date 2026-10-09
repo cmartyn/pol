@@ -207,7 +207,9 @@ module RacesHelper
   # Every link also carries data-table-filter-target="sortLink" so the
   # table-filter Stimulus controller can rewrite its href with the reader's
   # live search text before it navigates — see table_filter_controller.js
-  # for why that has to happen client-side rather than here.
+  # for why that has to happen client-side rather than here — and
+  # data-action="table-filter#sort", so a click marks the table as sorting
+  # at once and a repeat click on the same pending link is held back.
   def sort_header(label, key, base_path:, testid_prefix:, current_sort:, current_direction:)
     active = current_sort == key
     next_direction = active && current_direction == "asc" ? "desc" : "asc"
@@ -216,7 +218,7 @@ module RacesHelper
     href = "#{base_path}?#{{ sort: key, dir: next_direction }.to_query}"
 
     link_to "#{label}#{indicator}", href, class: classes,
-            data: { testid: "#{testid_prefix}-sort-#{key}", table_filter_target: "sortLink" }
+            data: { testid: "#{testid_prefix}-sort-#{key}", table_filter_target: "sortLink", action: "table-filter#sort" }
   end
 
   private
