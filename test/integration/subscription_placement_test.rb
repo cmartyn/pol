@@ -43,6 +43,9 @@ class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
   test "the race page's signup says it covers every race" do
     get race_path(races(:senate_maine).slug)
     assert_select "#subscription-form-race h2", text: /every race/
+    # The header dialog opens over race pages too, and its reply can't know
+    # which page it's on — so it says every race everywhere.
+    assert_select "#subscription-form-dialog h2", text: /every race/
 
     get senate_path
     assert_select "#subscription-form-senate h2", text: "Get every dispatch by email"
