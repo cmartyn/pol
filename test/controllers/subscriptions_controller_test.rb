@@ -98,6 +98,34 @@ class SubscriptionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-posthog-identify-distinct-id-value=?]", subscriber.posthog_distinct_id
   end
 
+  # The reply replaces the submitted form wholesale, so a layout the reply
+  # does not know about would snap the box into a different shape mid-page.
+  test "an inline form comes back inline, on success and on a rejected address" do
+    [ "friend@example.com", "nope" ].each do |email_address|
+      post subscription_path,
+           params: { subscriber: { email_address: email_address }, source: "homepage", layout: "inline" },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      assert_select "section#subscription-form-homepage[data-layout='inline']", { count: 1 }, "#{email_address} reply lost the inline layout"
+    end
+  end
+
+  # `compact` is what forms sent before `layout` existed, and a copy held at
+  # the edge or left open in a tab keeps sending it after a deploy. An
+  # unknown layout falls back to the plain card rather than echoing input.
+  test "the layout param is read as given, from the legacy compact flag, or not at all" do
+    { { layout: "compact" } => "compact",
+      { compact: "true" } => "compact",
+      { layout: "bogus" } => "card",
+      {} => "card" }.each do |form_params, expected|
+      post subscription_path,
+           params: { subscriber: { email_address: "nope" }, source: "footer", **form_params },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      assert_select "section#subscription-form-footer[data-layout='#{expected}']", { count: 1 }, "#{form_params} should render #{expected}"
+    end
+  end
+
   private
     def capture_posthog
       captured = []

@@ -3,6 +3,10 @@ class SubscriptionsController < PublicController
 
   rate_limit to: 8, within: 3.minutes, only: :create
 
+  # The shapes shared/_subscription_form knows how to draw. Anything else
+  # coming back from a form is a typo or a probe, and gets the plain card.
+  FORM_LAYOUTS = %w[card inline compact].freeze
+
   before_action :set_form_context, only: :create
 
   def create
@@ -28,10 +32,13 @@ class SubscriptionsController < PublicController
 
   private
     # Which of the page's two form copies was submitted, so the turbo_stream
-    # response replaces that one and re-renders it in the same style.
+    # response replaces that one and re-renders it in the same style. A form
+    # rendered before `layout` existed sends `compact` instead, and copies
+    # held at the edge or left open in a tab keep sending it for a while.
     def set_form_context
       @source = params[:source].to_s.presence || "direct"
-      @compact = ActiveModel::Type::Boolean.new.cast(params[:compact]).present?
+      @layout = params[:layout].to_s.presence_in(FORM_LAYOUTS) ||
+        (ActiveModel::Type::Boolean.new.cast(params[:compact]) ? "compact" : "card")
     end
 
     def confirm_subscription

@@ -1,6 +1,7 @@
 <%# locals: model_run (a succeeded ModelRun — callers only render this partial
     once one exists), chamber ("senate"/"house"), title, house (boolean),
-    map (optional, default false: only the dashboard shows the card's map; /senate and /house already carry a full-size one).
+    map (optional, default false: only the dashboard shows the card's map; /senate and /house already carry a full-size one),
+    linked (optional, default false: only the dashboard links the card to its chamber page; /senate and /house would link to themselves).
     Self-contained rather than taking a precomputed chamber_forecast/histogram:
     this partial is the "dashboard cards" heavy surface from the brief's
     Performance section, cached here (not by the caller) so both call sites —
@@ -8,7 +9,9 @@
     and so a cache hit skips the ChamberForecast lookup and histogram build
     below rather than paying for them regardless. %>
 <% map = local_assigns.fetch(:map, false) %>
-<% cache [ "chamber-card", chamber, model_run, map, (Site::CacheKey.collection_freshness(Boundary.all) if map), (Site::CacheKey.collection_freshness(house ? Race.house : Race.senate) if map) ] do %>
+<% linked = local_assigns.fetch(:linked, false) %>
+<% chamber_path = house ? house_path : senate_path %>
+<% cache [ "chamber-card", chamber, model_run, map, linked, (Site::CacheKey.collection_freshness(Boundary.all) if map), (Site::CacheKey.collection_freshness(house ? Race.house : Race.senate) if map) ] do %>
   <%# Both internals views render into this one cached card; CSS shows the
       one the toggle picked (VariantsHelper). Load them together, inside the
       cache block so a hit skips the query. The published row stands in for
@@ -16,22 +19,39 @@
   <% chamber_forecasts = ChamberForecast.where(model_run_id: model_run.id, chamber: chamber).index_by { |forecast| forecast.variant.to_sym } %>
   <% excl_forecast = chamber_forecasts[:excl_internals] %>
   <% chamber_forecasts[:incl_internals] ||= excl_forecast %>
-  <div class="rounded-lg border border-slate-200 p-5" data-testid="chamber-card-<%= title.downcase %>">
-    <%# A tracked label rather than a serif heading: on a card whose whole job
-        is the two probabilities below it, "Senate" is the caption and the
-        numbers are the headline.
+  <%# Flex column when linked so the footer link can sit on the card's floor:
+      the dashboard's two cards share a grid row and so a height, and the
+      House card's error note would otherwise leave the two links misaligned. %>
+  <div class="rounded-lg border border-slate-200 p-5 <%= "flex flex-col" if linked %>" data-testid="chamber-card-<%= title.downcase %>">
+    <%# The headline block — label, sentence, figures — is one target on the
+        dashboard: the link is the label, and its ::after stretches over the
+        block. That keeps the link's accessible name to the chamber, and the
+        heading a heading, while anywhere a reader clicks on the numbers goes
+        where they'd expect. The histogram stays outside it; it has its own
+        pointer and arrow-key tooltip for a link to swallow. %>
+    <div class="<%= "group relative" if linked %>">
+      <%# A tracked label rather than a serif heading: on a card whose whole job
+          is the two probabilities below it, "Senate" is the caption and the
+          numbers are the headline.
 
-        But a label still has to be findable. At 11px in slate-500 this was
-        smaller and paler than the 14px sentence underneath it, which inverts
-        the thing it is supposed to do — the eye landed on the body and found
-        the label second. 12px at slate-700 keeps it subordinate to the
-        figures without making it something you have to hunt for. %>
-    <h2 class="eyebrow text-xs text-slate-700"><%= title %></h2>
+          But a label still has to be findable. At 11px in slate-500 this was
+          smaller and paler than the 14px sentence underneath it, which inverts
+          the thing it is supposed to do — the eye landed on the body and found
+          the label second. 12px at slate-700 keeps it subordinate to the
+          figures without making it something you have to hunt for. %>
+      <h2 class="eyebrow text-xs text-slate-700">
+        <% if linked %>
+          <%= link_to chamber_path,
+                class: "transition-colors group-hover:text-amber-700 focus-visible:outline-none after:absolute after:inset-0 after:rounded-md focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-amber-600",
+                data: { testid: "chamber-card-link" } do %><%= title %><span class="ml-1 inline-block transition-transform group-hover:translate-x-0.5" aria-hidden="true">&rarr;</span><% end %>
+        <% else %>
+          <%= title %>
+        <% end %>
+      </h2>
 
-    <% if excl_forecast %>
+      <% if excl_forecast %>
       <%= each_variant do |variant| %>
       <% chamber_forecast = chamber_forecasts[variant] %>
-      <% histogram = Site::Charts::SeatHistogram.build(chamber_forecast) %>
       <p class="mt-1 text-sm text-slate-600">
         <% leader = chamber_forecast.p_dem_control >= chamber_forecast.p_rep_control ? "Democrats" : "Republicans" %>
         <% leader_probability = [ chamber_forecast.p_dem_control, chamber_forecast.p_rep_control ].max %>
@@ -60,10 +80,13 @@
           <span class="font-figure text-sm font-bold opacity-45" aria-hidden="true">%</span>
         </span>
       </div>
+      <% end %>
+      <% end %>
+    </div>
 
-      <div class="mt-4">
-        <%= render "races/seat_histogram", payload: histogram, title: title %>
-      </div>
+    <% if excl_forecast %>
+      <%= each_variant(css: "mt-4") do |variant| %>
+        <%= render "races/seat_histogram", payload: Site::Charts::SeatHistogram.build(chamber_forecasts[variant]), title: title %>
       <% end %>
 
       <%# Outside each_variant: the map carries both variants' fills itself.
@@ -73,7 +96,7 @@
         <% chamber_map = house ? Site::Maps::HouseMap.build(key: "dashboard-house", tolerance: Site::Maps::Canvas::SMALL_TOLERANCE, interactive: false) : Site::Maps::SenateMap.build(key: "dashboard-senate", tolerance: Site::Maps::Canvas::SMALL_TOLERANCE, interactive: false) %>
         <% if chamber_map %>
           <div class="mt-4" data-testid="chamber-card-map">
-            <%= link_to house ? house_path : senate_path,
+            <%= link_to chamber_path,
                   class: "block rounded-md transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600",
                   aria: { label: "Open the full #{title} map" },
                   data: { testid: "chamber-card-map-link" } do %>
@@ -88,6 +111,20 @@
           card's single idea in two. %>
       <% if house %>
         <%= render "shared/house_error_note" %>
+      <% end %>
+
+      <%# Said in words, last, because the map was the card's only way in and
+          nothing on screen admitted it was a link. A reader who has finished
+          the card is asking "and the races?" — this is the answer. %>
+      <% if linked %>
+        <div class="mt-auto pt-4">
+          <div class="border-t border-slate-100 pt-3">
+            <%= link_to chamber_path, class: "group/cta text-sm font-medium text-amber-700 hover:text-amber-800",
+                  data: { testid: "chamber-card-cta" } do %>
+              Full <%= title %> forecast: <%= house ? "all 435 districts" : "every race" %><span class="ml-1 inline-block transition-transform group-hover/cta:translate-x-0.5" aria-hidden="true">&rarr;</span>
+            <% end %>
+          </div>
+        </div>
       <% end %>
     <% else %>
       <p class="mt-2 text-sm text-slate-500" data-testid="chamber-card-empty">No forecast yet.</p>

@@ -1,7 +1,20 @@
 <% content_for :title, "535 — 2026 midterms forecast" %>
 
-<h1 class="font-serif text-3xl font-semibold text-slate-900">2026 midterms forecast</h1>
-<%= render "shared/as_of", time: @latest_run&.started_at %>
+<%# The email signup rides in the headline row: beside it from laptop width
+    up, where that costs no height, and under the timestamp on narrower
+    screens, where it costs one row. Under the chamber cards it was below the
+    fold on every phone and laptop — the cards and their maps fill the first
+    screen — and anywhere above them a boxed pitch would have been the first
+    thing a reader met instead of the forecast. %>
+<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+  <div>
+    <h1 class="font-serif text-3xl font-semibold text-slate-900">2026 midterms forecast</h1>
+    <%= render "shared/as_of", time: @latest_run&.started_at %>
+  </div>
+  <div class="lg:w-[26rem] lg:shrink-0">
+    <%= render "shared/subscription_form", source: "homepage", layout: "inline" %>
+  </div>
+</div>
 
 <%= render "home/corpus_note", note: @corpus_note if @corpus_note.visible? %>
 
@@ -11,8 +24,8 @@
   </p>
 <% else %>
   <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true %>
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true, linked: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true, linked: true %>
   </div>
 <% end %>
 
@@ -55,10 +68,6 @@
     </ul>
   </section>
 <% end %>
-
-<div class="mt-10 max-w-3xl border-t border-slate-200 pt-8">
-  <%= render "shared/subscription_form", source: "homepage" %>
-</div>
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="dashboard-dispatches">
   <div class="flex items-baseline justify-between">
