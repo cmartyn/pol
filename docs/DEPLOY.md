@@ -58,6 +58,26 @@ certificate, while Cloudflare terminates the public connection. Kamal accepts
 redirects the latter two to the same path on the apex. `assume_ssl`/`force_ssl`
 are on, with `/up` excluded so the proxy's internal health check stays valid.
 
+## RailsMind workflow pilot
+
+The native Action Mailer pilot is the subscription-preferences request:
+`SubscriptionPreferencesController#create` queues `SubscriberMailer.manage`.
+The SDK links the request, enqueue, job start, mail rendering and delivery
+attempt by trace and job ID. Attempt completion does not establish recipient
+delivery. Mail content, addresses and unsubscribe tokens are excluded.
+
+`test/integration/rails_mind_workflow_test.rb` validates that path with a
+synthetic subscriber, memory collector and test-only mail delivery. Use an
+isolated PostgreSQL database through `POL_TEST_DATABASE`; no production data or
+mail sends are needed. Existing SDK credentials and platform revision detection
+remain unchanged.
+
+Dispatch newsletters are different: `SendDispatchEmailJob` renders
+`DispatchMailer` and calls the Resend HTTP API directly. SDK render/job events
+must not be interpreted as Action Mailer delivery attempts. The pilot test pins
+that distinction. Existing signed provider webhooks remain the authority for
+newsletter delivery state.
+
 ## Dispatch email
 
 Subscribers and per-recipient delivery state live in Postgres. Creating a new

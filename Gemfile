@@ -88,4 +88,4 @@ end
 gem "posthog-ruby", "~> 3.23"
 gem "posthog-rails", "~> 3.18"
 
-gem "rails_mind", "~> 0.1"
+gem "rails_mind", "~> 0.2.0"
