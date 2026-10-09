@@ -331,6 +331,16 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The same card partial heads both pages, and on the dashboard it links
+  # here. Rendered here it would link to the page it is already on.
+  test "neither chamber page's summary card links to itself" do
+    { senate_path => "senate", house_path => "house" }.each do |path, chamber|
+      get path
+      assert_select "[data-testid='chamber-card-#{chamber}'] [data-testid='chamber-card-link']", { count: 0 }, "#{path} card links to itself"
+      assert_select "[data-testid='chamber-card-#{chamber}'] [data-testid='chamber-card-cta']", { count: 0 }, "#{path} card links to itself"
+    end
+  end
+
   test "both chamber pages sort by every advertised key without error" do
     { senate_path => Site::SenateTable::SORTS, house_path => Site::HouseTable::SORTS }.each do |path, keys|
       keys.each do |key|

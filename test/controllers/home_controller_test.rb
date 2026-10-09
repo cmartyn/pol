@@ -33,6 +33,46 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The chamber pages are the main thing a reader goes to from here, and the
+  # card's only way in used to be its map — a link nothing on screen admitted
+  # to. The headline and a footer line now say where they go. The histogram
+  # stays outside both: it has its own pointer and arrow-key tooltip, which a
+  # surrounding link would swallow.
+  test "each dashboard card opens its chamber page from the headline and a footer link" do
+    get root_path
+
+    { "senate" => "Senate", "house" => "House" }.each do |chamber, title|
+      assert_select "[data-testid='chamber-card-#{chamber}']" do
+        assert_select "h2 a[data-testid='chamber-card-link'][href='/#{chamber}']", count: 1
+        assert_select "a[data-testid='chamber-card-cta'][href='/#{chamber}']", text: /Full #{title} forecast/, count: 1
+        assert_select "a [data-testid='seat-histogram-#{chamber}']", count: 0
+      end
+    end
+  end
+
+  # Right after the answer the reader came for, ahead of everything else the
+  # dashboard says — not under the movers, where it sat two screens down.
+  test "the subscribe box sits directly under the chamber cards" do
+    get root_path
+
+    body = response.body
+    cards = body.index("data-testid=\"chamber-cards\"")
+    form = body.index("id=\"subscription-form-homepage\"")
+    environment = body.index("data-testid=\"national-environment\"")
+
+    assert cards && form && environment
+    assert_operator cards, :<, form
+    assert_operator form, :<, environment
+  end
+
+  test "the header links to the footer's subscribe form on every page" do
+    [ root_path, senate_path, methodology_path ].each do |path|
+      get path
+      assert_select "header a[href='#subscription-form-footer']", { text: "Subscribe", count: 1 }, "#{path} is missing the header link"
+      assert_select "footer #subscription-form-footer", { count: 1 }, "#{path} is missing the link's target"
+    end
+  end
+
   test "loads both forecast variants together for each dashboard card and map" do
     run = model_runs(:model_run_one)
     %i[senate_chamber_forecast house_chamber_forecast].each do |fixture|

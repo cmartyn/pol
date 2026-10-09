@@ -11,10 +11,19 @@
   </p>
 <% else %>
   <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true %>
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true, linked: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true, linked: true %>
   </div>
 <% end %>
+
+<%# Directly under the cards: the moment after a reader has the answer they
+    came for is the one where asking costs them least. Across both columns,
+    so it reads as part of the dashboard rather than something dropped into
+    it. Outside the run check on purpose — the newsroom's email is worth
+    offering even before there's a forecast to show. %>
+<div class="mt-6">
+  <%= render "shared/subscription_form", source: "homepage", layout: "wide" %>
+</div>
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="national-environment">
   <h2 class="font-serif text-xl font-semibold text-slate-900">National environment</h2>
@@ -55,10 +64,6 @@
     </ul>
   </section>
 <% end %>
-
-<div class="mt-10 max-w-3xl border-t border-slate-200 pt-8">
-  <%= render "shared/subscription_form", source: "homepage" %>
-</div>
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="dashboard-dispatches">
   <div class="flex items-baseline justify-between">

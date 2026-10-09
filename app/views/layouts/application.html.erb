@@ -67,6 +67,11 @@
           <%= nav_link "Pollsters", pollsters_path %>
           <%= nav_link "Methodology", methodology_path %>
           <%= nav_link "About", about_path %>
+          <%# Not a page, so not a nav_link: it jumps to the footer's form,
+              which every page carries. Amber like the site's other links and
+              nothing louder — findable from the top of any page without
+              interrupting one. %>
+          <%= link_to "Subscribe", "#subscription-form-footer", class: "rounded px-2 py-1 text-amber-700 hover:text-amber-800" %>
         </nav>
 
         <%# The internals toggle. Off is the published forecast — independent
@@ -112,7 +117,7 @@
             <%= link_to "Privacy", privacy_path, class: "ml-2 font-medium text-amber-700 hover:text-amber-800" %>
           </p>
         </div>
-        <%= render "shared/subscription_form", source: "footer", compact: true %>
+        <%= render "shared/subscription_form", source: "footer", layout: "compact" %>
       </div>
     </footer>
   </body>
