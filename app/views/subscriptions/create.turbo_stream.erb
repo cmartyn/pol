@@ -3,7 +3,7 @@
     already holds and the flash would never render. %>
 <%= turbo_stream.replace "subscription-form-#{@source}" do %>
   <%= render "shared/subscription_form",
-        source: @source, compact: @compact, notice: @notice, alert: @alert %>
+        source: @source, layout: @layout, notice: @notice, alert: @alert %>
 <% end %>
 <% if @posthog_distinct_id.present? %>
   <%= turbo_stream.append "subscription-form-#{@source}" do %>

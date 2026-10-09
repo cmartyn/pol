@@ -5,7 +5,7 @@ gem "rails", "~> 8.1.3", ">= 8.1.3.1"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
+gem "pg", "~> 1.7"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
@@ -37,7 +37,7 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 2.1"
+gem "image_processing", "~> 2.2"
 # image_processing 2.0 made its backends opt-in. Active Storage's default
 # variant processor is vips, and the Dockerfile installs libvips.
 # require: false because Active Storage requires ruby-vips itself, rescuing
@@ -88,4 +88,4 @@ end
 gem "posthog-ruby", "~> 3.23"
 gem "posthog-rails", "~> 3.18"
 
-gem "rails_mind", "~> 0.1"
+gem "rails_mind", "~> 0.2.0"

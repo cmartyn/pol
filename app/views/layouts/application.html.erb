@@ -76,15 +76,39 @@
             lives in the header, not on any one chart. Hidden when JS is off:
             a control that could never do anything is worse than none, and
             the no-JS reader already has the published view. %>
-        <label class="hidden items-center gap-2 text-xs text-slate-600 [html[data-internals]_&]:flex"
-               data-controller="internals-toggle" data-testid="internals-toggle"
-               title="Include polls from partisan-aligned sponsors, adjusted toward the non-sponsor party and down-weighted — see Methodology.">
-          <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"
-                 data-action="internals-toggle#toggle">
-          <span class="relative h-4 w-7 shrink-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-amber-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-amber-600
-                       after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-3"></span>
-          <span class="whitespace-nowrap">Partisan internals</span>
-        </label>
+        <div class="flex items-center gap-x-6 max-sm:w-full max-sm:justify-between" data-controller="subscribe-dialog">
+          <label class="hidden items-center gap-2 text-xs text-slate-600 [html[data-internals]_&]:flex"
+                 data-controller="internals-toggle" data-testid="internals-toggle"
+                 title="Include polls from partisan-aligned sponsors, adjusted toward the non-sponsor party and down-weighted — see Methodology.">
+            <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"
+                   data-action="internals-toggle#toggle">
+            <span class="relative h-4 w-7 shrink-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-amber-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-amber-600
+                         after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-3"></span>
+            <span class="whitespace-nowrap">Partisan internals</span>
+          </label>
+
+          <%# Beside the toggle rather than in the nav: it isn't a page. As a
+              ninth nav item it pushed a phone's nav onto a third line; here it
+              takes the toggle row's spare width there and the header's right
+              edge on a desktop. It opens the form in a dialog
+              (subscribe_dialog_controller); the href is the no-JS fallback,
+              the footer's copy, which every page carries. %>
+          <%= link_to "Subscribe", "#subscription-form-footer", class: "rounded text-sm font-medium text-amber-700 hover:text-amber-800",
+                data: { action: "subscribe-dialog#open" } %>
+
+          <%# Unpadded so a click on the element itself is a backdrop click;
+              the wrapper inside carries the padding. The close button comes
+              after the form so showModal() focuses the email field first. %>
+          <dialog data-subscribe-dialog-target="dialog" data-action="click->subscribe-dialog#closeOnBackdrop"
+                  aria-labelledby="subscription-form-dialog-heading"
+                  class="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/40">
+            <div class="relative p-6">
+              <%= render "shared/subscription_form", source: "dialog", layout: "dialog" %>
+              <button type="button" data-action="subscribe-dialog#close" aria-label="Close"
+                      class="absolute right-3 top-3 rounded px-2 py-1 text-xl leading-none text-slate-400 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-amber-600">&times;</button>
+            </div>
+          </dialog>
+        </div>
       </div>
     </header>
 
@@ -112,7 +136,7 @@
             <%= link_to "Privacy", privacy_path, class: "ml-2 font-medium text-amber-700 hover:text-amber-800" %>
           </p>
         </div>
-        <%= render "shared/subscription_form", source: "footer", compact: true %>
+        <%= render "shared/subscription_form", source: "footer", layout: "compact" %>
       </div>
     </footer>
   </body>

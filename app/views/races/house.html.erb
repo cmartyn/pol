@@ -1,8 +1,10 @@
 <% content_for :title, "House · 535" %>
 
-<h1 class="font-serif text-3xl font-semibold text-slate-900">House</h1>
-<p class="mt-1 text-slate-600">All 435 districts.</p>
-<%= render "shared/as_of", time: @latest_run&.started_at %>
+<%= render layout: "shared/headline_row", locals: { source: "house" } do %>
+  <h1 class="font-serif text-3xl font-semibold text-slate-900">House</h1>
+  <p class="mt-1 text-slate-600">All 435 districts.</p>
+  <%= render "shared/as_of", time: @latest_run&.started_at %>
+<% end %>
 
 <%# Same chrome as /senate: the chamber summary card up top, and the same
     no-run empty state when there's nothing to show yet. %>

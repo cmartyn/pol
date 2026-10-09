@@ -33,6 +33,50 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The chamber pages are the main thing a reader goes to from here, and the
+  # card's only way in used to be its map — a link nothing on screen admitted
+  # to. The headline and a footer line now say where they go. The histogram
+  # stays outside both: it has its own pointer and arrow-key tooltip, which a
+  # surrounding link would swallow.
+  test "each dashboard card opens its chamber page from the headline and a footer link" do
+    get root_path
+
+    { "senate" => "Senate", "house" => "House" }.each do |chamber, title|
+      assert_select "[data-testid='chamber-card-#{chamber}']" do
+        assert_select "h2 a[data-testid='chamber-card-link'][href='/#{chamber}']", count: 1
+        assert_select "a[data-testid='chamber-card-cta'][href='/#{chamber}']", text: /Full #{title} forecast/, count: 1
+        assert_select "a [data-testid='seat-histogram-#{chamber}']", count: 0
+      end
+    end
+  end
+
+  # In the headline row, so it's above the fold on every phone and laptop —
+  # under the cards it was a screen or more down on all of them, because the
+  # cards and their maps fill the first screen. One in-page copy only; the
+  # footer's is the other.
+  test "the subscribe form sits in the headline row, ahead of the chamber cards" do
+    get root_path
+
+    body = response.body
+    headline = body.index("<h1")
+    form = body.index("id=\"subscription-form-homepage\"")
+    cards = body.index("data-testid=\"chamber-cards\"")
+
+    assert headline && form && cards
+    assert_operator headline, :<, form
+    assert_operator form, :<, cards
+    assert_select "main [data-testid='subscription-form']", count: 1
+    assert_select "#subscription-form-homepage[data-layout='inline'] input[type=email]", count: 1
+  end
+
+  test "the header links to the footer's subscribe form on every page" do
+    [ root_path, senate_path, methodology_path ].each do |path|
+      get path
+      assert_select "header a[href='#subscription-form-footer']", { text: "Subscribe", count: 1 }, "#{path} is missing the header link"
+      assert_select "footer #subscription-form-footer", { count: 1 }, "#{path} is missing the link's target"
+    end
+  end
+
   test "loads both forecast variants together for each dashboard card and map" do
     run = model_runs(:model_run_one)
     %i[senate_chamber_forecast house_chamber_forecast].each do |fixture|

@@ -1,7 +1,9 @@
 <% content_for :title, "535 — 2026 midterms forecast" %>
 
-<h1 class="font-serif text-3xl font-semibold text-slate-900">2026 midterms forecast</h1>
-<%= render "shared/as_of", time: @latest_run&.started_at %>
+<%= render layout: "shared/headline_row", locals: { source: "homepage" } do %>
+  <h1 class="font-serif text-3xl font-semibold text-slate-900">2026 midterms forecast</h1>
+  <%= render "shared/as_of", time: @latest_run&.started_at %>
+<% end %>
 
 <%= render "home/corpus_note", note: @corpus_note if @corpus_note.visible? %>
 
@@ -11,8 +13,8 @@
   </p>
 <% else %>
   <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true %>
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true, linked: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true, linked: true %>
   </div>
 <% end %>
 
@@ -55,10 +57,6 @@
     </ul>
   </section>
 <% end %>
-
-<div class="mt-10 max-w-3xl border-t border-slate-200 pt-8">
-  <%= render "shared/subscription_form", source: "homepage" %>
-</div>
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="dashboard-dispatches">
   <div class="flex items-baseline justify-between">
