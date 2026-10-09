@@ -8,6 +8,11 @@ class Forecast < ApplicationRecord
   belongs_to :model_run
   belongs_to :race
 
+  # Most competitive races first: the forecasts whose Democratic win
+  # probability sits closest to a coin flip. Arel.sql marks the ABS()
+  # expression as trusted, which Rails requires for a non-column ORDER BY.
+  scope :by_competitiveness, -> { order(Arel.sql("ABS(p_dem_win - 0.5)"), :race_id) }
+
   # Forecasts belonging to the most recently *succeeded* model run — the
   # numbers the public site should actually display. A subquery rather than
   # two round-trips, so it stays a single query no matter how many races are
