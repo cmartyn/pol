@@ -1,5 +1,6 @@
 RailsMind.configure do |config|
-  config.token = ENV["RAILS_MIND_KEY"] # Environment-scoped server credential. Never expose to browsers.
+  # Clear inherited credentials in tests; test traffic must never reach production.
+  config.token = Rails.env.test? ? nil : ENV["RAILS_MIND_KEY"]
 
   # Endpoint defaults to https://railsmind.com; RAILS_MIND_ENDPOINT overrides it.
   # Release is detected from hosting metadata or Rails.root/REVISION when available.
@@ -11,8 +12,10 @@ RailsMind.configure do |config|
   # config.analytics = false
   # config.flags = false
 
-  # Exception messages are omitted by default. Review before enabling.
-  # config.capture_exception_message = true
+  # Scrubbed exception messages and literal-free repeated-query shapes are sent
+  # by default. Disable either if the app needs a stricter collection policy.
+  # config.capture_exception_message = false
+  # config.capture_query_shapes = false
   # config.before_send = ->(event) { event } # Return nil to drop an event.
 end
 
