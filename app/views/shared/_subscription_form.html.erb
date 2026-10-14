@@ -1,35 +1,32 @@
-<%# The id is what the turbo_stream response targets. Both the footer copy
-    and an in-page copy render on the dashboard and on dispatch pages, so the
-    id has to name which one was submitted — see SubscriptionsController.
+<%# The id is what the turbo_stream response targets. A page can carry this
+    form and the footer at once, so the id names which copy was submitted.
+    See SubscriptionsController.
 
-    layout: "card" (the default) is the boxed block on dispatch pages;
-    "inline" is the dashboard's unboxed row beside the headline, kept to a
-    label and a field so it fits above the fold on every phone and laptop —
-    it leaves the unsubscribe and privacy line to the footer copy on the same
-    page; "compact" is the footer's unboxed, smaller copy; "dialog" is the
-    header link's modal, unboxed because the dialog is the box. It
-    round-trips as a hidden field so the reply re-renders the submitted copy
-    in the shape it left in.
+    layout round-trips as a hidden field so the reply redraws the submitted
+    copy in the shape it left in:
+      "card"  — the boxed close of a race or a dispatch
+      "band"  — the unboxed ask under the chamber figures
+      "inline"— a single row, kept for replies from a form rendered that way
+      "compact" — the footer
+      "dialog"  — the header modal; the dialog is already the box
 
-    No pitch under the heading. What a subscriber gets is what the site
-    already lists, and "every dispatch by email" says it — except on a race
-    page, whose reader came for one race and could fairly read it as every
-    dispatch about that one. The newsletter is every race, so there it says
-    so — and in the header's dialog, which opens over race pages too and
-    can't tell which page it's on. Keyed on source rather than passed in, so
-    the reply, which only knows the source, keeps the wording. %>
+    One promise on every copy. The dialog opens over any page and cannot
+    know which one, and a race reader could misread a vaguer line as "this
+    race only." The mail is still a published dispatch. %>
 <% layout = local_assigns.fetch(:layout, "card") %>
 <% inline = layout == "inline" %>
+<% on_card = layout == "card" %>
 <% notice = local_assigns[:notice] %>
 <% alert = local_assigns[:alert] %>
-<% heading_class = { "card" => "font-serif text-xl", "compact" => "font-serif text-lg", "inline" => "text-sm", "dialog" => "font-serif text-xl pr-8" }.fetch(layout, "font-serif text-xl") %>
-<% heading = %w[race dialog].include?(source) ? "Get every dispatch, on every race, by email" : "Get every dispatch by email" %>
+<% heading_class = { "card" => "font-serif text-xl", "band" => "font-serif text-xl", "compact" => "font-serif text-lg", "inline" => "text-sm", "dialog" => "font-serif text-xl pr-8" }.fetch(layout, "font-serif text-xl") %>
+<% support_class = on_card ? "text-amber-950" : "text-slate-600" %>
 <section id="subscription-form-<%= source %>" data-layout="<%= layout %>" data-testid="subscription-form"
-         class="<%= "rounded-lg border border-amber-200 bg-amber-50 p-5" if layout == "card" %>">
-  <h2 id="subscription-form-<%= source %>-heading" class="<%= heading_class %> font-semibold text-slate-900"><%= heading %></h2>
+         class="<%= "max-w-xl" if layout == "band" %> <%= "rounded-lg border border-amber-200 bg-amber-50 p-5" if on_card %>">
+  <h2 id="subscription-form-<%= source %>-heading" class="<%= heading_class %> font-semibold text-slate-900">The forecast, in your inbox</h2>
+  <p class="mt-1 text-sm <%= support_class %>" data-testid="subscription-promise">A dispatch when the numbers move.</p>
   <% if notice || alert %>
     <p role="<%= notice ? "status" : "alert" %>" data-testid="subscription-result"
-       class="mt-1 <%= layout == "card" ? "text-sm" : "text-xs" %> <%= notice ? "text-emerald-800" : "text-red-800" %>">
+       class="mt-1 text-sm <%= notice ? "text-emerald-800" : "text-red-800" %>">
       <%= notice || alert %>
     </p>
   <% else %>
@@ -51,7 +48,7 @@
   <% end %>
 
   <% unless inline %>
-    <p class="mt-2 text-sm text-slate-600">
+    <p class="mt-2 text-sm <%= support_class %>">
       Easy out anytime:
       <%= link_to "manage or unsubscribe", email_preferences_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
       See the <%= link_to "privacy note", privacy_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.

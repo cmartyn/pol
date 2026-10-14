@@ -50,16 +50,23 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # The forecast is the headline. The signup used to sit in the title row,
-  # which put a form beside the numbers and, on a phone, above them. The
-  # header dialog and the footer are the two copies every page shares.
-  test "the headline is the forecast, and the signup is the header dialog plus the footer" do
+  # The number is the headline. The ask follows both chamber cards, outside
+  # either card, and the header and footer keep the same promise.
+  test "the signup follows the chamber figures" do
     get root_path
 
     assert_select "h1", text: /2026 midterms forecast/
-    assert_select "main [data-testid='subscription-form']", count: 0
-    assert_select "footer #subscription-form-footer[data-layout='compact']", count: 1
-    assert_select "dialog #subscription-form-dialog[data-layout='dialog']", count: 1
+    assert_select "main #subscription-form-homepage[data-layout='band']", count: 1
+    assert_select "main #subscription-form-homepage h2", text: "The forecast, in your inbox"
+    assert_select "main #subscription-form-homepage [data-testid='subscription-promise']", text: "A dispatch when the numbers move."
+    assert_select "[data-testid='chamber-card-senate'] [data-testid='subscription-form']", count: 0
+    assert_select "[data-testid='chamber-card-house'] [data-testid='subscription-form']", count: 0
+    assert_select "footer #subscription-form-footer[data-layout='compact'] h2", text: "The forecast, in your inbox"
+    assert_select "dialog #subscription-form-dialog[data-layout='dialog'] h2", text: "The forecast, in your inbox"
+
+    body = response.body
+    assert_operator body.index("chamber-cards"), :<, body.index("subscription-form-homepage")
+    assert_operator body.index("subscription-form-homepage"), :<, body.index("national-environment")
   end
 
   test "the header links to the footer's subscribe form on every page" do

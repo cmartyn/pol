@@ -18,6 +18,13 @@
   </div>
 <% end %>
 
+<%# After the figures, and outside the cached chamber cards: one ask for
+    both chambers. A form inside either card would duplicate, and a cache
+    hit would skip rendering it. %>
+<div class="mt-8">
+  <%= render "shared/subscription_form", source: "homepage", layout: "band" %>
+</div>
+
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="national-environment">
   <h2 class="font-serif text-xl font-semibold text-slate-900">National environment</h2>
   <%= each_variant do |variant| %>

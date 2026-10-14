@@ -128,6 +128,12 @@
     </p>
   <% end %>
 
+  <%# The win probability and the margin are the figure. The ask is the
+      next thing, before the chart and the poll table. %>
+  <div class="mt-8 max-w-xl">
+    <%= render "shared/subscription_form", source: "race", layout: "card" %>
+  </div>
+
   <section class="mt-10">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Win probability over time</h2>
     <% timeline = Site::Charts::Timeline.build(race: @race) %>

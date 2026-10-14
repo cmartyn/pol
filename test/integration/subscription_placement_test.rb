@@ -1,32 +1,49 @@
 require "test_helper"
 
-# Where the email signup appears, page by page. The forecast is the headline,
-# so a reading page does not carry its own form. Subscribe lives in the header
-# dialog and the footer, which every public page renders. Pages that are about
-# managing an existing subscription, or about the legal terms of one, still
-# have the footer and the dialog — they just don't add a third form in the article.
+# Where the email signup appears. The ask follows a figure the reader came
+# for: under the chamber numbers, and after a race's margin or a dispatch.
+# Pages without that figure keep the header dialog and the footer. Every
+# copy makes the same promise, because the dialog cannot know which page
+# opened it.
 class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
-  READING_PAGES = %w[/ /senate /house /polls /pollsters /methodology /about /dispatches].freeze
+  FIGURE_BANDS = { "/" => "homepage", "/senate" => "senate", "/house" => "house" }.freeze
+  QUIET_PAGES = %w[/polls /pollsters /methodology /about /dispatches].freeze
 
-  test "reading pages keep the signup out of the article" do
-    paths = READING_PAGES + [ race_path(races(:senate_maine).slug), dispatch_path(dispatches(:maine_poll_reaction)) ]
-
-    paths.each do |path|
+  test "the ask follows the figure, with one promise" do
+    FIGURE_BANDS.each do |path, source|
       get path
       assert_response :success
+      assert_select "main #subscription-form-#{source}[data-layout='band']", { count: 1 }, path
+      assert_select "main #subscription-form-#{source} h2", text: "The forecast, in your inbox"
+      assert_select "main #subscription-form-#{source} [data-testid='subscription-promise']", text: "A dispatch when the numbers move."
+    end
 
+    get race_path(races(:senate_maine).slug)
+    assert_select "main #subscription-form-race[data-layout='card']", count: 1
+    body = response.body
+    assert_operator body.index("forecast-detail"), :<, body.index("subscription-form-race")
+    assert_operator body.index("subscription-form-race"), :<, body.index("Win probability over time")
+
+    get dispatch_path(dispatches(:maine_poll_reaction))
+    assert_select "main #subscription-form-dispatch[data-layout='card']", count: 1
+    body = response.body
+    assert_operator body.index("dispatch-sources"), :<, body.index("subscription-form-dispatch")
+  end
+
+  test "the dialog and the footer use the same promise" do
+    get race_path(races(:senate_maine).slug)
+    assert_select "#subscription-form-dialog h2", text: "The forecast, in your inbox"
+    assert_select "#subscription-form-dialog [data-testid='subscription-promise']", text: "A dispatch when the numbers move."
+    assert_select "footer #subscription-form-footer h2", text: "The forecast, in your inbox"
+  end
+
+  test "pages without a forecast figure keep the ask out of the article" do
+    QUIET_PAGES.each do |path|
+      get path
+      assert_response :success
       assert_select "main [data-testid='subscription-form']", { count: 0 }, "#{path} should not put a signup in the article"
       assert_select "footer #subscription-form-footer", { count: 1 }, "#{path} should keep the footer signup"
     end
-  end
-
-  # The header dialog opens over race pages too, and its reply can't know
-  # which page it's on — so it says every race everywhere. A reader who came
-  # for one race could otherwise hear "every dispatch" as every dispatch
-  # about that race.
-  test "the header dialog says the newsletter covers every race" do
-    get race_path(races(:senate_maine).slug)
-    assert_select "#subscription-form-dialog h2", text: /every race/
   end
 
   test "pages about managing or the terms of a subscription carry no in-page signup" do

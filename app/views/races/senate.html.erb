@@ -51,6 +51,12 @@
   <% end %>
 <% end %>
 
+<%# After the chamber summary and its map, before the race table. The
+    card partial is cached, so the form stays a sibling of that cache. %>
+<div class="mt-8">
+  <%= render "shared/subscription_form", source: "senate", layout: "band" %>
+</div>
+
 <%# The heaviest surface on this page — a 35-row table each pulling a
     forecast and poll stats — is cache-keyed on the run those forecasts come
     from, the sort/direction actually in effect (so a hit never serves a

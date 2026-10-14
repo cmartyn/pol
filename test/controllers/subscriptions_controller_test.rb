@@ -115,6 +115,7 @@ class SubscriptionsControllerTest < ActionDispatch::IntegrationTest
   # unknown layout falls back to the plain card rather than echoing input.
   test "the layout param is read as given, from the legacy compact flag, or not at all" do
     { { layout: "compact" } => "compact",
+      { layout: "band" } => "band",
       { compact: "true" } => "compact",
       { layout: "bogus" } => "card",
       {} => "card" }.each do |form_params, expected|
