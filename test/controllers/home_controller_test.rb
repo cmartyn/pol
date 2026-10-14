@@ -186,6 +186,9 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "[data-testid='movers-section']"
     assert_select "[data-testid='mover-row']", text: /now 62% Dem/
+    assert_select "[data-testid='mover-row']" do |rows|
+      rows.each { |row| assert_not_includes row["class"].to_s, "justify-between" }
+    end
   end
 
   test "shows an honest empty state for dispatches when none are published" do

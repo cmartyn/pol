@@ -30,6 +30,28 @@ class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
     assert_operator body.index("dispatch-sources"), :<, body.index("subscription-form-dispatch")
   end
 
+  test "each copy of the email field has its own id" do
+    get root_path
+
+    email_ids = css_select("input[type=email]").map { |node| node["id"] }
+    assert_equal email_ids.uniq, email_ids
+    assert_equal(
+      %w[subscriber_email_address_dialog subscriber_email_address_footer subscriber_email_address_homepage],
+      email_ids.sort
+    )
+    email_ids.each do |id|
+      assert_select "label[for='#{id}']", count: 1
+      assert_select "input##{id}[name='subscriber[email_address]']", count: 1
+    end
+    website_ids = css_select("input[name=website]").map { |node| node["id"] }
+    assert_equal website_ids.uniq, website_ids
+
+    get race_path(races(:senate_maine).slug)
+    race_ids = css_select("input[type=email]").map { |node| node["id"] }
+    assert_equal race_ids.uniq, race_ids
+    assert_includes race_ids, "subscriber_email_address_race"
+  end
+
   test "the dialog and the footer use the same promise" do
     get race_path(races(:senate_maine).slug)
     assert_select "#subscription-form-dialog h2", text: "The forecast, in your inbox"

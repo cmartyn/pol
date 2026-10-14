@@ -16,6 +16,14 @@
 <% layout = local_assigns.fetch(:layout, "card") %>
 <% inline = layout == "inline" %>
 <% on_card = layout == "card" %>
+<%# A page can render the dialog, a band or card, and the footer at once.
+    The field name stays subscriber[email_address] so the controller is
+    unchanged. The id includes the source, or every label points at the
+    first field and a screen reader cannot tell the copies apart. The
+    honeypot keeps the name "website" for the same reason, and takes its
+    own id. %>
+<% email_field_id = "subscriber_email_address_#{source}" %>
+<% website_field_id = "website_#{source}" %>
 <% notice = local_assigns[:notice] %>
 <% alert = local_assigns[:alert] %>
 <% heading_class = { "card" => "font-serif text-xl", "band" => "font-serif text-xl", "compact" => "font-serif text-lg", "inline" => "text-sm", "dialog" => "font-serif text-xl pr-8" }.fetch(layout, "font-serif text-xl") %>
@@ -37,11 +45,11 @@
       <%= hidden_field_tag :source, source %>
       <%= hidden_field_tag :layout, layout %>
       <div class="hidden" aria-hidden="true">
-        <%= label_tag :website, "Website" %>
-        <%= text_field_tag :website, nil, tabindex: -1, autocomplete: "off" %>
+        <%= label_tag website_field_id, "Website" %>
+        <%= text_field_tag :website, nil, id: website_field_id, tabindex: -1, autocomplete: "off" %>
       </div>
-      <%= form.label :email_address, "Email address", class: "sr-only" %>
-      <%= form.email_field :email_address, required: true, autocomplete: "email", placeholder: "you@example.com",
+      <%= form.label :email_address, "Email address", class: "sr-only", for: email_field_id %>
+      <%= form.email_field :email_address, id: email_field_id, required: true, autocomplete: "email", placeholder: "you@example.com",
             class: "min-h-11 min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-600 focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200" %>
       <%= form.submit "Subscribe", class: "min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" %>
     <% end %>

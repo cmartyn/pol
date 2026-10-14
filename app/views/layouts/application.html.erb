@@ -43,7 +43,14 @@
     </a>
 
     <header class="border-b border-slate-200 pt-[env(safe-area-inset-top)]">
-      <div class="container mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-1 px-5 py-2">
+      <%# From lg the bar is three columns: wordmark, nav, action. A wrapping
+          flex row with space-between drops the action to the start of the
+          next line once the nav no longer fits, which parks Subscribe under
+          the wordmark. The middle column can shrink, so the links wrap
+          inside it and Subscribe stays in the right column. Below lg the
+          bar stays a wrapping flex row: the nav takes its own line, and
+          Subscribe stays on the right of the toggle row. %>
+      <div class="container mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-1 px-5 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto]">
         <%# The stamp is beside the wordmark rather than inside the link: it
             dates the forecast, and a timestamp that navigates home when you
             click it is a small lie about what it is. %>
