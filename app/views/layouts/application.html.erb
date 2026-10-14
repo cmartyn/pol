@@ -43,18 +43,18 @@
     </a>
 
     <header class="border-b border-slate-200 pt-[env(safe-area-inset-top)]">
-      <%# From lg the bar is three columns: wordmark, nav, action. A wrapping
-          flex row with space-between drops the action to the start of the
-          next line once the nav no longer fits, which parks Subscribe under
-          the wordmark. The middle column can shrink, so the links wrap
-          inside it and Subscribe stays in the right column. Below lg the
-          bar stays a wrapping flex row: the nav takes its own line, and
-          Subscribe stays on the right of the toggle row. %>
-      <div class="container mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-1 px-5 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+      <%# Below md the three pieces stack, because the action cluster does not
+          fit beside the wordmark on a phone. From md through xl they share
+          the top row — wordmark at the left, Subscribe at the right — and
+          the links take the full width underneath. A three-column bar in
+          that range wraps the links: the container is still 1280px wide at
+          xl, and the action cluster leaves them about 40px short. One row
+          waits until 2xl, when the container is finally wide enough. %>
+      <div class="container mx-auto grid grid-cols-1 items-center gap-x-8 gap-y-1 px-5 py-2 md:grid-cols-[minmax(0,1fr)_auto] 2xl:grid-cols-[auto_minmax(0,1fr)_auto]">
         <%# The stamp is beside the wordmark rather than inside the link: it
             dates the forecast, and a timestamp that navigates home when you
             click it is a small lie about what it is. %>
-        <div class="flex items-baseline gap-2.5 shrink-0">
+        <div class="col-start-1 row-start-1 flex min-w-0 flex-wrap items-baseline gap-x-2.5">
           <%= link_to "535", root_path, class: "inline-flex min-h-11 items-center font-serif text-2xl font-semibold tracking-tight text-slate-900" %>
           <% if (run = latest_model_run) %>
             <span class="font-figure text-xs tracking-tight text-slate-600" data-testid="header-updated">
@@ -63,8 +63,12 @@
           <% end %>
         </div>
 
-        <nav class="flex w-full flex-wrap items-center gap-x-1 text-sm font-medium lg:w-auto" aria-label="Primary">
-          <div class="flex flex-wrap items-center">
+        <nav class="col-start-1 col-end-[-1] row-start-2 flex min-w-0 flex-wrap items-center gap-x-1 text-sm font-medium 2xl:col-start-2 2xl:col-end-3 2xl:row-start-1" aria-label="Primary">
+          <%# The groups stay in the markup so the reference links can take a
+              small inset once they share a line with the forecast links.
+              contents lets every link wrap in one row: a full-width group
+              was leaving Dispatches, then About, alone on a narrow phone. %>
+          <div class="contents">
             <%= nav_link "Dashboard", root_path %>
             <%= nav_link "Senate", senate_path %>
             <%= nav_link "House", house_path %>
@@ -72,8 +76,8 @@
           </div>
           <%# Polls before Pollsters: the corpus, then what the model does to
               it. Read the other way round the second link has no referent.
-              Quieter than the forecast links, and on its own line on a phone. %>
-          <div class="flex flex-wrap items-center max-lg:w-full lg:ml-2">
+              Quieter than the forecast links. %>
+          <div class="contents sm:[&>a:first-child]:ml-2">
             <%= nav_link "Polls", polls_path, quiet: true %>
             <%= nav_link "Pollsters", pollsters_path, quiet: true %>
             <%= nav_link "Methodology", methodology_path, quiet: true %>
@@ -88,7 +92,11 @@
             lives in the header, not on any one chart. Hidden when JS is off:
             a control that could never do anything is worse than none, and
             the no-JS reader already has the published view. %>
-        <div class="flex items-center gap-x-6 max-sm:w-full max-sm:justify-between" data-controller="subscribe-dialog">
+        <%# On its own row below md, sharing the top row from the right from
+            md up, and the last column of the one-line bar at 2xl. On a phone
+            the label and Subscribe take opposite ends of that row so the
+            subtitle can wrap without covering the action. %>
+        <div class="col-start-1 row-start-3 flex w-full items-center justify-end gap-x-6 max-sm:justify-between md:col-start-2 md:row-start-1 md:w-auto 2xl:col-start-3" data-controller="subscribe-dialog">
           <label class="hidden min-h-11 items-center gap-2 text-slate-600 [html[data-internals]_&]:flex"
                  data-controller="internals-toggle" data-testid="internals-toggle">
             <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"

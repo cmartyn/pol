@@ -74,6 +74,14 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
       get path
       assert_select "header a[href='#subscription-form-footer']", { text: "Subscribe", count: 1 }, "#{path} is missing the header link"
       assert_select "footer #subscription-form-footer", { count: 1 }, "#{path} is missing the link's target"
+      # Below md the pieces stack. From md through xl the wordmark and
+      # Subscribe share the top row and the links run underneath. One line
+      # waits until 2xl.
+      bar = css_select("header > div").first["class"]
+      assert_includes bar, "md:grid-cols-[minmax(0,1fr)_auto]"
+      assert_includes bar, "2xl:grid-cols-[auto_minmax(0,1fr)_auto]"
+      assert_not_includes bar, "lg:grid"
+      assert_includes css_select("header nav").first["class"], "2xl:col-start-2"
     end
   end
 
