@@ -21,10 +21,14 @@ class SubscriptionFormTest < ApplicationSystemTestCase
       assert_no_selector "input[type=email]"
     end
 
-    # A redirect would have reloaded the page and rebuilt both copies as forms.
-    # The dashboard's own copy still being a form is what proves the response
-    # replaced only the one submitted, in place.
-    assert_selector "#subscription-form-homepage input[type=email]"
+    # A redirect would have reloaded the page. Still being on the forecast,
+    # with the dialog's copy untouched, is what proves the response replaced
+    # only the footer form, in place.
+    assert_text "2026 midterms forecast"
+    # The dialog stays closed, with its own form intact. A turbo reply that
+    # matched the wrong id would have replaced this field with the footer's
+    # success message.
+    assert_selector "dialog:not([open]) #subscription-form-dialog input[type=email]", visible: :all
     assert_equal "reader@example.com", Subscriber.last.email_address
   end
 

@@ -30,13 +30,13 @@
   <%# The byline is a rule rather than another grey line of text: it is the
       boundary between what the piece claims and who claimed it, and this
       site's whole proposition is being straight about the second part. %>
-  <p class="mt-5 border-y border-slate-200 py-3 font-figure text-[10px] leading-relaxed tracking-tight text-slate-500" data-testid="dispatch-byline">
-    Written autonomously by <span class="font-medium text-slate-700"><%= @dispatch.model_slug.presence || "the newsroom" %></span>
+  <p class="mt-5 border-y border-slate-200 py-3 text-sm leading-relaxed text-slate-700" data-testid="dispatch-byline">
+    <%= dispatch_byline_text(@dispatch) %>
     <% if @dispatch.published_at %>
       &middot; <%= @dispatch.published_at.strftime("%B %-d, %Y at %-I:%M %p %Z") %>
     <% end %>
     <% if @dispatch.edited_at.present? %>
-      &middot; <span class="font-medium text-slate-700">Updated by the editor</span>
+      · <span class="font-medium">Updated by the editor</span>
       <%= @dispatch.edited_at.strftime("%B %-d, %Y") %>
     <% end %>
   </p>
@@ -78,13 +78,10 @@
       </p>
     <% end %>
 
-    <p class="mt-4 text-xs text-slate-500">
+    <p class="mt-4 text-sm text-slate-600">
       Every constant behind these numbers is on the
       <%= link_to "methodology page", methodology_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
     </p>
   </section>
 
-  <div class="mt-10">
-    <%= render "shared/subscription_form", source: "dispatch-show" %>
-  </div>
 </article>

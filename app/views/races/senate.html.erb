@@ -85,7 +85,7 @@
           scrolling there — same as before this page had sticky headers at
           all — beats a table that silently doesn't scroll sideways. %>
       <div class="mt-4 overflow-x-auto lg:overflow-x-visible">
-        <table class="w-full min-w-[820px] text-left text-sm" data-testid="senate-table">
+        <table class="stack-table w-full text-left text-sm lg:min-w-[820px]" data-testid="senate-table">
           <thead class="text-xs uppercase tracking-wide">
             <tr>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
@@ -100,7 +100,7 @@
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
                 <%= sort_header "Margin", "margin", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
               </th>
-              <th class="hidden sm:table-cell sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">Trend</th>
+              <th class="sticky top-0 z-10 hidden border-b border-slate-200 bg-white py-2 pr-3 font-medium lg:table-cell">Trend</th>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
                 <%= sort_header "Lean", "lean", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
               </th>
@@ -115,17 +115,17 @@
           <tbody class="divide-y divide-slate-100">
             <% rows.each do |row| %>
               <tr data-table-filter-target="row" data-search="<%= race_search_text(row.race) %>" data-testid="senate-race-row">
-                <td class="py-2.5 pr-3">
+                <td class="py-2.5 pr-3" data-role="name">
                   <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
-                  <% if row.race.special? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">special</span><% end %>
+                  <% if row.race.special? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">special</span><% end %>
                 </td>
-                <td class="py-2.5 pr-3 text-slate-700" data-testid="rating-word"><%= each_variant(tag_name: :span) do |variant|
+                <td class="py-2.5 pr-3 text-slate-700" data-role="meta" data-testid="rating-word"><%= each_variant(tag_name: :span) do |variant|
                   rating_word_for(row.race, variant == :incl_internals ? row.incl_forecast : row.forecast) || "—"
                 end %></td>
-                <td class="py-2.5 pr-3"><%= each_variant(tag_name: :span) do |variant|
+                <td class="py-2.5 pr-3" data-role="probability"><%= each_variant(tag_name: :span) do |variant|
                   probability_chip(variant == :incl_internals ? row.incl_forecast : row.forecast)
                 end %></td>
-                <td class="py-2.5 pr-3 font-semibold">
+                <td class="py-2.5 pr-3 font-semibold" data-label="Margin">
                   <%= each_variant(tag_name: :span) do |variant| %>
                     <% forecast = variant == :incl_internals ? row.incl_forecast : row.forecast %>
                     <% if forecast %>
@@ -137,11 +137,11 @@
                     <% end %>
                   <% end %>
                 </td>
-                <td class="py-2.5 pr-3 hidden sm:table-cell"><%= each_variant(tag_name: :span) do |variant| %><%= render "races/margin_bar", race: row.race, value: (variant == :incl_internals ? row.incl_forecast : row.forecast)&.mean_margin %><% end %></td>
+                <td class="hidden py-2.5 pr-3 lg:table-cell"><%= each_variant(tag_name: :span) do |variant| %><%= render "races/margin_bar", race: row.race, value: (variant == :incl_internals ? row.incl_forecast : row.forecast)&.mean_margin %><% end %></td>
               <%# The state's partisan lean — Senate's equivalent of the
                   2024 baseline /house shows, and the fundamentals half of
                   every blended mu. It went unshown here until now. %>
-              <td class="py-2.5 pr-3 whitespace-nowrap">
+              <td class="whitespace-nowrap py-2.5 pr-3" data-label="Lean">
                 <% if row.race.lean %>
                   <span class="font-medium <%= party_text_color(house_margin_party(row.race.lean)) %>">
                     <%= house_margin(row.race.lean) %>
@@ -150,8 +150,8 @@
                   <span class="text-slate-300">—</span>
                 <% end %>
               </td>
-                <td class="py-2.5 pr-3 text-slate-600"><%= row.poll_count %></td>
-                <td class="py-2.5 text-slate-600"><%= row.last_poll_date&.strftime("%b %-d, %Y") || "—" %></td>
+                <td class="py-2.5 pr-3 text-slate-600" data-label="Polls"><%= row.poll_count %></td>
+                <td class="py-2.5 text-slate-600" data-label="Last poll"><%= row.last_poll_date&.strftime("%b %-d, %Y") || "—" %></td>
               </tr>
             <% end %>
           </tbody>

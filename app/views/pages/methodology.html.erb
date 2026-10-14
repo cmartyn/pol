@@ -2,14 +2,13 @@
 
 <%= render layout: "shared/headline_row", locals: { source: "methodology" } do %>
   <h1 class="font-serif text-3xl font-semibold text-slate-900">Methodology</h1>
-  <p class="mt-2 max-w-2xl text-slate-600">
-    Every parameter this model uses lives in one file
-    (<code class="rounded bg-slate-100 px-1 py-0.5 text-sm">config/model_params.yml</code>) and is listed below,
-    with a citation where one exists. If a number isn't on this page, it isn't in the model.
+  <p class="mt-2 max-w-prose text-slate-600">
+    Every parameter this model uses is listed below, with a citation where one exists.
+    If a number isn't on this page, it isn't in the model.
   </p>
 <% end %>
 
-<section class="mt-10 max-w-3xl" id="how-it-works">
+<section class="mt-10 max-w-prose" id="how-it-works">
   <h2 class="font-serif text-xl font-semibold text-slate-900">How the forecast works</h2>
   <ol class="mt-4 list-decimal space-y-4 pl-5 text-slate-700">
     <li>
@@ -63,7 +62,7 @@
   </ol>
 </section>
 
-<section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="data-sources" data-testid="data-sources">
+<section class="mt-10 max-w-prose border-t border-slate-200 pt-8" id="data-sources" data-testid="data-sources">
   <h2 class="font-serif text-xl font-semibold text-slate-900">Where the data comes from</h2>
   <p class="mt-3 text-slate-700">
     Poll results come from
@@ -91,7 +90,7 @@
   </p>
 </section>
 
-<section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="internals" data-testid="internals-policy">
+<section class="mt-10 max-w-prose border-t border-slate-200 pt-8" id="internals" data-testid="internals-policy">
   <h2 class="font-serif text-xl font-semibold text-slate-900">Partisan internal polls, and the toggle</h2>
   <p class="mt-3 text-slate-700">
     About a quarter of the corpus is flagged as sponsored by a party-aligned client &mdash; campaigns,
@@ -108,7 +107,7 @@
   </p>
 </section>
 
-<section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="house-effects" data-testid="house-effects">
+<section class="mt-10 max-w-prose border-t border-slate-200 pt-8" id="house-effects" data-testid="house-effects">
   <h2 class="font-serif text-xl font-semibold text-slate-900">Pollster house effects, in plain language</h2>
   <p class="mt-3 text-slate-700">
     Some polling firms consistently show a race a point or two more Democratic, or more Republican, than
@@ -169,7 +168,7 @@
   </p>
 </section>
 
-<section class="mt-10 max-w-3xl border-t border-slate-200 pt-8" id="known-limitations" data-testid="limitations">
+<section class="mt-10 max-w-prose border-t border-slate-200 pt-8" id="known-limitations" data-testid="limitations">
   <h2 class="font-serif text-xl font-semibold text-slate-900">Known limitations</h2>
   <ul class="mt-4 list-disc space-y-3 pl-5 text-slate-700">
     <li>
@@ -193,8 +192,7 @@
         noise &mdash; so we don't claim a direction for it. (For scale: the House control probability was 93.3%
         on model run 19, 2026-08-12. That is a figure from one run, not a live reading &mdash; the current one is
         on the front page.) All of this is a much smaller gap than this page reported before 2026-08-12, when the
-        model had one correlated term instead of four; the arithmetic is in docs/BUILD_NOTES.md Phase 10 §C, and
-        the run behind the scale figure is in §H.
+        model had one correlated term instead of four.
       </span>
     </li>
     <li>
@@ -219,10 +217,8 @@
       the winner, rather than a real two-party result. These carry a small "est." marker on the House table.
     </li>
     <li>
-      <strong class="text-slate-900">Unsettled nominees.</strong> The Senate candidate list
-      (<code class="rounded bg-slate-100 px-1 py-0.5 text-sm">db/seed_data/senate_2026.yml</code>) is maintained
-      by hand, not scraped — re-running the seed task does not pick up a primary result; only editing that file
-      does.
+      <strong class="text-slate-900">Unsettled nominees.</strong> The Senate candidate list is maintained
+      by hand, not scraped — a primary result shows up here only after that list is edited.
       <% senate_unsettled_pct = @senate_count.zero? ? 0 : (100.0 * @senate_unsettled_count / @senate_count) %>
       <%= @senate_unsettled_count %> of <%= @senate_count %> Senate races
       (<%= number_to_percentage(senate_unsettled_pct, precision: 1) %>) are currently affected: where a party's
@@ -234,19 +230,19 @@
 
 <section class="mt-10">
   <h2 class="font-serif text-xl font-semibold text-slate-900">Every parameter</h2>
-  <p class="mt-1 text-slate-600">In file order, exactly as config/model_params.yml has them.</p>
+  <p class="mt-1 text-slate-600">In the order the model reads them.</p>
 
   <% @params.each do |section, keys| %>
     <div class="mt-8">
       <h3 class="text-base font-semibold text-slate-900"><%= section_title(section) %></h3>
       <div class="mt-2 overflow-x-auto">
-        <table class="w-full min-w-[480px] text-left text-sm" data-testid="param-table-<%= section %>">
+        <table class="stack-table w-full text-left text-sm lg:min-w-[480px]" data-testid="param-table-<%= section %>">
           <tbody class="divide-y divide-slate-100">
             <% keys.each do |key, value| %>
               <tr data-testid="param-row">
-                <td class="w-64 py-1.5 pr-3 align-top font-mono text-xs text-slate-500"><%= key %></td>
-                <td class="w-32 py-1.5 pr-3 align-top font-medium text-slate-900" data-testid="param-value"><%= param_value(value) %></td>
-                <td class="py-1.5 align-top text-xs text-slate-500" data-testid="param-citation">
+                <td class="w-64 py-1.5 pr-3 align-top font-mono text-xs text-slate-600" data-role="name"><%= key %></td>
+                <td class="w-32 py-1.5 pr-3 align-top font-medium text-slate-900" data-role="probability" data-testid="param-value"><%= param_value(value) %></td>
+                <td class="py-1.5 align-top text-xs text-slate-600" data-label="Source" data-testid="param-citation">
                   <% citations = Site::ParamCitations.for(section, key) %>
                   <% if citations.any? %>
                     <% citations.each do |citation| %>

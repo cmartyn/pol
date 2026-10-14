@@ -149,3 +149,109 @@ a[data-active] > .map-shape {
 .map-locator .map-highlight {
   stroke-width: 1.5px;
 }
+
+/* The forecast is read in a browser, so the parts the browser draws should
+   use the same amber as the links. */
+::selection {
+  background-color: #fde68a;
+  color: #0f172a;
+}
+
+/* ---------------------------------------------------------------------------
+   Wide tables below the lg breakpoint
+
+   Senate, House, polls, pollsters, and the methodology parameters are real
+   tables at lg and up, where the columns fit. Below that, a min-width plus
+   horizontal scroll put the race name and the win probability on opposite
+   ends of an 820px row. These rules restack each body row: the name and the
+   probability share the first line, and every other cell becomes a labeled
+   line. Sort links stay in the header as a wrapping row.
+
+   tr[hidden] must stay display:none. Author `display: grid` would otherwise
+   beat the hidden attribute, and the chamber search filter would show rows
+   it had just excluded.
+--------------------------------------------------------------------------- */
+@media (width < 64rem) {
+  table.stack-table {
+    min-width: 0;
+  }
+
+  table.stack-table thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+  }
+
+  table.stack-table thead th {
+    position: static;
+    border: 0;
+    background: transparent;
+    padding: 0.25rem 0;
+  }
+
+  table.stack-table tbody tr:not([hidden]):has(td) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.75rem;
+    row-gap: 0.2rem;
+    align-items: baseline;
+    padding: 0.75rem 0;
+  }
+
+  table.stack-table tbody tr[hidden] {
+    display: none;
+  }
+
+  table.stack-table tbody tr:has(th[colspan]) {
+    display: block;
+  }
+
+  /* :not(.hidden) — the trend column is display:none below lg, and an
+     author display here would beat that utility and put the bar back
+     in the stack. */
+  table.stack-table tbody td:not(.hidden),
+  table.stack-table tbody tr:has(th[colspan]) th {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    text-align: start;
+  }
+
+  table.stack-table td[data-role="name"] {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  table.stack-table td[data-role="meta"] {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  table.stack-table td[data-role="probability"] {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-self: end;
+    align-self: center;
+    text-align: end;
+  }
+
+  /* More specific than the display:block rule above, which would
+     otherwise leave the label and the value run together. */
+  table.stack-table tbody td[data-label]:not(.hidden) {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  table.stack-table td[data-label]::before {
+    content: attr(data-label);
+    flex: none;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+}

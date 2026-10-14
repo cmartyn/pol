@@ -6,7 +6,7 @@
     and moved every word OUT of the SVG: the strip stretches to any width
     (preserveAspectRatio="none" over a fixed pixel height), so text inside
     it would distort — labels live in absolutely-positioned HTML spans at
-    percentage offsets instead, and stay 11px at every size. Interactivity
+    percentage offsets instead, and stay 12px at every size. Interactivity
     is layered on by histogram_chart_controller, which reads only the
     prebuilt data-* strings below: the payload carries the words, the JS
     carries the geometry. %>
@@ -39,7 +39,7 @@
                     else
                       "left:#{(fraction * 100).round(2)}%;transform:translateX(-50%)"
                     end %>
-        <span class="text-slate-600" style="position:absolute;bottom:2px;white-space:nowrap;font-size:11px;<%= anchor %>"><%= payload[:majority_label] %></span>
+        <span class="text-slate-600" style="position:absolute;bottom:2px;white-space:nowrap;font-size:12px;<%= anchor %>"><%= payload[:majority_label] %></span>
       <% end %>
     </div>
 
@@ -77,7 +77,7 @@
       <% payload[:tick_seats].each do |seats| %>
         <% index = index_by_seats[seats] %>
         <% next unless index %>
-        <span class="font-figure text-slate-500 tabular-nums" style="position:absolute;top:2px;left:<%= (((index + 0.5) / n) * 100).round(2) %>%;transform:translateX(-50%);font-size:10px"><%= seats %></span>
+        <span class="font-figure text-slate-600 tabular-nums" style="position:absolute;top:2px;left:<%= (((index + 0.5) / n) * 100).round(2) %>%;transform:translateX(-50%);font-size:12px"><%= seats %></span>
       <% end %>
     </div>
   <% else %>
@@ -87,12 +87,11 @@
     </svg>
   <% end %>
 
-  <%# Figures in the figure face, prose left alone: the three readings are
-      numbers you check, the trailing sentence is a caption you read once. %>
-  <p class="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
-    <span class="font-figure text-xs font-bold tracking-tight text-blue-700"><%= Site::Format.percent(payload[:p_dem_control]) %> Dem control</span>
-    <span class="font-figure text-xs font-bold tracking-tight text-red-700"><%= Site::Format.percent(payload[:p_rep_control]) %> Rep control</span>
-    <span class="font-figure text-xs tracking-tight text-slate-500">mean <%= number_with_precision(payload[:mean_dem_seats], precision: 1) %> Dem-caucus seats</span>
-    <span class="text-xs text-slate-400">Dem-caucus seats per simulated world; dashed line = majority.</span>
+  <%# The control percentages are already the figures above this chart.
+      The caption only adds what the chart itself shows: the mean, and
+      what the dashed line is. %>
+  <p class="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-slate-600">
+    <span class="font-figure text-xs tracking-tight">mean <%= number_with_precision(payload[:mean_dem_seats], precision: 1) %> Dem-caucus seats</span>
+    <span class="text-xs">Dashed line marks a majority.</span>
   </p>
 </div>

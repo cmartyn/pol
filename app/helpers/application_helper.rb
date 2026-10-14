@@ -7,9 +7,16 @@ module ApplicationHelper
   end
   # A primary-nav link that marks itself current — aria-current is what
   # assistive tech reads; the underline is what everyone else sees.
-  def nav_link(label, path)
+  def nav_link(label, path, quiet: false)
     current = current_page?(path)
-    classes = current ? "rounded px-2 py-1 text-slate-900 underline decoration-amber-500 decoration-2 underline-offset-4" : "rounded px-2 py-1 text-slate-600 hover:text-slate-900"
+    tone = if current
+      "text-slate-900 underline decoration-amber-500 decoration-2 underline-offset-4"
+    elsif quiet
+      "text-slate-500 hover:text-slate-900"
+    else
+      "text-slate-700 hover:text-slate-900"
+    end
+    classes = "inline-flex min-h-11 items-center rounded px-2 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 #{tone}"
 
     link_to label, path, class: classes, aria: { current: current ? "page" : nil }
   end

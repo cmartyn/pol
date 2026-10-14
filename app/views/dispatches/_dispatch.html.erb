@@ -9,7 +9,7 @@
     contexts that also render this partial (the dashboard, a race page) the
     inner cap is simply a no-op. %>
 <article class="border-b border-slate-100 py-6 last:border-b-0" data-testid="dispatch-card">
- <div class="max-w-3xl">
+ <div class="max-w-prose">
   <div class="flex flex-wrap items-center gap-2 text-xs">
     <span class="rounded-full px-2 py-0.5 font-medium <%= dispatch_kind_color(dispatch.kind) %>" data-testid="dispatch-kind">
       <%= dispatch.kind.humanize %>
@@ -18,7 +18,7 @@
       <%= link_to dispatch.race.name, race_path(dispatch.race.slug), class: "font-medium text-amber-700 hover:text-amber-800" %>
     <% end %>
     <% if dispatch.published_at %>
-      <span class="text-slate-400"><%= dispatch.published_at.strftime("%b %-d, %Y") %></span>
+      <span class="text-slate-600"><%= dispatch.published_at.strftime("%b %-d, %Y") %></span>
     <% end %>
   </div>
 
@@ -51,8 +51,8 @@
           class: "text-sm font-medium text-amber-700 hover:text-amber-800" %>
   </p>
 
-  <p class="mt-2 font-figure text-[10px] tracking-tight text-slate-500" data-testid="dispatch-byline">
-    Written autonomously by <%= dispatch.model_slug.presence || "the newsroom" %><% if dispatch.edited_at.present? %> &middot; Updated by the editor<% end %>
+  <p class="mt-2 text-sm text-slate-700" data-testid="dispatch-byline">
+    <%= dispatch_byline_text(dispatch) %><% if dispatch.edited_at.present? %> · Updated by the editor<% end %>
   </p>
  </div>
 </article>

@@ -3,18 +3,18 @@
     is showing (its numbers are not in that view's average) and reads at
     full strength when the toggle brings internals in. %>
 <tr data-testid="poll-row" <%= "data-internal-poll" if poll.internal? %>>
-  <td class="py-2 pr-3 text-slate-700">
+  <td class="py-2 pr-3 text-slate-700" data-role="name">
     <%= poll.pollster.name %>
     <%= render "polls/sponsor_badge", poll: poll %>
   </td>
-  <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
+  <td class="whitespace-nowrap py-2 pr-3 text-slate-600" data-role="meta">
     <%= Site::Format.field_dates(poll.field_start, poll.field_end) %>
   </td>
-  <td class="py-2 pr-3 whitespace-nowrap text-slate-600">
+  <td class="whitespace-nowrap py-2 pr-3 text-slate-600" data-label="Sample">
     <%= poll.sample_size ? number_with_delimiter(poll.sample_size) : "n/a" %>
-    <span class="uppercase text-slate-400"><%= poll.population %></span>
+    <span class="uppercase text-slate-600"><%= poll.population %></span>
   </td>
-  <td class="py-2 pr-3 text-slate-700">
+  <td class="py-2 pr-3 text-slate-700" data-label="Results">
     <% poll.poll_results.sort_by { |result| -result.pct }.each do |result| %>
       <span class="mr-2 whitespace-nowrap">
         <%= result.candidate&.name || result.party.capitalize %>
@@ -22,17 +22,17 @@
       </span>
     <% end %>
   </td>
-  <td class="py-2 pr-3 whitespace-nowrap font-semibold">
+  <td class="whitespace-nowrap py-2 pr-3 font-semibold" data-role="probability">
     <% margin = poll_margin(poll, race) %>
     <% if margin %>
       <span class="<%= party_text_color(margin[:party]) %>"><%= margin[:label] %></span>
     <% else %>
-      <span class="text-slate-400">&mdash;</span>
+      <span class="text-slate-600">&mdash;</span>
     <% end %>
   </td>
   <%# What the model did to this poll before averaging it, so the arithmetic
       is visible rather than asserted. Blank where no effect was applied. %>
-  <td class="py-2 pr-3 whitespace-nowrap text-xs">
+  <td class="whitespace-nowrap py-2 pr-3 text-xs" data-label="House effect">
     <%# The adjusted margin is the number the model used, so it leads; the
         lean that produced it sits under it. Deliberately NOT written as
         "−R+1.6": a minus sign in front of an already-signed party label is
@@ -43,13 +43,13 @@
       <span data-testid="poll-adjustment"
             title="This pollster leans <%= adjustment[:effect] %> against the field; the model removes that before averaging.">
         <span class="font-semibold <%= party_text_color(adjustment[:adjusted_party]) %>"><%= adjustment[:adjusted] %></span>
-        <span class="block text-slate-400"><%= adjustment[:effect] %> lean removed</span>
+        <span class="block text-slate-600"><%= adjustment[:effect] %> lean removed</span>
       </span>
     <% else %>
       <span class="text-slate-300">&mdash;</span>
     <% end %>
   </td>
-  <td class="py-2">
+  <td class="py-2" data-label="Source">
     <%= safe_external_link(poll.source_url, "Source", class: "text-amber-700 hover:text-amber-800", target: "_blank",
                            rel: "noopener nofollow", data: { testid: "poll-source-link" }) %>
   </td>

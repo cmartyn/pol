@@ -8,8 +8,8 @@ module PagesHelper
     chambers: "Chamber control rules",
     simulation: "Simulation",
     election: "Election date",
-    newsroom: "Newsroom (Phase 5)",
-    scrape: "Data collection (Wikipedia fallback)",
+    newsroom: "Newsroom",
+    scrape: "Candidate and result collection",
     feed: "Poll feed (New York Times)",
     internals: "Partisan internal polls",
     site: "Site display rules"

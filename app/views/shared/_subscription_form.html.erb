@@ -45,13 +45,13 @@
       </div>
       <%= form.label :email_address, "Email address", class: "sr-only" %>
       <%= form.email_field :email_address, required: true, autocomplete: "email", placeholder: "you@example.com",
-            class: "min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200" %>
-      <%= form.submit "Subscribe", class: "rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" %>
+            class: "min-h-11 min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-600 focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-200" %>
+      <%= form.submit "Subscribe", class: "min-h-11 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" %>
     <% end %>
   <% end %>
 
   <% unless inline %>
-    <p class="mt-2 text-xs text-slate-500">
+    <p class="mt-2 text-sm text-slate-600">
       Easy out anytime:
       <%= link_to "manage or unsubscribe", email_preferences_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
       See the <%= link_to "privacy note", privacy_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.

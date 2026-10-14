@@ -105,7 +105,7 @@ class FullPipelineTest < ApplicationSystemTestCase
     assert_selector "[data-testid=dispatch-card]", count: 3
     within "[data-testid=dispatch-card]", text: REACTION_HEADLINE do
       assert_text "1,500 likely voters"
-      assert_text "Written autonomously by anthropic/claude-sonnet-5"
+      assert_text "Written by the newsroom · anthropic/claude-sonnet-5"
     end
     assert_selector "[data-testid=dispatch-card]", text: MOVEMENT_HEADLINE
 

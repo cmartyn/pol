@@ -1,63 +1,32 @@
 require "test_helper"
 
-# Where the email signup appears, page by page. The homepage proved the
-# headline row is the one place that clears the fold on every phone and
-# laptop; every page a reader lands on to read the forecast gets the same row,
-# with its own source so conversions can be told apart. Pages that are about
-# managing an existing subscription, or about the legal terms of one, don't.
+# Where the email signup appears, page by page. The forecast is the headline,
+# so a reading page does not carry its own form. Subscribe lives in the header
+# dialog and the footer, which every public page renders. Pages that are about
+# managing an existing subscription, or about the legal terms of one, still
+# have the footer and the dialog — they just don't add a third form in the article.
 class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
-  HEADLINE_SOURCES = {
-    "/" => "homepage",
-    "/senate" => "senate",
-    "/house" => "house",
-    "/polls" => "polls",
-    "/pollsters" => "pollsters",
-    "/methodology" => "methodology",
-    "/about" => "about",
-    "/dispatches" => "dispatches-index"
-  }.freeze
+  READING_PAGES = %w[/ /senate /house /polls /pollsters /methodology /about /dispatches].freeze
 
-  test "every reading page carries one inline signup, ahead of its first section" do
-    paths = HEADLINE_SOURCES.merge(race_path(races(:senate_maine).slug) => "race")
+  test "reading pages keep the signup out of the article" do
+    paths = READING_PAGES + [ race_path(races(:senate_maine).slug), dispatch_path(dispatches(:maine_poll_reaction)) ]
 
-    paths.each do |path, source|
+    paths.each do |path|
       get path
       assert_response :success
 
-      assert_select "main [data-testid='subscription-form']", { count: 1 }, "#{path} should carry exactly one in-page signup"
-      assert_select "main #subscription-form-#{source}[data-layout='inline'] input[type=email]", { count: 1 }, "#{path} should label its signup #{source}"
-
-      # Above the fold means above the page's own content: before its
-      # first section (the form is a section itself, so not that one), or
-      # the race page's forecast detail.
-      body = response.body
-      first_content = [ body.index(/<section(?![^>]*id="subscription-form-)/), body.index("data-testid=\"forecast-detail\"") ].compact.min
-      form = body.index("id=\"subscription-form-#{source}\"")
-      assert_operator form, :<, first_content, "#{path} puts its signup below the page's content" if first_content
+      assert_select "main [data-testid='subscription-form']", { count: 0 }, "#{path} should not put a signup in the article"
+      assert_select "footer #subscription-form-footer", { count: 1 }, "#{path} should keep the footer signup"
     end
   end
 
-  # The race page's reader came for one race, and the newsletter covers all
-  # of them. The heading has to say so rather than leave "every dispatch" to
-  # be read as every dispatch about this race.
-  test "the race page's signup says it covers every race" do
+  # The header dialog opens over race pages too, and its reply can't know
+  # which page it's on — so it says every race everywhere. A reader who came
+  # for one race could otherwise hear "every dispatch" as every dispatch
+  # about that race.
+  test "the header dialog says the newsletter covers every race" do
     get race_path(races(:senate_maine).slug)
-    assert_select "#subscription-form-race h2", text: /every race/
-    # The header dialog opens over race pages too, and its reply can't know
-    # which page it's on — so it says every race everywhere.
     assert_select "#subscription-form-dialog h2", text: /every race/
-
-    get senate_path
-    assert_select "#subscription-form-senate h2", text: "Get every dispatch by email"
-  end
-
-  test "a dispatch keeps its signup at the end of the article, not above the headline" do
-    dispatch = dispatches(:maine_poll_reaction)
-    get dispatch_path(dispatch)
-
-    assert_select "main [data-testid='subscription-form']", count: 1
-    assert_select "main #subscription-form-dispatch-show[data-layout='card']", count: 1
-    assert_operator response.body.index("data-testid=\"dispatch-headline\""), :<, response.body.index("id=\"subscription-form-dispatch-show\"")
   end
 
   test "pages about managing or the terms of a subscription carry no in-page signup" do

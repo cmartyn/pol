@@ -2,7 +2,7 @@
 <html>
   <head>
     <title><%= content_for(:title) || "535 — 2026 midterms forecast" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light">
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="<%= content_for(:description) || "An agent-powered forecast of the 2026 U.S. Senate and House elections: correlated Monte Carlo simulation, live polling, transparent methodology." %>">
@@ -42,31 +42,36 @@
       Skip to content
     </a>
 
-    <header class="border-b border-slate-200">
-      <div class="container mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-5 py-4">
+    <header class="border-b border-slate-200 pt-[env(safe-area-inset-top)]">
+      <div class="container mx-auto flex flex-wrap items-center justify-between gap-x-8 gap-y-1 px-5 py-2">
         <%# The stamp is beside the wordmark rather than inside the link: it
             dates the forecast, and a timestamp that navigates home when you
             click it is a small lie about what it is. %>
         <div class="flex items-baseline gap-2.5 shrink-0">
-          <%= link_to "535", root_path, class: "font-serif text-2xl font-semibold tracking-tight text-slate-900" %>
+          <%= link_to "535", root_path, class: "inline-flex min-h-11 items-center font-serif text-2xl font-semibold tracking-tight text-slate-900" %>
           <% if (run = latest_model_run) %>
-            <span class="hidden font-figure text-[10px] tracking-tight text-slate-400 sm:inline" data-testid="header-updated">
+            <span class="font-figure text-xs tracking-tight text-slate-600" data-testid="header-updated">
               <%= Site::Format.last_updated(run.started_at) %>
             </span>
           <% end %>
         </div>
 
-        <nav class="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm font-medium" aria-label="Primary">
-          <%= nav_link "Dashboard", root_path %>
-          <%= nav_link "Senate", senate_path %>
-          <%= nav_link "House", house_path %>
-          <%= nav_link "Dispatches", dispatches_path %>
+        <nav class="flex w-full flex-wrap items-center gap-x-1 text-sm font-medium lg:w-auto" aria-label="Primary">
+          <div class="flex flex-wrap items-center">
+            <%= nav_link "Dashboard", root_path %>
+            <%= nav_link "Senate", senate_path %>
+            <%= nav_link "House", house_path %>
+            <%= nav_link "Dispatches", dispatches_path %>
+          </div>
           <%# Polls before Pollsters: the corpus, then what the model does to
-              it. Read the other way round the second link has no referent. %>
-          <%= nav_link "Polls", polls_path %>
-          <%= nav_link "Pollsters", pollsters_path %>
-          <%= nav_link "Methodology", methodology_path %>
-          <%= nav_link "About", about_path %>
+              it. Read the other way round the second link has no referent.
+              Quieter than the forecast links, and on its own line on a phone. %>
+          <div class="flex flex-wrap items-center max-lg:w-full lg:ml-2">
+            <%= nav_link "Polls", polls_path, quiet: true %>
+            <%= nav_link "Pollsters", pollsters_path, quiet: true %>
+            <%= nav_link "Methodology", methodology_path, quiet: true %>
+            <%= nav_link "About", about_path, quiet: true %>
+          </div>
         </nav>
 
         <%# The internals toggle. Off is the published forecast — independent
@@ -77,14 +82,16 @@
             a control that could never do anything is worse than none, and
             the no-JS reader already has the published view. %>
         <div class="flex items-center gap-x-6 max-sm:w-full max-sm:justify-between" data-controller="subscribe-dialog">
-          <label class="hidden items-center gap-2 text-xs text-slate-600 [html[data-internals]_&]:flex"
-                 data-controller="internals-toggle" data-testid="internals-toggle"
-                 title="Include polls from partisan-aligned sponsors, adjusted toward the non-sponsor party and down-weighted — see Methodology.">
+          <label class="hidden min-h-11 items-center gap-2 text-slate-600 [html[data-internals]_&]:flex"
+                 data-controller="internals-toggle" data-testid="internals-toggle">
             <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"
                    data-action="internals-toggle#toggle">
             <span class="relative h-4 w-7 shrink-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-amber-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-amber-600
-                         after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-3"></span>
-            <span class="whitespace-nowrap">Partisan internals</span>
+                         after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-3" aria-hidden="true"></span>
+            <span class="leading-tight">
+              <span class="block text-sm font-medium text-slate-800">Partisan internals</span>
+              <span class="block text-xs font-normal text-slate-600">Includes partisan-sponsored polls, adjusted</span>
+            </span>
           </label>
 
           <%# Beside the toggle rather than in the nav: it isn't a page. As a
@@ -93,7 +100,8 @@
               edge on a desktop. It opens the form in a dialog
               (subscribe_dialog_controller); the href is the no-JS fallback,
               the footer's copy, which every page carries. %>
-          <%= link_to "Subscribe", "#subscription-form-footer", class: "rounded text-sm font-medium text-amber-700 hover:text-amber-800",
+          <%= link_to "Subscribe", "#subscription-form-footer",
+                class: "inline-flex min-h-11 items-center rounded px-2 text-sm font-medium text-amber-700 hover:text-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600",
                 data: { action: "subscribe-dialog#open" } %>
 
           <%# Unpadded so a click on the element itself is a backdrop click;
@@ -105,7 +113,7 @@
             <div class="relative p-6">
               <%= render "shared/subscription_form", source: "dialog", layout: "dialog" %>
               <button type="button" data-action="subscribe-dialog#close" aria-label="Close"
-                      class="absolute right-3 top-3 rounded px-2 py-1 text-xl leading-none text-slate-400 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-amber-600">&times;</button>
+                      class="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded text-xl leading-none text-slate-600 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-amber-600">&times;</button>
             </div>
           </dialog>
         </div>
@@ -122,7 +130,7 @@
       <%= yield %>
     </main>
 
-    <footer class="mt-24 border-t border-slate-200 py-10 text-sm text-slate-500">
+    <footer class="mt-24 border-t border-slate-200 py-10 pb-[max(2.5rem,env(safe-area-inset-bottom))] text-sm text-slate-600">
       <div class="container mx-auto grid gap-8 px-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
         <div class="max-w-2xl">
           <p>
@@ -130,7 +138,7 @@
             No secret sauce: every parameter this model uses is on the
             <%= link_to "methodology page", methodology_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
           </p>
-          <p class="mt-2 text-xs text-slate-400">
+          <p class="mt-2 text-sm text-slate-600">
             A project of <%= link_to "Appmakey LLC", "https://appmakey.com", class: "font-medium text-amber-700 hover:text-amber-800",
                                      target: "_blank", rel: "noopener" %>.
             <%= link_to "Privacy", privacy_path, class: "ml-2 font-medium text-amber-700 hover:text-amber-800" %>

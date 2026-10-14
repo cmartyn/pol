@@ -301,7 +301,7 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
   test "show renders a dispatch's byline, plain" do
     get race_path(races(:senate_maine).slug)
-    assert_select "[data-testid='dispatch-byline']", text: /Written autonomously by #{Regexp.escape(dispatches(:maine_poll_reaction).model_slug)}/
+    assert_select "[data-testid='dispatch-byline']", text: /Written by the newsroom · #{Regexp.escape(dispatches(:maine_poll_reaction).model_slug)}/
     assert_select "[data-testid='dispatch-byline']", text: /Updated by the editor/, count: 0
   end
 

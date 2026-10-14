@@ -50,23 +50,16 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # In the headline row, so it's above the fold on every phone and laptop —
-  # under the cards it was a screen or more down on all of them, because the
-  # cards and their maps fill the first screen. One in-page copy only; the
-  # footer's is the other.
-  test "the subscribe form sits in the headline row, ahead of the chamber cards" do
+  # The forecast is the headline. The signup used to sit in the title row,
+  # which put a form beside the numbers and, on a phone, above them. The
+  # header dialog and the footer are the two copies every page shares.
+  test "the headline is the forecast, and the signup is the header dialog plus the footer" do
     get root_path
 
-    body = response.body
-    headline = body.index("<h1")
-    form = body.index("id=\"subscription-form-homepage\"")
-    cards = body.index("data-testid=\"chamber-cards\"")
-
-    assert headline && form && cards
-    assert_operator headline, :<, form
-    assert_operator form, :<, cards
-    assert_select "main [data-testid='subscription-form']", count: 1
-    assert_select "#subscription-form-homepage[data-layout='inline'] input[type=email]", count: 1
+    assert_select "h1", text: /2026 midterms forecast/
+    assert_select "main [data-testid='subscription-form']", count: 0
+    assert_select "footer #subscription-form-footer[data-layout='compact']", count: 1
+    assert_select "dialog #subscription-form-dialog[data-layout='dialog']", count: 1
   end
 
   test "the header links to the footer's subscribe form on every page" do
@@ -112,6 +105,11 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
       %w[ME FL NY-17].each do |key|
         assert_select ".map-shape[data-key='#{key}'][style=?]", fills, count: 1
       end
+      # The homepage maps are previews. The key sits beside them, and outside
+      # the link, so a reader learns what a pale state means before opening
+      # the chamber.
+      assert_select "[data-testid='chamber-card-senate'] [data-testid='map-legend']", text: /tossups/
+      assert_select "[data-testid='chamber-card-senate'] a [data-testid='map-legend']", count: 0
 
       # Keep the reads inside the fragment so a hit does no forecast work.
       ActiveRecord::Base.connection.clear_query_cache
@@ -180,7 +178,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_select "[data-testid='movers-section']"
-    assert_select "[data-testid='mover-row']"
+    assert_select "[data-testid='mover-row']", text: /now 62% Dem/
   end
 
   test "shows an honest empty state for dispatches when none are published" do

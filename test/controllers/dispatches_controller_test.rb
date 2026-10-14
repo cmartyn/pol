@@ -63,7 +63,7 @@ class DispatchesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='dispatch-dek']", text: dispatch.dek
     # The feed truncates; the permalink is the place the whole piece exists.
     assert_select "[data-testid='dispatch-body']", text: /Cardinal Research found a tighter/
-    assert_select "[data-testid='dispatch-byline']", text: /#{Regexp.escape(dispatch.model_slug)}/
+    assert_select "[data-testid='dispatch-byline']", text: /Written by the newsroom · #{Regexp.escape(dispatch.model_slug)}/
   end
 
   # "Every number traceable back to where it came from" is the About page's

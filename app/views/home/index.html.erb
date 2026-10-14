@@ -44,13 +44,16 @@
     <p class="mt-1 text-sm text-slate-500">Biggest shifts in Democratic win probability, this run vs. about a week ago.</p>
     <ul class="mt-4 divide-y divide-slate-100">
       <% @movers.each do |mover| %>
-        <li class="flex items-center justify-between gap-4 py-2 text-sm" data-testid="mover-row">
+        <li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2 text-sm" data-testid="mover-row">
           <%= link_to mover.race.name, race_path(mover.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
           <%# Only the magnitude goes in the figure face — "pts toward Dem" is
-              prose, and setting the whole phrase in mono reads as a log line. %>
+              prose, and setting the whole phrase in mono reads as a log line.
+              The landing probability is the number the delta moved to, so a
+              reader does not have to open the race to know where it stands. %>
           <span class="whitespace-nowrap font-semibold <%= mover.direction == :dem ? "text-blue-700" : "text-red-700" %>">
             <span class="font-figure font-bold tracking-tight"><%= number_with_precision(mover.delta_pp.abs, precision: 1) %></span>
             pts toward <%= mover.direction == :dem ? "Dem" : "Rep" %>
+            <span class="font-normal text-slate-600">· now <%= Site::Format.percent(mover.latest_p_dem_win) %> Dem</span>
           </span>
         </li>
       <% end %>
@@ -63,7 +66,7 @@
     <h2 class="font-serif text-xl font-semibold text-slate-900">Latest dispatches</h2>
     <%= link_to "All dispatches →", dispatches_path, class: "text-sm font-medium text-amber-700 hover:text-amber-800" %>
   </div>
-  <div class="mt-2 max-w-3xl">
+  <div class="mt-2 max-w-prose">
     <% if @dispatches.any? %>
       <%= render partial: "dispatches/dispatch", collection: @dispatches, as: :dispatch, locals: { truncate: 200 } %>
     <% else %>
