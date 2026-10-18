@@ -5,6 +5,27 @@
     comparable with each other, and a reader scanning the margin column
     should be able to see why. %>
 <% groups = polls.group_by(&:matchup_key) %>
+<div data-controller="matchup-filter">
+<% if groups.size > 1 %>
+  <div class="mb-4">
+    <label for="poll-matchup" class="block text-sm font-medium text-slate-700">Candidate matchup</label>
+    <select id="poll-matchup" class="mt-1 w-full max-w-full rounded border border-slate-300 p-2 text-sm sm:w-auto"
+            aria-controls="race-poll-table" aria-describedby="poll-matchup-help"
+            data-matchup-filter-target="select" data-action="change->matchup-filter#filter">
+      <option value="">All matchups</option>
+      <% groups.values.each_with_index do |group, index| %>
+        <option value="<%= index %>"><%= group.first.matchup_heading %> · <%= pluralize(group.size, "poll") %></option>
+      <% end %>
+    </select>
+    <p id="poll-matchup-help" class="mt-2 text-xs text-slate-600">
+      Filters this polling table only. Forecast values and scatter-chart data remain unchanged.
+      Choose All matchups to restore every group.
+    </p>
+    <p class="mt-1 text-xs text-slate-600" role="status" data-matchup-filter-target="status">
+      Showing <%= pluralize(polls.size, "poll") %> across all matchups.
+    </p>
+  </div>
+<% end %>
 <% if polls.any?(&:internal?) %>
   <%# One line of provenance per view, swapped with the toggle: what this
       view's average did with the flagged rows below. %>
@@ -17,7 +38,7 @@
   </p>
 <% end %>
 <div class="overflow-x-auto">
-  <table class="stack-table w-full text-left text-sm lg:min-w-[760px]" data-testid="poll-table">
+  <table id="race-poll-table" class="stack-table w-full text-left text-sm lg:min-w-[760px]" data-testid="poll-table">
     <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
       <tr>
         <th class="py-2 pr-3 font-medium">Pollster</th>
@@ -32,9 +53,10 @@
         <th class="py-2 font-medium">Source</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
       <% if groups.size > 1 %>
-        <% groups.each do |key, group| %>
+        <% groups.each_with_index do |(key, group), index| %>
+          <tbody class="divide-y divide-slate-100" data-matchup-filter-target="group"
+                 data-group="<%= index %>" data-count="<%= group.size %>">
           <tr class="bg-slate-50" data-testid="poll-matchup-heading" data-matchup="<%= key %>">
             <th colspan="7" class="py-2 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <%= group.first.matchup_heading %>
@@ -47,11 +69,14 @@
           </tr>
           <%= render partial: "races/poll_row", collection: group, as: :poll,
                      locals: { race: race, house_effects: house_effects } %>
+          </tbody>
         <% end %>
       <% else %>
+        <tbody class="divide-y divide-slate-100">
         <%= render partial: "races/poll_row", collection: polls, as: :poll,
                    locals: { race: race, house_effects: house_effects } %>
+        </tbody>
       <% end %>
-    </tbody>
   </table>
+</div>
 </div>

@@ -205,6 +205,51 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='poll-table'] a[href='#{pollsters_path}']"
   end
 
+  test "polling table offers named matchup groups including missing and empty keys" do
+    race = races(:senate_maine)
+    race.polls.destroy_all
+    keys = [ "dem:ellis|rep:rivers", "dem:jones|rep:rivers", nil, "" ]
+    polls = keys.map.with_index do |key, index|
+      create_poll(pollster: pollsters(:beacon_polling), race: race,
+        field_end: Date.current - index, results: { dem: 51.0, rep: 45.0 }, matchup_key: key)
+    end
+
+    get race_path(race.slug)
+
+    assert_response :success
+    assert_select "label[for='poll-matchup']", text: "Candidate matchup"
+    assert_select "select#poll-matchup[aria-describedby='poll-matchup-help'][aria-controls='race-poll-table']" do
+      assert_select "option[value='']", text: "All matchups", count: 1
+      polls.each_with_index do |poll, index|
+        assert_select "option[value='#{index}']", text: "#{poll.matchup_heading} · 1 poll"
+      end
+    end
+    assert_select "#poll-matchup-help", text: /Filters this polling table only.*Forecast values and scatter-chart data remain unchanged/m
+    assert_select "[data-matchup-filter-target='status']", text: /Showing 4 polls across all matchups/
+    assert_select "#race-poll-table tbody[data-matchup-filter-target='group']", count: 4
+    assert_select "#race-poll-table tbody[hidden]", count: 0
+    assert_select "[data-testid='poll-matchup-heading']", count: 4
+    assert_select "[data-testid='earlier-matchup-tag']", count: 1
+    assert_select "[data-testid='poll-row']", count: 4
+    polls.each do |poll|
+      assert_select "a[data-testid='poll-source-link'][href='#{poll.source_url}']"
+    end
+  end
+
+  test "single matchup and unpolled pages omit the matchup selector" do
+    race = races(:senate_maine)
+    get race_path(race.slug)
+    assert_select "[data-testid='poll-row']", count: race.polls.count
+    assert_select "select#poll-matchup", count: 0
+
+    race.polls.destroy_all
+    race.touch
+    get race_path(race.slug)
+    assert_select "[data-testid='unpolled-empty-state']"
+    assert_select "select#poll-matchup", count: 0
+    assert_select "[data-testid='poll-table']", count: 0
+  end
+
   # A district whose polls measure contests that cannot all happen has polling
   # and no forecast-grade average. The page has to say both — hiding the polls
   # would be as dishonest as averaging them.
