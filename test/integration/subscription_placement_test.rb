@@ -1,10 +1,10 @@
 require "test_helper"
 
-# Where the email signup appears. The ask follows a figure the reader came
-# for: under the chamber numbers, and after a race's margin or a dispatch.
-# Pages without that figure keep the header dialog and the footer. Every
-# copy makes the same promise, because the dialog cannot know which page
-# opened it.
+# Where the email signup appears. The ask follows the forecast: below the
+# dashboard's dispatches and below a chamber's race table, and after a
+# race's margin or a dispatch. Pages without that figure keep the header
+# dialog and the footer. Every copy makes the same promise, because the
+# dialog cannot know which page opened it.
 class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
   FIGURE_BANDS = { "/" => "homepage", "/senate" => "senate", "/house" => "house" }.freeze
   QUIET_PAGES = %w[/polls /pollsters /methodology /about /dispatches].freeze
@@ -28,6 +28,14 @@ class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
     assert_select "main #subscription-form-dispatch[data-layout='card']", count: 1
     body = response.body
     assert_operator body.index("dispatch-sources"), :<, body.index("subscription-form-dispatch")
+
+    get senate_path
+    body = response.body
+    assert_operator body.index("table-filter"), :<, body.index("subscription-form-senate")
+
+    get house_path
+    body = response.body
+    assert_operator body.index("table-filter"), :<, body.index("subscription-form-house")
   end
 
   test "each copy of the email field has its own id" do

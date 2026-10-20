@@ -5,6 +5,17 @@
     miss every Cloudflare hit. %>
 <div hidden data-controller="analytics-event" data-analytics-event-name-value="race_viewed" data-analytics-event-properties-value="<%= { race_slug: @race.slug, race_state: @race.state, race_office: @race.office }.to_json %>"></div>
 
+<% back_path, back_name = if @race.house?
+     [ house_path, "House" ]
+   elsif @race.senate?
+     [ senate_path, "Senate" ]
+   else
+     [ root_path, "Dashboard" ]
+   end %>
+<%= link_to "Back to #{back_name}", back_path,
+      class: "mb-3 inline-flex min-h-11 items-center text-sm font-medium text-slate-700 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 xl:hidden",
+      data: { testid: "race-back" } %>
+
 <%# "Race page core" from the brief's Performance section: everything below
     is keyed on the race itself (candidates, slug, name — Rails turns @race
     into an id+updated_at key on its own), the run its forecast/timeline
