@@ -239,19 +239,54 @@ a[data-active] > .map-shape {
   }
 
   /* More specific than the display:block rule above, which would
-     otherwise leave the label and the value run together. */
+     otherwise leave the label and the value run together.
+
+     The label pushes the value to the far edge with an auto margin, not
+     space-between. A value is often more than one flex item: "1,196" and
+     "LV", or three candidates' results. space-between spread those pieces
+     across the row and pushed a fourth result past the edge. Packed to the
+     end and allowed to wrap, they stay together, and an extra line wraps
+     under them, aligned right. text-align follows, so a two-line value
+     such as a house effect over its lean is flush right on both lines.
+     Spacing between a cell's own pieces belongs on their leading side
+     (ml-2 first:ml-0 in the poll rows): a trailing margin lands at the end
+     of a wrapped line and pulls it off the edge. */
   table.stack-table tbody td[data-label]:not(.hidden) {
     grid-column: 1 / -1;
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: baseline;
+    column-gap: 0.5rem;
+    text-align: end;
   }
 
   table.stack-table td[data-label]::before {
     content: attr(data-label);
     flex: none;
+    margin-inline-end: auto;
+    padding-inline-end: 0.5rem;
     color: #475569;
     font-size: 0.75rem;
     font-weight: 500;
+  }
+}
+
+/* The app shell's top bar is sticky below xl, and from lg up the chamber
+   tables pin their column headers to the viewport. Without this offset the
+   header row slides underneath the bar. Below lg the stack-table rules
+   already set those cells to position: static, so only this band matters.
+   In it the bar is two lines: the controls, then the freshness stamp. */
+@media (width >= 64rem) and (width < 80rem) {
+  body:has(.app-tab-bar) table.stack-table thead th {
+    top: calc(env(safe-area-inset-top) + 5rem);
+  }
+}
+
+/* Hash jumps (More without JS, Subscribe without JS) land clear of the
+   fixed bottom bar. */
+@media (width < 80rem) {
+  html:has(.app-tab-bar) {
+    scroll-padding-bottom: calc(3.75rem + env(safe-area-inset-bottom));
   }
 }

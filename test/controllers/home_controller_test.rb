@@ -66,7 +66,8 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     body = response.body
     assert_operator body.index("chamber-cards"), :<, body.index("subscription-form-homepage")
-    assert_operator body.index("subscription-form-homepage"), :<, body.index("national-environment")
+    assert_operator body.index("national-environment"), :<, body.index("subscription-form-homepage")
+    assert_operator body.index("dashboard-dispatches"), :<, body.index("subscription-form-homepage")
   end
 
   test "the header links to the footer's subscribe form on every page" do
@@ -74,14 +75,15 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
       get path
       assert_select "header a[href='#subscription-form-footer']", { text: "Subscribe", count: 1 }, "#{path} is missing the header link"
       assert_select "footer #subscription-form-footer", { count: 1 }, "#{path} is missing the link's target"
-      # Below md the pieces stack. From md through xl the wordmark and
-      # Subscribe share the top row and the links run underneath. One line
-      # waits until 2xl.
+      # Below xl the public pages use the app shell. From xl to just under
+      # 2xl the wordmark and Subscribe share the top row and the links run
+      # underneath. One line waits until 2xl.
       bar = css_select("header > div").first["class"]
-      assert_includes bar, "md:grid-cols-[minmax(0,1fr)_auto]"
+      assert_includes bar, "xl:grid-cols-[minmax(0,1fr)_auto]"
       assert_includes bar, "2xl:grid-cols-[auto_minmax(0,1fr)_auto]"
       assert_not_includes bar, "lg:grid"
       assert_includes css_select("header nav").first["class"], "2xl:col-start-2"
+      assert_includes css_select("header nav").first["class"], "hidden"
     end
   end
 

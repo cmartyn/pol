@@ -18,13 +18,6 @@
   </div>
 <% end %>
 
-<%# After the figures, and outside the cached chamber cards: one ask for
-    both chambers. A form inside either card would duplicate, and a cache
-    hit would skip rendering it. %>
-<div class="mt-8">
-  <%= render "shared/subscription_form", source: "homepage", layout: "band" %>
-</div>
-
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="national-environment">
   <h2 class="font-serif text-xl font-semibold text-slate-900">National environment</h2>
   <%= each_variant do |variant| %>
@@ -35,7 +28,9 @@
       <span class="font-figure font-bold tracking-tight <%= environment.mean_margin.positive? ? "text-blue-700" : "text-red-700" %>">
         <%= Site::Format.margin(environment.mean_margin, side_a_party: "dem", side_b_party: "rep") %>
       </span>
-      <span class="text-sm text-slate-500">
+      <%# Its own line on a phone. Inline, the parenthetical broke after
+          "45-day" and the second line took the text-lg line height. %>
+      <span class="text-sm text-slate-500 max-sm:block">
         (<%= pluralize(environment.poll_count, "poll") %>, <%= environment.window_days %>-day window, as of today)
       </span>
     </p>
@@ -51,11 +46,14 @@
     <p class="mt-1 text-sm text-slate-500">Biggest shifts in Democratic win probability, this run vs. about a week ago.</p>
     <%# The race and the delta are one fact. space-between parked them at
         opposite edges of a wide row, so the landing probability could not
-        be read with the name. A short gap keeps the pair together; on a
-        narrow row the delta wraps under the name. %>
-    <ul class="mt-4 divide-y divide-slate-100">
+        be read with the name. From sm up the rows share one grid (subgrid),
+        so every delta starts at the same x a short gap after the longest
+        name, and the column reads down. On a phone the delta sits under the
+        name in every row, not only in the rows whose name was long enough
+        to wrap. %>
+    <ul class="mt-4 max-w-prose divide-y divide-slate-100 sm:grid sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-6">
       <% @movers.each do |mover| %>
-        <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2 text-sm" data-testid="mover-row">
+        <li class="flex flex-col gap-y-0.5 py-2 text-sm sm:col-span-2 sm:grid sm:grid-cols-subgrid sm:items-baseline" data-testid="mover-row">
           <%= link_to mover.race.name, race_path(mover.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
           <%# Only the magnitude goes in the figure face — "pts toward Dem" is
               prose, and setting the whole phrase in mono reads as a log line.
@@ -73,7 +71,10 @@
 <% end %>
 
 <section class="mt-10 border-t border-slate-200 pt-6" data-testid="dashboard-dispatches">
-  <div class="flex items-baseline justify-between">
+  <%# The same measure as the teasers under it, so "All dispatches" ends
+      where the column ends. Across the full container it sat about 600px
+      past the last line of text it belongs to. %>
+  <div class="flex max-w-prose items-baseline justify-between gap-4">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Latest dispatches</h2>
     <%= link_to "All dispatches →", dispatches_path, class: "text-sm font-medium text-amber-700 hover:text-amber-800" %>
   </div>
@@ -81,9 +82,14 @@
     <% if @dispatches.any? %>
       <%= render partial: "dispatches/dispatch", collection: @dispatches, as: :dispatch, locals: { truncate: 200 } %>
     <% else %>
-      <p class="text-slate-500" data-testid="dispatches-empty">
-        No dispatches published yet — the autonomous newsroom comes online in a later phase.
-      </p>
+      <p class="text-slate-500" data-testid="dispatches-empty">No dispatches published yet.</p>
     <% end %>
   </div>
 </section>
+
+<%# Below the forecast — the chamber pictures, what moved, the dispatches —
+    and outside the cached chamber cards. A form inside either card would
+    duplicate, and a cache hit would skip rendering it. %>
+<div class="mt-10">
+  <%= render "shared/subscription_form", source: "homepage", layout: "band" %>
+</div>
