@@ -85,7 +85,7 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem "posthog-ruby", "~> 3.23"
+gem "posthog-ruby", "~> 3.27"
 gem "posthog-rails", "~> 3.18"
 
 gem "rails_mind", "~> 0.3.1"
