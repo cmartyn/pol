@@ -1,6 +1,6 @@
 class ModelRun < ApplicationRecord
   enum :status, { running: 0, succeeded: 1, failed: 2 }
-  enum :trigger, { ingest: 0, manual: 1, cron: 2 }
+  enum :trigger, { ingest: 0, manual: 1, cron: 2, pollster_change: 3 }
 
   has_many :forecasts, dependent: :destroy
   has_many :chamber_forecasts, dependent: :destroy
@@ -11,6 +11,16 @@ class ModelRun < ApplicationRecord
   # ModelRun.succeeded.latest => succeeded runs, most recent first. Chain
   # .first to get the one run whose numbers the site should show.
   scope :latest, -> { order(started_at: :desc, id: :desc) }
+
+  def excluded_pollster_ids
+    Array(params_snapshot&.fetch("excluded_pollsters", [])).map { |pollster| pollster.fetch("id") }.sort
+  end
+
+  def pollster_exclusions_current?
+    # A newsroom job can wait on an API while another process excludes a
+    # firm. Its per-job query cache must not hide that committed change.
+    Pollster.uncached { excluded_pollster_ids == Pollster.excluded.order(:id).pluck(:id) }
+  end
 
   # The sponsor-lean discount this run applied to its incl_internals variant,
   # recorded in params_snapshot by Forecast::Runner. Falls back to the prior
@@ -47,9 +57,13 @@ class ModelRun < ApplicationRecord
     # races. Both the dashboard's movers module (Site::Movers) and the
     # newsroom's movement notes select their comparison run here, so the two
     # can never disagree about which run "last week" means.
+    # Only compare runs with the same exclusions: removing fabricated data
+    # changes the model's inputs and must not masquerade as voter movement.
     def comparison_run(run, window_days:)
       target = run.started_at - window_days.days
-      candidates = succeeded.where.not(id: run.id).to_a
+      candidates = succeeded.where.not(id: run.id).to_a.select do |candidate|
+        candidate.excluded_pollster_ids == run.excluded_pollster_ids
+      end
       return nil if candidates.empty?
 
       candidates.min_by { |candidate| (candidate.started_at - target).abs }

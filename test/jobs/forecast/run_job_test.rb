@@ -1,6 +1,33 @@
 require "test_helper"
 
 class Forecast::RunJobTest < ActiveJob::TestCase
+  test "a correction waits for an in-flight run instead of losing the exclusion" do
+    ModelRun.create!(status: :running, trigger: :cron, started_at: 1.minute.ago)
+
+    assert_enqueued_with(job: Forecast::RunJob, args: [ { trigger: :pollster_change } ], at: ->(at) { at > Time.current }) do
+      Forecast::RunJob.perform_now(trigger: :pollster_change)
+    end
+    assert_enqueued_jobs 0, only: Newsroom::MovementNotesJob
+  end
+
+  test "a failed correction is retried and never sent to the newsroom" do
+    failed = ModelRun.create!(status: :failed, trigger: :pollster_change, started_at: Time.current)
+    stubbing(Forecast::Runner, :call, failed) do
+      assert_enqueued_with(job: Forecast::RunJob, args: [ { trigger: :pollster_change } ]) do
+        Forecast::RunJob.perform_now(trigger: :pollster_change)
+      end
+    end
+    assert_enqueued_jobs 0, only: Newsroom::MovementNotesJob
+  end
+
+  test "a correction updates forecasts without presenting an editorial decision as voter movement" do
+    with_params(simulation: { n_sims: 100 }) do
+      run = Forecast::RunJob.perform_now(trigger: :pollster_change)
+      assert_predicate run, :succeeded?
+    end
+    assert_enqueued_jobs 0, only: [ Newsroom::PollReactionsJob, Newsroom::MovementNotesJob ]
+  end
+
   test "performing the job runs the model" do
     assert_difference "ModelRun.succeeded.count", 1 do
       Forecast::RunJob.perform_now(trigger: :ingest)

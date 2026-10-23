@@ -26,6 +26,8 @@
     Every query this page needs (forecast, poll list, timeline payload,
     polls-scatter payload, the dispatches feed) is built inside the block so
     a cache hit skips all of them, not just the rendering. %>
+<%= render "shared/forecast_exclusion_notice" %>
+
 <% cache [ "race-core", @race, @latest_run, @latest_dispatch, Site::CacheKey.collection_freshness(Boundary.all) ] do %>
   <%# Both internals views of the forecast render here; the header toggle
       picks one (VariantsHelper). The published row stands in when a

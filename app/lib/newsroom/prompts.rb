@@ -138,6 +138,8 @@ module Newsroom
         news is that a story has moved on, say what changed rather than repeating it. An entry marked
         "[RETRACTED by editor]" was pulled by a human after publication. Treat everything it claimed as
         withdrawn: do not re-assert it, do not restate it in different words, and do not refer to it.
+        An entry marked "[CITES EXCLUDED POLLSTER — do not repeat]" relied on a firm the editor has
+        excluded. Do not repeat its claims or use it as evidence for new coverage.
 
         UNCERTAINTY
         A probability is not a prediction. Write probabilities as our estimate of a chance, never as a

@@ -7,6 +7,9 @@
 <tr data-testid="poll-feed-row" data-poll-id="<%= poll.id %>" <%= "data-internal-poll" if poll.internal? %>>
   <td class="py-2 pr-3 text-slate-700" data-role="name">
     <%= poll.pollster.name %>
+    <% if poll.pollster.excluded? %>
+      <span class="ml-1 text-xs font-medium text-amber-800">Excluded</span>
+    <% end %>
     <%= render "polls/sponsor_badge", poll: poll %>
   </td>
   <td class="py-2 pr-3 text-slate-700" data-role="meta" data-testid="poll-feed-race">

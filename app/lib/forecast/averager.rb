@@ -43,8 +43,9 @@ class Forecast::Averager
   # their weight by internals.weight_factor. A sponsor aligned with neither
   # side (an IND-flagged poll of a D−R race) has no direction to shift
   # toward and takes only the weight penalty.
-  def initialize(as_of:, house_effects: {}, internals: :exclude, internals_shift: nil)
+  def initialize(as_of:, house_effects: {}, internals: :exclude, internals_shift: nil, excluded_pollster_ids: nil)
     @as_of = as_of.to_date
+    @excluded_pollster_ids = excluded_pollster_ids
     @house_effects = house_effects || {}
     @internals = internals.to_sym
     raise ArgumentError, "internals must be :exclude or :adjusted (#{internals.inspect})" unless %i[exclude adjusted].include?(@internals)
@@ -72,13 +73,13 @@ class Forecast::Averager
   # Defaults read the model corpus — the feed plus manual entries — never the
   # retired Wikipedia rows.
   def for_race(race, side_a: :dem, side_b: :rep, polls: nil)
-    call(polls: polls || race.polls.model_corpus.includes(:poll_results), side_a: side_a, side_b: side_b)
+    call(polls: polls || race.polls.model_corpus(excluded_pollster_ids).includes(:poll_results), side_a: side_a, side_b: side_b)
   end
 
   # The national environment: the same machinery over generic-ballot polls,
   # whose results carry a party but no candidate.
   def for_generic_ballot(polls: nil)
-    call(polls: polls || Poll.model_corpus.for_generic_ballot.includes(:poll_results))
+    call(polls: polls || Poll.model_corpus(excluded_pollster_ids).for_generic_ballot.includes(:poll_results))
   end
 
   def call(polls:, side_a: :dem, side_b: :rep)
@@ -91,7 +92,7 @@ class Forecast::Averager
     # reports — the race page's "N polls, M skipped" describes the corpus the
     # variant actually read.
     in_hand = polls.select do |poll|
-      poll.field_end.present? && poll.field_end <= as_of &&
+      !excluded_pollster_ids.include?(poll.pollster_id) && poll.field_end.present? && poll.field_end <= as_of &&
         (@internals == :adjusted || !poll.internal?)
     end
 
@@ -216,6 +217,10 @@ class Forecast::Averager
   end
 
   private
+    def excluded_pollster_ids
+      @excluded_pollster_ids ||= Pollster.excluded.pluck(:id)
+    end
+
     # ["achilles vs risch"] — the distinct contests these polls measured,
     # named on the two sides being compared and nobody else. Montana's
     # two-way and three-way Bankhead-vs-Alme tables are one contest with a
@@ -237,6 +242,8 @@ class Forecast::Averager
     # stronger one. A poll that never asked about one of the two sides is not
     # evidence about this matchup and returns nil.
     def measure(poll, side_a, side_b)
+      return nil if excluded_pollster_ids.include?(poll.pollster_id)
+
       # A poll fought against "Generic Republican" measured the party, not the
       # nominee, and its margin is not a reading of this contest. The parser
       # refuses those tables now; four rows predate the guard and are still in

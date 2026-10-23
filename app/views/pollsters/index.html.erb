@@ -37,13 +37,29 @@
     freshness, so a new poll for a pollster with no estimate still changes
     the page. Site::PollsterTable.build's three queries live inside the
     block so a cache hit skips them. %>
-<% cache [ "pollster-table", @latest_run, Site::CacheKey.collection_freshness(Poll.model_corpus) ] do %>
+<% cache [ "pollster-table", @latest_run, Site::CacheKey.collection_freshness(Poll.model_corpus),
+           Site::CacheKey.timestamp(Pollster.maximum(:updated_at)) ] do %>
   <% rows = Site::PollsterTable.build(model_run: @latest_run) %>
   <% estimated = rows.count(&:estimated?) %>
+  <% excluded_pollsters = Pollster.excluded.order(:name) %>
+
+  <% if excluded_pollsters.any? %>
+    <section class="mt-8" data-testid="excluded-pollsters">
+      <h2 class="font-serif text-xl font-semibold text-slate-900">Excluded pollsters</h2>
+      <p class="mt-2 max-w-prose text-sm text-slate-600">These firms' polls are excluded from both forecast variants and from the adjustments estimated for other pollsters. Their records remain available below.</p>
+      <% excluded_pollsters.each do |pollster| %>
+        <div class="mt-4">
+          <h3 class="mb-2 font-semibold"><%= link_to pollster.name, pollster_path(pollster), class: "text-amber-700 underline underline-offset-2" %></h3>
+          <%= render "exclusion", pollster: pollster %>
+          <%= link_to "View archived polls", pollster_path(pollster), class: "mt-2 inline-block text-sm text-amber-700 hover:text-amber-800" %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
 
   <% if rows.empty? %>
     <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="pollsters-empty">
-      No polls have been collected yet, so there are no pollsters to rate.
+      <%= excluded_pollsters.any? ? "No included polls are available." : "No polls have been collected yet, so there are no pollsters to rate." %>
     </p>
   <% else %>
     <% if estimated.zero? %>

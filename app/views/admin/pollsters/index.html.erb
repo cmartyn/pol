@@ -1,0 +1,22 @@
+<% content_for :title, "Pollsters · Admin · 535" %>
+
+<h1 class="font-serif text-2xl font-semibold text-slate-900">Pollsters</h1>
+<p class="mt-1 max-w-prose text-sm text-slate-600">Exclude a firm when its polls should no longer inform the forecast. Its records stay available, and you can reinstate it here.</p>
+
+<div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white p-5">
+  <table class="w-full text-left text-sm">
+    <thead class="border-b border-slate-200 text-xs uppercase text-slate-500">
+      <tr><th class="py-2 font-medium">Pollster</th><th class="py-2 font-medium">Polls</th><th class="py-2 font-medium">Status</th><th class="py-2 font-medium">Reason</th></tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @pollsters.each do |pollster| %>
+        <tr data-testid="admin-pollster-row">
+          <td class="py-3 pr-4"><%= link_to pollster.name, edit_admin_pollster_path(pollster), class: "font-medium text-slate-900 underline underline-offset-2" %></td>
+          <td class="py-3 pr-4"><%= number_with_delimiter(@poll_counts.fetch(pollster.id, 0)) %></td>
+          <td class="py-3 pr-4 <%= pollster.excluded? ? 'text-red-700' : 'text-slate-600' %>"><%= pollster.excluded? ? "Excluded" : "Included" %></td>
+          <td class="py-3 text-slate-600"><%= pollster.exclusion_reason %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

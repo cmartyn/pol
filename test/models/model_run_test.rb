@@ -1,6 +1,16 @@
 require "test_helper"
 
 class ModelRunTest < ActiveSupport::TestCase
+  test "movement comparisons do not cross a change in excluded pollsters" do
+    latest = model_runs(:model_run_one)
+    latest.update!(params_snapshot: { "excluded_pollsters" => [ { "id" => pollsters(:beacon_polling).id } ] })
+    ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 7.days.before(latest.started_at))
+    assert_nil ModelRun.comparison_run(latest, window_days: 7)
+
+    comparable = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: 1.day.before(latest.started_at), params_snapshot: latest.params_snapshot)
+    assert_equal comparable, ModelRun.comparison_run(latest, window_days: 7)
+  end
+
   test "status enum round-trips every value" do
     ModelRun.statuses.each_key do |value|
       run = ModelRun.new(status: value)

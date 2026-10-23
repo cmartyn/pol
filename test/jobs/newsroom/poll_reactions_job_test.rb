@@ -17,6 +17,26 @@ class Newsroom::PollReactionsJobTest < ActiveJob::TestCase
     dispatch_json(cited_poll_ids: ids)
   end
 
+  test "queued poll ids are filtered again after a pollster is excluded" do
+    pollsters(:beacon_polling).update!(excluded: true, exclusion_reason: "Withdrawn")
+    @run.update!(params_snapshot: @run.params_snapshot.merge("excluded_pollsters" => Pollster.exclusion_snapshot))
+    kept = polls(:maine_poll_two)
+    stub_openrouter(good_draft([ kept.id ]))
+
+    assert_difference "Dispatch.count", 1 do
+      with_api_key { perform }
+    end
+    assert_equal [ kept.id ], Dispatch.recent_first.first.cited_poll_ids
+  end
+
+  test "a queued sweep containing only excluded polls never calls the writer" do
+    pollsters(:beacon_polling).update!(excluded: true, exclusion_reason: "Withdrawn")
+    assert_no_difference "Dispatch.count" do
+      with_api_key { perform(poll_ids: [ polls(:maine_poll_one).id ]) }
+    end
+    assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
+  end
+
   test "one reaction per race that got polls, citing that race's polls" do
     florida_poll = create_poll(pollster: pollsters(:beacon_polling), race: @other_race,
                                field_end: Date.current, sample_size: 700, results: { dem: 45.0, rep: 47.0 })

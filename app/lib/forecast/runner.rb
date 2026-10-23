@@ -92,7 +92,7 @@ class Forecast::Runner
     # Both merges build new hashes — Pol::Params.to_h is memoized per process
     # and must not be mutated.
     def effective_params
-      snapshot = Pol::Params.to_h
+      snapshot = Pol::Params.to_h.merge(excluded_pollsters: Pollster.exclusion_snapshot)
       return snapshot unless @n_sims
 
       snapshot.merge(simulation: snapshot.fetch(:simulation).merge(n_sims: @n_sims))
@@ -125,8 +125,8 @@ class Forecast::Runner
       # described in Forecast::HouseEffects. Estimated once, on the
       # internals-excluded corpus, and applied in both variants; the
       # internals shift is likewise one number per run.
-      @house_effects = Forecast::HouseEffects.call(as_of: as_of)
-      @internals_estimate = Forecast::Internals.estimate(as_of: as_of)
+      @house_effects = Forecast::HouseEffects.call(as_of: as_of, excluded_pollster_ids: model_run.excluded_pollster_ids)
+      @internals_estimate = Forecast::Internals.estimate(as_of: as_of, excluded_pollster_ids: model_run.excluded_pollster_ids)
 
       # The default variant first, computed exactly as a run always computed:
       # same averager construction, same race order, its own simulator on the
@@ -164,7 +164,8 @@ class Forecast::Runner
     def compute_variant(internals:)
       averager = Forecast::Averager.new(
         as_of: as_of, house_effects: @house_effects.lookup,
-        internals: internals, internals_shift: @internals_estimate.shift
+        internals: internals, internals_shift: @internals_estimate.shift,
+        excluded_pollster_ids: model_run.excluded_pollster_ids
       )
       generic_ballot = averager.for_generic_ballot(polls: generic_polls)
       national_env = national_environment(generic_ballot)
@@ -214,11 +215,11 @@ class Forecast::Runner
     end
 
     def race_polls
-      @race_polls ||= Poll.model_corpus.where(race_id: races.map(&:id)).includes(:poll_results).group_by(&:race_id)
+      @race_polls ||= Poll.model_corpus(model_run.excluded_pollster_ids).where(race_id: races.map(&:id)).includes(:poll_results).group_by(&:race_id)
     end
 
     def generic_polls
-      @generic_polls ||= Poll.model_corpus.for_generic_ballot.includes(:poll_results).to_a
+      @generic_polls ||= Poll.model_corpus(model_run.excluded_pollster_ids).for_generic_ballot.includes(:poll_results).to_a
     end
 
     # In the run's own transaction, alongside the forecasts they produced, so

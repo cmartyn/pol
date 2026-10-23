@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_193439) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -312,6 +312,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_193439) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "nyt_pollster_id"
+    t.datetime "excluded_at"
+    t.text "exclusion_reason"
+    t.string "exclusion_source_url"
     t.index ["nyt_pollster_id"], name: "index_pollsters_on_nyt_pollster_id", unique: true
     t.index ["slug"], name: "index_pollsters_on_slug", unique: true
   end

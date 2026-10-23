@@ -20,13 +20,27 @@ class Forecast::RunJob < ApplicationJob
   def perform(trigger: :ingest, poll_ids: [])
     model_run = Forecast::Runner.call(trigger: trigger)
 
+    if trigger.to_sym == :pollster_change && model_run&.failed?
+      retry_job wait: 1.minute
+      return model_run
+    end
+
     # In production the runner records a failure on the run row and returns
     # rather than raising, so a failed run must not be mistaken for a fresh
     # forecast worth writing about.
-    Newsroom.after_model_run!(model_run, poll_ids: poll_ids) if model_run&.succeeded?
+    if model_run&.succeeded? && model_run.pollster_exclusions_current? && !model_run.pollster_change?
+      Newsroom.after_model_run!(model_run, poll_ids: poll_ids)
+    end
 
     model_run
   rescue Forecast::Runner::AlreadyRunning => error
+    # The in-flight run may have read the pollster before the exclusion.
+    # This corrective run must wait its turn, never silently step aside.
+    if trigger.to_sym == :pollster_change
+      retry_job wait: 30.seconds
+      return nil
+    end
+
     Rails.logger.info("Forecast::RunJob: #{error.message}; skipping this #{trigger} run")
     nil
   end

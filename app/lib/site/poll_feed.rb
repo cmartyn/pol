@@ -31,8 +31,8 @@ module Site
       def next_page = page < pages ? page + 1 : nil
     end
 
-    def self.build(page:, per_page: PER_PAGE)
-      new(page: page, per_page: per_page).build
+    def self.build(page:, per_page: PER_PAGE, scope: Poll.model_corpus)
+      new(page: page, per_page: per_page, scope: scope).build
     end
 
     # A page number from whatever the query string held. Rack hands over an
@@ -50,9 +50,10 @@ module Site
       [ (total.to_f / per_page).ceil, 1 ].max
     end
 
-    def initialize(page:, per_page: PER_PAGE)
+    def initialize(page:, per_page: PER_PAGE, scope: Poll.model_corpus)
       @per_page = per_page
       @page = self.class.normalize_page(page)
+      @scope = scope
     end
 
     def build
@@ -62,7 +63,7 @@ module Site
 
     private
       def scope
-        Poll.model_corpus
+        @scope
       end
 
       def days_for

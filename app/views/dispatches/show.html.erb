@@ -2,6 +2,16 @@
 <% content_for :description, @dispatch.dek.presence || truncate(@dispatch.body_markdown, length: 155, separator: " ") %>
 
 <article class="max-w-2xl" data-testid="dispatch-article" data-controller="analytics-event" data-analytics-event-name-value="dispatch_viewed" data-analytics-event-properties-value="<%= { dispatch_id: @dispatch.id, dispatch_kind: @dispatch.kind, race_slug: @dispatch.race&.slug }.compact.to_json %>">
+  <% excluded_pollsters = @cited_polls.map(&:pollster).select(&:excluded?).uniq(&:id) %>
+  <% if excluded_pollsters.any? %>
+    <aside class="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" data-testid="dispatch-excluded-pollster">
+      This dispatch cites polls from a firm that has since been excluded from the forecast:
+      <% excluded_pollsters.each do |pollster| %>
+        <%= link_to pollster.name, pollster_path(pollster), class: "underline" %>.
+      <% end %>
+      See the pollster record for the reason and archived polls.
+    </aside>
+  <% end %>
   <p class="text-sm">
     <%= link_to "← All dispatches", dispatches_path, class: "font-medium text-amber-700 hover:text-amber-800" %>
   </p>
