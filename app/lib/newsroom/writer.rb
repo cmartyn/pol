@@ -34,6 +34,8 @@ module Newsroom
     attr_reader :kind, :payload, :race, :model_run, :model_key, :logger
 
     def call
+      return exclusion_skip if exclusion_blocks_publication?
+
       client = Client.new(model_key, instructions: Prompts.system_prompt(kind), schema: Prompts::SCHEMA)
       errors = nil
 
@@ -57,6 +59,9 @@ module Newsroom
       end
 
       def published(reply)
+        # The editor can exclude a pollster while the API request is in flight.
+        return exclusion_skip if exclusion_blocks_publication?
+
         dispatch = Dispatch.create!(
           kind: kind,
           race: race,
@@ -98,6 +103,17 @@ module Newsroom
         Result.new(skip: NewsroomSkip.record!(
           kind: kind, race: race, reason: reason, detail: detail, payload: payload, logger: logger
         ))
+      end
+
+      def exclusion_blocks_publication?
+        Poll.uncached do
+          (model_run && !model_run.pollster_exclusions_current?) ||
+            Poll.where(id: citable_poll_ids, pollster_id: Pollster.excluded.select(:id)).exists?
+        end
+      end
+
+      def exclusion_skip
+        skipped(:pollster_excluded, "Pollster exclusions changed or this draft uses an excluded pollster; a fresh forecast and context are required.")
       end
   end
 end

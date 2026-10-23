@@ -42,7 +42,8 @@ module Site
       # (ModelRun#internals_shift), for the toggled-on average.
       def initialize(race:, polls:, as_of:, house_effects: {}, internals_shift: nil)
         @race = race
-        @polls = polls.to_a
+        excluded_ids = Pollster.excluded.pluck(:id)
+        @polls = polls.to_a.reject { |poll| excluded_ids.include?(poll.pollster_id) }
         @as_of = as_of
         @house_effects = house_effects || {}
         @internals_shift = internals_shift || Pol::Params.fetch!(:internals, :prior_shift).to_f

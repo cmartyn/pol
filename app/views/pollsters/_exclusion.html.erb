@@ -1,0 +1,7 @@
+<div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" data-testid="pollster-exclusion">
+  <p class="font-semibold">Excluded from the forecast since <%= pollster.excluded_at.in_time_zone.strftime("%B %-d, %Y") %></p>
+  <p class="mt-1"><%= pollster.exclusion_reason %></p>
+  <% if pollster.exclusion_source_url.present? %>
+    <p class="mt-2"><%= safe_external_link(pollster.exclusion_source_url, "Source for this decision", class: "underline", rel: "noopener nofollow") %></p>
+  <% end %>
+</div>

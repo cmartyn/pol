@@ -22,7 +22,7 @@ module Newsroom
       # Generic-ballot polls have no race and get no reaction: they move the
       # national environment, which is the daily brief's subject, not a race's.
       def polls_by_race(poll_ids)
-        Poll.where(id: Array(poll_ids))
+        Poll.model_corpus.where(id: Array(poll_ids))
             .where.not(race_id: nil)
             .includes(:race, :pollster, poll_results: :candidate)
             .group_by(&:race)

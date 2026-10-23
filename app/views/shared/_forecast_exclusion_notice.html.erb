@@ -1,0 +1,6 @@
+<% if @latest_run && !@latest_run.pollster_exclusions_current? %>
+  <p class="mt-4 max-w-prose rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" data-testid="forecast-exclusion-pending">
+    Pollster exclusions have changed. The forecast shown predates that change; an updated forecast is pending.
+    <%= link_to "Pollster decisions", pollsters_path, class: "underline" %>.
+  </p>
+<% end %>

@@ -10,4 +10,11 @@ class PollstersController < PublicController
     # Site::PollsterTable.build runs inside the view's `cache` block, so a
     # cache hit skips its three queries entirely — same shape as /senate.
   end
+
+  def show
+    @pollster = Pollster.find(params[:id])
+    @page = Site::PollFeed.normalize_page(params[:page])
+    @feed = Site::PollFeed.build(page: @page, scope: @pollster.polls.from_current_sources)
+    redirect_to pollster_path(@pollster, page: (@feed.pages if @feed.pages > 1)) if @page > @feed.pages
+  end
 end

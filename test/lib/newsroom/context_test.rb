@@ -1,6 +1,15 @@
 require "test_helper"
 
 class Newsroom::ContextTest < ActiveSupport::TestCase
+  test "prior headlines citing an excluded firm cannot serve as evidence for new coverage" do
+    pollsters(:beacon_polling).update!(excluded: true, exclusion_reason: "Withdrawn")
+    payload = Newsroom::Context.daily_brief(model_run: @run)
+    headline = payload[:recent_headlines].sole
+    assert headline[:excluded_source]
+    assert_includes headline[:headline], Newsroom::Context::EXCLUDED_SOURCE_MARKER
+    assert_not_includes payload[:citable_poll_ids], polls(:maine_poll_one).id
+  end
+
   # Everything the model is told comes from these rows and nowhere else, so
   # these tests are the ones that decide what it is possible for a dispatch to
   # say. They run entirely off fixtures; no request leaves the process.

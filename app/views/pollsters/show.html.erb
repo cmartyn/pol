@@ -1,0 +1,17 @@
+<% content_for :title, "#{@pollster.name} · Polls · 535" %>
+
+<%= link_to "← Pollsters", pollsters_path, class: "text-sm text-amber-700 hover:text-amber-800" %>
+<h1 class="mt-4 font-serif text-3xl font-semibold text-slate-900"><%= @pollster.name %></h1>
+<% if @pollster.excluded? %>
+  <div class="mt-4"><%= render "exclusion", pollster: @pollster %></div>
+  <p class="mt-3 max-w-prose text-sm text-slate-600">These polls are retained as an archive. Their results are excluded from both forecast variants, statistical adjustments, charts, and new newsroom coverage.</p>
+<% end %>
+
+<p class="mt-6 text-sm text-slate-600"><%= feed_poll_count(@feed.total) %> &middot; newest arrival first</p>
+<%= render "polls/feed_table", feed: @feed %>
+<% if @feed.pages > 1 %>
+  <nav class="mt-6 flex justify-between text-sm" aria-label="Pagination">
+    <span><%= link_to "← Newer", pollster_path(@pollster, page: (@feed.previous_page if @feed.previous_page > 1)), class: "text-amber-700" if @feed.previous_page %></span>
+    <span><%= link_to "Older →", pollster_path(@pollster, page: @feed.next_page), class: "text-amber-700" if @feed.next_page %></span>
+  </nav>
+<% end %>

@@ -15,6 +15,7 @@ module Newsroom
     # How a headline an editor pulled is presented to the writer. The prompt's
     # "WHAT WE HAVE ALREADY SAID" section keys off this exact string.
     RETRACTED_MARKER = "[RETRACTED by editor]".freeze
+    EXCLUDED_SOURCE_MARKER = "[CITES EXCLUDED POLLSTER — do not repeat]".freeze
     POPULATIONS = {
       "lv" => "likely voters", "rv" => "registered voters", "a" => "adults", "unknown" => "unspecified"
     }.freeze
@@ -71,6 +72,10 @@ module Newsroom
 
     def build(new_polls: [], previous_run: nil, movement: false, movers: nil)
       polls = Array(new_polls)
+      # Removing a pollster is a change in our inputs, not voter movement.
+      if previous_run && previous_run.excluded_pollster_ids != model_run&.excluded_pollster_ids
+        previous_run = nil
+      end
 
       {
         kind: kind.to_s,
@@ -281,13 +286,20 @@ module Newsroom
         scope = Dispatch.recent_first.limit(Pol::Params.fetch!(:newsroom, :recent_headline_count))
         scope = scope.where(race_id: race.id) if race
 
-        scope.map do |dispatch|
+        dispatches = scope.to_a
+        excluded_ids = Poll.where(id: dispatches.flat_map(&:cited_poll_ids), pollster_id: Pollster.excluded.select(:id)).pluck(:id)
+
+        dispatches.map do |dispatch|
+          excluded_source = (Array(dispatch.cited_poll_ids) & excluded_ids).any?
+          marker = dispatch.retracted? ? RETRACTED_MARKER : (EXCLUDED_SOURCE_MARKER if excluded_source)
           entry = {
-            headline: dispatch.retracted? ? "#{RETRACTED_MARKER} #{dispatch.headline}" : dispatch.headline,
+            headline: marker ? "#{marker} #{dispatch.headline}" : dispatch.headline,
             kind: dispatch.kind,
             published: dispatch.published_at && long_date(dispatch.published_at.to_date)
           }.compact
-          dispatch.retracted? ? entry.merge(retracted: true) : entry
+          entry[:retracted] = true if dispatch.retracted?
+          entry[:excluded_source] = true if excluded_source
+          entry
         end
       end
 

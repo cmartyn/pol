@@ -132,6 +132,13 @@ environment forces it off regardless of the stored value, in every
 environment, and the admin page says so rather than offering a toggle that
 would not work.
 
+**Pollsters** at `/admin/pollsters` lets the editor exclude or reinstate a firm.
+Exclusion takes a short public reason and an optional source link, preserves
+all stored polls, and queues a full forecast refresh. Excluded polls stay out
+of both model variants, statistical adjustments, charts, and new newsroom
+coverage. `/pollsters` publishes the decision and links to the firm's archive;
+the admin form lists published dispatches citing that firm for review.
+
 ## The site
 
 - `/` — both chambers, the national environment, movers, the latest dispatches

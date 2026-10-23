@@ -76,8 +76,9 @@ class Forecast::HouseEffects
     new(**options).call
   end
 
-  def initialize(as_of:)
+  def initialize(as_of:, excluded_pollster_ids: nil)
     @as_of = as_of.to_date
+    @excluded_pollster_ids = excluded_pollster_ids || Pollster.excluded.pluck(:id)
     @enabled = Pol::Params.fetch!(:house_effects, :enabled)
     @min_polls_to_apply = Pol::Params.fetch!(:house_effects, :min_polls_to_apply)
     @shrinkage_k = Pol::Params.fetch!(:house_effects, :shrinkage_k).to_f
@@ -87,7 +88,7 @@ class Forecast::HouseEffects
     @min_comparison_pollsters = Pol::Params.fetch!(:house_effects, :min_comparison_pollsters)
     # Unadjusted on purpose: this is the single pass. Effects are estimated
     # against the average as it stands with no house effects removed from it.
-    @averager = Forecast::Averager.new(as_of: @as_of)
+    @averager = Forecast::Averager.new(as_of: @as_of, excluded_pollster_ids: @excluded_pollster_ids)
     @residuals = Hash.new { |hash, key| hash[key] = [] }
     @skipped = Hash.new(0)
   end
@@ -108,13 +109,13 @@ class Forecast::HouseEffects
     # into this estimation would launder a client's lean into the firm's
     # baseline correction and from there into the default variant's averages.
     def generic_ballot_polls
-      Poll.model_corpus.partisan_none.for_generic_ballot
+      Poll.model_corpus(@excluded_pollster_ids).partisan_none.for_generic_ballot
           .where(field_end: ..as_of).includes(:poll_results).to_a
     end
 
     def races_with_polls
       races = Race.where(office: MODELLED_OFFICES).includes(:candidates).order(:id).to_a
-      polls = Poll.model_corpus.partisan_none.where(race_id: races.map(&:id), field_end: ..as_of)
+      polls = Poll.model_corpus(@excluded_pollster_ids).partisan_none.where(race_id: races.map(&:id), field_end: ..as_of)
                   .includes(:poll_results).group_by(&:race_id)
 
       races.filter_map { |race| [ race, polls[race.id] ] if polls[race.id].present? }

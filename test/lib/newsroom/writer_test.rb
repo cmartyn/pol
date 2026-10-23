@@ -12,6 +12,31 @@ class Newsroom::WriterTest < ActiveSupport::TestCase
     Newsroom::Writer.call(kind: kind, race: race, model_run: @run, payload: payload)
   end
 
+  test "a draft prepared before an exclusion cannot use a stale forecast" do
+    pollsters(:beacon_polling).update!(excluded: true, exclusion_reason: "Withdrawn")
+    result = with_api_key { write }
+    assert_predicate result.skip, :pollster_excluded?
+    assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
+  end
+
+  test "an exclusion during the API request prevents publication" do
+    pollster_id = pollsters(:beacon_polling).id
+    stub_request(:post, NewsroomStubHelper::COMPLETIONS_URL).to_return do
+      # Bypass AR's query-cache invalidation to simulate an editor saving on
+      # another connection while this worker waits for its API response.
+      Pollster.connection.raw_connection.exec_params(
+        "UPDATE pollsters SET excluded_at = CURRENT_TIMESTAMP, exclusion_reason = $1 WHERE id = $2",
+        [ "Withdrawn", pollster_id ]
+      )
+      { status: 200, headers: { "Content-Type" => "application/json" },
+        body: JSON.generate(completion_response(content: dispatch_json(cited_poll_ids: @polls.map(&:id)))) }
+    end
+    assert_no_difference "Dispatch.count" do
+      result = Poll.cache { with_api_key { write } }
+      assert_predicate result.skip, :pollster_excluded?
+    end
+  end
+
   test "a valid draft is published, bylined with the model that served it" do
     stub_openrouter(dispatch_json(cited_poll_ids: @polls.map(&:id)), model: "anthropic/claude-sonnet-5-20260630")
 

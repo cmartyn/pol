@@ -31,12 +31,13 @@ class Forecast::Internals
 
   DIRECTIONS = { "dem" => 1.0, "rep" => -1.0 }.freeze
 
-  def self.estimate(as_of:)
-    new(as_of: as_of).estimate
+  def self.estimate(**options)
+    new(**options).estimate
   end
 
-  def initialize(as_of:)
+  def initialize(as_of:, excluded_pollster_ids: nil)
     @as_of = as_of.to_date
+    @excluded_pollster_ids = excluded_pollster_ids || Pollster.excluded.pluck(:id)
     @prior = Pol::Params.fetch!(:internals, :prior_shift).to_f
     @pair_window_days = Pol::Params.fetch!(:internals, :pair_window_days)
     @shrinkage_k = Pol::Params.fetch!(:internals, :shrinkage_k).to_f
@@ -46,7 +47,7 @@ class Forecast::Internals
     @half_life_days = Pol::Params.fetch!(:house_effects, :residual_half_life_days).to_f
     # Unadjusted and internals-excluded on purpose: the field a flagged poll
     # is compared against must not itself contain flagged polls.
-    @averager = Forecast::Averager.new(as_of: @as_of)
+    @averager = Forecast::Averager.new(as_of: @as_of, excluded_pollster_ids: @excluded_pollster_ids)
   end
 
   attr_reader :as_of
@@ -76,7 +77,7 @@ class Forecast::Internals
     end
 
     def flagged_polls
-      Poll.model_corpus.where(partisan: DIRECTIONS.keys)
+      Poll.model_corpus(@excluded_pollster_ids).where(partisan: DIRECTIONS.keys)
           .where(field_end: ..as_of).includes(:poll_results)
     end
 
@@ -118,7 +119,7 @@ class Forecast::Internals
     end
 
     def unflagged_by_quantity(race_id, matchup_key)
-      @unflagged ||= Poll.model_corpus.partisan_none
+      @unflagged ||= Poll.model_corpus(@excluded_pollster_ids).partisan_none
                          .where(field_end: ..as_of).includes(:poll_results)
                          .group_by { |poll| [ poll.race_id, poll.matchup_key ] }
       @unflagged.fetch([ race_id, matchup_key ], [])

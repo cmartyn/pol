@@ -10,7 +10,8 @@ class NewsroomSkip < ApplicationRecord
     duplicate: 2,
     agents_disabled: 3,
     no_api_key: 4,
-    llm_error: 5
+    llm_error: 5,
+    pollster_excluded: 6
   }
 
   belongs_to :race, optional: true

@@ -91,7 +91,7 @@ module Newsroom
       # the runs do not share is skipped rather than treated as movement.
       def baseline_for(race_id, comparison, noted_runs, forecasts)
         noted = noted_runs[race_id]
-        if noted && (forecast = forecasts[[ noted.id, race_id ]])
+        if noted && noted.excluded_pollster_ids == model_run.excluded_pollster_ids && (forecast = forecasts[[ noted.id, race_id ]])
           return [ noted, forecast ]
         end
 

@@ -45,7 +45,13 @@ class Poll < ApplicationRecord
   # letting both in would double-count every poll they share. Retirement is
   # the marked case, so a new door (the admin CSV import, a future feed) is
   # in the corpus unless it opts out.
-  scope :model_corpus, -> { where.not(entry_mode: :scraped) }
+  scope :from_current_sources, -> { where.not(entry_mode: :scraped) }
+  # The subquery avoids joining pollsters into every caller's GROUP/ORDER BY.
+  # A runner passes its saved exclusion IDs so all estimates in one run use
+  # the same decision, even if the editor changes it while the model runs.
+  scope :model_corpus, ->(excluded_pollster_ids = nil) {
+    from_current_sources.where.not(pollster_id: excluded_pollster_ids || Pollster.excluded.select(:id))
+  }
 
   # Flagged as sponsored by a party-aligned client. What the internals
   # toggle includes or excludes.

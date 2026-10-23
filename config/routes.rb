@@ -37,6 +37,7 @@ Rails.application.routes.draw do
   # model is acting on it. An adjustment readers cannot inspect is the secret
   # sauce this project promised not to have.
   get "pollsters", to: "pollsters#index"
+  get "pollsters/:id", to: "pollsters#show", as: :pollster
 
   get "methodology", to: "pages#methodology"
   get "about", to: "pages#about"
@@ -58,6 +59,7 @@ Rails.application.routes.draw do
     root to: "dashboard#index"
 
     resources :polls
+    resources :pollsters, only: [ :index, :edit, :update ]
     resources :poll_imports, only: [ :new, :create ]
 
     resources :scrape_runs, only: [ :index, :create ]
