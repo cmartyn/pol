@@ -24,7 +24,13 @@ module TigerwebStubHelper
       ]
     ))
     stub_request(:get, "#{district_url}?f=json").to_return(tigerweb_json(
-      "layers" => [ { "id" => 4, "name" => "119th Congressional Districts" }, { "id" => DISTRICT_LAYER_ID, "name" => district_layer } ]
+      "layers" => [
+        { "id" => 3, "name" => "ACS 2025", "type" => "Group Layer", "parentLayerId" => -1 },
+        { "id" => 4, "name" => "119th Congressional Districts", "parentLayerId" => 3 },
+        { "id" => 7, "name" => "BAS 2026", "type" => "Group Layer", "parentLayerId" => -1 },
+        { "id" => 8, "name" => "119th Congressional Districts", "parentLayerId" => 7 },
+        { "id" => DISTRICT_LAYER_ID, "name" => district_layer }
+      ]
     ))
 
     state_query = %r{\A#{Regexp.escape(state_url)}/#{STATE_LAYER_ID}/query}

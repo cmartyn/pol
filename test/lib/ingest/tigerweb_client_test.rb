@@ -50,6 +50,9 @@ class Ingest::TigerwebClientTest < ActiveSupport::TestCase
 
     error = assert_raises(Ingest::TigerwebClient::LayerNotFound) { @client.layer_id(SERVICE, "119th Congressional Districts") }
     assert_includes error.message, "2 layers"
+    assert_equal 21, @client.layer_id(SERVICE, "119th Congressional Districts", group: "Group B")
+    assert_equal 11, @client.layer_id(SERVICE, "119th Congressional Districts", group: "Group A")
+    assert_raises(Ingest::TigerwebClient::LayerNotFound) { @client.layer_id(SERVICE, "119th Congressional Districts", group: "Missing vintage") }
   end
 
   test "features returns the exact query url and the GeoJSON features" do
