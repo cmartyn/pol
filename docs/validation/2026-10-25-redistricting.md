@@ -1,7 +1,8 @@
 # Redistricting correction: implementation and validation
 
-October 25, 2026. Implemented and verified against an authorized production
-snapshot. Deployment and publication are the remaining release steps.
+October 25, 2026. **Deployed and verified in production.** Corrected run 1158
+published at 20:44:46 Eastern, with all 435 House districts in both variants.
+The complete map refresh also succeeded, including Missouri's restored lines.
 
 ## Coverage and sources
 
@@ -191,7 +192,8 @@ poll blending or full chamber calibration. It is not a claim of 2026 accuracy.
 
 Verification used isolated databases; no test used production data.
 
-- Rails: **1,334 tests, 5,346 assertions, zero failures/errors**.
+- Rails: **1,334 tests, 5,349 assertions, zero failures/errors**, including the
+  follow-up Census vintage-selection regression checks.
 - Ruby style: 376 files, zero offenses. Full Brakeman: zero errors/warnings.
   Bundler and importmap vulnerability audits passed.
 - `db:seed:replant` passed in the isolated test database.
@@ -214,20 +216,36 @@ AS_OF=2026-10-25 SEED=20261025 N_SIMS=100000 bin/rails pol:compare_baselines > c
 python3 script/audit_house_boundaries.py cd119.zip cd120.zip > boundary_audit.csv
 ```
 
-Remaining activation work:
+Release record:
 
-1. **Complete:** run the read-only comparison against actual production inputs
-   and review coverage, candidate flags, exclusions and differences.
-2. Deploy the complete code/catalog revision and run the existing forecast runner
-   under its concurrency lock. Both variants and House control publish together
-   through the existing transaction. A validation failure preserves the last
-   successful forecast.
-3. Refresh the boundary cache so Missouri uses the verified 119th geometry.
-   Invalidate application/edge caches, then inspect TN-9, representative changed
-   districts, the House aggregate, maps, mobile pages and both variants.
-4. Review the dated timeline explanation and historical dispatch correction
-   notes against the real first corrected run. Publish any separately approved
-   public correction through the normal editorial process.
+1. [PR 48](https://github.com/cmartyn/pol/pull/48) merged the main correction.
+   Image `c0b77dbae9092a72ad68257bb009c4263566d96c` deployed through Kamal's
+   health-checked rollout. Production run **1158** used the verified baseline
+   revision and seed, publishing 940 race forecasts and four chamber forecasts
+   atomically. Calling the runner directly did not enqueue correction emails.
+2. All 940 published probabilities exactly match the production-snapshot
+   comparison. Percentiles agree within `7.2e-15` points, consistent with
+   floating-point rounding across platforms. TN-9's published simulated mean
+   is **R+11.0349**, with **92.463% Republican win probability** in the default
+   variant; the adjusted-internals variant is R+11.0684 and 92.511% Republican.
+3. The first map refresh found two identically named historical Census layers
+   and refused the ambiguous selection before writing anything. [PR 49](https://github.com/cmartyn/pol/pull/49)
+   adds explicit vintage selection, with a duplicate-layer regression fixture.
+   The final deployed image is `dae74e58bb83c6fe65b5c8eac271b7214f015fd9`.
+   Refreshing all boundaries then succeeded: **435 districts, 51 state/DC
+   outlines, 124,506 points**. All eight Missouri districts use the ACS 2025
+   group's 119th congressional geometry; other districts use the 120th layer.
+4. Application caches were cleared. The Cloudflare connector lacks the
+   `cache.purge` scope, so a manual edge purge was unavailable. Canonical race
+   URLs in all nine affected states returned HTTP 200 with the corrected
+   baseline and run timestamp after normal edge revalidation. TN-9's two
+   variants, the complete House table/control totals, dated timeline correction
+   and historical TN-9 dispatch correction were also verified in the browser.
+5. Hosted GitHub Actions never started because the account is locked by a
+   billing issue. This is recorded as an infrastructure limitation, not a
+   successful CI run. Deployment used the locally verified release and normal
+   merge path, without overriding branch protections. The local browser-suite
+   limitations above remain separate from the hosted billing issue.
 
 The initial export was blocked by automatic approval review because it could
 include private polling records. The user subsequently authorized the production

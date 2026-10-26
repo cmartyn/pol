@@ -765,5 +765,187 @@
         ]
       ]
     }
-  }
+  },
+  "published": {
+    "run_id": 1158,
+    "started_at": "2026-10-25 20:42:47 -0400",
+    "finished_at": "2026-10-25 20:44:46 -0400",
+    "seed": 20261025,
+    "as_of": "2026-10-25",
+    "baseline_revision": "260fd64adae37758bd88c92db3734cc3600a51cc290bfbbbaff11938d6b04bd7",
+    "house_counts": {
+      "excl_internals": 435,
+      "incl_internals": 435
+    },
+    "baseline_methods": {
+      "presidential_lean": 145,
+      "imputed_house_result": 24,
+      "house_result": 266
+    },
+    "tn9": [
+      {
+        "race": "house-2026-tn-09",
+        "variant": "excl_internals",
+        "mean_margin": -11.034894578600936,
+        "p_dem_win": 0.07537,
+        "p_rep_win": 0.92463,
+        "percentiles": {
+          "5": -23.668354563086126,
+          "25": -16.22667742727529,
+          "50": -11.033561118567999,
+          "75": -5.851145460294222,
+          "95": 1.6797970026069482
+        }
+      },
+      {
+        "race": "house-2026-tn-09",
+        "variant": "incl_internals",
+        "mean_margin": -11.068393844664243,
+        "p_dem_win": 0.07489,
+        "p_rep_win": 0.92511,
+        "percentiles": {
+          "5": -23.701853829149364,
+          "25": -16.26017669333853,
+          "50": -11.067060384631237,
+          "75": -5.88464472635746,
+          "95": 1.6462977365437101
+        }
+      }
+    ],
+    "chambers": [
+      {
+        "chamber": "senate",
+        "variant": "excl_internals",
+        "p_dem_control": 0.54842,
+        "p_rep_control": 0.44687,
+        "mean_dem_seats": 50.67167
+      },
+      {
+        "chamber": "house",
+        "variant": "excl_internals",
+        "p_dem_control": 0.97159,
+        "p_rep_control": 0.02824,
+        "mean_dem_seats": 243.53197
+      },
+      {
+        "chamber": "senate",
+        "variant": "incl_internals",
+        "p_dem_control": 0.55328,
+        "p_rep_control": 0.44267,
+        "mean_dem_seats": 50.68796
+      },
+      {
+        "chamber": "house",
+        "variant": "incl_internals",
+        "p_dem_control": 0.97,
+        "p_rep_control": 0.02972,
+        "mean_dem_seats": 243.62998
+      }
+    ]
+  },
+  "deployed_revision": "dae74e58bb83c6fe65b5c8eac271b7214f015fd9",
+  "original_bias_estimators_identical": true,
+  "all_940_published_probabilities_identical": true,
+  "maximum_published_percentile_difference": 7.105427357601002e-15,
+  "boundary_refresh": {
+    "outlines": 51,
+    "districts": 435,
+    "points": 124506,
+    "missouri_districts": 8,
+    "missouri_congress": 119
+  },
+  "live_page_checks": [
+    {
+      "race": "house-2026-al-01",
+      "status": 200,
+      "baseline": "R+36.0",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-ca-01",
+      "status": 200,
+      "baseline": "D+12.2",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-fl-03",
+      "status": 200,
+      "baseline": "R+21.1",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-la-01",
+      "status": 200,
+      "baseline": "R+38.2",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-nc-01",
+      "status": 200,
+      "baseline": "R+11.5",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-oh-01",
+      "status": 200,
+      "baseline": "R+2.6",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-tn-09",
+      "status": 200,
+      "baseline": "R+21.1",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "MISS",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-tx-01",
+      "status": 200,
+      "baseline": "R+49.5",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    },
+    {
+      "race": "house-2026-ut-01",
+      "status": 200,
+      "baseline": "D+23.6",
+      "headers": {
+        "Age": null,
+        "CF-Cache-Status": "EXPIRED",
+        "CDN-Cache-Control": "public, max-age=180, stale-while-revalidate=600, stale-if-error=3600"
+      }
+    }
+  ],
+  "hosted_ci": "Not started: GitHub account locked due to a billing issue.",
+  "manual_edge_purge": "Unavailable: connector lacks cache.purge scope. Verified corrected canonical responses after normal edge revalidation."
 }

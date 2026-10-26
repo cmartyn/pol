@@ -1,9 +1,9 @@
 # Correct House forecasts after redistricting
 
-**Status:** Implemented and validated locally; production activation pending
+**Status:** Deployed and verified in production; corrected run 1158
 **Date:** October 25, 2026
 **Decision owner:** Chase
-**Scope:** Correct the 2026 House forecast, prevent recurrence, and explain the correction to readers. This document does not activate changes in production.
+**Scope:** Correct the 2026 House forecast, prevent recurrence, and explain the correction to readers. Production deployment was subsequently authorized and completed; see the release report below.
 
 Implementation results and the remaining release steps are recorded in
 [`docs/validation/2026-10-25-redistricting.md`](../../validation/2026-10-25-redistricting.md).
@@ -157,4 +157,4 @@ The first deliverable is an implementation that calculates corrected predictions
 
 Completion means every House seat has an approved baseline compatible with its operative plan; both forecast variants consume that revision; no known old-plan poll contaminates the current model; comparison runs do not publish; subsequent seeding/runs preserve the correction; and the before/after report and published explanation identify the correction's actual effects. A change in TN-9's displayed winner alone does not satisfy these criteria.
 
-The local implementation and validation report supersede this proposal's original verification queue. Production activation still requires a comparison against the actual live inputs, deployment, a complete corrected run, Missouri boundary refresh, cache invalidation and live-page checks. The historical proxy diagnostic documents its limits; it is not a full prospective calibration backtest.
+The implementation and production release report supersede this proposal's original verification queue. The authorized live-input comparison, deployment, complete corrected run, Missouri boundary refresh and live-page checks are complete. The report records the unavailable manual edge purge and GitHub billing lock, alongside successful local validation and live cache revalidation. The historical proxy diagnostic documents its limits; it is not a full prospective calibration backtest.
