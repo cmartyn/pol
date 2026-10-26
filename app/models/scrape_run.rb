@@ -46,6 +46,7 @@ class ScrapeRun < ApplicationRecord
     "unknown_race" => "no race on the board matches",
     "ambiguous_senate_race" => "two senate races share the state",
     "generic_candidate" => "placeholder candidate answer",
+    "conflicting_candidate_results" => "conflicting results for one candidate",
     "too_few_parties" => "fewer than two parties answered",
     "missing_field_dates" => "no usable field dates",
     "record_invalid" => "mapped but failed validation"

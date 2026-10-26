@@ -312,7 +312,7 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     assert_empty current.css("[data-testid='earlier-matchup-tag']"), "current matchup should carry no tag"
     assert_equal 1, stale.css("[data-testid='earlier-matchup-tag']").size
-    assert_match "Polled before the field was set", stale.text
+    assert_match "Different candidate matchup", stale.text
   end
 
   test "show leaves a single-matchup race's poll table ungrouped" do

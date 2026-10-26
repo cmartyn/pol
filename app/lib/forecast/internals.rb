@@ -53,7 +53,9 @@ class Forecast::Internals
   attr_reader :as_of
 
   def estimate
-    gaps = flagged_polls.filter_map { |poll| pair_gap(poll) }
+    flagged = flagged_polls.filter_map { |poll| @averager.measurement(poll) }
+    gaps = @averager.prefer_final_rounds(flagged, side_a: :dem, side_b: :rep)
+                    .filter_map { |measurement| pair_gap(measurement.poll) }
     return Estimate.new(shift: @prior, prior: @prior, empirical_mean: nil, pair_count: 0) if gaps.empty?
 
     total = gaps.sum { |gap| gap[:weight] }
@@ -92,6 +94,7 @@ class Forecast::Internals
 
       peers = peer_measurements(poll)
       return nil if peers.empty?
+      return nil if @averager.distinct_matchups([ flagged, *peers.map(&:first) ]).size > 1
 
       total = 0.0
       weighted = 0.0
@@ -109,9 +112,10 @@ class Forecast::Internals
     end
 
     def peer_measurements(poll)
-      unflagged_by_quantity(poll.race_id, poll.matchup_key)
+      measured = unflagged_by_quantity(poll.race_id, poll.matchup_key)
         .select { |peer| (peer.field_end - poll.field_end).to_i.abs <= @pair_window_days }
         .filter_map { |peer| @averager.measurement(peer) }
+      @averager.prefer_final_rounds(measured, side_a: :dem, side_b: :rep)
         .group_by { |measurement| measurement.poll.pollster_id }
         .values
         .map { |group| group.min_by { |m| [ (m.poll.field_end - poll.field_end).to_i.abs, -m.poll.id ] } }

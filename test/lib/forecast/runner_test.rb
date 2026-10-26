@@ -6,6 +6,17 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
   AS_OF = Date.new(2026, 8, 1)
   SEED = 20260801
 
+  test "production cannot publish the new revision before stored polls are repaired" do
+    polls(:maine_poll_one).update!(entry_mode: :nyt)
+    stubbing(Rails, :env, "production".inquiry) do
+      error = assert_raises(RuntimeError) do
+        Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED,
+          require_complete_house: false, raise_on_error: true)
+      end
+      assert_match "need reprocessing", error.message
+    end
+  end
+
   test "a run forecasts every race and both chambers, and closes itself" do
     run = Forecast::Runner.call(trigger: :manual, as_of: AS_OF, seed: SEED)
 
@@ -25,7 +36,8 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     run = Forecast::Runner.call(trigger: :cron, as_of: AS_OF, seed: SEED)
 
     assert_equal SEED, run.rng_seed
-    assert_equal Pol::Params.to_h.deep_stringify_keys, run.params_snapshot.except("internals_estimate", "excluded_pollsters", "as_of", "house_baselines")
+    assert_equal Pol::Params.to_h.deep_stringify_keys, run.params_snapshot.except("internals_estimate", "excluded_pollsters", "as_of", "house_baselines", "poll_input_revision")
+    assert_equal Ingest::Nyt::Mapper::REVISION, run.poll_input_revision
     assert_equal AS_OF.iso8601, run.params_snapshot.fetch("as_of")
     assert_equal Forecast::HouseBaselines.current.revision, run.baseline_revision
     assert_equal [], run.params_snapshot.fetch("excluded_pollsters")

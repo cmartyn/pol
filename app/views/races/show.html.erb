@@ -166,6 +166,13 @@
         Changes across that correction are model changes, not a measure of voter movement.
       </p>
     <% end %>
+    <% if timeline[:polling_corrections].any? %>
+      <p class="mt-2 text-sm text-slate-600" data-testid="polling-correction-note">
+        Polling inputs were corrected on <%= timeline[:polling_corrections].join(", ") %> to retain candidates
+        sharing a party and use final ranked-choice rounds when available. Changes across this correction
+        reflect the data repair and recalculated pollster adjustments, not voter movement.
+      </p>
+    <% end %>
     <div class="mt-3">
       <%= render "races/timeline_chart", payload: timeline %>
     </div>
@@ -195,7 +202,7 @@
           <%= pluralize(polls_scatter[:matchups].size, "different matchup") %>, so there is no single
           contest to average — the forecast rests on fundamentals
           (<%= @race.house? ? "the district's 2024 result" : "the state's partisan lean" %> and the
-          national environment) until the nominees are settled. Every poll is below, grouped by the
+          national environment). Every poll is below, grouped by the
           matchup it tested.
         </p>
       <% end %>

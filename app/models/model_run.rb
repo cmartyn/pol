@@ -36,7 +36,23 @@ class ModelRun < ApplicationRecord
   end
 
   def comparable_inputs?(other)
-    other && excluded_pollster_ids == other.excluded_pollster_ids && baseline_revision == other.baseline_revision
+    other && excluded_pollster_ids == other.excluded_pollster_ids && baseline_revision == other.baseline_revision &&
+      poll_input_revision == other.poll_input_revision
+  end
+
+  def poll_input_revision
+    params_snapshot&.fetch("poll_input_revision", nil) || "legacy"
+  end
+
+  def poll_inputs_superseded?
+    latest = ModelRun.uncached { ModelRun.succeeded.latest.first }
+    latest && latest.poll_input_revision != poll_input_revision && latest.started_at >= started_at
+  end
+
+  def forecast_inputs_superseded?
+    latest = ModelRun.uncached { ModelRun.succeeded.latest.first }
+    latest && latest.started_at >= started_at &&
+      (latest.baseline_revision != baseline_revision || latest.poll_input_revision != poll_input_revision)
   end
 
   # Keep old history visible. Once a corrected run has published, queued

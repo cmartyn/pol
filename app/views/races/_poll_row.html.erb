@@ -20,9 +20,12 @@
   <td class="py-2 pr-3 text-slate-700" data-label="Results">
     <% poll.poll_results.sort_by { |result| -result.pct }.each do |result| %>
       <span class="ml-2 whitespace-nowrap first:ml-0">
-        <%= result.candidate&.name || result.party.capitalize %>
+        <%= result.display_name %>
         <span class="font-medium <%= party_text_color(result.party) %>"><%= number_with_precision(result.pct, precision: 1) %>%</span>
       </span>
+    <% end %>
+    <% if poll.ranked_choice_label %>
+      <span class="mt-1 block text-xs text-slate-500" data-testid="poll-round"><%= poll.ranked_choice_label %></span>
     <% end %>
   </td>
   <td class="whitespace-nowrap py-2 pr-3 font-semibold" data-role="probability">

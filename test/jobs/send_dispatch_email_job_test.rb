@@ -55,4 +55,13 @@ class SendDispatchEmailJobTest < ActiveJob::TestCase
     assert_predicate @delivery.reload, :skipped?
     assert_not_requested :post, "https://api.resend.com/emails"
   end
+
+  test "does not send a queued story based on superseded candidate results" do
+    old = @dispatch.model_run
+    ModelRun.create!(status: :succeeded, trigger: :manual, started_at: old.started_at + 1.day,
+      params_snapshot: old.params_snapshot.merge("poll_input_revision" => Ingest::Nyt::Mapper::REVISION))
+    SendDispatchEmailJob.perform_now(@delivery.id)
+    assert_predicate @delivery.reload, :skipped?
+    assert_not_requested :post, "https://api.resend.com/emails"
+  end
 end

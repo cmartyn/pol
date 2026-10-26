@@ -70,6 +70,34 @@ class Poll < ApplicationRecord
     !partisan_none?
   end
 
+  # Match the importer when choosing the party's leading candidate. Names
+  # and source IDs break ties deterministically, without trusting row IDs.
+  def leading_result(party)
+    poll_results.select { |result| result.party == party.to_s }
+                .min_by { |result| [ -result.pct, result.candidate_name.to_s, result.source_candidate_id.to_s ] }
+  end
+
+  def ambiguous_party?(party)
+    leader = leading_result(party)
+    return false unless leader
+
+    poll_results.select { |result| result.party == party.to_s && result.pct == leader.pct }
+                .map { |result| result.source_identity || result.candidate_name.presence || result.candidate_id }
+                .uniq.size > 1
+  end
+
+  def ranked_choice_final?
+    raw_payload.is_a?(Hash) && raw_payload.dig("nyt", "ranked_choice_final") == true
+  end
+
+  def ranked_choice_label
+    return "Ranked-choice final round" if ranked_choice_final?
+    return unless raw_payload.is_a?(Hash)
+
+    round = raw_payload.dig("nyt", "ranked_choice_round").presence
+    "Ranked-choice round #{round}" if round
+  end
+
   # "Matt Dunlap (D) vs Paul LePage (R)" — which contest this poll measured,
   # as the source page wrote it. matchup_key is the normalised form the
   # averager compares on; this is the readable one, and falls back to the key

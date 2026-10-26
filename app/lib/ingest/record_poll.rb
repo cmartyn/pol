@@ -74,7 +74,7 @@ module Ingest
           )
 
           @results.each do |result|
-            poll.poll_results.build(party: result[:party], pct: result[:pct], candidate: result[:candidate])
+            poll.poll_results.build(result.slice(:party, :pct, :candidate, :candidate_name, :source_candidate_id))
           end
 
           poll.save!

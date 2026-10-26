@@ -140,6 +140,7 @@ class Forecast::HouseEffects
       measured = polls.map { |poll| [ poll, @averager.measurement(poll, side_a: side_a, side_b: side_b) ] }
       @skipped[:not_measurable] += measured.count { |_, measurement| measurement.nil? }
       measured = measured.filter_map { |_, measurement| measurement }
+      measured = @averager.prefer_final_rounds(measured, side_a: side_a, side_b: side_b)
       return if measured.empty?
 
       # Every eligible poll stays in `measured` — it is the field others are

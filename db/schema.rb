@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_23_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_26_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -273,6 +273,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_23_140000) do
     t.float "pct", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "candidate_name"
+    t.string "source_candidate_id"
     t.index ["candidate_id"], name: "index_poll_results_on_candidate_id"
     t.index ["poll_id", "party"], name: "index_poll_results_on_poll_id_and_party"
     t.index ["poll_id"], name: "index_poll_results_on_poll_id"

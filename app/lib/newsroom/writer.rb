@@ -34,7 +34,7 @@ module Newsroom
     attr_reader :kind, :payload, :race, :model_run, :model_key, :logger
 
     def call
-      return skipped(:baseline_superseded, "A corrected baseline has superseded this forecast; rebuild the context.") if model_run&.baseline_superseded?
+      return skipped(:baseline_superseded, "Corrected inputs have superseded this forecast; rebuild the context.") if model_run&.forecast_inputs_superseded?
       return exclusion_skip if exclusion_blocks_publication?
 
       client = Client.new(model_key, instructions: Prompts.system_prompt(kind), schema: Prompts::SCHEMA)
@@ -62,7 +62,7 @@ module Newsroom
       def published(reply)
         # The editor can exclude a pollster while the API request is in flight.
         return exclusion_skip if exclusion_blocks_publication?
-        return skipped(:baseline_superseded, "A corrected baseline published while this story was being written.") if model_run&.baseline_superseded?
+        return skipped(:baseline_superseded, "Corrected forecast inputs published while this story was being written.") if model_run&.forecast_inputs_superseded?
 
         dispatch = Dispatch.create!(
           kind: kind,

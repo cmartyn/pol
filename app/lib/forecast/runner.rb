@@ -93,7 +93,8 @@ class Forecast::Runner
     # Both merges build new hashes — Pol::Params.to_h is memoized per process
     # and must not be mutated.
     def effective_params
-      snapshot = Pol::Params.to_h.merge(excluded_pollsters: Pollster.exclusion_snapshot, as_of: as_of.iso8601)
+      snapshot = Pol::Params.to_h.merge(excluded_pollsters: Pollster.exclusion_snapshot, as_of: as_of.iso8601,
+        poll_input_revision: Ingest::Nyt::Mapper::REVISION)
       return snapshot unless @n_sims
 
       snapshot.merge(simulation: snapshot.fetch(:simulation).merge(n_sims: @n_sims))
@@ -122,6 +123,9 @@ class Forecast::Runner
     end
 
     def forecast!
+      if Rails.env.production? && Poll.nyt.where("raw_payload #>> '{nyt,mapper_revision}' IS DISTINCT FROM ?", Ingest::Nyt::Mapper::REVISION).exists?
+        raise "NYT poll results need reprocessing before publishing this forecast"
+      end
       Forecast::HouseBaselines.current.validate_board!(races) if @require_complete_house
       model_run.update!(params_snapshot: model_run.params_snapshot.merge(
         "house_baselines" => Forecast::HouseBaselines.current.snapshot(races)))
