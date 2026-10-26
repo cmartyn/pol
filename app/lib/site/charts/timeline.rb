@@ -29,6 +29,9 @@ module Site
 
         {
           baseline_corrections: baseline_corrections(rows),
+          polling_corrections: rows.each_cons(2).filter_map { |before, after|
+            after.model_run.started_at.strftime("%b %-d, %Y") if before.model_run.poll_input_revision != after.model_run.poll_input_revision
+          }.uniq,
           points: points,
           incl_points: incl_points,
           # A third line is only worth drawing when some point actually has a

@@ -50,6 +50,18 @@ class Forecast::InternalsTest < ActiveSupport::TestCase
     assert_equal 3.0, estimate.shift
   end
 
+  test "sponsor adjustment compares final rounds instead of later inserted first preferences" do
+    flagged(partisan: :dem, results: { dem: 51.0, rep: 49.0 })
+    final = peer(results: { dem: 51.0, rep: 49.0 })
+    first = peer(results: { dem: 47.0, rep: 40.0 })
+    final.update!(nyt_poll_id: "rcv-survey", raw_payload: { "nyt" => { "ranked_choice_final" => true } })
+    first.update!(nyt_poll_id: "rcv-survey")
+
+    estimate = Forecast::Internals.estimate(as_of: AS_OF)
+    assert_equal 1, estimate.pair_count
+    assert_in_delta 0.0, estimate.empirical_mean, 1e-9
+  end
+
   test "one pair pulls the shift off the prior by 1/(1+k) of its excess" do
     # Flagged margin +9 against a same-day unflagged +3: gap 6 toward the
     # sponsor. shift = 3 + (6 − 3) × 1/11 = 3.2727…

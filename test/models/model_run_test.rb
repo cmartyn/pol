@@ -1,6 +1,18 @@
 require "test_helper"
 
 class ModelRunTest < ActiveSupport::TestCase
+  test "polling repairs invalidate movement comparisons and queued forecast claims" do
+    old = model_runs(:model_run_one)
+    corrected = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: old.started_at + 7.days,
+      params_snapshot: old.params_snapshot.merge("poll_input_revision" => Ingest::Nyt::Mapper::REVISION))
+
+    assert_nil ModelRun.comparison_run(corrected, window_days: 7)
+    assert old.poll_inputs_superseded?
+    assert old.forecast_inputs_superseded?
+    refute old.baseline_superseded?
+    refute corrected.forecast_inputs_superseded?
+  end
+
   test "movement comparisons never cross a baseline correction" do
     old = model_runs(:model_run_one)
     corrected = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: old.started_at + 7.days,

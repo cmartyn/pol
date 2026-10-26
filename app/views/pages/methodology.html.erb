@@ -18,6 +18,10 @@
       <%= Pol::Params.fetch!(:averaging, :min_polls_in_window) %> qualify — keeping one poll per pollster and
       weighting by recency (a <%= Pol::Params.fetch!(:averaging, :half_life_days) %>-day half-life) and sample
       size (capped at <%= number_with_delimiter(Pol::Params.fetch!(:averaging, :sample_size_cap)) %>).
+      Polls retain every named candidate, including candidates sharing a party. The model compares the
+      strongest candidate on each modeled party's side. For a survey reporting several ranked-choice
+      rounds of the same matchup and population, its final two-candidate round takes precedence.
+      Earlier rounds remain visible in the poll table.
     </li>
     <li>
       <strong class="text-slate-900">Correct for pollster house effects.</strong> Before a poll enters an

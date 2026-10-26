@@ -60,6 +60,15 @@
     </p>
   <% end %>
 
+  <% if @dispatch.model_run&.poll_inputs_superseded? %>
+    <p class="mt-4 border-l-2 border-slate-300 pl-4 text-sm text-slate-600" data-testid="dispatch-polling-correction">
+      Correction: the forecasts in this article predate a polling-data repair. Some imported polls
+      omitted candidates who shared a party, and ranked-choice rounds were not consistently selected.
+      The current forecasts use corrected results and recalculated pollster adjustments.
+      <%= link_to "See current forecasts", root_path, class: "underline" %>.
+    </p>
+  <% end %>
+
   <%# space-y rather than paragraph margins: Tailwind's preflight zeroes <p>
       margins and simple_format emits bare <p>s, so a multi-paragraph
       dispatch would otherwise set as one unbroken block. leading-7 at

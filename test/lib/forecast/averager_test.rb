@@ -16,6 +16,66 @@ class Forecast::AveragerTest < ActiveSupport::TestCase
     @delta = pollsters(:delta_metrics)
   end
 
+  test "a final RCV round takes precedence over later-imported first preferences" do
+    final = create_poll(pollster: @beacon, race: races(:senate_maine), field_end: AS_OF,
+      results: { dem: 51.0, rep: 49.0 }, matchup_key: "dem:ellis|rep:rivers")
+    first = create_poll(pollster: @beacon, race: races(:senate_maine), field_end: AS_OF,
+      results: { dem: 47.0, rep: 44.0 }, matchup_key: "dem:ellis|rep:rivers")
+    final.update!(nyt_poll_id: "same-survey", raw_payload: { "nyt" => { "ranked_choice_final" => true } })
+    first.update!(nyt_poll_id: "same-survey", raw_payload: { "nyt" => { "ranked_choice_final" => false, "ranked_choice_round" => "1" } })
+
+    result = @averager.call(polls: [ first, final ])
+    assert_equal 1, result.poll_count
+    assert_equal 1, result.skipped_count
+    assert_in_delta 2.0, result.mean_margin, 1e-10
+  end
+
+  test "RCV preference preserves another hypothetical matchup and population" do
+    final = create_poll(pollster: @beacon, field_end: AS_OF, population: :lv,
+      results: { dem: 51.0, rep: 49.0 }, matchup_key: "dem:ellis|rep:rivers")
+    other = create_poll(pollster: @beacon, field_end: AS_OF, population: :rv,
+      results: { dem: 47.0, rep: 44.0 }, matchup_key: "dem:ellis|rep:second")
+    final.update!(nyt_poll_id: "same-survey", raw_payload: { "nyt" => { "ranked_choice_final" => true } })
+    other.update!(nyt_poll_id: "same-survey")
+
+    result = @averager.call(polls: [ final, other ])
+    assert_equal :ambiguous_matchup, result.reason
+    assert_equal 2, result.poll_count
+  end
+
+  test "two people sharing a surname cannot silently become the same contest" do
+    polls = [ @beacon, @cardinal ].each_with_index.map do |pollster, index|
+      poll = create_poll(pollster: pollster, field_end: AS_OF,
+        results: { dem: 48.0, rep: 44.0 }, matchup_key: "dem:ellis|rep:sullivan")
+      poll.poll_results.find_by!(party: :rep).update!(source_candidate_id: "sullivan-#{index}",
+        candidate_name: index.zero? ? "Dan Sullivan" : "Dan J. Sullivan")
+      poll.reload
+    end
+
+    assert_equal :ambiguous_matchup, @averager.call(polls: polls).reason
+  end
+
+  test "a tied party with two named candidates does not silently pick a person" do
+    poll = create_poll(pollster: @beacon, field_end: AS_OF, results: { dem: 48.0, rep: 44.0 })
+    poll.poll_results.find_by!(party: :rep).update!(candidate_name: "First Republican")
+    poll.poll_results.create!(party: :rep, pct: 44.0, candidate_name: "Second Republican")
+
+    assert_nil @averager.measurement(poll)
+  end
+
+  test "sourced aliases for one candidate do not create a false matchup conflict" do
+    polls = [ @beacon, @cardinal ].zip([
+      "9eef7bf6-19a9-4d47-a81e-3e352f1a5c4a", "fa6b2ecd-5ecc-4d0c-b1fc-65c92e59bd7c"
+    ]).map do |pollster, identity|
+      poll = create_poll(pollster: pollster, field_end: AS_OF,
+        results: { dem: 48.0, rep: 44.0 }, matchup_key: "dem:davis|rep:letlow")
+      poll.poll_results.find_by!(party: :dem).update!(source_candidate_id: identity)
+      poll.reload
+    end
+
+    assert_predicate @averager.call(polls: polls), :polled?
+  end
+
   # A sample size of zero reaches the database only through manual or CSV
   # entry — the scraper normalises it to nil — and it means "unknown", not "a
   # poll of nobody". Weighed literally it would be zero, which at one poll

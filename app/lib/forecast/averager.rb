@@ -108,6 +108,7 @@ class Forecast::Averager
     # the poll that actually measures the race. #skipped_count reports the
     # rest rather than hiding them.
     measured = in_hand.filter_map { |poll| measure(poll, side_a, side_b) }
+    measured = prefer_final_rounds(measured, side_a: side_a, side_b: side_b)
 
     window = @window_days
     window = @extended_window_days if within(measured, @window_days).size < @min_polls_in_window
@@ -217,6 +218,24 @@ class Forecast::Averager
     contested_pairs(measurements, side_a, side_b)
   end
 
+  # A survey's final RCV round replaces earlier rounds of the same contest
+  # and population. It does not suppress another survey, an LV/RV split,
+  # or an alternative hypothetical matchup. House effects share this rule.
+  def prefer_final_rounds(measurements, side_a:, side_b:)
+    measurements.group_by do |measurement|
+      poll = measurement.poll
+      next [ :single, poll.id ] if poll.nyt_poll_id.blank?
+
+      identities = [ side_a, side_b ].map do |party|
+        poll.leading_result(party)&.source_identity || Ingest::Matchup.parse(poll.matchup_key)[party.to_s]
+      end
+      [ poll.nyt_poll_id, poll.race_id, poll.field_start, poll.field_end, poll.population, poll.partisan, *identities ]
+    end.values.flat_map do |group|
+      finals = group.select { |measurement| measurement.poll.ranked_choice_final? }
+      finals.any? ? finals : group
+    end
+  end
+
   private
     def excluded_pollster_ids
       @excluded_pollster_ids ||= Pollster.excluded.pluck(:id)
@@ -231,8 +250,28 @@ class Forecast::Averager
     # own contest — the key is provenance, and a poll without it is not
     # evidence that the race is ambiguous.
     def contested_pairs(measurements, side_a, side_b)
+      # A surname is usually enough to compare legacy and feed polls, but
+      # two source candidate IDs with that surname are distinct people.
+      # Alaska has two Republican Sullivans on the same ballot.
+      identities = Hash.new { |hash, key| hash[key] = [] }
+      measurements.each do |measurement|
+        by_party = Ingest::Matchup.parse(measurement.poll.matchup_key)
+        [ side_a, side_b ].each do |party|
+          next unless by_party[party.to_s]
+
+          id = measurement.poll.leading_result(party)&.source_identity
+          identities[[ party.to_s, by_party[party.to_s] ]] << id if id.present?
+        end
+      end
       measurements.filter_map { |measurement|
         by_party = Ingest::Matchup.parse(measurement.poll.matchup_key)
+        [ side_a, side_b ].each do |party|
+          key = [ party.to_s, by_party[party.to_s] ]
+          if identities[key].uniq.size > 1
+            result = measurement.poll.leading_result(party)
+            by_party[party.to_s] = "#{by_party[party.to_s]} (#{result&.source_identity || result&.candidate_name})"
+          end
+        end
         a = by_party[side_a.to_s]
         b = by_party[side_b.to_s]
         "#{a} vs #{b}" if a && b
@@ -252,6 +291,7 @@ class Forecast::Averager
       # the corpus, so they are dropped here — counted in skipped_count, which
       # is exactly what it means, and still shown on the race page.
       return nil if Ingest::Matchup.placeholder_opponent?(poll)
+      return nil if poll.ambiguous_party?(side_a) || poll.ambiguous_party?(side_b)
 
       a = top_pct(poll, side_a)
       b = top_pct(poll, side_b)
@@ -294,7 +334,7 @@ class Forecast::Averager
       measurements
         .group_by { |measurement| measurement.poll.pollster_id }
         .values
-        .map { |group| group.max_by { |m| [ m.poll.field_end, m.poll.field_start || m.poll.field_end, m.poll.id ] } }
+        .map { |group| group.max_by { |m| [ m.poll.field_end, m.poll.field_start || m.poll.field_end, m.poll.ranked_choice_final? ? 1 : 0, m.poll.id ] } }
         .sort_by { |measurement| measurement.poll.id }
     end
 end

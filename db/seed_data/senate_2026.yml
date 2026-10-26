@@ -27,7 +27,8 @@
   incumbent_name: Dan Sullivan
   incumbent_party: rep
   open_seat: false
-  unsettled: true
+  # General-election field certified after the August primary.
+  unsettled: false
   candidates:
     - { name: Dan Sullivan, party: rep, incumbent: true }
     - { name: Mary Peltola, party: dem }

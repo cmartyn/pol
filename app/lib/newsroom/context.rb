@@ -259,8 +259,10 @@ module Newsroom
           sample_size: poll.sample_size,
           population: POPULATIONS[poll.population],
           source: source_domain(poll.source_url),
+          ranked_choice_round: poll.ranked_choice_label,
           results: poll.poll_results.map do |result|
-            { candidate: result.candidate&.name, party: PARTY_NAMES[result.party], pct: result.pct }.compact
+            { candidate: result.candidate_name.presence || result.candidate&.name,
+              party: PARTY_NAMES[result.party], pct: result.pct }.compact
           end
         }.compact
       end
@@ -294,7 +296,9 @@ module Newsroom
         dispatches.map do |dispatch|
           excluded_source = (Array(dispatch.cited_poll_ids) & excluded_ids).any?
           marker = dispatch.retracted? ? RETRACTED_MARKER : (EXCLUDED_SOURCE_MARKER if excluded_source)
-          superseded = model_run && dispatch.model_run && model_run.baseline_revision != dispatch.model_run.baseline_revision
+          superseded = model_run && dispatch.model_run &&
+            (model_run.baseline_revision != dispatch.model_run.baseline_revision ||
+             model_run.poll_input_revision != dispatch.model_run.poll_input_revision)
           marker ||= SUPERSEDED_BASELINE_MARKER if superseded
           entry = {
             headline: marker ? "#{marker} #{dispatch.headline}" : dispatch.headline,

@@ -93,13 +93,49 @@ class Ingest::Nyt::MapperTest < ActiveSupport::TestCase
     assert_equal %i[dem rep other], outcome.results.map { |r| r[:party] }
   end
 
-  test "where a party repeats, the first row wins — the page-column rule" do
+  test "retains multiple candidates per party and keys the strongest regardless of row order" do
     rows = nyt_matchup_rows + [
-      { "party" => "REP", "pct" => "9", "answer" => "Second", "candidate_name" => "Riley Second" }
+      { "party" => "REP", "pct" => "9", "answer" => "Second", "candidate_name" => "Riley Second", "candidate_id" => "second-person" }
     ]
+    rows.permutation.each do |permutation|
+      outcome = @mapper.map(nyt_questions(permutation).sole)
+      assert_equal 3, outcome.results.size
+      assert_equal [ 9.0, 44.0 ], outcome.results.select { |r| r[:party] == :rep }.map { |r| r[:pct] }.sort
+      assert_equal "dem:ellis|rep:rivers", outcome.attrs[:matchup_key]
+    end
+  end
+
+  test "same-surname candidates retain separate source identities and roster links" do
+    candidates(:maine_rep).update!(name: "Dan Sullivan")
+    rows = nyt_matchup_rows(rep: { "candidate_name" => "Dan Sullivan", "candidate_id" => "incumbent" }) + [
+      { "party" => "REP", "pct" => "3.7", "candidate_name" => "Dan J. Sullivan", "candidate_id" => "challenger" }
+    ]
+    outcome = Ingest::Nyt::Mapper.new(source: "senate.csv").map(nyt_questions(rows.reverse).sole)
+    result = Ingest::RecordPoll.call(outcome.attrs, results: outcome.results, entry_mode: :nyt)
+
+    assert result.created?
+    incumbent = result.poll.poll_results.find_by!(source_candidate_id: "incumbent")
+    challenger = result.poll.poll_results.find_by!(source_candidate_id: "challenger")
+    assert_equal candidates(:maine_rep), incumbent.candidate
+    assert_nil challenger.candidate
+    assert_equal "Dan J. Sullivan", challenger.display_name
+    assert_equal 44.0, result.poll.leading_result(:rep).pct
+  end
+
+  test "final round flags work even without a round number" do
+    rows = nyt_matchup_rows("ranked_choice_final" => "TRUE", dem: { "pct" => "52" }, rep: { "pct" => "48" }) +
+           nyt_matchup_rows("ranked_choice_round" => "1", "ranked_choice_final" => "FALSE")
     outcome = @mapper.map(nyt_questions(rows).sole)
 
-    assert_equal 44.0, outcome.results.find { |r| r[:party] == :rep }[:pct]
+    assert_equal [ 52.0, 48.0 ], outcome.results.map { |r| r[:pct] }
+    assert_equal true, outcome.attrs[:raw_payload].dig("nyt", "ranked_choice_final")
+  end
+
+  test "repeated final-round rows produce only one result per person" do
+    rows = nyt_matchup_rows("ranked_choice_round" => "2", "ranked_choice_final" => "TRUE") * 2
+    outcome = @mapper.map(nyt_questions(rows).sole)
+
+    assert_equal 2, outcome.results.size
   end
 
   test "ranked-choice questions prefer the reallocated final round" do
@@ -135,6 +171,16 @@ class Ingest::Nyt::MapperTest < ActiveSupport::TestCase
 
     assert outcome.refused?
     assert_equal "too_few_parties", outcome.reason
+  end
+
+  test "conflicting percentages for one source candidate are refused" do
+    rows = nyt_matchup_rows(rep: { "candidate_id" => "same-person" }) + [
+      { "party" => "REP", "pct" => "9", "candidate_id" => "same-person", "candidate_name" => "Pat Rivers" }
+    ]
+    outcome = @mapper.map(nyt_questions(rows).sole)
+
+    assert outcome.refused?
+    assert_equal "conflicting_candidate_results", outcome.reason
   end
 
   test "feed matchup keys agree with page matchup keys for the same contest" do

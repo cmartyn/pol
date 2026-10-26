@@ -11,6 +11,8 @@ module Ingest
     # *should* be able to place and can't — those are the ones a scrape run
     # needs to alarm on.
     class Mapper
+      REVISION = "candidate-results-v2".freeze
+
       # DEM/REP/IND land on our enum directly; every other code the feed
       # uses (LIB, GRE, PSL, NPA, CON, WCP, ALL, OTH…) is a minor line our
       # model files under :other. NONE is not a party at all — it tags
@@ -38,7 +40,7 @@ module Ingest
       # label" contract.
       REFUSAL_REASONS = %i[
         unknown_race ambiguous_senate_race too_few_parties missing_field_dates
-        generic_candidate record_invalid
+        generic_candidate conflicting_candidate_results record_invalid
       ].freeze
 
       Outcome = Struct.new(:status, :attrs, :results, :reason, keyword_init: true) do
@@ -81,13 +83,16 @@ module Ingest
         field_start, field_end = parse_dates(question)
         return refused(:missing_field_dates) if field_end.nil?
 
-        results_by_party = build_results(rows, race)
-        return refused(:too_few_parties) if results_by_party.size < 2
+        results = build_results(rows, race)
+        identities = results.group_by { |result| [ result[:party], result[:source_candidate_id] || PollResult.normalized_name(result[:name]) ] }
+        return refused(:conflicting_candidate_results) if identities.any? { |_, group| group.map { |result| result[:pct] }.uniq.size > 1 }
+        results = identities.values.map(&:first)
+        return refused(:too_few_parties) if results.map { |r| r[:party] }.uniq.size < 2
 
         Outcome.new(
           status: :mapped,
-          attrs: attrs_for(question, race, field_start, field_end, results_by_party),
-          results: results_by_party.values.map { |r| r.slice(:party, :pct, :candidate) }
+          attrs: attrs_for(question, race, field_start, field_end, results),
+          results: results.map { |r| r.slice(:party, :pct, :candidate, :candidate_name, :source_candidate_id) }
         )
       end
 
@@ -126,14 +131,19 @@ module Ingest
         # reads, else the first preferences.
         def candidate_rows(question)
           rows = question.rows.reject { |row| row["party"].to_s == "NONE" || row["party"].to_s.strip.empty? }
-          rcv = rows.select { |row| row["ranked_choice_round"].to_s.strip.present? }
-          return rows if rcv.empty?
+          finals = rows.select { |row| row["ranked_choice_final"].to_s.casecmp?("TRUE") }
+          if finals.any?
+            last_round = finals.map { |row| row["ranked_choice_round"].to_f }.max
+            rows = finals.select { |row| row["ranked_choice_round"].to_f == last_round }
+          else
+            rcv = rows.select { |row| row["ranked_choice_round"].to_s.strip.present? }
+            if rcv.any?
+              first_round = rcv.map { |row| row["ranked_choice_round"].to_f }.min
+              rows = rcv.select { |row| row["ranked_choice_round"].to_f == first_round }
+            end
+          end
 
-          finals = rcv.select { |row| row["ranked_choice_final"].to_s.casecmp?("TRUE") }
-          return finals if finals.any?
-
-          first_round = rcv.map { |row| row["ranked_choice_round"].to_f }.min
-          rcv.select { |row| row["ranked_choice_round"].to_f == first_round }
+          rows.uniq { |row| row.values_at("candidate_id", "candidate_name", "party", "pct") }
         end
 
         def parse_dates(question)
@@ -149,18 +159,27 @@ module Ingest
           nil
         end
 
-        # One result per party, first row wins where a party repeats — the
-        # rule the Wikipedia parser applied to a page's columns.
+        # A party can have several candidates on an all-party/RCV ballot.
+        # Preserve each person; the model and the displayed matchup both
+        # read the strongest result per party, never the feed's row order.
         def build_results(rows, race)
-          rows.each_with_object({}) do |row, results|
+          rows.filter_map do |row|
             party = PARTY_MAP.fetch(row["party"], :other)
             pct = parse_pct(row["pct"])
             next if pct.nil?
 
-            results[party] ||= {
+            {
               party: party, pct: pct, name: row["candidate_name"].to_s.strip,
+              candidate_name: row["candidate_name"].to_s.strip,
+              source_candidate_id: row["candidate_id"].presence,
               raw_party: row["party"], candidate: match_candidate(race, party, row["candidate_name"])
             }
+          end
+        end
+
+        def leading_results(results)
+          results.group_by { |result| result[:party] }.transform_values do |group|
+            group.min_by { |result| [ -result[:pct], result[:name], result[:source_candidate_id].to_s ] }
           end
         end
 
@@ -174,11 +193,17 @@ module Ingest
         def match_candidate(race, party, name)
           return nil unless race
 
-          surname = PollTableParser.surname(name)
-          race.candidates.find { |c| c.party == party.to_s && PollTableParser.surname(c.name) == surname }
+          # Surname-only matching linked Dan J. Sullivan to incumbent Dan
+          # Sullivan. Keep an unmatched source name intact instead of
+          # inventing a roster link; a name variant still has its feed ID.
+          normalized = PollResult.normalized_name(name)
+          matches = race.candidates.select do |candidate|
+            candidate.party == party.to_s && PollResult.normalized_name(candidate.name) == normalized
+          end
+          matches.first if matches.size == 1
         end
 
-        def attrs_for(question, race, field_start, field_end, results_by_party)
+        def attrs_for(question, race, field_start, field_end, results)
           {
             pollster_name: question.poll_field("pollster").to_s.strip,
             nyt_pollster_id: question.poll_field("pollster_id"),
@@ -191,11 +216,11 @@ module Ingest
             partisan: PARTISAN_MAP.fetch(question.poll_field("partisan").to_s, :none),
             methodology: question.poll_field("methodology").presence,
             source_url: question.poll_field("url").presence || Client.url_for(@source),
-            matchup_key: matchup_key(race, results_by_party),
+            matchup_key: matchup_key(race, leading_results(results)),
             nyt_poll_id: question.poll_field("poll_id"),
             nyt_question_id: question.question_id,
             digest_salt: question.question_id,
-            raw_payload: raw_payload(question, results_by_party)
+            raw_payload: raw_payload(question, leading_results(results))
           }
         end
 
@@ -222,6 +247,7 @@ module Ingest
         # and every other reader of a poll's provenance works identically on
         # feed rows. The feed's own identifiers ride alongside under `nyt`.
         def raw_payload(question, results_by_party)
+          selected_rows = candidate_rows(question)
           columns = results_by_party.values.to_h do |result|
             letter = PARTY_LETTERS[result[:party]] || result[:raw_party]
             [ "#{result[:name]} (#{letter})", format("%g", result[:pct]) ]
@@ -232,6 +258,9 @@ module Ingest
             "nyt" => {
               "poll_id" => question.poll_field("poll_id"),
               "question_id" => question.question_id,
+              "mapper_revision" => REVISION,
+              "ranked_choice_final" => selected_rows.size == 2 && selected_rows.all? { |row| row["ranked_choice_final"].to_s.casecmp?("TRUE") },
+              "ranked_choice_round" => selected_rows.first&.fetch("ranked_choice_round", nil),
               "rows" => question.rows.map { |row| row.compact.reject { |_, v| v.to_s.empty? } }
             }
           }

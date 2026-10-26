@@ -33,8 +33,8 @@ module Admin
     # better here than a per-row side flip would), or nil when either
     # party's result is missing from this poll.
     def admin_poll_margin(poll)
-      dem = poll.poll_results.find { |result| result.party == "dem" }&.pct
-      rep = poll.poll_results.find { |result| result.party == "rep" }&.pct
+      dem = poll.leading_result(:dem)&.pct
+      rep = poll.leading_result(:rep)&.pct
       return nil if dem.nil? || rep.nil?
 
       Site::Format.margin(dem - rep, side_a_party: "dem", side_b_party: "rep")

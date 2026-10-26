@@ -41,7 +41,7 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
         matchup_select.send_keys(:arrow_down, :enter)
         assert_only_group(historical, 1)
         assert_unchanged_forecast_and_chart(forecast, chart_data)
-        assert_selector "[data-testid='earlier-matchup-tag']", text: "Polled before the field was set"
+        assert_selector "[data-testid='earlier-matchup-tag']", text: "Different candidate matchup"
 
         # Missing and empty keys are real groups, never the reset sentinel.
         [ unknown, empty ].each do |poll|
