@@ -51,11 +51,12 @@ module Ingest
       @last_request_finished_at = nil
     end
 
-    def layer_id(service, layer_name)
+    def layer_id(service, layer_name, group: nil)
       layers = Array(get_json(URI("#{self.class.service_url(service)}?f=json"))["layers"])
       by_id = layers.index_by { |layer| layer["id"] }
       matches = layers.select do |layer|
-        layer["name"] == layer_name && layer["type"] != "Group Layer" && !inside_labels?(layer, by_id)
+        layer["name"] == layer_name && layer["type"] != "Group Layer" &&
+          !inside_group?(layer, by_id, LABELS_GROUP) && (!group || inside_group?(layer, by_id, group))
       end
       raise LayerNotFound, "#{service} has no layer named #{layer_name.inspect}" if matches.empty?
       raise LayerNotFound, "#{service} has #{matches.size} layers named #{layer_name.inspect}" if matches.size > 1
@@ -76,10 +77,10 @@ module Ingest
     end
 
     private
-      def inside_labels?(layer, by_id)
+      def inside_group?(layer, by_id, name)
         parent = by_id[layer["parentLayerId"]]
         while parent
-          return true if parent["name"] == LABELS_GROUP
+          return true if parent["name"] == name
 
           parent = by_id[parent["parentLayerId"]]
         end

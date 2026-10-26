@@ -135,7 +135,7 @@ module Ingest
         # its 120th TIGER geometry still depicts the rejected map. Read the
         # verified 119th lines until Census republishes the corrected layer.
         if @congress == 120 && state == "MO"
-          layer = @client.layer_id(DISTRICT_SERVICE, "119th Congressional Districts")
+          layer = @client.layer_id(DISTRICT_SERVICE, "119th Congressional Districts", group: "ACS 2025")
           field = "CD119"
         end
         url, features = @client.features(DISTRICT_SERVICE, layer, where: "STATE='#{fips}'", out_fields: [ "STATE", field ], max_allowable_offset: offset)
