@@ -1,6 +1,12 @@
 # Candidate results and ranked-choice polling repair
 
-Status: verified locally; production rollout pending.
+Status: deployed and verified in production on October 26, 2026.
+
+[PR #50](https://github.com/cmartyn/pol/pull/50) merged normally. Release
+`d4ec941d58f3ad48b5e0055fc9ee5831da28495d` is running in both web and job
+containers. Production model run **1166** completed at **09:07:37 EDT**, using
+the verified October 26 inputs, seed `20261026`, and 100,000 simulations per
+variant.
 
 The NYT mapper previously kept the first answer for each party. In Alaska's
 four-candidate Senate polls this frequently retained Gerald Heikes or Dan J.
@@ -27,10 +33,15 @@ different survey populations are not silently combined.
 The authorized, private export contains only races, candidates, pollsters,
 polls and poll results. The refreshed October 26 export (08:34 EDT) exactly
 matches the October 25 export in all five tables: 470 races, 922 candidates,
-258 pollsters, 3,168 polls and 6,726 results. No accounts, subscriber records,
-or email delivery data were exported. Raw exports remain git-ignored.
+258 pollsters, 3,168 polls and 6,726 results. During deployment the 09:00 feed
+added one Nebraska Senate poll, so the production fingerprint guard stopped
+the first activation before any changes. A fresh 09:02 export and isolated
+replay verified that addition: 3,169 polls and 6,728 results before repair.
+No accounts, subscriber records, or email delivery data were exported. Raw
+exports remain git-ignored.
 
-Reprocessing the 2,086 NYT questions:
+Reprocessing 2,087 NYT questions repairs the 2,086 historical questions; the
+new Nebraska question already uses the corrected importer. The repair:
 
 - Restores 128 candidate results across 78 questions.
 - Corrects a leading party percentage in 64 questions across 17 races,
@@ -56,9 +67,9 @@ revision `260fd64adae37758bd88c92db3734cc3600a51cc290bfbbbaff11938d6b04bd7`.
 
 | Alaska Senate | Excluding partisan polls | Including adjusted partisan polls |
 | --- | ---: | ---: |
-| Peltola win probability | 63.293% | 65.299% |
-| Mean margin | D+1.671 | D+1.929 |
-| Pollster-adjusted average | D+2.624 | D+2.487 |
+| Peltola win probability | 63.293% | 65.325% |
+| Mean margin | D+1.671 | D+1.932 |
+| Pollster-adjusted average | D+2.624 | D+2.490 |
 | Contributing pollsters | 7 | 8 |
 | Effective poll weight | 2.659 | 2.797 |
 
@@ -66,6 +77,13 @@ The final model runs, complete per-race outputs, repair plans, and estimator
 outputs are saved in the private verification directory. Small changes in
 other forecasts are expected because corrected polls also change shared
 pollster adjustments.
+
+Production matches the final isolated replay across all **940 race
+forecasts** and all **four chamber forecasts**. Every win/control probability
+matches exactly; the largest floating-point difference in margins, weights
+or interval endpoints is `2.842170943040401e-14`, below the `1e-12` tolerance.
+The repaired database contains 6,856 poll results, and a second repair pass
+makes zero changes. The House baseline revision remains unchanged.
 
 ## Publication and validation
 
@@ -84,8 +102,19 @@ observed failures: native-select keyboard behavior on macOS and intermittent
 Senate-map hover timing. Both were already observed during the preceding
 redistricting release.
 
-GitHub Actions was previously unable to start because of an account billing
-lock; the release records local verification separately from hosted CI.
+GitHub Actions for PR #50 could not start because of an account billing lock,
+confirmed in the check annotations for this release's exact commit. The
+normal merge succeeded without an administrator override; hosted CI is not
+reported as passing. Local verification is recorded separately above.
+
+The canonical [Alaska Senate page](https://535.wtf/races/senate-2026-ak) was
+verified after CDN revalidation. It shows D63% / D+1.7 by default and D65% /
+D+1.9 when the partisan-internals switch is enabled. The Data for Progress
+rows show 47/44/4/1 first choices and 51/49 in the final round, with both
+Sullivans named separately. The false current-matchup ambiguity and unsettled
+field claims are absent. The timeline and an older Alaska dispatch display
+the polling correction notice. TN-9 retains its new-district baseline and
+redistricting explanation. Activation did not enqueue newsroom or email jobs.
 
 ## Applying the repair
 
