@@ -29,7 +29,9 @@
     <li>
       <strong class="text-slate-900">Blend with fundamentals.</strong> The poll average is blended with a
       fundamentals-only prior — partisan lean and incumbency for the Senate; the district's 2024 result and the
-      national swing since then for the House. The more a race has been polled, the more the average counts,
+      national swing since then for unchanged House districts. Redrawn House districts use the 2024 presidential
+      vote on the 2026 lines, minus the national presidential margin, plus the current generic ballot.
+      The more a race has been polled, the more the average counts,
       saturating at a poll weight of <%= Pol::Params.fetch!(:blend, :weight_saturation) %>; a race with no polls
       sits entirely on its prior.
     </li>
@@ -204,9 +206,19 @@
       correction is therefore conservative rather than overcooked.
     </li>
     <li>
-      <strong class="text-slate-900">2024 House baselines are redistricting-stale.</strong> Several states redrew
-      their House districts for 2026. A district's baseline is still its 2024 result on 2024 lines — for a
-      redrawn district, that describes different territory than the one actually on the 2026 ballot.
+      <strong class="text-slate-900">Redrawn districts use a presidential proxy.</strong>
+      For 145 districts in AL, CA, FL, LA, NC, OH, TN, TX and UT, we use
+      <a href="https://www.the-downballot.com/p/the-downballots-calculations-of-presidential" class="underline">The Downballot's
+      2024 presidential results on the 2026 lines</a>, checked against the operative Census district plans.
+      Margins use all votes: 100 × (Democratic votes − Republican votes) / total votes.
+      We subtract the national presidential margin (<%= Pol::Params.fetch!(:fundamentals, :pres_national_margin_2024) %>)
+      and add the current national environment. We apply no House open-seat adjustment to this proxy, which
+      contains no incumbent's House performance. Candidate-specific differences remain a source of uncertainty;
+      the correction does not reduce the model's error terms. Historical forecasts retain their original inputs.
+      For district polls we accept explicit documentation of the sampled plan, or the NYT feed's assignment to
+      the current general-election district when the entire field period follows adoption of the map.
+      The latter is a source assignment, not an independent voter-file audit. Earlier or unresolved samples
+      require explicit documentation before entering either forecast variant or pollster-bias estimates.
     </li>
     <li>
       <strong class="text-slate-900">Imputed baselines.</strong>

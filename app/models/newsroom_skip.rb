@@ -11,7 +11,8 @@ class NewsroomSkip < ApplicationRecord
     agents_disabled: 3,
     no_api_key: 4,
     llm_error: 5,
-    pollster_excluded: 6
+    pollster_excluded: 6,
+    baseline_superseded: 7
   }
 
   belongs_to :race, optional: true

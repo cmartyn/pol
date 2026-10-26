@@ -28,6 +28,7 @@ module Site
         incl_points = rows.map { |forecast| point(incl_by_run[forecast.model_run_id] || forecast) }
 
         {
+          baseline_corrections: baseline_corrections(rows),
           points: points,
           incl_points: incl_points,
           # A third line is only worth drawing when some point actually has a
@@ -42,6 +43,14 @@ module Site
       end
 
       private
+        def baseline_corrections(rows)
+          return [] unless Forecast::HouseBaselines.current.changed?(@race)
+
+          rows.each_cons(2).filter_map do |before, after|
+            after.model_run.started_at.strftime("%b %-d, %Y") if before.model_run.baseline_revision != after.model_run.baseline_revision
+          end.uniq
+        end
+
         def forecasts(variant)
           Forecast.where(variant: variant, race_id: @race.id)
             .joins(:model_run).merge(ModelRun.succeeded)

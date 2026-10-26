@@ -45,6 +45,7 @@ class Forecast::Averager
   # toward and takes only the weight penalty.
   def initialize(as_of:, house_effects: {}, internals: :exclude, internals_shift: nil, excluded_pollster_ids: nil)
     @as_of = as_of.to_date
+    @geography = Forecast::PollGeography.new
     @excluded_pollster_ids = excluded_pollster_ids
     @house_effects = house_effects || {}
     @internals = internals.to_sym
@@ -243,6 +244,7 @@ class Forecast::Averager
     # evidence about this matchup and returns nil.
     def measure(poll, side_a, side_b)
       return nil if excluded_pollster_ids.include?(poll.pollster_id)
+      return nil if @geography.reason(poll)
 
       # A poll fought against "Generic Republican" measured the party, not the
       # nominee, and its margin is not a reading of this contest. The parser

@@ -58,6 +58,20 @@ class Ingest::BoundarySyncTest < ActiveSupport::TestCase
     assert_raises(Ingest::TigerwebClient::LayerNotFound) { sync(cycle: 2028) }
   end
 
+  test "Missouri uses its restored 119th lines instead of the superseded 120th geometry" do
+    seed_house_races("MO" => 8)
+    spec = { fips: "29", box: [ -95.8, 36.0, -89.1, 40.6 ], districts: %w[01 02 03 04 05 06 07 08] }
+    stub_tigerweb({ "MO" => spec })
+    url = Ingest::TigerwebClient.service_url(Ingest::BoundarySync::DISTRICT_SERVICE)
+    request = stub_request(:get, %r{#{Regexp.escape(url)}/4/query})
+      .with(query: hash_including("where" => "STATE='29'", "outFields" => "STATE,CD119"))
+      .to_return(tigerweb_json(tigerweb_collection(tigerweb_districts(spec, "CD119"))))
+    sync(states: [ "MO" ], expected_districts: 8)
+    assert_requested request
+    assert_equal 8, Boundary.districts.where(state: "MO").count
+    assert Boundary.districts.where(state: "MO").all? { |row| row.source_url.include?("/4/query") }
+  end
+
   test "a state whose districts disagree with the race board raises and keeps the previous set" do
     create_boundary(state: "VT", box: [ -73.4, 42.7, -71.5, 45.0 ])
     stub_tigerweb(WORLD.merge("RI" => WORLD["RI"].merge(districts: %w[01])))

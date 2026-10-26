@@ -1,0 +1,196 @@
+{
+  "as_of": "2026-10-25",
+  "seed": 20261025,
+  "n_sims": 100000,
+  "input_digest": "5ccdbe2394897602bdace840fb4220d7d2e9bc822740ceb0c230dfc7cbf94f69",
+  "baseline_revision": "260fd64adae37758bd88c92db3734cc3600a51cc290bfbbbaff11938d6b04bd7",
+  "source_checksums": {
+    "house.csv": "193cf3430c31dea0e80e5e957a3c90280df770402642b3198e3b84ed219e68cb",
+    "senate.csv": "deeba66e30f57ff8e663b7e7e5d24c999afd4657b46b7fdfb329286a80612145",
+    "house_2024.html": "347e0f4a4d30c9b887cd82b6fbab644763deb42c4cfe6cc3c806d445e506840d",
+    "pres_2024.html": "a64a2ac020ef1acf57f7f9b8db8e068e7cb9323d418d02d9024de469d6584daf",
+    "pres_2020.html": "20b47387b2c4266799bb990222534a4f6f67408349de3eccc963481347da1733"
+  },
+  "variants": {
+    "excl_internals": {
+      "TN9": {
+        "race": "house-2026-tn-09",
+        "state": "TN",
+        "changed": true,
+        "before": {
+          "baseline": {
+            "method": "house_result",
+            "margin": 45.6,
+            "national_margin": -2.6,
+            "plan_id": "tn-2024",
+            "source_url": "https://en.wikipedia.org/wiki/2024_United_States_House_of_Representatives_elections",
+            "votes": null,
+            "year": 2024,
+            "units": "D-R percentage points, all votes"
+          },
+          "prior": 56.837424118810866,
+          "mu": 56.837424118810866,
+          "poll_weight": 0.0,
+          "p_dem_win": 1.0,
+          "p_rep_win": 0.0,
+          "percentiles": {
+            "5": 44.154260861755574,
+            "25": 51.59593799756641,
+            "50": 56.78905430627371,
+            "75": 61.97146996454748,
+            "95": 69.50241242744865
+          }
+        },
+        "after": {
+          "baseline": {
+            "method": "presidential_lean",
+            "margin": -21.144030543931756,
+            "national_margin": -1.5,
+            "plan_id": "tn-120th-2026",
+            "source_url": "https://docs.google.com/spreadsheets/d/1eZfaFI-c-PFOoKx1-zZA2MP0_dxRq_LVK0re3BOQqy0/edit?gid=1491069057",
+            "votes": {
+              "dem_votes": 124805,
+              "rep_votes": 192867,
+              "total_votes": 321897
+            },
+            "year": 2024,
+            "units": "D-R percentage points, all votes"
+          },
+          "prior": -11.006606425120893,
+          "mu": -11.006606425120893,
+          "poll_weight": 0.0,
+          "p_dem_win": 0.07501,
+          "p_rep_win": 0.92499,
+          "percentiles": {
+            "5": -23.68976968217618,
+            "25": -16.24809254636535,
+            "50": -11.054976237658055,
+            "75": -5.872560579384278,
+            "95": 1.658381883516892
+          }
+        }
+      },
+      "chambers": [
+        [
+          {
+            "chamber": "senate",
+            "p_dem_control": 0.5443,
+            "p_rep_control": 0.45105,
+            "mean_dem_seats": 50.64615
+          },
+          {
+            "chamber": "house",
+            "p_dem_control": 0.99436,
+            "p_rep_control": 0.00564,
+            "mean_dem_seats": 246.27188
+          }
+        ],
+        [
+          {
+            "chamber": "senate",
+            "p_dem_control": 0.5443,
+            "p_rep_control": 0.45105,
+            "mean_dem_seats": 50.64615
+          },
+          {
+            "chamber": "house",
+            "p_dem_control": 0.97128,
+            "p_rep_control": 0.02872,
+            "mean_dem_seats": 243.44942
+          }
+        ]
+      ],
+      "unchanged_exact": true
+    },
+    "incl_internals": {
+      "TN9": {
+        "race": "house-2026-tn-09",
+        "state": "TN",
+        "changed": true,
+        "before": {
+          "baseline": {
+            "method": "house_result",
+            "margin": 45.6,
+            "national_margin": -2.6,
+            "plan_id": "tn-2024",
+            "source_url": "https://en.wikipedia.org/wiki/2024_United_States_House_of_Representatives_elections",
+            "votes": null,
+            "year": 2024,
+            "units": "D-R percentage points, all votes"
+          },
+          "prior": 56.74626281117344,
+          "mu": 56.104720633418744,
+          "poll_weight": 0.031103765023817734,
+          "p_dem_win": 1.0,
+          "p_rep_win": 0.0,
+          "percentiles": {
+            "5": 43.42155737636345,
+            "25": 50.86323451217429,
+            "50": 56.05635082088159,
+            "75": 61.23876647915536,
+            "95": 68.76970894205652
+          }
+        },
+        "after": {
+          "baseline": {
+            "method": "presidential_lean",
+            "margin": -21.144030543931756,
+            "national_margin": -1.5,
+            "plan_id": "tn-120th-2026",
+            "source_url": "https://docs.google.com/spreadsheets/d/1eZfaFI-c-PFOoKx1-zZA2MP0_dxRq_LVK0re3BOQqy0/edit?gid=1491069057",
+            "votes": {
+              "dem_votes": 124805,
+              "rep_votes": 192867,
+              "total_votes": 321897
+            },
+            "year": 2024,
+            "units": "D-R percentage points, all votes"
+          },
+          "prior": -11.097767732758317,
+          "mu": -11.035908315743962,
+          "poll_weight": 0.031103765023817734,
+          "p_dem_win": 0.07462,
+          "p_rep_win": 0.92538,
+          "percentiles": {
+            "5": -23.71907157279925,
+            "25": -16.277394436988416,
+            "50": -11.084278128281124,
+            "75": -5.901862470007347,
+            "95": 1.629079992893823
+          }
+        }
+      },
+      "chambers": [
+        [
+          {
+            "chamber": "senate",
+            "p_dem_control": 0.55111,
+            "p_rep_control": 0.44476,
+            "mean_dem_seats": 50.67384
+          },
+          {
+            "chamber": "house",
+            "p_dem_control": 0.99366,
+            "p_rep_control": 0.00634,
+            "mean_dem_seats": 246.32554
+          }
+        ],
+        [
+          {
+            "chamber": "senate",
+            "p_dem_control": 0.55111,
+            "p_rep_control": 0.44476,
+            "mean_dem_seats": 50.67384
+          },
+          {
+            "chamber": "house",
+            "p_dem_control": 0.9697,
+            "p_rep_control": 0.0303,
+            "mean_dem_seats": 243.56504
+          }
+        ]
+      ],
+      "unchanged_exact": true
+    }
+  }
+}

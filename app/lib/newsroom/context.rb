@@ -16,6 +16,7 @@ module Newsroom
     # "WHAT WE HAVE ALREADY SAID" section keys off this exact string.
     RETRACTED_MARKER = "[RETRACTED by editor]".freeze
     EXCLUDED_SOURCE_MARKER = "[CITES EXCLUDED POLLSTER — do not repeat]".freeze
+    SUPERSEDED_BASELINE_MARKER = "[FORECAST INPUTS SUPERSEDED — do not repeat forecast claims]".freeze
     POPULATIONS = {
       "lv" => "likely voters", "rv" => "registered voters", "a" => "adults", "unknown" => "unspecified"
     }.freeze
@@ -73,7 +74,7 @@ module Newsroom
     def build(new_polls: [], previous_run: nil, movement: false, movers: nil)
       polls = Array(new_polls)
       # Removing a pollster is a change in our inputs, not voter movement.
-      if previous_run && previous_run.excluded_pollster_ids != model_run&.excluded_pollster_ids
+      if previous_run && !previous_run.comparable_inputs?(model_run)
         previous_run = nil
       end
 
@@ -175,6 +176,7 @@ module Newsroom
           office: race.office,
           state: Race::STATE_NAMES.fetch(race.state, race.state),
           district: race.district,
+          baseline: model_run&.params_snapshot&.dig("house_baselines", "races", race.id.to_s),
           special: race.special,
           open_seat: race.open_seat,
           incumbent: race.incumbent_name.presence && {
@@ -286,12 +288,14 @@ module Newsroom
         scope = Dispatch.recent_first.limit(Pol::Params.fetch!(:newsroom, :recent_headline_count))
         scope = scope.where(race_id: race.id) if race
 
-        dispatches = scope.to_a
+        dispatches = scope.includes(:model_run).to_a
         excluded_ids = Poll.where(id: dispatches.flat_map(&:cited_poll_ids), pollster_id: Pollster.excluded.select(:id)).pluck(:id)
 
         dispatches.map do |dispatch|
           excluded_source = (Array(dispatch.cited_poll_ids) & excluded_ids).any?
           marker = dispatch.retracted? ? RETRACTED_MARKER : (EXCLUDED_SOURCE_MARKER if excluded_source)
+          superseded = model_run && dispatch.model_run && model_run.baseline_revision != dispatch.model_run.baseline_revision
+          marker ||= SUPERSEDED_BASELINE_MARKER if superseded
           entry = {
             headline: marker ? "#{marker} #{dispatch.headline}" : dispatch.headline,
             kind: dispatch.kind,
@@ -299,6 +303,7 @@ module Newsroom
           }.compact
           entry[:retracted] = true if dispatch.retracted?
           entry[:excluded_source] = true if excluded_source
+          entry[:superseded_baseline] = true if superseded
           entry
         end
       end

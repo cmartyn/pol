@@ -21,14 +21,19 @@ class Forecast::RaceModel
   MAJOR_PARTIES = %w[dem rep].freeze
   CHAMBERS = { "senate" => :senate, "house" => :house }.freeze
 
-  def initialize(race:, national_env:, averager:, polls: nil)
+  def initialize(race:, national_env:, averager:, polls: nil, house_baseline: nil)
     @race = race
     @national_env = national_env
     @averager = averager
     @polls = polls
+    @house_baseline = house_baseline
   end
 
   attr_reader :race, :national_env
+
+  def house_baseline
+    @house_baseline ||= Forecast::HouseBaselines.current.resolve(race) if race.house?
+  end
 
   # The two sides, resolved from the candidate list. side_a is the Democrat
   # where one is running; where none is, an independent takes the anti-
@@ -199,12 +204,10 @@ class Forecast::RaceModel
     end
 
     def house_prior
-      # baseline_margin is the district's 2024 two-party margin; Phase 2's
-      # seeder guarantees one for all 435 districts, imputing where a major
-      # party did not field a candidate.
-      baseline = race.baseline_margin || 0.0
-      swing = national_env - Pol::Params.fetch!(:fundamentals, :house_national_margin_2024)
-      baseline + swing + open_seat_term
+      # A presidential baseline contains no past House incumbent performance
+      # to subtract when a seat opens. Each method carries its own national
+      # reference; neither silently falls back to the old electorate or zero.
+      house_baseline.lean + national_env + (house_baseline.presidential? ? 0.0 : open_seat_term)
     end
 
     # v1 seeds no 2026 House incumbency or retirements — Phase 2 read the 2024

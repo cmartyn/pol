@@ -107,6 +107,9 @@ module Site
         end
 
         def point(poll, side_a, side_b)
+          @geography ||= Forecast::PollGeography.new
+          return nil if @geography.reason(poll, race: @race)
+
           a = top_pct(poll, side_a)
           b = top_pct(poll, side_b)
           return nil if a.nil? || b.nil?

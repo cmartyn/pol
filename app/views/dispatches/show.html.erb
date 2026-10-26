@@ -51,6 +51,15 @@
     <% end %>
   </p>
 
+  <% if (@dispatch.race.nil? || Forecast::HouseBaselines.current.changed?(@dispatch.race)) && @dispatch.model_run&.baseline_superseded? %>
+    <p class="mt-4 border-l-2 border-slate-300 pl-4 text-sm text-slate-600" data-testid="dispatch-baseline-correction">
+      Correction: the House forecasts used in this article predate our redistricting correction.
+      They used 2024 House results on earlier district lines. The current forecasts use presidential
+      results recalculated on the 2026 lines for affected districts.
+      <%= link_to "Read the methodology", methodology_path, class: "underline" %>.
+    </p>
+  <% end %>
+
   <%# space-y rather than paragraph margins: Tailwind's preflight zeroes <p>
       margins and simple_format emits bare <p>s, so a multi-paragraph
       dispatch would otherwise set as one unbroken block. leading-7 at

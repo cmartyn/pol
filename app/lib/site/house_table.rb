@@ -82,7 +82,7 @@ module Site
         when "margin"
           row.forecast&.mean_margin || -Float::INFINITY
         when "baseline"
-          row.race.baseline_margin || -Float::INFINITY
+          row.race.forecast_baseline&.margin || -Float::INFINITY
         when "polls"
           row.poll_count
         when "last_poll"

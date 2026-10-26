@@ -31,6 +31,21 @@ class ModelRun < ApplicationRecord
       Pol::Params.fetch!(:internals, :prior_shift).to_f
   end
 
+  def baseline_revision
+    params_snapshot&.dig("house_baselines", "revision") || Forecast::HouseBaselines::LEGACY_REVISION
+  end
+
+  def comparable_inputs?(other)
+    other && excluded_pollster_ids == other.excluded_pollster_ids && baseline_revision == other.baseline_revision
+  end
+
+  # Keep old history visible. Once a corrected run has published, queued
+  # stories based on the superseded revision may no longer publish or send.
+  def baseline_superseded?
+    latest = ModelRun.uncached { ModelRun.succeeded.latest.first }
+    latest && latest.baseline_revision != baseline_revision && latest.started_at >= started_at
+  end
+
   # How many simulated elections this run actually drew, from its own
   # params_snapshot — the denominator the site prints beside its
   # probabilities (Site::Format.of_simulations).
@@ -62,7 +77,7 @@ class ModelRun < ApplicationRecord
     def comparison_run(run, window_days:)
       target = run.started_at - window_days.days
       candidates = succeeded.where.not(id: run.id).to_a.select do |candidate|
-        candidate.excluded_pollster_ids == run.excluded_pollster_ids
+        candidate.started_at < run.started_at && candidate.comparable_inputs?(run)
       end
       return nil if candidates.empty?
 

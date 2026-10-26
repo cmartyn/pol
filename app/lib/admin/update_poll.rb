@@ -60,6 +60,7 @@ module Admin
             population: @attrs[:population].presence || :unknown,
             sponsor: @attrs[:sponsor].presence,
             source_url: @attrs[:source_url],
+            raw_payload: (@poll.raw_payload || {}).merge(@attrs[:raw_payload] || {}),
             dedup_digest: digest
           )
           @poll.poll_results.destroy_all

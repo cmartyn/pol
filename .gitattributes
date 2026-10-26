@@ -7,3 +7,8 @@ db/schema.rb linguist-generated
 vendor/* linguist-vendored
 config/credentials/*.yml.enc diff=rails_credentials
 config/credentials.yml.enc diff=rails_credentials
+
+# Preserve the CSV snapshots' exact bytes for source checksums. CSV's CRLF
+# record separators are intentional, not trailing whitespace.
+db/seed_data/house_baselines/**/*.csv -text whitespace=cr-at-eol
+docs/validation/*.csv -text whitespace=cr-at-eol

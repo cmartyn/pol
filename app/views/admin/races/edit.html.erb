@@ -23,7 +23,10 @@
     <%= f.number_field :lean, step: 0.01, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
   </div>
   <div>
-    <%= f.label :baseline_margin, "Baseline margin (D−R points; House)", class: "block text-sm font-medium text-slate-700" %>
+    <%= f.label :baseline_margin, "Historical 2024 House margin (D−R points)", class: "block text-sm font-medium text-slate-700" %>
+    <% if Forecast::HouseBaselines.current.changed?(@race) %>
+      <p class="text-sm text-slate-600">This district's forecast uses the versioned presidential baseline on 2026 lines. Editing its historical House result does not change that baseline.</p>
+    <% end %>
     <%= f.number_field :baseline_margin, step: 0.01, class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
   </div>
   <div class="flex items-center gap-2 pt-6">

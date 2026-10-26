@@ -25,7 +25,9 @@ class Forecast::RunnerTest < ActiveSupport::TestCase
     run = Forecast::Runner.call(trigger: :cron, as_of: AS_OF, seed: SEED)
 
     assert_equal SEED, run.rng_seed
-    assert_equal Pol::Params.to_h.deep_stringify_keys, run.params_snapshot.except("internals_estimate", "excluded_pollsters")
+    assert_equal Pol::Params.to_h.deep_stringify_keys, run.params_snapshot.except("internals_estimate", "excluded_pollsters", "as_of", "house_baselines")
+    assert_equal AS_OF.iso8601, run.params_snapshot.fetch("as_of")
+    assert_equal Forecast::HouseBaselines.current.revision, run.baseline_revision
     assert_equal [], run.params_snapshot.fetch("excluded_pollsters")
     assert_equal 100_000, run.params_snapshot.dig("simulation", "n_sims")
     # The fixture world holds no partisan polls, so the recorded shift is the

@@ -12,6 +12,11 @@ class SendDispatchEmailJob < ApplicationJob
     delivery = DispatchDelivery.includes(:dispatch, :subscriber).find(delivery_id)
     return if delivery.terminal?
 
+    if delivery.dispatch.model_run&.baseline_superseded?
+      delivery.update!(status: :skipped, last_error: "forecast baseline superseded before send")
+      return
+    end
+
     unless delivery.subscriber.subscribed? && delivery.dispatch.published?
       delivery.update!(status: :skipped, last_error: "recipient unsubscribed or dispatch retracted before send")
       return

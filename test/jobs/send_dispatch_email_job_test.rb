@@ -46,4 +46,13 @@ class SendDispatchEmailJobTest < ActiveJob::TestCase
     assert_not_requested :post, "https://api.resend.com/emails"
     assert_predicate @delivery.reload, :skipped?
   end
+
+  test "does not send a queued story based on a superseded baseline" do
+    old = @dispatch.model_run
+    ModelRun.create!(status: :succeeded, trigger: :manual, started_at: old.started_at + 1.day,
+      params_snapshot: { house_baselines: { revision: Forecast::HouseBaselines.current.revision } })
+    SendDispatchEmailJob.perform_now(@delivery.id)
+    assert_predicate @delivery.reload, :skipped?
+    assert_not_requested :post, "https://api.resend.com/emails"
+  end
 end

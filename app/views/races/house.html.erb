@@ -44,7 +44,7 @@
     on why the reader's ?q= is applied to sort links in the browser rather
     than baked into this fragment. %>
 <div class="mt-10" data-controller="table-filter">
-  <% cache [ "house-table", @latest_run, @sort, @direction, Site::CacheKey.collection_freshness(Race.house) ] do %>
+  <% cache [ "house-table", @latest_run, @sort, @direction, Forecast::HouseBaselines.current.revision, Site::CacheKey.collection_freshness(Race.house) ] do %>
     <% rows = Site::HouseTable.build(sort: @sort, direction: @direction) %>
     <% if rows.empty? %>
       <p class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="house-table-empty">
@@ -123,11 +123,13 @@
                   <% end %>
                 </td>
                 <td class="hidden py-2 pr-3 lg:table-cell"><%= each_variant(tag_name: :span) do |variant| %><%= render "races/margin_bar", race: row.race, value: (variant == :incl_internals ? row.incl_forecast : row.forecast)&.mean_margin %><% end %></td>
+                <% baseline = row.race.forecast_baseline %>
                 <td class="whitespace-nowrap py-2 pr-3" data-label="2024 baseline">
-                  <span class="font-medium <%= party_text_color(house_margin_party(row.race.baseline_margin)) %>">
-                    <%= house_margin(row.race.baseline_margin) || "—" %>
+                  <span class="font-medium <%= party_text_color(house_margin_party(baseline&.margin)) %>">
+                    <%= house_margin(baseline&.margin) || "—" %>
                   </span>
-                  <% if row.race.baseline_imputed? %>
+                  <% if baseline %><span class="block text-xs text-slate-500"><%= baseline.presidential? ? "President · new lines" : "House · same lines" %></span><% end %>
+                  <% if baseline&.imputed? %>
                     <span class="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium uppercase text-amber-800"
                           data-testid="baseline-imputed-marker"
                           title="Estimated baseline: no major-party opponent in 2024 — see Methodology.">est.</span>

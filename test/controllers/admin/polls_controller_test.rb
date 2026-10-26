@@ -149,6 +149,46 @@ class Admin::PollsControllerTest < ActionDispatch::IntegrationTest
 
   # --- edit/update -------------------------------------------------------------
 
+  test "a sourced manual poll on current district lines enters the forecast" do
+    race = Race.create!(office: :house, cycle: 2026, state: "TN", district: 9, slug: "house-2026-tn-09")
+    post admin_polls_path, params: { poll: valid_poll_params(race_id: race.id,
+      district_plan_id: "tn-120th-2026", district_plan_source_url: "https://example.com/methodology") }
+    poll = Poll.order(:created_at).last
+    assert_redirected_to admin_poll_path(poll)
+    assert_nil Forecast::PollGeography.new.reason(poll)
+
+    get edit_admin_poll_path(poll)
+    assert_select "#poll_district_plan_id option[selected][value='tn-120th-2026']"
+    assert_select "#poll_district_plan_source_url[value='https://example.com/methodology']"
+  end
+
+  test "editing district evidence preserves feed provenance and can clear an override" do
+    race = Race.create!(office: :house, cycle: 2026, state: "TN", district: 9, slug: "house-2026-tn-09")
+    poll = polls(:maine_poll_one)
+    original = { "nyt" => { "rows" => [ { "cycle" => "2026", "state" => "TN", "seat_number" => "9", "stage" => "general" } ] } }
+    poll.update!(race: race, entry_mode: :nyt, raw_payload: original)
+    params = valid_poll_params(race_id: race.id, district_plan_id: "earlier-lines",
+      district_plan_source_url: "https://example.com/old-lines")
+
+    patch admin_poll_path(poll), params: { poll: params }
+    assert_redirected_to admin_poll_path(poll)
+    assert_equal "Sample uses different district lines", Forecast::PollGeography.new.reason(poll.reload)
+    assert_equal original["nyt"], poll.raw_payload["nyt"]
+
+    patch admin_poll_path(poll), params: { poll: params.merge(district_plan_id: "") }
+    assert_redirected_to admin_poll_path(poll)
+    assert_nil Forecast::PollGeography.new.reason(poll.reload)
+    assert_equal original["nyt"], poll.raw_payload["nyt"]
+  end
+
+  test "a plan without evidence cannot override source assignment" do
+    race = Race.create!(office: :house, cycle: 2026, state: "TN", district: 9, slug: "house-2026-tn-09")
+    post admin_polls_path, params: { poll: valid_poll_params(race_id: race.id,
+      district_plan_id: "tn-120th-2026", district_plan_source_url: "") }
+    poll = Poll.order(:created_at).last
+    assert_equal "District lines need a verification source", Forecast::PollGeography.new.reason(poll)
+  end
+
   test "edit renders the form pre-filled from the existing poll" do
     get edit_admin_poll_path(polls(:maine_poll_one))
 

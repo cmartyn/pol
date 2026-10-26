@@ -10,6 +10,15 @@ class Newsroom::ContextTest < ActiveSupport::TestCase
     assert_not_includes payload[:citable_poll_ids], polls(:maine_poll_one).id
   end
 
+  test "prior headlines with superseded baselines cannot support new forecast claims" do
+    corrected = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: Time.current,
+      params_snapshot: { house_baselines: { revision: Forecast::HouseBaselines.current.revision } })
+    payload = Newsroom::Context.daily_brief(model_run: corrected)
+    headline = payload[:recent_headlines].sole
+    assert headline[:superseded_baseline]
+    assert_includes headline[:headline], Newsroom::Context::SUPERSEDED_BASELINE_MARKER
+  end
+
   # Everything the model is told comes from these rows and nowhere else, so
   # these tests are the ones that decide what it is possible for a dispatch to
   # say. They run entirely off fixtures; no request leaves the process.

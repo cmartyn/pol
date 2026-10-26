@@ -442,7 +442,7 @@ class Forecast::RaceModelTest < ActiveSupport::TestCase
 
     def house_race(baseline_margin:, **attributes)
       Race.create!(
-        office: :house, state: "OH", district: 1, cycle: 2026, baseline_margin: baseline_margin,
+        office: :house, state: "NY", district: 18, cycle: 2026, baseline_margin: baseline_margin,
         slug: attributes.delete(:slug) || "house-test-#{SecureRandom.hex(4)}",
         **attributes
       )
