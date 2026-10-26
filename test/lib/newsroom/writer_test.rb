@@ -12,6 +12,29 @@ class Newsroom::WriterTest < ActiveSupport::TestCase
     Newsroom::Writer.call(kind: kind, race: race, model_run: @run, payload: payload)
   end
 
+  test "a queued draft cannot publish after corrected forecasts have replaced its baseline" do
+    ModelRun.create!(status: :succeeded, trigger: :manual, started_at: @run.started_at + 1.day,
+      params_snapshot: { house_baselines: { revision: Forecast::HouseBaselines.current.revision } })
+    assert_no_difference "Dispatch.count" do
+      result = with_api_key { write }
+      assert_predicate result.skip, :baseline_superseded?
+    end
+    assert_not_requested(:post, NewsroomStubHelper::COMPLETIONS_URL)
+  end
+
+  test "a correction during writing also prevents publication" do
+    stub_request(:post, NewsroomStubHelper::COMPLETIONS_URL).to_return do
+      ModelRun.create!(status: :succeeded, trigger: :manual, started_at: @run.started_at + 1.day,
+        params_snapshot: { house_baselines: { revision: Forecast::HouseBaselines.current.revision } })
+      { status: 200, headers: { "Content-Type" => "application/json" },
+        body: JSON.generate(completion_response(content: dispatch_json(cited_poll_ids: @polls.map(&:id)))) }
+    end
+    assert_no_difference "Dispatch.count" do
+      result = with_api_key { write }
+      assert_predicate result.skip, :baseline_superseded?
+    end
+  end
+
   test "a draft prepared before an exclusion cannot use a stale forecast" do
     pollsters(:beacon_polling).update!(excluded: true, exclusion_reason: "Withdrawn")
     result = with_api_key { write }

@@ -102,7 +102,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
       # caveat is that it is estimated in one pass where 538 and Silver
       # Bulletin both iterate.
       assert_select "li", text: /[Hh]ouse effects are computed in a single pass/
-      assert_select "li", text: /redistricting-stale/
+      assert_select "li", text: /Redrawn districts use a presidential proxy/
       assert_select "li", text: /[Ii]mputed baseline/
       assert_select "li", text: /[Uu]nsettled nominee/
     end

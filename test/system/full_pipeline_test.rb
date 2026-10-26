@@ -25,6 +25,11 @@ class FullPipelineTest < ApplicationSystemTestCase
 
   setup do
     @race = races(:senate_maine)
+    # This test isolates polling movement within one baseline revision.
+    # Crossing the redistricting correction intentionally produces no mover.
+    run = model_runs(:model_run_one)
+    run.update!(params_snapshot: run.params_snapshot.merge(
+      "house_baselines" => Forecast::HouseBaselines.current.snapshot(Race.all)))
   end
 
   test "a poll arrives, the model re-runs, the newsroom writes it up, and the page shows all three" do

@@ -28,7 +28,7 @@
     a cache hit skips all of them, not just the rendering. %>
 <%= render "shared/forecast_exclusion_notice" %>
 
-<% cache [ "race-core", @race, @latest_run, @latest_dispatch, Site::CacheKey.collection_freshness(Boundary.all) ] do %>
+<% cache [ "race-core", @race, @latest_run, @latest_dispatch, Forecast::HouseBaselines.current.revision, Site::CacheKey.collection_freshness(Boundary.all) ] do %>
   <%# Both internals views of the forecast render here; the header toggle
       picks one (VariantsHelper). The published row stands in when a
       pre-toggle run wrote only one variant. %>
@@ -141,6 +141,16 @@
     </p>
   <% end %>
 
+  <% if @race.house? && (baseline = @race.forecast_baseline)&.presidential? %>
+    <p class="mt-4 text-sm text-slate-600" data-testid="forecast-baseline">
+      This district was redrawn for 2026. Its starting point is the 2024 presidential vote
+      recalculated on the new lines: <strong><%= house_margin(baseline.margin) %></strong>,
+      adjusted for the national environment, then blended with eligible district polls.
+      <%= link_to "Source: The Downballot", baseline.source_url, class: "underline" %>.
+      The <%= house_margin(@race.baseline_margin) %> House result in 2024 describes the old district.
+    </p>
+  <% end %>
+
   <%# The win probability and the margin are the figure. The ask is the
       next thing, before the chart and the poll table. %>
   <div class="mt-8 max-w-xl">
@@ -150,6 +160,12 @@
   <section class="mt-10">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Win probability over time</h2>
     <% timeline = Site::Charts::Timeline.build(race: @race) %>
+    <% if timeline[:baseline_corrections].any? %>
+      <p class="mt-2 text-sm text-slate-600" data-testid="baseline-correction-note">
+        Forecast inputs were corrected on <%= timeline[:baseline_corrections].join(", ") %> to account for redistricting.
+        Changes across that correction are model changes, not a measure of voter movement.
+      </p>
+    <% end %>
     <div class="mt-3">
       <%= render "races/timeline_chart", payload: timeline %>
     </div>

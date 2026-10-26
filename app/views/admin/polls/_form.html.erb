@@ -54,6 +54,23 @@
     </div>
   </div>
 
+  <div class="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_district_plan_id">Verified district boundaries (House polls)</label>
+      <% plan_options = [["No recorded verification", ""], ["Earlier or different lines", "earlier-lines"]] + Forecast::HouseBaselines.current.plan_ids.map { |state, id| ["#{state} — 2026 election lines", id] } %>
+      <% if values[:district_plan_id].present? && plan_options.none? { |_, id| id == values[:district_plan_id] } %>
+        <% plan_options << ["Previously recorded plan: #{values[:district_plan_id]}", values[:district_plan_id]] %>
+      <% end %>
+      <%= select_tag "poll[district_plan_id]", options_for_select(plan_options, values[:district_plan_id]), id: "poll_district_plan_id", class: "mt-1 w-full rounded-md border-slate-300 text-sm" %>
+      <p class="mt-1 text-xs text-slate-500">Record the lines used to select respondents, with a source. Manual polls in redrawn districts need this evidence to enter the forecast.</p>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700" for="poll_district_plan_source_url">Boundary verification source</label>
+      <input type="url" name="poll[district_plan_source_url]" id="poll_district_plan_source_url" value="<%= values[:district_plan_source_url] %>" class="mt-1 w-full rounded-md border-slate-300 text-sm">
+      <p class="mt-1 text-xs text-slate-500">Link to the poll's methodology or a statement identifying its district map.</p>
+    </div>
+  </div>
+
   <div class="rounded-lg border border-slate-200 bg-white p-5">
     <h2 class="text-sm font-medium text-slate-700">Results</h2>
     <p class="mt-0.5 text-xs text-slate-500">Leave a party's percentage blank if this poll reports no result for it.</p>

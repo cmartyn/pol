@@ -20,13 +20,14 @@ class Forecast::Runner
   end
 
   def initialize(trigger:, as_of: nil, seed: nil, n_sims: nil, logger: Rails.logger,
-                 raise_on_error: !Rails.env.production?)
+                 raise_on_error: !Rails.env.production?, require_complete_house: Rails.env.production?)
     @trigger = trigger.to_sym
     @as_of = (as_of || Date.current).to_date
     @seed = seed
     @n_sims = n_sims
     @logger = logger
     @raise_on_error = raise_on_error
+    @require_complete_house = require_complete_house
   end
 
   attr_reader :trigger, :as_of, :logger
@@ -92,7 +93,7 @@ class Forecast::Runner
     # Both merges build new hashes — Pol::Params.to_h is memoized per process
     # and must not be mutated.
     def effective_params
-      snapshot = Pol::Params.to_h.merge(excluded_pollsters: Pollster.exclusion_snapshot)
+      snapshot = Pol::Params.to_h.merge(excluded_pollsters: Pollster.exclusion_snapshot, as_of: as_of.iso8601)
       return snapshot unless @n_sims
 
       snapshot.merge(simulation: snapshot.fetch(:simulation).merge(n_sims: @n_sims))
@@ -121,6 +122,9 @@ class Forecast::Runner
     end
 
     def forecast!
+      Forecast::HouseBaselines.current.validate_board!(races) if @require_complete_house
+      model_run.update!(params_snapshot: model_run.params_snapshot.merge(
+        "house_baselines" => Forecast::HouseBaselines.current.snapshot(races)))
       # Before any averaging, and from unadjusted averages — the single pass
       # described in Forecast::HouseEffects. Estimated once, on the
       # internals-excluded corpus, and applied in both variants; the
@@ -205,9 +209,17 @@ class Forecast::Runner
           race: race,
           national_env: national_env,
           averager: averager,
-          polls: race_polls.fetch(race.id, [])
+          polls: race_polls.fetch(race.id, []),
+          house_baseline: saved_house_baseline(race)
         )
       end
+    end
+
+    def saved_house_baseline(race)
+      return unless race.house?
+
+      attributes = model_run.params_snapshot.fetch("house_baselines").fetch("races").fetch(race.id.to_s)
+      Forecast::HouseBaselines::Baseline.new(**attributes.symbolize_keys.slice(*Forecast::HouseBaselines::Baseline.members))
     end
 
     def races

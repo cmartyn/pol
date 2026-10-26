@@ -175,8 +175,10 @@ or so firmer than a fuller model's, three at the outside, in whichever
 direction it leans; the Senate's movement across the same assumptions is inside
 sampling noise and we don't claim a direction for it. That note travels with the
 number everywhere it is printed, including into the newsroom's prompt. Beyond
-it: there are no pollster quality weights, district baselines are 2024 results
-and go stale where a state has since redistricted, some House districts have
+it: there are no pollster quality weights. The 145 districts whose Census block
+assignments changed for 2026 use sourced 2024 presidential votes on the new lines,
+normalized against the national presidential result. The remaining districts
+retain their historical House-result method. Some unchanged House districts have
 imputed baselines because a major party did not field a candidate in 2024, and
 some Senate nominations were unsettled when the board was seeded —
 [`/methodology`](#the-site) carries both counts, computed live off the current
@@ -184,12 +186,22 @@ board rather than hardcoded here where they would go stale. The model also has
 no idea which party currently controls either chamber, which is why the
 newsroom writes about *winning* control and never about holding it.
 
+Redistricting inputs and provenance live in
+[`db/seed_data/house_baselines/2026`](db/seed_data/house_baselines/2026/README.md).
+`bin/rails pol:audit_baselines` validates all 435 district decisions;
+`bin/rails pol:compare_baselines` computes a read-only before/after report
+without publishing forecasts or enqueueing newsroom jobs. See the
+[October 25 validation report](docs/validation/2026-10-25-redistricting.md).
+
 ## Deploy posture
 
-Nothing is deployed, and deployment is deliberately out of scope for this
-build. The app is 12-factor-ready: Postgres via `DATABASE_URL`, secrets via
-credentials or environment, one web process plus one `good_job` worker, no
-local state, `/up` as a health check. DigitalOcean's App Platform is the likely
-target. The `Dockerfile`, `.kamal/` and `config/deploy.yml` are Rails
-generator output, present and unused — treat them as a starting point rather
-than as a tested configuration.
+Production runs at [535.wtf](https://535.wtf) on a DigitalOcean droplet using
+Kamal: a web container, a dedicated GoodJob worker, and a Postgres accessory.
+`config/deploy.yml` is the active configuration. Deploy a committed revision
+with `bin/kamal deploy`; `.kamal/secrets` reads the deployment credentials from
+the macOS keychain and the ignored `config/master.key`. The health endpoint is
+`/up`, and Cloudflare sits in front of Kamal's HTTPS proxy.
+
+For the redistricting release, follow the verification and activation steps in
+the [release report](docs/validation/2026-10-25-redistricting.md). The comparison
+command is read-only; the forecast runner publishes a complete corrected board.

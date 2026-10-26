@@ -41,6 +41,15 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     assert_equal [], payload[:points]
   end
 
+  test "a House baseline correction does not label an unchanged Senate timeline" do
+    corrected = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-25 10:00:00",
+      params_snapshot: { house_baselines: { revision: Forecast::HouseBaselines.current.revision } })
+    Forecast.create!(model_run: corrected, race: races(:senate_maine), p_dem_win: 0.62, p_rep_win: 0.38, mean_margin: 3.2)
+    payload = Site::Charts::Timeline.build(race: races(:senate_maine))
+    assert_equal 2, payload[:points].size
+    assert_empty payload[:baseline_corrections]
+  end
+
   # The interactive chart's words all come from the payload (the JS only
   # places them): the tooltip's dateline and the whole-percent strings for
   # tooltip rows and on-chart end labels.

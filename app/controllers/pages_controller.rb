@@ -10,9 +10,9 @@ class PagesController < PublicController
     # moment a primary reshuffles who's actually on a House ballot. One
     # grouped count keeps the sentence honest without a second query for the
     # denominator.
-    imputed_by_flag = Race.house.group(:baseline_imputed).count
-    @house_district_count = imputed_by_flag.values.sum
-    @house_imputed_count = imputed_by_flag[true] || 0
+    house_races = Race.house.to_a
+    @house_district_count = house_races.size
+    @house_imputed_count = house_races.count { |race| race.baseline_imputed? && !Forecast::HouseBaselines.current.changed?(race) }
 
     # Final fixes pass: the "Unsettled nominees" bullet used to say "as of
     # the last time races were seeded," implying a future re-seed would

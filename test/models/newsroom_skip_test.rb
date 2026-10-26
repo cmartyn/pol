@@ -44,7 +44,7 @@ class NewsroomSkipTest < ActiveSupport::TestCase
   end
 
   test "every reason the newsroom can have for not publishing is a value here" do
-    assert_equal %w[validation_failed cap_reached duplicate agents_disabled no_api_key llm_error pollster_excluded],
+    assert_equal %w[validation_failed cap_reached duplicate agents_disabled no_api_key llm_error pollster_excluded baseline_superseded],
                  NewsroomSkip.reasons.keys
   end
 end

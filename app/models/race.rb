@@ -52,4 +52,10 @@ class Race < ApplicationRecord
   def latest_forecast(variant: :excl_internals)
     Forecast.latest_for_races(variant: variant).find_by(race_id: id)
   end
+
+  def forecast_baseline
+    return if baseline_margin.nil? && !Forecast::HouseBaselines.current.changed?(self)
+
+    Forecast::HouseBaselines.current.resolve(self) if house?
+  end
 end

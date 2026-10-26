@@ -130,9 +130,17 @@ module Ingest
       end
 
       def district_rows(layer, state, fips, offset)
-        url, features = @client.features(DISTRICT_SERVICE, layer, where: "STATE='#{fips}'", out_fields: [ "STATE", district_field ], max_allowable_offset: offset)
+        field = district_field
+        # The October 2026 Census notice restores Missouri's 2024 plan while
+        # its 120th TIGER geometry still depicts the rejected map. Read the
+        # verified 119th lines until Census republishes the corrected layer.
+        if @congress == 120 && state == "MO"
+          layer = @client.layer_id(DISTRICT_SERVICE, "119th Congressional Districts")
+          field = "CD119"
+        end
+        url, features = @client.features(DISTRICT_SERVICE, layer, where: "STATE='#{fips}'", out_fields: [ "STATE", field ], max_allowable_offset: offset)
         features.filter_map do |feature|
-          number = self.class.district_number(feature.dig("properties", district_field))
+          number = self.class.district_number(feature.dig("properties", field))
           next unless number && feature["geometry"]
 
           { state: state, district: number, geometry: self.class.normalize(feature["geometry"]), source_url: url }

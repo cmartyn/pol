@@ -105,4 +105,19 @@ class DispatchesControllerTest < ActionDispatch::IntegrationTest
     get dispatch_path(dispatches(:maine_poll_reaction))
     assert_response :success
   end
+
+  test "an old redrawn-district article gets a correction only after corrected forecasts publish" do
+    race = Race.create!(office: :house, cycle: 2026, state: "TN", district: 9, slug: "house-2026-tn-09")
+    dispatch = dispatches(:maine_poll_reaction)
+    dispatch.update!(race: race)
+    original = dispatch.body_markdown
+    get dispatch_path(dispatch)
+    assert_select "[data-testid='dispatch-baseline-correction']", count: 0
+
+    ModelRun.create!(status: :succeeded, trigger: :manual, started_at: Time.current,
+      params_snapshot: { house_baselines: { revision: Forecast::HouseBaselines.current.revision } })
+    get dispatch_path(dispatch)
+    assert_select "[data-testid='dispatch-baseline-correction']", text: /earlier district lines/
+    assert_equal original, dispatch.reload.body_markdown
+  end
 end

@@ -1,6 +1,18 @@
 require "test_helper"
 
 class ModelRunTest < ActiveSupport::TestCase
+  test "movement comparisons never cross a baseline correction" do
+    old = model_runs(:model_run_one)
+    corrected = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: old.started_at + 7.days,
+      params_snapshot: { house_baselines: { revision: Forecast::HouseBaselines.current.revision } })
+    assert_nil ModelRun.comparison_run(corrected, window_days: 7)
+    assert old.baseline_superseded?
+    assert_not corrected.baseline_superseded?
+    later = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: corrected.started_at + 1.day,
+      params_snapshot: corrected.params_snapshot)
+    assert_equal corrected, ModelRun.comparison_run(later, window_days: 7)
+  end
+
   test "movement comparisons do not cross a change in excluded pollsters" do
     latest = model_runs(:model_run_one)
     latest.update!(params_snapshot: { "excluded_pollsters" => [ { "id" => pollsters(:beacon_polling).id } ] })

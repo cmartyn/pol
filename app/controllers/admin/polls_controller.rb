@@ -97,8 +97,20 @@ module Admin
           population: poll_params[:population].presence,
           sponsor: poll_params[:sponsor],
           source_url: poll_params[:source_url],
-          raw_payload: { "entered_via" => "admin_form", "entered_at" => Time.current.iso8601 }
+          raw_payload: poll_payload(poll_params)
         }
+      end
+
+      def poll_payload(poll_params)
+        payload = { "entered_via" => "admin_form", "entered_at" => Time.current.iso8601 }
+        # Omitted fields preserve existing evidence; a submitted blank clears
+        # the override without discarding the original feed's provenance.
+        if poll_params.key?(:district_plan_id)
+          payload["district_plan"] = if poll_params[:district_plan_id].present?
+            { "id" => poll_params[:district_plan_id], "source_url" => poll_params[:district_plan_source_url] }
+          end
+        end
+        payload
       end
 
       # Four fixed party rows (dem/rep/ind/other — the whole of PollResult's
@@ -166,7 +178,9 @@ module Admin
         {
           "pollster_name" => poll.pollster&.name, "race_id" => poll.race_id, "field_start" => poll.field_start,
           "field_end" => poll.field_end, "sample_size" => poll.sample_size, "population" => poll.population,
-          "sponsor" => poll.sponsor, "source_url" => poll.source_url, "results" => results
+          "sponsor" => poll.sponsor, "source_url" => poll.source_url, "results" => results,
+          "district_plan_id" => poll.raw_payload&.dig("district_plan", "id"),
+          "district_plan_source_url" => poll.raw_payload&.dig("district_plan", "source_url")
         }.with_indifferent_access
       end
   end
