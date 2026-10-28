@@ -1,4 +1,8 @@
-<% content_for :title, "Dispatches · 535" %>
+<% content_for :title, @page > 1 ? "Dispatches · Page #{@page} · 535" : "Dispatches · 535" %>
+<%# The layout's canonical is path-only, which would mark every later page as
+    a copy of the first. Name the page actually rendered: an out-of-range
+    ?page=99 is clamped to the last page, so it points there. %>
+<% content_for :canonical_url, "#{canonical_url}?page=#{@page}" if @page > 1 %>
 
 <%= render layout: "shared/headline_row", locals: { source: "dispatches-index" } do %>
   <h1 class="font-serif text-3xl font-semibold text-slate-900">Dispatches</h1>
@@ -19,3 +23,17 @@
     </p>
   <% end %>
 </div>
+
+<% if @total_pages > 1 %>
+  <nav aria-label="Dispatch pagination" class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
+    <p class="text-sm text-slate-600">Page <%= @page %> of <%= @total_pages %></p>
+    <div class="flex flex-wrap gap-4">
+      <% if @page > 1 %>
+        <%= link_to "Newer dispatches", dispatches_path(page: @page > 2 ? @page - 1 : nil), rel: "prev", class: "inline-flex min-h-11 items-center text-sm font-medium text-amber-700 underline underline-offset-4 hover:text-amber-800" %>
+      <% end %>
+      <% if @page < @total_pages %>
+        <%= link_to "Older dispatches", dispatches_path(page: @page + 1), rel: "next", class: "inline-flex min-h-11 items-center text-sm font-medium text-amber-700 underline underline-offset-4 hover:text-amber-800" %>
+      <% end %>
+    </div>
+  </nav>
+<% end %>

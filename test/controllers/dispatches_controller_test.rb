@@ -1,7 +1,7 @@
 require "test_helper"
 
 class DispatchesControllerTest < ActionDispatch::IntegrationTest
-  test "index renders every published dispatch, newest first" do
+  test "index renders published dispatches, newest first" do
     newer = Dispatch.create!(
       headline: "Newer dispatch", body_markdown: "Body.", kind: :daily_brief, status: :published,
       published_at: dispatches(:maine_poll_reaction).published_at + 1.day, model_slug: "fixture/writer-model"
@@ -13,6 +13,68 @@ class DispatchesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='dispatch-card']", count: Dispatch.published.count
     headlines = css_select("[data-testid='dispatch-card'] h3").map { |node| node.text.strip }
     assert_equal newer.headline, headlines.first
+  end
+
+  test "index paginates published dispatches in stable batches of thirty without side effects" do
+    Dispatch.delete_all
+    rows = 61.times.map do |i|
+      { headline: "Dispatch #{i}", body_markdown: "Body.", kind: :daily_brief,
+        status: :published, published_at: Time.utc(2026, 8, 3) }
+    end
+    Dispatch.insert_all!(rows + [ rows.first.merge(headline: "Retracted", status: :retracted) ])
+    expected = rows.reverse.map { |row| row.fetch(:headline) }
+
+    assert_no_changes -> { Dispatch.order(:id).pluck(:id, :status, :updated_at) } do
+      assert_no_enqueued_jobs do
+        (1..3).each do |page|
+          get dispatches_path, params: { page: page }
+          assert_response :success
+          headlines = css_select("[data-testid='dispatch-card'] h3").map { |node| node.text.strip }
+          assert_equal expected.slice((page - 1) * 30, 30), headlines
+          assert_select "nav[aria-label='Dispatch pagination']", text: /Page #{page} of 3/
+          assert_select "a[rel='prev']", count: page > 1 ? 1 : 0
+          assert_select "a[rel='next']", count: page < 3 ? 1 : 0
+        end
+
+        get dispatches_path, params: { page: "9" * 100 }
+        assert_response :success
+        assert_select "[data-testid='dispatch-card'] h3", text: expected.last, count: 1
+        assert_select "[data-testid='dispatch-card']", count: 1
+        assert_select "a[rel='next']", count: 0
+      end
+    end
+  end
+
+  test "index normalizes invalid pages and hides pagination for a single page" do
+    [ nil, "0", "-1", "nonsense", "2junk", "1.5", [ "2" ], { number: "2" } ].each do |page|
+      get dispatches_path, params: { page: page }
+      assert_response :success
+      assert_select "[data-testid='dispatch-card']", count: Dispatch.published.count
+      assert_select "nav[aria-label='Dispatch pagination']", count: 0
+    end
+  end
+
+  # The layout's default canonical drops the query string, which would tell
+  # search engines that page 2 is a copy of page 1 — and the older pages are
+  # the only crawl path to older dispatch permalinks.
+  test "each page names itself as canonical and gets its own title" do
+    Dispatch.delete_all
+    Dispatch.insert_all!(31.times.map do |i|
+      { headline: "Dispatch #{i}", body_markdown: "Body.", kind: :daily_brief,
+        status: :published, published_at: Time.utc(2026, 8, 3) }
+    end)
+
+    get dispatches_path
+    assert_select "link[rel='canonical'][href$='/dispatches']"
+    assert_select "title", "Dispatches · 535"
+
+    get dispatches_path, params: { page: 2 }
+    assert_select "link[rel='canonical'][href$='/dispatches?page=2']"
+    assert_select "title", "Dispatches · Page 2 · 535"
+
+    # An out-of-range page renders the last page, so it names that page.
+    get dispatches_path, params: { page: 99 }
+    assert_select "link[rel='canonical'][href$='/dispatches?page=2']"
   end
 
   test "index excludes retracted dispatches" do
@@ -31,6 +93,7 @@ class DispatchesControllerTest < ActionDispatch::IntegrationTest
     get dispatches_path
     assert_response :success
     assert_select "[data-testid='dispatches-empty']"
+    assert_select "nav[aria-label='Dispatch pagination']", count: 0
   end
 
   test "does not require authentication" do
