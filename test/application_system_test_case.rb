@@ -15,7 +15,14 @@ require "test_helper"
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   # Headless Chrome, resolved by Selenium Manager (selenium-webdriver 4.x
   # downloads and caches a matching chromedriver on first use).
-  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
+  SCREEN_SIZE = [ 1400, 1400 ]
+  driven_by :selenium, using: :headless_chrome, screen_size: SCREEN_SIZE
+
+  # Rails sizes the window once, when the browser starts, and every test shares
+  # that browser. Phone-layout tests shrink it, so restore it before each test;
+  # otherwise whichever test the seed runs next inherits a phone-width window
+  # (the senate map's hover test then misses Maine behind the bottom nav).
+  setup { page.current_window.resize_to(*SCREEN_SIZE) }
 
   # ActiveJob::TestHelper is included into ActionDispatch::IntegrationTest, and
   # SystemTestCase only borrows that class's Behavior module — so
