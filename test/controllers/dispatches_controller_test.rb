@@ -54,6 +54,29 @@ class DispatchesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The layout's default canonical drops the query string, which would tell
+  # search engines that page 2 is a copy of page 1 — and the older pages are
+  # the only crawl path to older dispatch permalinks.
+  test "each page names itself as canonical and gets its own title" do
+    Dispatch.delete_all
+    Dispatch.insert_all!(31.times.map do |i|
+      { headline: "Dispatch #{i}", body_markdown: "Body.", kind: :daily_brief,
+        status: :published, published_at: Time.utc(2026, 8, 3) }
+    end)
+
+    get dispatches_path
+    assert_select "link[rel='canonical'][href$='/dispatches']"
+    assert_select "title", "Dispatches · 535"
+
+    get dispatches_path, params: { page: 2 }
+    assert_select "link[rel='canonical'][href$='/dispatches?page=2']"
+    assert_select "title", "Dispatches · Page 2 · 535"
+
+    # An out-of-range page renders the last page, so it names that page.
+    get dispatches_path, params: { page: 99 }
+    assert_select "link[rel='canonical'][href$='/dispatches?page=2']"
+  end
+
   test "index excludes retracted dispatches" do
     retracted = Dispatch.create!(
       headline: "Retracted dispatch", body_markdown: "Body.", kind: :daily_brief, status: :retracted,

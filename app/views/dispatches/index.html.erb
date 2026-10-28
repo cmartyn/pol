@@ -1,4 +1,8 @@
-<% content_for :title, "Dispatches · 535" %>
+<% content_for :title, @page > 1 ? "Dispatches · Page #{@page} · 535" : "Dispatches · 535" %>
+<%# The layout's canonical is path-only, which would mark every later page as
+    a copy of the first. Name the page actually rendered: an out-of-range
+    ?page=99 is clamped to the last page, so it points there. %>
+<% content_for :canonical_url, "#{canonical_url}?page=#{@page}" if @page > 1 %>
 
 <%= render layout: "shared/headline_row", locals: { source: "dispatches-index" } do %>
   <h1 class="font-serif text-3xl font-semibold text-slate-900">Dispatches</h1>
