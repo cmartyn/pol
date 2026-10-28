@@ -28,31 +28,32 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
         forecast = find("[data-testid='win-probability']").text
         chart_data = find("[data-polls-scatter-chart-target='payload']", visible: :all).text(:all)
 
-        # Tab reaches the native select; arrows commit a selection without a mouse.
+        # Tab reaches the native select; typing commits a selection without a mouse.
         matchup_select.send_keys(:tab)
         page.driver.browser.action.key_down(:shift).send_keys(:tab).key_up(:shift).perform
         assert_equal "poll-matchup", page.evaluate_script("document.activeElement.id")
-        matchup_select.send_keys(:home, :arrow_down, :enter)
+        choose_matchup_by_keyboard("j") # Jordan Ellis (D) vs Pat Rivers (R)
         assert_only_group(current, 2)
         assert_unchanged_forecast_and_chart(forecast, chart_data)
         assert_no_selector "[data-testid='earlier-matchup-tag']"
         assert_selector "[role='status']", text: "Showing 2 polls for this matchup."
 
-        matchup_select.send_keys(:arrow_down, :enter)
+        choose_matchup_by_keyboard("p") # Pat Jones (D) vs Pat Rivers (R)
         assert_only_group(historical, 1)
         assert_unchanged_forecast_and_chart(forecast, chart_data)
         assert_selector "[data-testid='earlier-matchup-tag']", text: "Different candidate matchup"
 
-        # Missing and empty keys are real groups, never the reset sentinel.
+        # Missing and empty keys are real groups, never the reset sentinel. Both
+        # read "Matchup not recorded", and each "m" moves to the next one.
         [ unknown, empty ].each do |poll|
-          matchup_select.send_keys(:arrow_down, :enter)
+          choose_matchup_by_keyboard("m")
           assert_only_group(poll, 1)
           assert_unchanged_forecast_and_chart(forecast, chart_data)
           assert_selector "[data-testid='poll-matchup-heading']", text: /Matchup not recorded/i
           assert_no_selector "[data-testid='earlier-matchup-tag']"
         end
 
-        matchup_select.send_keys(:home, :enter)
+        choose_matchup_by_keyboard("a") # All matchups
         assert_selector "[data-testid='poll-row']", count: 5
         assert_selector "[data-testid='poll-matchup-heading']", count: 4
         assert_selector "[data-testid='poll-source-link']", count: 5
@@ -126,6 +127,18 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
       yield
     ensure
       page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+    end
+
+    # Typing an option's first letter selects it and fires change on every
+    # platform. Arrow keys don't: on macOS they open the native menu instead of
+    # stepping the value, and headless Chrome there has no menu to show, so the
+    # selection never changes. Tabbing out and back first ends the previous
+    # type-ahead search; letters typed within a second join it ("jp" matches
+    # nothing).
+    def choose_matchup_by_keyboard(letter)
+      page.driver.browser.action.send_keys(:tab).key_down(:shift).send_keys(:tab).key_up(:shift).perform
+      assert_equal "poll-matchup", page.evaluate_script("document.activeElement.id")
+      page.driver.browser.action.send_keys(letter).perform
     end
 
     def assert_unchanged_forecast_and_chart(forecast, chart_data)
