@@ -2,8 +2,15 @@
 class DispatchesController < PublicController
   edge_cache
 
+  PAGE_SIZE = 30
+
   def index
-    @dispatches = Dispatch.published.recent_first.includes(:race)
+    published = Dispatch.published
+    @total_pages = [ (published.count + PAGE_SIZE - 1) / PAGE_SIZE, 1 ].max
+    requested_page = Integer(params[:page].to_s, 10, exception: false) || 1
+    @page = requested_page.clamp(1, @total_pages)
+    @dispatches = published.recent_first.includes(:race)
+                           .limit(PAGE_SIZE).offset((@page - 1) * PAGE_SIZE)
   end
 
   # Scoped to .published, so a retracted dispatch raises RecordNotFound and

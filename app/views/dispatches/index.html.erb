@@ -19,3 +19,17 @@
     </p>
   <% end %>
 </div>
+
+<% if @total_pages > 1 %>
+  <nav aria-label="Dispatch pagination" class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
+    <p class="text-sm text-slate-600">Page <%= @page %> of <%= @total_pages %></p>
+    <div class="flex flex-wrap gap-4">
+      <% if @page > 1 %>
+        <%= link_to "Newer dispatches", dispatches_path(page: @page > 2 ? @page - 1 : nil), rel: "prev", class: "inline-flex min-h-11 items-center text-sm font-medium text-amber-700 underline underline-offset-4 hover:text-amber-800" %>
+      <% end %>
+      <% if @page < @total_pages %>
+        <%= link_to "Older dispatches", dispatches_path(page: @page + 1), rel: "next", class: "inline-flex min-h-11 items-center text-sm font-medium text-amber-700 underline underline-offset-4 hover:text-amber-800" %>
+      <% end %>
+    </div>
+  </nav>
+<% end %>
