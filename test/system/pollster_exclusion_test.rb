@@ -26,7 +26,13 @@ class PollsterExclusionSystemTest < ApplicationSystemTestCase
     visit polls_path
     assert_no_selector "[data-testid='poll-feed-row']", text: "Beacon Polling"
     visit pollsters_path
+    assert_selector "[data-testid='pollster-row']", text: "Cardinal Research"
+    assert_no_selector "[data-testid='excluded-pollsters']", text: "Beacon Polling"
+    click_link "1 excluded"
+    find("[data-testid='excluded-pollsters'] summary").click
     assert_selector "[data-testid='excluded-pollsters']", text: "Beacon Polling"
+    click_link "View archived polls"
+    assert_selector "[data-testid='pollster-exclusion']", text: "The pollster withdrew its results."
 
     visit edit_admin_pollster_path(pollster)
     uncheck "Exclude this pollster"
