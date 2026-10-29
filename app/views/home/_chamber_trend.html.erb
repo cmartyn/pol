@@ -1,0 +1,60 @@
+<%# locals: sparkline — Site::Charts::ChamberSparkline.build(history, variant:)
+
+    The dashboard card's trend line: every run's chance of control, from
+    the first run to election day. Static SVG, so it needs no JavaScript and
+    rides the card's cache entry.
+
+    The plot stretches to the card's width (preserveAspectRatio="none"), so
+    strokes are non-scaling and the current-value dots are HTML spans laid
+    over it: a circle inside a stretched SVG would draw as an ellipse.
+
+    pointer-events-none: this sits inside the card's headline block, whose
+    link stretches an ::after over the whole block. A positioned element
+    later in the DOM paints above that overlay, and without this a tap on
+    the line would land on the line instead of opening the chamber page. %>
+<% width = sparkline[:width] %>
+<% height = sparkline[:height] %>
+<figure class="pointer-events-none mb-2 mt-4" data-testid="chamber-trend">
+  <div class="relative" style="height: <%= height %>px">
+    <svg viewBox="0 0 <%= width %> <%= height %>" preserveAspectRatio="none"
+         class="absolute inset-0 size-full overflow-visible" role="img" aria-label="<%= sparkline[:aria_label] %>">
+      <line x1="0" x2="<%= width %>" y1="<%= sparkline[:midline_y] %>" y2="<%= sparkline[:midline_y] %>"
+            class="stroke-slate-200" vector-effect="non-scaling-stroke" />
+      <%# The right edge is election day. %>
+      <line x1="<%= width %>" x2="<%= width %>" y1="0" y2="<%= height %>"
+            class="stroke-slate-300" vector-effect="non-scaling-stroke" />
+      <%# Each correction is a dotted mark that names itself on hover. The
+          figure ignores the pointer (see above), so the mark opts back in
+          through a wider invisible stroke that holds its <title>. %>
+      <% sparkline[:corrections].each do |correction| %>
+        <g data-testid="chamber-trend-correction">
+          <title><%= correction[:label] %></title>
+          <line x1="<%= correction[:x] %>" x2="<%= correction[:x] %>" y1="0" y2="<%= height %>" stroke-dasharray="2 2"
+                class="stroke-slate-400" vector-effect="non-scaling-stroke" />
+          <line x1="<%= correction[:x] %>" x2="<%= correction[:x] %>" y1="0" y2="<%= height %>"
+                stroke="transparent" stroke-width="9" vector-effect="non-scaling-stroke" style="pointer-events: stroke" />
+        </g>
+      <% end %>
+      <path d="<%= sparkline[:rep][:path] %>" data-party="rep" fill="none" stroke-width="1.5" stroke-linejoin="round"
+            class="stroke-red-700" vector-effect="non-scaling-stroke" />
+      <path d="<%= sparkline[:dem][:path] %>" data-party="dem" fill="none" stroke-width="1.5" stroke-linejoin="round"
+            class="stroke-blue-700" vector-effect="non-scaling-stroke" />
+    </svg>
+    <% { rep: "bg-red-700", dem: "bg-blue-700" }.each do |party, color| %>
+      <span aria-hidden="true"
+            class="absolute size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white <%= color %>"
+            style="left: <%= sparkline[party][:end][:left_pct] %>%; top: <%= sparkline[party][:end][:top] %>px"></span>
+    <% end %>
+  </div>
+  <%# Where the line started, and where the axis ends. The current values
+      are the figures above; nothing here computes a change between the
+      two, because a correction can sit between them. %>
+  <figcaption class="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs text-slate-500">
+    <span>
+      <%= sparkline[:start_label] %>
+      <span class="ml-1 font-figure font-bold text-blue-700">D <%= sparkline[:dem][:start_label] %></span>
+      <span class="ml-1 font-figure font-bold text-red-700">R <%= sparkline[:rep][:start_label] %></span>
+    </span>
+    <span>Election Day</span>
+  </figcaption>
+</figure>

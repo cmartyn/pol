@@ -32,6 +32,24 @@ module Site
         new(chamber_forecast).build
       end
 
+      # The same threshold Forecast::Simulator uses to call control
+      # (#senate_outcome / #house_outcome) — read from params, not
+      # re-derived by simulating anything. Public so the chamber history
+      # chart draws its majority line where this histogram draws its own.
+      def self.dem_threshold(chamber)
+        if chamber.to_s == "senate"
+          total = Pol::Params.fetch!(:chambers, :senate_total_seats)
+          tie = total / 2
+          Pol::Params.fetch!(:chambers, :vp_party) == "dem" ? tie : tie + 1
+        else
+          Pol::Params.fetch!(:chambers, :house_majority_seats)
+        end
+      end
+
+      def self.majority_label(chamber)
+        "#{dem_threshold(chamber)} = majority"
+      end
+
       def initialize(chamber_forecast)
         @chamber_forecast = chamber_forecast
       end
@@ -39,7 +57,7 @@ module Site
       def build
         histogram = @chamber_forecast.seat_histogram || {}
         total = histogram.values.sum
-        threshold = dem_threshold
+        threshold = self.class.dem_threshold(@chamber_forecast.chamber)
 
         bins = histogram.map do |seats, count|
           seats_i = Integer(seats)
@@ -60,7 +78,7 @@ module Site
           chamber: @chamber_forecast.chamber,
           bins: bins,
           dem_threshold: threshold,
-          majority_label: "#{threshold} = majority",
+          majority_label: self.class.majority_label(@chamber_forecast.chamber),
           tick_seats: tick_seats(bins),
           mean_dem_seats: @chamber_forecast.mean_dem_seats,
           p_dem_control: @chamber_forecast.p_dem_control,
@@ -111,19 +129,6 @@ module Site
           when ..80 then 10
           when ..160 then 20
           else 25
-          end
-        end
-
-        # The same threshold Forecast::Simulator uses to call control
-        # (#senate_outcome / #house_outcome) — read from params, not
-        # re-derived by simulating anything.
-        def dem_threshold
-          if @chamber_forecast.chamber == "senate"
-            total = Pol::Params.fetch!(:chambers, :senate_total_seats)
-            tie = total / 2
-            Pol::Params.fetch!(:chambers, :vp_party) == "dem" ? tie : tie + 1
-          else
-            Pol::Params.fetch!(:chambers, :house_majority_seats)
           end
         end
     end

@@ -9,10 +9,21 @@
 <%# Same chrome as /senate: the chamber summary card up top, and the same
     no-run empty state when there's nothing to show yet. %>
 <% if @latest_run %>
-  <%# The partial owns its own border and padding — the dashboard
-      renders it bare — so this wrapper carries layout only. %>
-  <div class="mt-6 max-w-xl">
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true %>
+  <%# The card and its forecast over time: side by side once the page is
+      wide enough for both, the chart under the card below that. The
+      partial owns its own border and padding — the dashboard renders it
+      bare — so the card's wrapper carries layout only. %>
+  <div class="mt-6 grid gap-10 xl:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] xl:items-start">
+    <div class="max-w-xl">
+      <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true %>
+    </div>
+
+    <%# Every run is read here, so it is a fragment of its own, keyed on the
+        latest run: a new run is the only thing that changes the history. %>
+    <% cache [ "chamber-timeline", "house", @latest_run ] do %>
+      <% history = Site::ChamberHistory.new(chamber: :house, seats: true) %>
+      <%= render "races/chamber_timeline", history: history, payload: Site::Charts::ChamberTimeline.build(history) %>
+    <% end %>
   </div>
 <% else %>
   <p class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="chamber-card-empty">

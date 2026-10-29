@@ -13,8 +13,8 @@
   </p>
 <% else %>
   <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true, linked: true %>
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true, linked: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true, linked: true, trend: true %>
+    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true, linked: true, trend: true %>
   </div>
 <% end %>
 

@@ -35,6 +35,53 @@ class ModelRunTest < ActiveSupport::TestCase
     assert_equal comparable, ModelRun.comparison_run(latest, window_days: 7)
   end
 
+  # The chamber history chart labels a correction by what changed, and shows
+  # a House-only baseline fix on the House chart alone. Each kind is read
+  # independently, so a run that changed two inputs at once names both.
+  test "input_changes_from names each input that differs between two runs" do
+    base = ModelRun.new(params_snapshot: {})
+    polls = ModelRun.new(params_snapshot: { "poll_input_revision" => "candidates-v2" })
+    baselines = ModelRun.new(params_snapshot: { "house_baselines" => { "revision" => "pres-2024-lines-v1" } })
+    excluded = ModelRun.new(params_snapshot: { "excluded_pollsters" => [ { "id" => 7 } ] })
+    both = ModelRun.new(params_snapshot: { "poll_input_revision" => "candidates-v2", "excluded_pollsters" => [ { "id" => 7 } ] })
+
+    assert_equal [], base.input_changes_from(ModelRun.new(params_snapshot: {}))
+    assert_equal [ :poll_inputs ], polls.input_changes_from(base)
+    assert_equal [ :house_baselines ], baselines.input_changes_from(base)
+    assert_equal [ :pollster_exclusions ], excluded.input_changes_from(base)
+    assert_equal [ :pollster_exclusions, :poll_inputs ], both.input_changes_from(base)
+    assert base.comparable_inputs?(ModelRun.new(params_snapshot: {}))
+    refute polls.comparable_inputs?(base)
+  end
+
+  # Recent snapshots carry every district's baseline (~137 KB of JSON per
+  # run in production), so a history of 1,200 runs must not load them. The
+  # slim scope keeps only what the input readers need, and they read the
+  # same answers from it as from the full record.
+  test "with_input_revisions_only reads the same revisions without the rest of the snapshot" do
+    run = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-26 09:00:00",
+      params_snapshot: {
+        "simulation" => { "n_sims" => 100_000 },
+        "poll_input_revision" => "candidates-v2",
+        "excluded_pollsters" => [ { "id" => 9, "name" => "Example Research" }, { "id" => 4, "name" => "Other" } ],
+        "house_baselines" => { "revision" => "pres-2024-lines-v1", "races" => { "36" => { "margin" => 4.2 } } }
+      })
+    legacy = model_runs(:model_run_one)
+
+    slim = ModelRun.with_input_revisions_only.where(id: [ run.id, legacy.id ]).index_by(&:id)
+
+    assert_equal "candidates-v2", slim[run.id].poll_input_revision
+    assert_equal "pres-2024-lines-v1", slim[run.id].baseline_revision
+    assert_equal [ 4, 9 ], slim[run.id].excluded_pollster_ids
+    assert_equal run.started_at, slim[run.id].started_at
+    assert_nil slim[run.id].params_snapshot.dig("house_baselines", "races")
+    assert_nil slim[run.id].params_snapshot["simulation"]
+    # A snapshot from before any of the three existed reads its defaults.
+    assert_equal legacy.poll_input_revision, slim[legacy.id].poll_input_revision
+    assert_equal legacy.baseline_revision, slim[legacy.id].baseline_revision
+    assert_equal [], slim[legacy.id].excluded_pollster_ids
+  end
+
   test "status enum round-trips every value" do
     ModelRun.statuses.each_key do |value|
       run = ModelRun.new(status: value)

@@ -50,6 +50,37 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     assert_empty payload[:baseline_corrections]
   end
 
+  test "corrections are dated on the first run after each one" do
+    race = Race.create!(office: :house, state: "TN", district: 9, cycle: 2026,
+      slug: "house-2026-tn-09", baseline_margin: 45.6, baseline_imputed: true)
+    Forecast.create!(race: race, model_run: model_runs(:model_run_one), p_dem_win: 1, p_rep_win: 0, mean_margin: 56.8)
+    new_lines = { "revision" => Forecast::HouseBaselines.current.revision }
+    rebased = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-25 10:00:00",
+      params_snapshot: { "house_baselines" => new_lines })
+    repaired = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-26 09:00:00",
+      params_snapshot: { "house_baselines" => new_lines, "poll_input_revision" => "candidates-v2" })
+    [ rebased, repaired ].each do |run|
+      Forecast.create!(race: race, model_run: run, p_dem_win: 0.1, p_rep_win: 0.9, mean_margin: -20.0)
+    end
+
+    payload = Site::Charts::Timeline.build(race: race)
+
+    assert_equal [ "Oct 25, 2026" ], payload[:baseline_corrections]
+    assert_equal [ "Oct 26, 2026" ], payload[:polling_corrections]
+  end
+
+  # A race page charts every run, and a recent run's snapshot carries every
+  # House district's baseline: about 137 KB of JSON, of which the chart
+  # needs three revision fields. Loading whole snapshots took 1.2 s per race
+  # page in production by late October, and grew with every run.
+  test "reads each run's revision fields without loading its whole snapshot" do
+    whole_snapshot = /"model_runs"\.(?:\*|"params_snapshot")/
+
+    assert_no_queries_match(whole_snapshot) do
+      Site::Charts::Timeline.build(race: races(:senate_maine))
+    end
+  end
+
   # The interactive chart's words all come from the payload (the JS only
   # places them): the tooltip's dateline and the whole-percent strings for
   # tooltip rows and on-chart end labels.
