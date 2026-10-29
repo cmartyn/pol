@@ -130,7 +130,7 @@
   <% end %>
 
   <% if excluded_pollsters.any? %>
-    <details id="excluded-pollsters" class="mt-8 scroll-mt-24 border-t border-slate-200" data-testid="excluded-pollsters">
+    <details id="excluded-pollsters" class="mt-8 scroll-mt-24 border-t border-slate-200 [overflow-wrap:anywhere]" data-testid="excluded-pollsters">
       <summary class="cursor-pointer py-3 text-sm font-medium text-slate-600 hover:text-slate-900 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600">
         Excluded pollsters <span class="font-normal">(<%= excluded_pollsters.size %>)</span>
       </summary>
