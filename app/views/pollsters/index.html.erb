@@ -43,20 +43,6 @@
   <% estimated = rows.count(&:estimated?) %>
   <% excluded_pollsters = Pollster.excluded.order(:name) %>
 
-  <% if excluded_pollsters.any? %>
-    <section class="mt-8" data-testid="excluded-pollsters">
-      <h2 class="font-serif text-xl font-semibold text-slate-900">Excluded pollsters</h2>
-      <p class="mt-2 max-w-prose text-sm text-slate-600">These firms' polls are excluded from both forecast variants and from the adjustments estimated for other pollsters. Their records remain available below.</p>
-      <% excluded_pollsters.each do |pollster| %>
-        <div class="mt-4">
-          <h3 class="mb-2 font-semibold"><%= link_to pollster.name, pollster_path(pollster), class: "text-amber-700 underline underline-offset-2" %></h3>
-          <%= render "exclusion", pollster: pollster %>
-          <%= link_to "View archived polls", pollster_path(pollster), class: "mt-2 inline-block text-sm text-amber-700 hover:text-amber-800" %>
-        </div>
-      <% end %>
-    </section>
-  <% end %>
-
   <% if rows.empty? %>
     <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="pollsters-empty">
       <%= excluded_pollsters.any? ? "No included polls are available." : "No polls have been collected yet, so there are no pollsters to rate." %>
@@ -73,6 +59,10 @@
       <%= pluralize(rows.size, "pollster") %> &middot;
       <%= estimated %> with an estimated effect &middot;
       <%= rows.count(&:applied?) %> whose effect is being applied
+      <% if excluded_pollsters.any? %>
+        &middot; <%= link_to "#{excluded_pollsters.size} excluded", "#excluded-pollsters",
+                            class: "underline underline-offset-2 hover:text-slate-700" %>
+      <% end %>
     </p>
 
     <div class="mt-3 overflow-x-auto">
@@ -137,5 +127,21 @@
       A firm with polls but no usable ones gets no estimate at all, which is a different thing from an
       estimate of zero.
     </p>
+  <% end %>
+
+  <% if excluded_pollsters.any? %>
+    <details id="excluded-pollsters" class="mt-8 scroll-mt-24 border-t border-slate-200 [overflow-wrap:anywhere]" data-testid="excluded-pollsters">
+      <summary class="cursor-pointer py-3 text-sm font-medium text-slate-600 hover:text-slate-900 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600">
+        Excluded pollsters <span class="font-normal">(<%= excluded_pollsters.size %>)</span>
+      </summary>
+      <p class="mt-2 max-w-prose text-sm text-slate-600">These firms' polls are excluded from both forecast variants and from the adjustments estimated for other pollsters. Their records remain available below.</p>
+      <% excluded_pollsters.each do |pollster| %>
+        <div class="mt-4">
+          <h3 class="mb-2 font-semibold"><%= link_to pollster.name, pollster_path(pollster), class: "text-amber-700 underline underline-offset-2" %></h3>
+          <%= render "exclusion", pollster: pollster %>
+          <%= link_to "View archived polls", pollster_path(pollster), class: "mt-2 inline-flex min-h-11 items-center text-sm text-amber-700 hover:text-amber-800" %>
+        </div>
+      <% end %>
+    </details>
   <% end %>
 <% end %>
