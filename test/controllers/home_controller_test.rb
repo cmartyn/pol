@@ -107,9 +107,11 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     forecast_queries = /\ASELECT .* FROM "(?:chamber_forecasts|forecasts)"/
     with_fragment_caching do
       # Two cards and two maps each need one bulk query, regardless of how
-      # many races or variants they render. No comparison run exists here.
+      # many races or variants they render, and each card's trend line two
+      # more (its runs, then their rows), regardless of how many runs there
+      # are. No comparison run exists here.
       ActiveRecord::Base.connection.clear_query_cache
-      assert_queries_match(forecast_queries, count: 4) { get root_path }
+      assert_queries_match(forecast_queries, count: 8) { get root_path }
 
       assert_response :success
       { "senate" => 55, "house" => 48 }.each do |chamber, published_percent|
@@ -249,6 +251,48 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='chamber-card-senate'] [data-variant='incl_internals']"
     assert_select "[data-testid='national-environment'] [data-variant='excl_internals']", count: 1
     assert_select "[data-testid='national-environment'] [data-variant='incl_internals']", count: 1
+  end
+
+  # The trend line is static SVG inside the cached card, one per internals
+  # view like every other number on it. The chamber pages carry the full
+  # chart beside their card instead, so their card leaves it out.
+  test "each dashboard card carries its chamber's trend line in both views, and /senate's card does not" do
+    later = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: "2026-10-29 11:00:00")
+    ChamberForecast.create!(model_run: later, chamber: :senate, p_dem_control: 0.69, p_rep_control: 0.31, mean_dem_seats: 51.8)
+    ChamberForecast.create!(model_run: later, chamber: :house, p_dem_control: 0.97, p_rep_control: 0.03, mean_dem_seats: 241.7)
+
+    get root_path
+
+    %w[senate house].each do |chamber|
+      assert_select "[data-testid='chamber-card-#{chamber}'] [data-testid='chamber-trend']", count: 2
+    end
+    assert_select "[data-testid='chamber-card-senate'] [data-variant='excl_internals'] [data-testid='chamber-trend']" do
+      assert_select "svg[role='img'][aria-label*='Democrats from 55% to 69%']"
+      assert_select "path[data-party='dem'][d^='M0,']"
+      assert_select "path[data-party='rep']"
+      assert_select "figcaption", text: /Aug 1.*D 55%.*R 45%.*Election Day/m
+      assert_select "[data-testid='chamber-trend-correction']", count: 0
+    end
+
+    get senate_path
+    assert_select "[data-testid='chamber-trend']", count: 0
+  end
+
+  test "the trend line marks a correction, and the mark names itself on hover" do
+    ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-26 09:04:00",
+      params_snapshot: { "poll_input_revision" => "candidates-v2" }).tap do |run|
+      ChamberForecast.create!(model_run: run, chamber: :senate, p_dem_control: 0.61, p_rep_control: 0.39, mean_dem_seats: 51.1)
+      ChamberForecast.create!(model_run: run, chamber: :house, p_dem_control: 0.97, p_rep_control: 0.03, mean_dem_seats: 243)
+    end
+
+    get root_path
+
+    assert_select "[data-testid='chamber-card-senate'] [data-variant='excl_internals'] [data-testid='chamber-trend']" do
+      assert_select "[data-testid='chamber-trend-correction']", count: 1
+      assert_select "[data-testid='chamber-trend-correction'] title", text: "Data correction, Oct 26"
+      # No key under the line: on its own it did not read as describing it.
+      assert_select "figcaption", text: /correction/i, count: 0
+    end
   end
 
   test "the dashboard's chamber cards carry small maps once boundaries exist, and /senate's card does not" do

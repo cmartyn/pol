@@ -12,6 +12,21 @@ class ModelRun < ApplicationRecord
   # .first to get the one run whose numbers the site should show.
   scope :latest, -> { order(started_at: :desc, id: :desc) }
 
+  # Runs with only the three snapshot fields the input readers above use
+  # (excluded_pollster_ids, poll_input_revision, baseline_revision). A recent
+  # snapshot carries every district's baseline — about 137 KB of JSON per
+  # run in production — so a history across every run selects this instead
+  # of the full record. Other attributes are not loaded.
+  scope :with_input_revisions_only, -> {
+    select(:id, :started_at, Arel.sql(<<~SQL.squish))
+      jsonb_build_object(
+        'excluded_pollsters', params_snapshot -> 'excluded_pollsters',
+        'poll_input_revision', params_snapshot -> 'poll_input_revision',
+        'house_baselines', jsonb_build_object('revision', params_snapshot #> '{house_baselines,revision}')
+      ) AS params_snapshot
+    SQL
+  }
+
   def excluded_pollster_ids
     Array(params_snapshot&.fetch("excluded_pollsters", [])).map { |pollster| pollster.fetch("id") }.sort
   end
@@ -35,9 +50,23 @@ class ModelRun < ApplicationRecord
     params_snapshot&.dig("house_baselines", "revision") || Forecast::HouseBaselines::LEGACY_REVISION
   end
 
+  # Two runs are comparable when nothing they were fed changed between them
+  # except the polls themselves: the same excluded pollsters, the same poll
+  # records, the same House baselines. Movement across any of those is a
+  # correction, not voters.
   def comparable_inputs?(other)
-    other && excluded_pollster_ids == other.excluded_pollster_ids && baseline_revision == other.baseline_revision &&
-      poll_input_revision == other.poll_input_revision
+    other.present? && input_changes_from(other).empty?
+  end
+
+  # Which of those inputs differ, by name, in a fixed order. The chamber
+  # history chart marks each correction with these, and shows a House-only
+  # baseline fix on the House chart alone.
+  def input_changes_from(other)
+    [
+      (:pollster_exclusions if excluded_pollster_ids != other.excluded_pollster_ids),
+      (:poll_inputs if poll_input_revision != other.poll_input_revision),
+      (:house_baselines if baseline_revision != other.baseline_revision)
+    ].compact
   end
 
   def poll_input_revision
