@@ -67,6 +67,8 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
 
     assert_equal [ "Oct 25, 2026" ], payload[:baseline_corrections]
     assert_equal [ "Oct 26, 2026" ], payload[:polling_corrections]
+    # Both kinds, in time order, for the chart's correction rules.
+    assert_equal [ rebased, repaired ].map { |run| run.started_at.iso8601 }, payload[:correction_times]
   end
 
   # A race page charts every run, and a recent run's snapshot carries every

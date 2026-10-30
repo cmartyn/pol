@@ -19,6 +19,14 @@
     <% [ payload[:side_a_party], payload[:side_b_party] ].each do |party| %>
       <span><span class="inline-block h-2 w-2 rounded-full <%= dot_class.fetch(party, "bg-slate-500") %>"></span> <%= side_word.fetch(party, "Other") %>-leaning poll</span>
     <% end %>
+    <%# The published view draws a partisan-sponsored poll as a ring: on the
+        chart, out of the average. With internals on it is a filled dot like
+        the rest, so the key only names the ring when the ring is drawn. %>
+    <% if payload[:points].any? { |point| point[:internal] } %>
+      <span data-variant="excl_internals" data-testid="scatter-internal-key">
+        <span class="inline-block h-2 w-2 rounded-full border-[1.5px] border-slate-500 bg-white"></span> Partisan-sponsored, not in average
+      </span>
+    <% end %>
     <%= each_variant(tag_name: :span) do |variant| %>
       <% margin = variant == :incl_internals ? payload.dig(:incl, :average_margin) : payload[:average_margin] %>
       <% if margin %>

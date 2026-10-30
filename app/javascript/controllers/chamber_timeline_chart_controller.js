@@ -7,6 +7,7 @@ import { partyColor, CHROME } from "charts/theme"
 import { observeWidth } from "charts/dimensions"
 import { timeTicks } from "charts/time_ticks"
 import { createTooltip } from "charts/tooltip"
+import { clusters } from "charts/clusters"
 
 // A chamber page's "Forecast over time": two panels on one time axis. The
 // top one is each party's chance of control in every model run; the bottom
@@ -573,15 +574,4 @@ function marker(g, color) {
     .attr("stroke", CHROME.ring)
     .attr("stroke-width", 1.5)
     .attr("display", "none")
-}
-
-// Sorted x positions grouped wherever neighbours sit within `gap` pixels.
-function clusters(xs, gap) {
-  const groups = []
-  for (const x of [...xs].sort((a, b) => a - b)) {
-    const group = groups[groups.length - 1]
-    if (group && x - group[group.length - 1] < gap) group.push(x)
-    else groups.push([x])
-  }
-  return groups
 }

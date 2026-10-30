@@ -111,63 +111,81 @@
     <% end %>
   </div>
 
-  <% if forecast %>
-    <section class="mt-8 rounded-lg border border-slate-200 p-5" data-testid="forecast-detail">
-      <h2 class="font-serif text-xl font-semibold text-slate-900">Forecast detail</h2>
-      <%= render "shared/as_of", time: @latest_run&.started_at %>
-
-      <%= each_variant do |variant| %>
-      <% variant_forecast = forecasts[variant] %>
-      <div class="mt-3 flex flex-wrap items-baseline gap-x-10 gap-y-3">
-        <div>
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Estimated margin</p>
-          <p class="text-lg font-semibold <%= party_text_color(margin_party(@race, variant_forecast.mean_margin)) %>">
-            <%= formatted_margin(@race, variant_forecast.mean_margin) %>
-          </p>
-        </div>
-        <% if variant_forecast.margin_percentiles.present? %>
-          <% interval = Site::Format.percentile_interval(variant_forecast.margin_percentiles, side_a_party: race_sides(@race).first, side_b_party: race_sides(@race).second) %>
-          <div data-testid="percentile-interval">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500"><%= interval[:label] %> interval</p>
-            <p class="text-lg font-semibold text-slate-900"><%= interval[:low] %> to <%= interval[:high] %></p>
-          </div>
-        <% end %>
-      </div>
-      <% end %>
-    </section>
-  <% else %>
-    <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="forecast-empty">
-      No forecast run has covered this race yet.
-    </p>
-  <% end %>
-
-  <% if @race.house? && (baseline = @race.forecast_baseline)&.presidential? %>
-    <p class="mt-4 text-sm text-slate-600" data-testid="forecast-baseline">
-      This district was redrawn for 2026. Its starting point is the 2024 presidential vote
-      recalculated on the new lines: <strong><%= house_margin(baseline.margin) %></strong>,
-      adjusted for the national environment, then blended with eligible district polls.
-      <%= link_to "Source: The Downballot", baseline.source_url, class: "underline" %>.
-      The <%= house_margin(@race.baseline_margin) %> House result in 2024 describes the old district.
-    </p>
-  <% end %>
+  <%# What the forecast rests on before polling, in methodology's words —
+      the unpolled and ambiguous-matchup notes below both name it. %>
+  <% baseline = @race.forecast_baseline if @race.house? %>
+  <% fundamentals = if !@race.house?
+       "the state's partisan lean"
+     elsif baseline&.presidential?
+       "the 2024 presidential vote on the district's new lines"
+     else
+       "the district's 2024 result"
+     end %>
 
   <%# The win probability and the margin are the figure. The ask is the
-      next thing, before the chart and the poll table. %>
-  <div class="mt-8 max-w-xl">
-    <%= render "shared/subscription_form", source: "race", layout: "card" %>
+      next thing, before the chart and the poll table. From lg the two sit
+      side by side: on their own rows each left most of the width empty. %>
+  <div class="mt-8 grid gap-6 lg:grid-cols-2">
+    <% if forecast %>
+      <section class="rounded-lg border border-slate-200 p-5" data-testid="forecast-detail">
+        <h2 class="font-serif text-xl font-semibold text-slate-900">Forecast detail</h2>
+        <%= render "shared/as_of", time: @latest_run&.started_at %>
+
+        <%= each_variant do |variant| %>
+        <% variant_forecast = forecasts[variant] %>
+        <div class="mt-3 flex flex-wrap items-baseline gap-x-10 gap-y-3">
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Estimated margin</p>
+            <p class="text-lg font-semibold <%= party_text_color(margin_party(@race, variant_forecast.mean_margin)) %>">
+              <%= formatted_margin(@race, variant_forecast.mean_margin) %>
+            </p>
+          </div>
+          <% if variant_forecast.margin_percentiles.present? %>
+            <% interval = Site::Format.percentile_interval(variant_forecast.margin_percentiles, side_a_party: race_sides(@race).first, side_b_party: race_sides(@race).second) %>
+            <div data-testid="percentile-interval">
+              <p class="text-xs font-medium uppercase tracking-wide text-slate-500"><%= interval[:label] %> interval</p>
+              <p class="text-lg font-semibold text-slate-900"><%= interval[:low] %> to <%= interval[:high] %></p>
+            </div>
+          <% end %>
+        </div>
+        <% end %>
+
+        <%# Where a redrawn district's forecast starts: part of the detail,
+            so it sits in the card under the figures it explains. %>
+        <% if baseline&.presidential? %>
+          <p class="mt-4 border-t border-slate-100 pt-3 text-sm text-slate-600" data-testid="forecast-baseline">
+            This district was redrawn for 2026. Its starting point is the 2024 presidential vote
+            recalculated on the new lines: <strong><%= house_margin(baseline.margin) %></strong>,
+            adjusted for the national environment, then blended with eligible district polls.
+            <%= link_to "Source: The Downballot", baseline.source_url, class: "underline" %>.
+            The <%= house_margin(@race.baseline_margin) %> House result in 2024 describes the old district.
+          </p>
+        <% end %>
+      </section>
+    <% else %>
+      <p class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="forecast-empty">
+        No forecast run has covered this race yet.
+      </p>
+    <% end %>
+
+    <%# grid, so the card fills the row's height beside a taller detail
+        card (a redrawn district's note) instead of stopping short. %>
+    <div class="grid max-w-xl lg:max-w-none">
+      <%= render "shared/subscription_form", source: "race", layout: "card" %>
+    </div>
   </div>
 
   <section class="mt-10">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Win probability over time</h2>
     <% timeline = Site::Charts::Timeline.build(race: @race) %>
     <% if timeline[:baseline_corrections].any? %>
-      <p class="mt-2 text-sm text-slate-600" data-testid="baseline-correction-note">
+      <p class="mt-2 max-w-prose text-sm text-slate-600" data-testid="baseline-correction-note">
         Forecast inputs were corrected on <%= timeline[:baseline_corrections].join(", ") %> to account for redistricting.
         Changes across that correction are model changes, not a measure of voter movement.
       </p>
     <% end %>
     <% if timeline[:polling_corrections].any? %>
-      <p class="mt-2 text-sm text-slate-600" data-testid="polling-correction-note">
+      <p class="mt-2 max-w-prose text-sm text-slate-600" data-testid="polling-correction-note">
         Polling inputs were corrected on <%= timeline[:polling_corrections].join(", ") %> to retain candidates
         sharing a party and use final ranked-choice rounds when available. Changes across this correction
         reflect the data repair and recalculated pollster adjustments, not voter movement.
@@ -201,8 +219,7 @@
           The recent polling here measures
           <%= pluralize(polls_scatter[:matchups].size, "different matchup") %>, so there is no single
           contest to average — the forecast rests on fundamentals
-          (<%= @race.house? ? "the district's 2024 result" : "the state's partisan lean" %> and the
-          national environment). Every poll is below, grouped by the
+          (<%= fundamentals %> and the national environment). Every poll is below, grouped by the
           matchup it tested.
         </p>
       <% end %>
@@ -213,8 +230,8 @@
         <%= render "races/poll_table", race: @race, polls: polls, house_effects: house_effects %>
       </div>
     <% else %>
-      <p class="mt-3 text-slate-600" data-testid="unpolled-empty-state">
-        No public polling — forecast rests on fundamentals (state lean, national environment).
+      <p class="mt-3 max-w-prose text-slate-600" data-testid="unpolled-empty-state">
+        No public polling — forecast rests on fundamentals (<%= fundamentals %> and the national environment).
       </p>
     <% end %>
   </section>
@@ -222,11 +239,41 @@
   <section class="mt-10 border-t border-slate-200 pt-6">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Dispatches about this race</h2>
     <div class="mt-3 max-w-3xl">
-      <% dispatches = @race.dispatches.published.recent_first.includes(:model_run) %>
+      <% dispatches = @race.dispatches.published.recent_first.includes(:model_run).to_a %>
+      <%# The newest three as teasers; the rest by date and headline. A race
+          the newsroom has followed all autumn otherwise ran to two dozen
+          teasers under the poll table. Each one keeps its permalink, and
+          the race link each card carries elsewhere would point here. %>
+      <% teasers, earlier = dispatches.first(3), dispatches.drop(3) %>
       <% if dispatches.any? %>
-        <%= render partial: "dispatches/dispatch", collection: dispatches, as: :dispatch %>
+        <%# Its own wrapper, so the last teaser drops its rule (last:) and
+            the earlier list's rule is the only one between them. %>
+        <div>
+          <%= render partial: "dispatches/dispatch", collection: teasers, as: :dispatch, locals: { show_race: false } %>
+        </div>
       <% else %>
         <p class="text-slate-500" data-testid="dispatches-empty">No dispatches about this race yet.</p>
+      <% end %>
+
+      <% if earlier.any? %>
+        <div class="mt-2 border-t border-slate-200 pt-5" data-testid="earlier-dispatches">
+          <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Earlier dispatches <span class="font-normal normal-case text-slate-600">&middot; <%= earlier.size %></span>
+          </h3>
+          <ol class="mt-1 divide-y divide-slate-100">
+            <% earlier.each do |dispatch| %>
+              <li class="flex flex-col gap-0.5 py-3 sm:flex-row sm:items-baseline sm:gap-6" data-testid="earlier-dispatch">
+                <% if dispatch.published_at %>
+                  <time datetime="<%= dispatch.published_at.iso8601 %>" class="shrink-0 text-xs text-slate-600 sm:w-24">
+                    <%= dispatch.published_at.strftime("%b %-d, %Y") %>
+                  </time>
+                <% end %>
+                <%= link_to dispatch.headline, dispatch_path(dispatch),
+                      class: "font-serif font-semibold leading-snug text-slate-900 decoration-amber-500 decoration-2 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600" %>
+              </li>
+            <% end %>
+          </ol>
+        </div>
       <% end %>
     </div>
   </section>

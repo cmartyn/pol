@@ -12,19 +12,26 @@
         arrow-key scrubbing; role="group" makes the aria-label announceable.
         The viewBox only reserves layout space until the controller connects —
         it renders at real pixel size and removes it. %>
-    <div data-controller="timeline-chart" class="w-full" tabindex="0" role="group"
+    <div data-controller="timeline-chart" tabindex="0" role="group"
+         class="w-full rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600"
          aria-label="Win probability over time; use left and right arrow keys to step through model runs">
       <svg data-timeline-chart-target="svg" viewBox="0 0 640 220" class="h-auto w-full"
            role="img" aria-label="Win probability over time"></svg>
       <script type="application/json" data-timeline-chart-target="payload"><%= json_escape(payload.to_json).html_safe %></script>
     </div>
-    <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-      <span><span class="inline-block h-2 w-2 rounded-full bg-blue-700"></span> Dem win probability</span>
-      <span><span class="inline-block h-2 w-2 rounded-full bg-red-700"></span> Rep win probability</span>
+    <%# The swatch is the mark the chart draws: a line once there are runs to
+        join, a dot for a lone run. %>
+    <% swatch = payload[:sparse] ? "h-2 w-2 rounded-full" : "h-0.5 w-3 rounded-full" %>
+    <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+      <span class="inline-flex items-center gap-1.5"><span class="inline-block <%= swatch %> bg-blue-700"></span> Dem win probability</span>
+      <span class="inline-flex items-center gap-1.5"><span class="inline-block <%= swatch %> bg-red-700"></span> Rep win probability</span>
       <% if payload[:show_other] %>
-        <span><span class="inline-block h-2 w-2 rounded-full bg-slate-500"></span> Other win probability</span>
+        <span class="inline-flex items-center gap-1.5"><span class="inline-block <%= swatch %> bg-slate-500"></span> Other win probability</span>
       <% end %>
-      <span><span class="inline-block h-2 w-3 bg-slate-100 align-middle"></span> Tossup band</span>
+      <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2 w-3 rounded-sm border border-slate-200 bg-slate-100"></span> Tossup band</span>
+      <% if payload[:correction_times].present? %>
+        <span class="inline-flex items-center gap-1.5"><span class="inline-block h-3 border-l border-dashed border-slate-400"></span> Data correction</span>
+      <% end %>
     </p>
   <% end %>
 </div>

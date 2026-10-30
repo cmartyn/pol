@@ -1,23 +1,25 @@
 import { Controller } from "@hotwired/stimulus"
 import { select, pointer } from "d3-selection"
 import { scaleLinear, scaleTime } from "d3-scale"
-import { line as d3line, curveMonotoneX } from "d3-shape"
+import { line as d3line } from "d3-shape"
 import { bisector } from "d3-array"
 import { partyColor, CHROME } from "charts/theme"
 import { observeWidth, frame } from "charts/dimensions"
 import { timeTicks } from "charts/time_ticks"
 import { createTooltip } from "charts/tooltip"
+import { clusters } from "charts/clusters"
 
 // The race page's win-probability-over-time chart. Reads its data from a
 // sibling <script type="application/json"> tag built server-side by
 // Site::Charts::Timeline (app/lib/site/charts/timeline.rb) — one point per
-// succeeded model run, oldest first. History is short right now, so this has
-// to look right with one point (dots, no line) just as well as with several.
+// succeeded model run, oldest first. A race added late may have one run (a
+// dot, no line); most have a run every two hours since August (a line, with
+// a dot only on the newest run).
 //
 // The payload carries the words, this controller carries the geometry: every
 // human-readable string (the tooltip dateline, the percent labels) arrives
 // pre-formatted from Ruby, and the only vocabulary owned here is the fixed
-// series display names below. Axes are hand-drawn rather than d3-axis —
+// series display names and chart labels below. Axes are hand-drawn rather than d3-axis —
 // d3-axis's default multi-scale time format is what printed "12 PM / Wed 12"
 // on a three-day run history, and charts/time_ticks.js exists to replace it.
 //
@@ -46,6 +48,16 @@ const bisectDate = bisector((point) => point.date)
 // polls_scatter_chart_controller.js, where a system test caught it.
 const EDGE_INSET = 7
 
+// Runs closer together than this draw no dot of their own: a 3px dot with
+// its 1.5px ring is 9px across, and below that the rings overlap and erase
+// the line under them.
+const MIN_DOT_SPACING = 10
+
+// Corrections closer together than this share one label, as on the chamber
+// chart (chamber_timeline_chart_controller.js).
+const CLUSTER_PX = 48
+const CORRECTION_WORDS = { one: "Correction", many: "Corrections" }
+
 // Which view the internals toggle is showing — see
 // internals_toggle_controller and polls_scatter_chart_controller.
 const internalsOn = () => document.documentElement.dataset.internals === "on"
@@ -66,6 +78,8 @@ export default class extends Controller {
     this.points = this.pointSets[internalsOn() ? "incl" : "excl"]
     if (this.points.length === 0) return
 
+    // Absent from payloads cached before the chart drew corrections.
+    this.corrections = (data.correction_times || []).map((t) => new Date(t))
     this.series = data.show_other ? SERIES : SERIES.slice(0, 2)
     this.band = { low: data.tossup_low_pct, high: data.tossup_high_pct }
     this.activeIndex = null
@@ -103,9 +117,10 @@ export default class extends Controller {
   render(width) {
     this.lastWidth = width
     // right: 68 is end-label room ("Other 12%" at 12px semibold just fits);
-    // left: 44 fits "100%" at 11px with an 8px gutter.
+    // left: 44 fits "100%" at 11px with an 8px gutter; top grows to hold
+    // the correction labels when there are any.
     const { height, margin, innerWidth, innerHeight } = frame(width, {
-      margin: { top: 14, right: 68, bottom: 30, left: 44 },
+      margin: { top: this.corrections.length ? 26 : 14, right: 68, bottom: 30, left: 44 },
       minHeight: 200,
       maxHeight: 280,
       heightRatio: 0.38
@@ -124,6 +139,7 @@ export default class extends Controller {
 
     this.drawBand(g, innerWidth)
     this.drawFrame(g, innerWidth, innerHeight)
+    this.drawCorrections(g, innerWidth, innerHeight)
 
     // Crosshair sits under the data marks but over the chrome; hidden until
     // a pointer or the keyboard picks a run.
@@ -133,7 +149,7 @@ export default class extends Controller {
       .attr("stroke", CHROME.crosshair)
       .attr("display", "none")
 
-    this.drawSeries(g)
+    this.drawSeries(g, innerWidth)
     this.drawEndLabels(g, innerWidth, innerHeight)
     this.drawCapture(g, innerWidth, innerHeight)
 
@@ -223,28 +239,64 @@ export default class extends Controller {
       .text((t) => t.label)
   }
 
-  drawSeries(g) {
-    if (this.points.length > 1) {
-      for (const series of this.series) {
-        const lineGenerator = d3line()
-          .x((point) => this.x(point.date))
-          .y((point) => this.y(point[series.key] * 100))
-          .curve(curveMonotoneX)
+  // Dashed rules where the inputs were corrected, labeled along the top, as
+  // on the chamber chart: a jump at one of these is the data repair the note
+  // above the chart describes, not voters moving.
+  drawCorrections(g, innerWidth, innerHeight) {
+    const xs = this.corrections.map((date) => this.x(date))
 
+    g.selectAll(null)
+      .data(xs)
+      .join("line")
+      .attr("x1", (x) => x)
+      .attr("x2", (x) => x)
+      .attr("y1", -6)
+      .attr("y2", innerHeight)
+      .attr("stroke", CHROME.crosshair)
+      .attr("stroke-dasharray", "3 3")
+      .attr("data-testid", "timeline-correction")
+
+    let floor = 0
+    for (const cluster of clusters(xs, CLUSTER_PX)) {
+      const label = g.append("text")
+        .attr("y", -12)
+        .attr("fill", CHROME.axisText)
+        .attr("font-size", 10)
+        .text(cluster.length > 1 ? CORRECTION_WORDS.many : CORRECTION_WORDS.one)
+      const labelWidth = label.node().getComputedTextLength()
+      const center = (cluster[0] + cluster[cluster.length - 1]) / 2
+      const left = Math.max(floor, Math.min(center - labelWidth / 2, innerWidth + this.margin.right - labelWidth - 2))
+      label.attr("x", left)
+      floor = left + labelWidth + 8
+    }
+  }
+
+  drawSeries(g, innerWidth) {
+    const last = this.points.length - 1
+
+    // Straight segments between runs, as on the chamber chart: the forecast
+    // changes only when a run lands, so a curve would invent the shape between.
+    if (last > 0) {
+      for (const series of this.series) {
         g.append("path")
           .datum(this.points)
           .attr("fill", "none")
           .attr("stroke", partyColor(series.party))
           .attr("stroke-width", 2)
-          .attr("d", lineGenerator)
+          .attr("stroke-linejoin", "round")
+          .attr("d", d3line().x((point) => this.x(point.date)).y((point) => this.y(point[series.key] * 100)))
       }
     }
 
-    // All dots after all lines, so no series' line crosses another's marks.
-    // Kept per-series so setActive can enlarge one run's dot in each.
-    this.dots = this.series.map((series) =>
+    // A dot per run while the runs sit apart. Packed closer (a run every
+    // two hours since August), only the newest run keeps a dot, beside its
+    // end label. All dots after all lines, so no series' line crosses
+    // another's marks.
+    const spread = last === 0 || innerWidth / last >= MIN_DOT_SPACING
+    const dotted = spread ? this.points : [this.points[last]]
+    for (const series of this.series) {
       g.selectAll(null)
-        .data(this.points)
+        .data(dotted)
         .join("circle")
         .attr("cx", (point) => this.x(point.date))
         .attr("cy", (point) => this.y(point[series.key] * 100))
@@ -252,6 +304,17 @@ export default class extends Controller {
         .attr("fill", partyColor(series.party))
         .attr("stroke", CHROME.ring)
         .attr("stroke-width", 1.5)
+    }
+
+    // The run a pointer or the keyboard picks: one marker per series, over
+    // the lines and dots.
+    this.markers = this.series.map((series) =>
+      g.append("circle")
+        .attr("r", 4)
+        .attr("fill", partyColor(series.party))
+        .attr("stroke", CHROME.ring)
+        .attr("stroke-width", 1.5)
+        .attr("display", "none")
     )
   }
 
@@ -316,7 +379,9 @@ export default class extends Controller {
 
     const px = this.x(point.date)
     this.crosshair.attr("x1", px).attr("x2", px).attr("display", null)
-    for (const dots of this.dots) dots.attr("r", (_, i) => (i === index ? 5 : 3))
+    this.series.forEach((series, i) => {
+      this.markers[i].attr("cx", px).attr("cy", this.y(point[series.key] * 100)).attr("display", null)
+    })
 
     // One readout for every series at once, leaders first; the tooltip
     // anchors on the leading line so it hugs the data it describes.
@@ -339,7 +404,7 @@ export default class extends Controller {
     this.activeIndex = null
     this.tooltip?.hide()
     this.crosshair?.attr("display", "none")
-    for (const dots of this.dots ?? []) dots.attr("r", 3)
+    for (const marker of this.markers ?? []) marker.attr("display", "none")
   }
 
   keydown(event) {
