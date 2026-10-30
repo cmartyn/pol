@@ -71,4 +71,33 @@ class RacesHelperTest < ActionView::TestCase
 
     assert_nil poll_margin(poll, nil)
   end
+
+  # The masthead's change line, in the words a reader sees.
+  test "forecast_change_line keeps the clock for an overnight move and drops it for an older one" do
+    latest = Time.zone.parse("2026-10-29 07:00")
+    down = Site::ForecastChange::Result.new(kind: :down, party: "rep", probability: 0.83, time: latest - 30.minutes)
+    up = Site::ForecastChange::Result.new(kind: :up, party: "dem", probability: 0.61, time: latest - 5.days)
+
+    assert_equal "Down from R 83% on Oct 29, 6:30 AM EDT.", strip_tags(forecast_change_line(down, latest_time: latest))
+    assert_equal "Up from D 61% on Oct 24.", strip_tags(forecast_change_line(up, latest_time: latest))
+  end
+
+  test "forecast_change_line names a flip by the side that led" do
+    latest = Time.zone.parse("2026-10-29 07:00")
+    flipped = Site::ForecastChange::Result.new(kind: :flipped, party: "dem", probability: 0.58, time: latest - 3.days)
+
+    assert_equal "Flipped from D 58% on Oct 26.", strip_tags(forecast_change_line(flipped, latest_time: latest))
+  end
+
+  test "forecast_change_line gives a steady race its range, or says unchanged" do
+    latest = Time.zone.parse("2026-10-29 07:00")
+    steady = Site::ForecastChange::Result.new(kind: :steady, party: "rep", low: 0.494, high: 0.512,
+                                              time: latest - 7.days, since: :window)
+    flat = Site::ForecastChange::Result.new(kind: :steady, party: "rep", low: 1.0, high: 1.0,
+                                            time: latest - 3.days, since: :correction)
+
+    assert_equal "Steady over the past week: R 49–51%.", strip_tags(forecast_change_line(steady, latest_time: latest))
+    assert_equal "Unchanged since the Oct 26 data correction.", forecast_change_line(flat, latest_time: latest)
+    assert_nil forecast_change_line(nil, latest_time: latest)
+  end
 end

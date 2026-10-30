@@ -1,9 +1,8 @@
 <%# locals: poll — preloaded with :pollster, race: :candidates and
     poll_results: :candidate. %>
-<%# data-internal-poll is the same hook the race-page rows use: the site-wide
-    internals toggle mutes these rows while the published view is showing, and
-    brings them back to full strength when partisan-sponsored polls are in the
-    math. The selector is tr[data-internal-poll], so this has to stay a row. %>
+<%# data-internal-poll is the same hook the race-page rows use: it marks a
+    partisan-sponsored poll, and the sponsor badge says in words whether it
+    is in the average of the view on show. %>
 <tr data-testid="poll-feed-row" data-poll-id="<%= poll.id %>" <%= "data-internal-poll" if poll.internal? %>>
   <td class="py-2 pr-3 text-slate-700" data-role="name">
     <%= poll.pollster.name %>

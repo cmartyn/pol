@@ -38,10 +38,12 @@
     <%= render "shared/posthog" %>
   </head>
 
-  <body class="min-h-screen bg-white text-slate-900 antialiased [font-variant-numeric:tabular-nums]<%= " max-xl:pb-[calc(3.75rem+env(safe-area-inset-bottom))]" if app_shell? %>">
+  <body class="min-h-screen bg-white text-slate-900 antialiased [font-variant-numeric:tabular-nums]<%= " max-xl:pb-[calc(3.75rem+env(safe-area-inset-bottom))]" if app_shell? %>"
+        data-controller="internals-toggle">
     <a href="#main" class="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-3 focus-visible:top-3 focus-visible:z-50 focus-visible:rounded focus-visible:bg-slate-900 focus-visible:px-3 focus-visible:py-2 focus-visible:text-white">
       Skip to content
     </a>
+    <p class="sr-only" role="status" data-internals-toggle-target="status"></p>
 
     <%# Below xl the public pages are an app shell: this thin top bar, and a
         fixed bottom bar after it. The eight-link nav is display:none there,
@@ -104,9 +106,9 @@
             the no-JS reader already has the published view. %>
         <div class="<%= app_shell? ? "col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-x-1 justify-self-end xl:w-auto xl:gap-x-6 2xl:col-start-3" : "col-start-1 row-start-3 flex w-full items-center justify-end gap-x-6 max-sm:justify-between md:col-start-2 md:row-start-1 md:w-auto 2xl:col-start-3" %>" data-controller="subscribe-dialog">
           <label class="hidden min-h-11 items-center gap-2 text-slate-600 [html[data-internals]_&]:flex"
-                 data-controller="internals-toggle" data-testid="internals-toggle">
+                 data-testid="internals-toggle">
             <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"
-                   data-action="internals-toggle#toggle">
+                   data-action="internals-toggle#toggle" aria-describedby="internals-description">
             <span class="relative h-4 w-7 shrink-0 rounded-full bg-slate-300 transition-colors peer-checked:bg-amber-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-amber-600
                          after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-3" aria-hidden="true"></span>
             <span class="leading-tight">
@@ -119,10 +121,10 @@
                   <span class="text-sm font-medium text-slate-800" aria-hidden="true">Internals</span>
                 </span>
                 <span class="hidden text-sm font-medium text-slate-800 xl:block">Partisan internals</span>
-                <span class="hidden text-xs font-normal text-slate-600 xl:block">Includes partisan-sponsored polls, adjusted</span>
+                <span id="internals-description" class="hidden text-xs font-normal text-slate-600 xl:block">Includes partisan-sponsored polls, adjusted</span>
               <% else %>
                 <span class="block text-sm font-medium text-slate-800">Partisan internals</span>
-                <span class="block text-xs font-normal text-slate-600">Includes partisan-sponsored polls, adjusted</span>
+                <span id="internals-description" class="block text-xs font-normal text-slate-600">Includes partisan-sponsored polls, adjusted</span>
               <% end %>
             </span>
           </label>

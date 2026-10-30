@@ -1,0 +1,21 @@
+<%# Beside the figures of a page that follows the internals toggle.
+    data-variant puts it under the toggle's own CSS switch, so it shows only
+    while the internals view is on and never without JS: a screenshot, or a
+    reader who forgot the switch, should still be able to tell which
+    forecast this is.
+
+    locals: published — optional, the published figure this view replaced
+    ("R 51%"), so the two can be compared without flipping back. %>
+<% published = local_assigns[:published] %>
+<p class="mt-3 flex flex-wrap items-center gap-x-3 text-sm text-slate-700" data-variant="incl_internals" data-testid="internals-marker">
+  <span>
+    Includes partisan internals.
+    <% if published %>
+      The published forecast is <span class="font-semibold text-slate-900"><%= published %></span>.
+    <% end %>
+  </span>
+  <button type="button" data-action="internals-toggle#turnOff"
+          class="inline-flex min-h-11 items-center font-medium text-amber-700 hover:text-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600">
+    Turn off<span class="sr-only"> partisan internals</span>
+  </button>
+</p>

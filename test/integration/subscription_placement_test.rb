@@ -2,7 +2,7 @@ require "test_helper"
 
 # Where the email signup appears. The ask follows the forecast: below the
 # dashboard's dispatches and below a chamber's race table, and after a
-# race's margin or a dispatch. Pages without that figure keep the header
+# race's chart or a dispatch. Pages without that figure keep the header
 # dialog and the footer. Every copy makes the same promise, because the
 # dialog cannot know which page opened it.
 class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
@@ -21,8 +21,10 @@ class SubscriptionPlacementTest < ActionDispatch::IntegrationTest
     get race_path(races(:senate_maine).slug)
     assert_select "main #subscription-form-race[data-layout='card']", count: 1
     body = response.body
-    assert_operator body.index("forecast-detail"), :<, body.index("subscription-form-race")
-    assert_operator body.index("subscription-form-race"), :<, body.index("Win probability over time")
+    # After the forecast and the line it moved on, before the poll table.
+    assert_operator body.index("forecast-detail"), :<, body.index("Win probability over time")
+    assert_operator body.index("Win probability over time"), :<, body.index("subscription-form-race")
+    assert_operator body.index("subscription-form-race"), :<, body.index("data-testid=\"poll-table\"")
 
     get dispatch_path(dispatches(:maine_poll_reaction))
     assert_select "main #subscription-form-dispatch[data-layout='card']", count: 1

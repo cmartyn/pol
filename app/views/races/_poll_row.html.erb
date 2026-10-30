@@ -1,7 +1,8 @@
-<%# locals: race, poll, house_effects — one row of the poll table. %>
-<%# data-internal-poll cues the CSS: the row mutes while the published view
-    is showing (its numbers are not in that view's average) and reads at
-    full strength when the toggle brings internals in. %>
+<%# locals: race, poll, house_effects — one row of the poll table;
+    show_adjustment — whether the table has a House adj. column. %>
+<% show_adjustment = local_assigns.fetch(:show_adjustment, true) %>
+<%# data-internal-poll marks a partisan-sponsored poll; the sponsor badge
+    says in words whether it is in the average of the view on show. %>
 <tr data-testid="poll-row" <%= "data-internal-poll" if poll.internal? %>>
   <td class="py-2 pr-3 text-slate-700" data-role="name">
     <%= poll.pollster.name %>
@@ -18,7 +19,11 @@
     <span class="uppercase text-slate-600"><%= poll.population %></span>
   </td>
   <td class="py-2 pr-3 text-slate-700" data-label="Results">
-    <% poll.poll_results.sort_by { |result| -result.pct }.each do |result| %>
+    <%# Party order, not vote order: a column read down the table finds the
+        same candidate in the same place on every row. The margin column
+        says who leads. %>
+    <% party_order = %w[dem rep ind other] %>
+    <% poll.poll_results.sort_by { |result| [ party_order.index(result.party) || 99, result.display_name.to_s ] }.each do |result| %>
       <span class="ml-2 whitespace-nowrap first:ml-0">
         <%= result.display_name %>
         <span class="font-medium <%= party_text_color(result.party) %>"><%= number_with_precision(result.pct, precision: 1) %>%</span>
@@ -37,14 +42,16 @@
     <% end %>
   </td>
   <%# What the model did to this poll before averaging it, so the arithmetic
-      is visible rather than asserted. Blank where no effect was applied. %>
-  <td class="whitespace-nowrap py-2 pr-3 text-xs" data-label="House adj.">
+      is visible rather than asserted. Blank where no effect was applied,
+      and that blank line is dropped from a phone's stacked row. %>
+  <% if show_adjustment %>
+  <% adjustment = poll_adjustment(poll, race, house_effects) %>
+  <td class="whitespace-nowrap py-2 pr-3 text-xs" data-label="House adj." <%= "data-empty" unless adjustment %>>
     <%# The adjusted margin is the number the model used, so it leads; the
         lean that produced it sits under it. Deliberately NOT written as
         "−R+1.6": a minus sign in front of an already-signed party label is
         two conventions in one token, and a reader cannot tell whether the
         margin moved toward D or R from it. %>
-    <% adjustment = poll_adjustment(poll, race, house_effects) %>
     <% if adjustment %>
       <span data-testid="poll-adjustment"
             title="This pollster leans <%= adjustment[:effect] %> against the field; the model removes that before averaging.">
@@ -52,11 +59,16 @@
         <span class="block text-slate-600"><%= adjustment[:effect] %> lean removed</span>
       </span>
     <% else %>
-      <span class="text-slate-300">&mdash;</span>
+      <span class="text-slate-400"><span aria-hidden="true">&mdash;</span><span class="sr-only">None</span></span>
     <% end %>
   </td>
+  <% end %>
   <td class="py-2" data-label="Source">
-    <%= safe_external_link(poll.source_url, "Source", class: "text-amber-700 hover:text-amber-800", target: "_blank",
-                           rel: "noopener nofollow", data: { testid: "poll-source-link" }) %>
+    <%# Every link says "Source"; its name says whose, so a screen reader's
+        links list isn't twenty identical entries. %>
+    <%= safe_external_link(poll.source_url,
+          safe_join([ "Source", content_tag(:span, ": #{poll.pollster.name}, #{Site::Format.field_dates(poll.field_start, poll.field_end)}", class: "sr-only") ]),
+          class: "text-amber-700 hover:text-amber-800", target: "_blank",
+          rel: "noopener nofollow", data: { testid: "poll-source-link" }) %>
   </td>
 </tr>

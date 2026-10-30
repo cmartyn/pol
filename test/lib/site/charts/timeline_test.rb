@@ -9,7 +9,6 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     point = payload[:points].first
     assert_equal forecasts(:maine_forecast).p_dem_win, point[:p_dem_win]
     assert_equal model_runs(:model_run_one).started_at.iso8601, point[:t]
-    assert_equal model_runs(:model_run_one).started_at.strftime("%b %-d"), point[:label]
   end
 
   test "a race with no succeeded forecast at all gets an empty, still-valid payload" do
@@ -60,7 +59,8 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     repaired = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-26 09:00:00",
       params_snapshot: { "house_baselines" => new_lines, "poll_input_revision" => "candidates-v2" })
     [ rebased, repaired ].each do |run|
-      Forecast.create!(race: race, model_run: run, p_dem_win: 0.1, p_rep_win: 0.9, mean_margin: -20.0)
+      Forecast.create!(race: race, model_run: run, p_dem_win: 0.1, p_rep_win: 0.9, mean_margin: -20.0,
+                       effective_poll_weight: 1.2)
     end
 
     payload = Site::Charts::Timeline.build(race: race)
@@ -69,6 +69,78 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     assert_equal [ "Oct 26, 2026" ], payload[:polling_corrections]
     # Both kinds, in time order, for the chart's correction rules.
     assert_equal [ rebased, repaired ].map { |run| run.started_at.iso8601 }, payload[:correction_times]
+  end
+
+  # The polling repair of Oct 26 was site-wide, but Wyoming had no poll in
+  # its average before it or after it: its line could not have moved for
+  # that reason, and a note saying it did was the critique's error.
+  test "a polling correction marks only a race with polls on one side of it or the other" do
+    race = races(:senate_florida_special)
+    before = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: "2026-10-26 08:00:00")
+    after = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-26 13:00:00",
+      params_snapshot: { "poll_input_revision" => "candidate-results-v2" })
+    rows = [ before, after ].map do |run|
+      Forecast.create!(race: race, model_run: run, p_dem_win: 0.2, p_rep_win: 0.8, mean_margin: -12.0)
+    end
+
+    payload = Site::Charts::Timeline.build(race: race)
+    assert_empty payload[:polling_corrections]
+    assert_empty payload[:correction_times]
+
+    rows.first.update!(effective_poll_weight: 0.8)
+    payload = Site::Charts::Timeline.build(race: race)
+    assert_equal [ "Oct 26, 2026" ], payload[:polling_corrections]
+    assert_equal [ after.started_at.iso8601 ], payload[:correction_times]
+  end
+
+  # By late October a race page charted ~1,250 runs twice over, and the JSON
+  # was most of the page. Older runs on the same level as the last kept one
+  # are dropped; a step keeps the run before it, so it stays a step.
+  test "older runs are thinned to the shape, and the last week keeps every run" do
+    race = races(:senate_florida_special)
+    latest = Time.zone.parse("2026-10-29 07:00")
+    times = (0..240).map { |i| latest - (i * 2).hours }.reverse # ~20 days, two-hourly
+    step_at = latest - 15.days
+    times.each do |time|
+      p_dem = time < step_at ? 0.30 : 0.45
+      run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: time)
+      Forecast.create!(race: race, model_run: run, p_dem_win: p_dem, p_rep_win: 1 - p_dem, mean_margin: -5.0)
+    end
+
+    points = Site::Charts::Timeline.build(race: race)[:points]
+    kept = points.map { |point| Time.zone.parse(point[:t]) }
+
+    assert_operator points.size, :<, times.size / 2
+    assert_equal times.first, kept.first
+    assert_equal times.select { |time| time >= latest - 7.days }, kept.select { |time| time >= latest - 7.days }
+    # Both sides of the step, so the line rises where the forecast did.
+    first_after = times.find { |time| time >= step_at }
+    last_before = times.reverse.find { |time| time < step_at }
+    assert_includes kept, first_after
+    assert_includes kept, last_before
+    # And at least one run a day, so a pointer on any date reads that date.
+    assert_equal times.map(&:to_date).uniq, kept.map(&:to_date).uniq
+  end
+
+  test "the summary names the leader now and its range over the history" do
+    race = races(:senate_florida_special)
+    [ [ "2026-08-20 06:00", 0.30 ], [ "2026-09-20 06:00", 0.55 ], [ "2026-10-20 06:00", 0.40 ] ].each do |time, p_dem|
+      run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: time)
+      Forecast.create!(race: race, model_run: run, p_dem_win: p_dem, p_rep_win: 1 - p_dem, mean_margin: -3.0)
+    end
+
+    summary = Site::Charts::Timeline.build(race: race)[:summary]
+
+    assert_equal "Republicans: 60% in the latest run, between 45% and 70% since Aug 20, 2026.", summary[:excl_internals]
+  end
+
+  test "the page-only keys stay out of the chart's JSON" do
+    html = ApplicationController.render(partial: "races/timeline_chart",
+                                        locals: { payload: Site::Charts::Timeline.build(race: races(:senate_maine)) })
+    json = Nokogiri::HTML(html).at_css("script[type='application/json']").text
+
+    assert_not_includes JSON.parse(json).keys, "change"
+    assert_not_includes JSON.parse(json).keys, "summary"
   end
 
   # A race page charts every run, and a recent run's snapshot carries every
@@ -91,7 +163,9 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
 
     point = payload[:points].first
     assert_equal "Aug 1, 2026 · 6:00 AM EDT", point[:time_label]
-    assert_equal({ dem: "62%", rep: "38%", other: "0%" }, point[:pct_labels])
+    # "Other" rides along only when its line is drawn.
+    assert_equal({ dem: "62%", rep: "38%" }, point[:pct_labels])
+    assert_not point.key?(:p_other_win)
   end
 
   # Pin the dateline's shape, not just the fixture's instance of it: month
@@ -129,6 +203,7 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     payload = Site::Charts::Timeline.build(race: races(:senate_florida_special))
 
     assert payload[:show_other]
+    assert_equal "1%", payload[:points].last[:pct_labels][:other]
   end
 
   test "the tossup band is exposed as the p_dem_win range that counts as a tossup" do
@@ -150,8 +225,9 @@ class Site::Charts::TimelineTest < ActiveSupport::TestCase
     payload = Site::Charts::Timeline.build(race: races(:senate_florida_special))
 
     assert_equal payload[:points].size, payload[:incl_points].size
-    # The old run wrote no internals row: its incl point is the published one.
-    assert_equal payload[:points].first[:p_dem_win], payload[:incl_points].first[:p_dem_win]
+    # The old run wrote no internals row, so its incl point would repeat the
+    # published one: it is nil, and the chart reads the published point.
+    assert_nil payload[:incl_points].first
     assert_in_delta 0.40, payload[:incl_points].last[:p_dem_win]
     assert_in_delta 0.30, payload[:points].last[:p_dem_win]
   end

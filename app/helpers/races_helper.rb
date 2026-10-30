@@ -96,6 +96,35 @@ module RacesHelper
     win_probabilities(forecast).fetch(leading_party(forecast))
   end
 
+  # The line under a race's figure: what just moved, from
+  # Site::ForecastChange. "Down from R 83% on Oct 29, 6:30 AM EDT." The
+  # earlier figure wears its party's color, as every probability here does.
+  # nil when there is no earlier run to compare with.
+  def forecast_change_line(change, latest_time:)
+    return nil unless change
+
+    case change.kind
+    when :up, :down, :flipped
+      verb = { up: "Up from", down: "Down from", flipped: "Flipped from" }.fetch(change.kind)
+      safe_join([ "#{verb} ", change_figure(change.party, Site::Format.percent(change.probability)),
+                  " on #{change_time(change.time, latest_time)}." ])
+    when :steady
+      since = case change.since
+      when :correction then "since the #{change.time.strftime('%b %-d')} data correction"
+      when :first_run then "since the first forecast, #{change.time.strftime('%b %-d')}"
+      else
+        days = Pol::Params.fetch!(:site, :movers_window_days)
+        days == 7 ? "over the past week" : "over the past #{days} days"
+      end
+      low, high = Site::Format.percent(change.low), Site::Format.percent(change.high)
+      return "Unchanged #{since}." if low == high
+
+      safe_join([ "Steady #{since}: ", change_figure(change.party, "#{low.delete('%')}–#{high}"), "." ])
+    when :corrected
+      "Recalculated after a data correction on #{change.time.strftime('%b %-d')}."
+    end
+  end
+
   # A small colored "D 62%" / "R 97%" pill — the win-probability chip the
   # Senate and House tables show per row.
   def probability_chip(forecast)
@@ -222,6 +251,16 @@ module RacesHelper
   end
 
   private
+    def change_figure(party, text)
+      content_tag(:span, "#{PARTY_LETTER.fetch(party)} #{text}", class: "font-semibold #{party_text_color(party)}")
+    end
+
+    # An overnight move needs its clock time; one from last week reads better
+    # as a date.
+    def change_time(time, latest_time)
+      latest_time - time < 2.days ? time.strftime("%b %-d, %-I:%M %p %Z") : time.strftime("%b %-d")
+    end
+
     def win_probabilities(forecast)
       { "dem" => forecast.p_dem_win, "rep" => forecast.p_rep_win, "other" => forecast.p_other_win }
     end

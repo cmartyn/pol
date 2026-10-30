@@ -34,6 +34,9 @@
       pre-toggle run wrote only one variant. %>
   <% forecasts = forecasts_by_variant(->(variant) { @race.latest_forecast(variant: variant) }) %>
   <% forecast = forecasts[:excl_internals] %>
+  <%# Built first: the masthead's change line reads it as well as the chart. %>
+  <% timeline = Site::Charts::Timeline.build(race: @race) %>
+  <% latest_time = @latest_run&.started_at || Time.current %>
 
   <div class="flex flex-wrap items-start justify-between gap-x-10 gap-y-6 sm:items-center">
     <div class="min-w-0 flex-1">
@@ -57,8 +60,9 @@
       </ul>
 
       <%# The masthead is the forecast: the rating labels it, the win
-          probability is the figure, and the simulation count is the caption.
-          Margin and the percentile interval stay in the detail card below.
+          probability is the figure, the change line says what just moved,
+          and the simulation count is the caption. Margin and interval
+          close it, so every number about the forecast is in one place.
           "Uncontested" has no figure — Forecast::Simulator#certain_outcome
           awards the seat and draws no error, so a percentage here would be
           the invented tally the caption was written to stop. %>
@@ -77,6 +81,7 @@
               <% party = leading_party(variant_forecast) %>
               <% probability = leading_probability(variant_forecast) %>
               <% party_name = { "dem" => "Democrats", "rep" => "Republicans", "other" => "The independent" }.fetch(party) %>
+              <% change = timeline[:change][variant] %>
               <p class="eyebrow text-xs <%= rating == "Tossup" ? "text-slate-700" : party_text_color(party) %>" data-testid="rating-word"><%= rating %></p>
               <%# The chamber card's figure at the same proportions. Inline
                   spans, not flex: flex items would each read as their own
@@ -84,6 +89,19 @@
               <p class="mt-1 font-figure font-bold <%= party_text_color(party) %>" data-testid="win-probability">
                 <span class="sr-only"><%= party_name %></span><span class="mr-1.5 text-lg tracking-[0.18em]" aria-hidden="true"><%= RacesHelper::PARTY_LETTER.fetch(party) %></span><span class="text-5xl tracking-tighter"><%= Site::Format.percent_value(probability) %></span><span class="ml-0.5 text-2xl opacity-45">%</span>
               </p>
+              <%# What just moved, against the last run that was meaningfully
+                  different (Site::ForecastChange). When a dispatch has been
+                  written since, it is one tap away. %>
+              <% if (line = forecast_change_line(change, latest_time: latest_time)) %>
+                <p class="mt-2 max-w-2xl font-medium text-slate-900" data-testid="forecast-change">
+                  <%= line %>
+                  <% if change.kind != :steady && @latest_dispatch&.published_at && @latest_dispatch.published_at >= change.time %>
+                    <%= link_to "Read the latest dispatch", dispatch_path(@latest_dispatch),
+                          class: "whitespace-nowrap font-medium text-amber-700 underline decoration-amber-300 underline-offset-4 hover:text-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600",
+                          data: { testid: "forecast-change-dispatch" } %>
+                  <% end %>
+                </p>
+              <% end %>
               <p class="mt-2 max-w-2xl text-slate-600">
                 <% if rating == "Tossup" %>
                   This race is a <strong class="font-semibold">Tossup</strong> — the leading side wins
@@ -97,7 +115,39 @@
               </p>
             <% end %>
           <% end %>
+
+          <%# Says which forecast this is while partisan internals are on,
+              beside the published figure it replaced. %>
+          <% published = forecasts[:excl_internals] %>
+          <%= render "shared/internals_marker",
+                published: "#{RacesHelper::PARTY_LETTER.fetch(leading_party(published))} #{Site::Format.percent(leading_probability(published))}" %>
+
+          <div class="mt-5 border-t border-slate-100 pt-4" data-testid="forecast-detail">
+            <%= each_variant do |variant| %>
+              <% variant_forecast = forecasts[variant] %>
+              <dl class="flex flex-wrap items-baseline gap-x-10 gap-y-3">
+                <div>
+                  <dt class="text-xs font-medium uppercase tracking-wide text-slate-600">Estimated margin</dt>
+                  <dd class="text-lg font-semibold <%= party_text_color(margin_party(@race, variant_forecast.mean_margin)) %>">
+                    <%= formatted_margin(@race, variant_forecast.mean_margin) %>
+                  </dd>
+                </div>
+                <% if variant_forecast.margin_percentiles.present? %>
+                  <% interval = Site::Format.percentile_interval(variant_forecast.margin_percentiles, side_a_party: race_sides(@race).first, side_b_party: race_sides(@race).second) %>
+                  <div data-testid="percentile-interval">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-slate-600"><%= interval[:label] %> interval</dt>
+                    <dd class="text-lg font-semibold text-slate-900"><%= interval[:low] %> to <%= interval[:high] %></dd>
+                  </div>
+                <% end %>
+              </dl>
+            <% end %>
+            <div class="mt-2"><%= render "shared/as_of", time: @latest_run&.started_at %></div>
+          </div>
         </div>
+      <% else %>
+        <p class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="forecast-empty">
+          No forecast run has covered this race yet.
+        </p>
       <% end %>
 
     </div>
@@ -122,62 +172,29 @@
        "the district's 2024 result"
      end %>
 
-  <%# The win probability and the margin are the figure. The ask is the
-      next thing, before the chart and the poll table. From lg the two sit
-      side by side: on their own rows each left most of the width empty. %>
-  <div class="mt-8 grid gap-6 lg:grid-cols-2">
-    <% if forecast %>
-      <section class="rounded-lg border border-slate-200 p-5" data-testid="forecast-detail">
-        <h2 class="font-serif text-xl font-semibold text-slate-900">Forecast detail</h2>
-        <%= render "shared/as_of", time: @latest_run&.started_at %>
-
-        <%= each_variant do |variant| %>
-        <% variant_forecast = forecasts[variant] %>
-        <div class="mt-3 flex flex-wrap items-baseline gap-x-10 gap-y-3">
-          <div>
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Estimated margin</p>
-            <p class="text-lg font-semibold <%= party_text_color(margin_party(@race, variant_forecast.mean_margin)) %>">
-              <%= formatted_margin(@race, variant_forecast.mean_margin) %>
-            </p>
-          </div>
-          <% if variant_forecast.margin_percentiles.present? %>
-            <% interval = Site::Format.percentile_interval(variant_forecast.margin_percentiles, side_a_party: race_sides(@race).first, side_b_party: race_sides(@race).second) %>
-            <div data-testid="percentile-interval">
-              <p class="text-xs font-medium uppercase tracking-wide text-slate-500"><%= interval[:label] %> interval</p>
-              <p class="text-lg font-semibold text-slate-900"><%= interval[:low] %> to <%= interval[:high] %></p>
-            </div>
-          <% end %>
-        </div>
-        <% end %>
-
-        <%# Where a redrawn district's forecast starts: part of the detail,
-            so it sits in the card under the figures it explains. %>
-        <% if baseline&.presidential? %>
-          <p class="mt-4 border-t border-slate-100 pt-3 text-sm text-slate-600" data-testid="forecast-baseline">
-            This district was redrawn for 2026. Its starting point is the 2024 presidential vote
-            recalculated on the new lines: <strong><%= house_margin(baseline.margin) %></strong>,
-            adjusted for the national environment, then blended with eligible district polls.
-            <%= link_to "Source: The Downballot", baseline.source_url, class: "underline" %>.
-            The <%= house_margin(@race.baseline_margin) %> House result in 2024 describes the old district.
-          </p>
-        <% end %>
-      </section>
-    <% else %>
-      <p class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="forecast-empty">
-        No forecast run has covered this race yet.
-      </p>
-    <% end %>
-
-    <%# grid, so the card fills the row's height beside a taller detail
-        card (a redrawn district's note) instead of stopping short. %>
-    <div class="grid max-w-xl lg:max-w-none">
-      <%= render "shared/subscription_form", source: "race", layout: "card" %>
-    </div>
-  </div>
+  <%# Where a redrawn district's forecast starts. It names polls only when
+      some are in the published average: an unpolled district's forecast
+      is the baseline and the national environment alone. %>
+  <% if forecast && baseline&.presidential? %>
+    <p class="mt-6 max-w-prose text-sm text-slate-600" data-testid="forecast-baseline">
+      This district was redrawn for 2026. Its starting point is the 2024 presidential vote
+      recalculated on the new lines: <strong><%= house_margin(baseline.margin) %></strong>,
+      <% if forecast.effective_poll_weight.positive? %>
+        adjusted for the national environment, then blended with this district's polls.
+      <% else %>
+        adjusted for the national environment. No district poll is in the average.
+      <% end %>
+      <%= link_to "Source: The Downballot", baseline.source_url, class: "underline" %>.
+      The <%= house_margin(@race.baseline_margin) %> House result in 2024 describes the old district.
+    </p>
+  <% end %>
 
   <section class="mt-10">
-    <h2 class="font-serif text-xl font-semibold text-slate-900">Win probability over time</h2>
-    <% timeline = Site::Charts::Timeline.build(race: @race) %>
+    <h2 class="font-serif text-xl font-semibold text-slate-900">
+      Win probability over time
+      <span class="ml-1 whitespace-nowrap rounded bg-slate-100 px-2 py-0.5 align-middle font-sans text-xs font-medium text-slate-700"
+            data-variant="incl_internals" data-testid="chart-internals-tag">With partisan internals</span>
+    </h2>
     <% if timeline[:baseline_corrections].any? %>
       <p class="mt-2 max-w-prose text-sm text-slate-600" data-testid="baseline-correction-note">
         Forecast inputs were corrected on <%= timeline[:baseline_corrections].join(", ") %> to account for redistricting.
@@ -195,6 +212,12 @@
       <%= render "races/timeline_chart", payload: timeline %>
     </div>
   </section>
+
+  <%# The ask follows what moved and the line it moved on, before the
+      poll table. Neutral, not amber: amber on this page is a warning. %>
+  <div class="mt-10 max-w-xl">
+    <%= render "shared/subscription_form", source: "race", layout: "card" %>
+  </div>
 
   <section class="mt-10">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Polls</h2>

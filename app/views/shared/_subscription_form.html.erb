@@ -27,9 +27,12 @@
 <% notice = local_assigns[:notice] %>
 <% alert = local_assigns[:alert] %>
 <% heading_class = { "card" => "font-serif text-xl", "band" => "font-serif text-xl", "compact" => "font-serif text-lg", "inline" => "text-sm", "dialog" => "font-serif text-xl pr-8" }.fetch(layout, "font-serif text-xl") %>
-<% support_class = on_card ? "text-amber-950" : "text-slate-600" %>
+<%# The card is neutral: amber boxes on these pages are warnings (the
+    pollster-exclusion notice), and the ask sat beside one in the same
+    amber-50 until 2026-10-30. %>
+<% support_class = on_card ? "text-slate-700" : "text-slate-600" %>
 <section id="subscription-form-<%= source %>" data-layout="<%= layout %>" data-testid="subscription-form"
-         class="<%= "max-w-xl" if layout == "band" %> <%= "rounded-lg border border-amber-200 bg-amber-50 p-5" if on_card %>">
+         class="<%= "max-w-xl" if layout == "band" %> <%= "rounded-lg border border-slate-200 bg-slate-50 p-5" if on_card %>">
   <h2 id="subscription-form-<%= source %>-heading" class="<%= heading_class %> font-semibold text-slate-900">The forecast, in your inbox</h2>
   <p class="mt-1 text-sm <%= support_class %>" data-testid="subscription-promise">A dispatch when the numbers move.</p>
   <% if notice || alert %>

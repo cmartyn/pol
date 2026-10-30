@@ -2,7 +2,8 @@
     The one badge both poll tables (a race page's, the feed's) wear, so a
     change to how sponsorship is shown lands on both. This is what tells a
     reader a poll is not in the published average, and the site-wide
-    internals toggle keys off the same flag. %>
+    internals toggle keys off the same flag. Shown on both poll tables, so
+    rows are no longer dimmed to say it (application.css). %>
 <% if poll.internal? %>
   <span class="mt-0.5 block">
     <span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide <%= { "dem" => "text-blue-700", "rep" => "text-red-700" }.fetch(poll.partisan, "text-slate-600") %>"
@@ -10,5 +11,8 @@
           title="Sponsored by a party-aligned client — not in the published average.">
       <%= poll.partisan == "oth" ? "partisan" : poll.partisan %> sponsor
     </span>
+    <%# The row's place in the math, in words and at full contrast, for
+        whichever view the internals toggle is showing. %>
+    <span class="ml-1 text-xs font-medium text-slate-700" data-testid="sponsor-average-status"><%= variant_swap("Not in average", "In average, adjusted") %></span>
   </span>
 <% end %>
