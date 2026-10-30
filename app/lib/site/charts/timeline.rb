@@ -17,7 +17,8 @@ module Site
 
       def build
         rows = forecasts(:excl_internals).to_a
-        points = rows.map { |forecast| point(forecast) }
+        runs = runs_for(rows)
+        points = rows.zip(runs).map { |forecast, run| point(forecast, run) }
 
         # The internals variant's series, aligned run-for-run with the
         # published one so the two share an x-axis. Runs from before the
@@ -25,13 +26,11 @@ module Site
         # stands in there, so toggling shows an identical (rather than
         # missing) past.
         incl_by_run = forecasts(:incl_internals).index_by(&:model_run_id)
-        incl_points = rows.map { |forecast| point(incl_by_run[forecast.model_run_id] || forecast) }
+        incl_points = rows.zip(runs).map { |forecast, run| point(incl_by_run[forecast.model_run_id] || forecast, run) }
 
         {
-          baseline_corrections: baseline_corrections(rows),
-          polling_corrections: rows.each_cons(2).filter_map { |before, after|
-            after.model_run.started_at.strftime("%b %-d, %Y") if before.model_run.poll_input_revision != after.model_run.poll_input_revision
-          }.uniq,
+          baseline_corrections: baseline_corrections(runs),
+          polling_corrections: corrections(runs, &:poll_input_revision),
           points: points,
           incl_points: incl_points,
           # A third line is only worth drawing when some point actually has a
@@ -46,27 +45,42 @@ module Site
       end
 
       private
-        def baseline_corrections(rows)
+        def baseline_corrections(runs)
           return [] unless Forecast::HouseBaselines.current.changed?(@race)
 
-          rows.each_cons(2).filter_map do |before, after|
-            after.model_run.started_at.strftime("%b %-d, %Y") if before.model_run.baseline_revision != after.model_run.baseline_revision
+          corrections(runs, &:baseline_revision)
+        end
+
+        # The date of each run whose input revision differs from the run
+        # before it.
+        def corrections(runs, &revision)
+          runs.each_cons(2).filter_map do |before, after|
+            after.started_at.strftime("%b %-d, %Y") if revision.call(before) != revision.call(after)
           end.uniq
         end
 
+        # The forecasts alone: their runs come from runs_for, which loads
+        # far less of each one.
         def forecasts(variant)
           Forecast.where(variant: variant, race_id: @race.id)
             .joins(:model_run).merge(ModelRun.succeeded)
-            .includes(:model_run)
             .order("model_runs.started_at ASC")
+        end
+
+        # Each row's run, in the rows' order, with only its start time and
+        # input revisions. A recent run's full snapshot is about 137 KB of
+        # JSON, and a race page charts every run.
+        def runs_for(rows)
+          by_id = ModelRun.with_input_revisions_only.where(id: rows.map(&:model_run_id)).index_by(&:id)
+          rows.map { |forecast| by_id.fetch(forecast.model_run_id) }
         end
 
         def tossup_band_pp
           Pol::Params.fetch!(:site, :tossup_band_pp)
         end
 
-        def point(forecast)
-          started_at = forecast.model_run.started_at
+        def point(forecast, run)
+          started_at = run.started_at
           {
             t: started_at.iso8601,
             label: started_at.strftime("%b %-d"),

@@ -43,6 +43,28 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     refute_match(/overstates certainty/, response.body)
   end
 
+  test "each chamber page carries its forecast over time, with its own chamber's runs in the payload" do
+    later = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: "2026-10-29 11:00:00")
+    ChamberForecast.create!(model_run: later, chamber: :senate, p_dem_control: 0.69, p_rep_control: 0.31, mean_dem_seats: 51.8)
+    ChamberForecast.create!(model_run: later, chamber: :house, p_dem_control: 0.97, p_rep_control: 0.03, mean_dem_seats: 241.7)
+
+    { senate_path => [ "senate", %w[55% 69%] ], house_path => [ "house", %w[48% 97%] ] }.each do |path, (chamber, dem_labels)|
+      get path
+      assert_select "[data-testid='chamber-timeline']" do
+        assert_select "h2", text: "Forecast over time"
+        assert_select "[data-controller='chamber-timeline-chart'][tabindex='0']"
+      end
+      payload = JSON.parse(css_select("[data-testid='chamber-timeline'] script[type='application/json']").first.text)
+      assert_equal chamber, payload["chamber"]
+      assert_equal dem_labels, payload.dig("series", "excl", "dem_labels")
+    end
+  end
+
+  test "a chamber page with one run says the trend will fill in" do
+    get senate_path
+    assert_select "[data-testid='chamber-timeline-sparse-note']", text: /1 model run/
+  end
+
   test "house renders every House fixture race with a data-search attribute for the client-side filter" do
     get house_path
     assert_select "[data-testid='house-race-row']", count: Race.house.count

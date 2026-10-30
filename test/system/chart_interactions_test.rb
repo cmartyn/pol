@@ -39,6 +39,54 @@ class ChartInteractionsTest < ApplicationSystemTestCase
     end
   end
 
+  # Two panels on one time axis: hover and the arrow keys read out a run's
+  # chance of control and expected seats together, the run after a
+  # correction says so, and the axis ends at election day.
+  test "chamber timeline: a run reads out control and seats, and a correction names itself" do
+    corrected = ModelRun.create!(status: :succeeded, trigger: :manual, started_at: "2026-10-26 09:04:00",
+      params_snapshot: { "poll_input_revision" => "candidates-v2" })
+    ChamberForecast.create!(model_run: corrected, chamber: :senate, p_dem_control: 0.61, p_rep_control: 0.39,
+      mean_dem_seats: 51.1, seat_histogram: { "49" => 5, "50" => 20, "51" => 45, "52" => 25, "53" => 5 })
+    ChamberForecast.create!(model_run: corrected, chamber: :house, p_dem_control: 0.97, p_rep_control: 0.03, mean_dem_seats: 243)
+
+    visit senate_path
+
+    within "[data-testid=chamber-timeline]" do
+      assert_selector "svg text", text: "Election Day"
+      assert_selector "svg text", text: "Correction"
+      assert_selector "svg text", text: "51 = majority"
+      assert_no_selector "svg text", text: /\d+\s?(AM|PM)\b/
+
+      # Focus shows the latest run, which is the first after the correction.
+      find("[tabindex='0']").send_keys :end
+      assert_selector "[data-testid=chart-tooltip]", text: "Oct 26, 2026 · 9:04 AM EDT"
+      assert_selector "[data-testid=chart-tooltip]", text: "61%"
+      assert_selector "[data-testid=chart-tooltip]", text: "51.1"
+      assert_selector "[data-testid=chart-tooltip]", text: "First run after a data correction"
+      assert_selector "[data-testid=chart-tooltip]", text: "49–52"
+      assert_selector "[aria-live=polite]", text: /Oct 26, 2026 · 9:04 AM EDT.*Dem 61%.*Rep 39%.*51\.1/, visible: :all
+
+      find("[tabindex='0']").send_keys :arrow_left
+      assert_selector "[data-testid=chart-tooltip]", text: "Aug 1, 2026 · 6:00 AM EDT"
+      assert_no_selector "[data-testid=chart-tooltip]", text: "data correction"
+
+      find("svg").hover
+      assert_selector "[data-testid=chart-tooltip]", text: /expected Dem-caucus seats/
+
+      # 51.1 expected seats sits on the 51-seat majority line. The dashed
+      # line must break around the end label, or "51.1" reads as "-51.1".
+      crosses_label = page.evaluate_script(<<~JS)
+        (() => {
+          const svg = document.querySelector("[data-testid=chamber-timeline] svg")
+          const label = svg.querySelector("[data-testid=chamber-timeline-seats-label]").getBBox()
+          return [...svg.querySelectorAll("[data-testid=chamber-timeline-majority]")].some((line) =>
+            +line.getAttribute("x1") < label.x + label.width + 1 && +line.getAttribute("x2") > label.x - 1)
+        })()
+      JS
+      assert_equal false, crosses_label
+    end
+  end
+
   test "polls scatter: hovering a dot names the pollster, margin, dates and sample" do
     visit race_path(@race.slug)
 

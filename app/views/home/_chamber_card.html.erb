@@ -2,6 +2,7 @@
     once one exists), chamber ("senate"/"house"), title, house (boolean),
     map (optional, default false: only the dashboard shows the card's map; /senate and /house already carry a full-size one),
     linked (optional, default false: only the dashboard links the card to its chamber page; /senate and /house would link to themselves).
+    trend (optional, default false: only the dashboard draws the trend line; /senate and /house carry the full chart beside the card).
     Self-contained rather than taking a precomputed chamber_forecast/histogram:
     this partial is the "dashboard cards" heavy surface from the brief's
     Performance section, cached here (not by the caller) so both call sites —
@@ -10,8 +11,9 @@
     below rather than paying for them regardless. %>
 <% map = local_assigns.fetch(:map, false) %>
 <% linked = local_assigns.fetch(:linked, false) %>
+<% trend = local_assigns.fetch(:trend, false) %>
 <% chamber_path = house ? house_path : senate_path %>
-<% cache [ "chamber-card", chamber, model_run, map, linked, (Site::CacheKey.collection_freshness(Boundary.all) if map), (Site::CacheKey.collection_freshness(house ? Race.house : Race.senate) if map) ] do %>
+<% cache [ "chamber-card", chamber, model_run, map, linked, trend, (Site::CacheKey.collection_freshness(Boundary.all) if map), (Site::CacheKey.collection_freshness(house ? Race.house : Race.senate) if map) ] do %>
   <%# Both internals views render into this one cached card; CSS shows the
       one the toggle picked (VariantsHelper). Load them together, inside the
       cache block so a hit skips the query. The published row stands in for
@@ -19,6 +21,13 @@
   <% chamber_forecasts = ChamberForecast.where(model_run_id: model_run.id, chamber: chamber).index_by { |forecast| forecast.variant.to_sym } %>
   <% excl_forecast = chamber_forecasts[:excl_internals] %>
   <% chamber_forecasts[:incl_internals] ||= excl_forecast %>
+  <%# The trend line reads every run, so it is built here, inside the cache
+      block: the card is keyed on the latest run, and a new run is the only
+      thing that changes the history (corrections included). %>
+  <% if trend %>
+    <% history = Site::ChamberHistory.new(chamber: chamber) %>
+    <% sparklines = VariantsHelper::VARIANTS.index_with { |variant| Site::Charts::ChamberSparkline.build(history, variant: variant) } %>
+  <% end %>
   <%# Flex column when linked so the footer link can sit on the card's floor:
       the dashboard's two cards share a grid row and so a height, and the
       House card's error note would otherwise leave the two links misaligned. %>
@@ -80,6 +89,11 @@
           <span class="font-figure text-sm font-bold opacity-45" aria-hidden="true">%</span>
         </span>
       </div>
+      <%# Inside the headline block, so a tap on it opens the chamber page
+          like the figures above it do. %>
+      <% if trend && sparklines[variant] %>
+        <%= render "home/chamber_trend", sparkline: sparklines[variant] %>
+      <% end %>
       <% end %>
       <% end %>
     </div>

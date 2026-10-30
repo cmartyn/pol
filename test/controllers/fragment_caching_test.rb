@@ -60,6 +60,21 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a new succeeded model run joins the chamber's forecast over time" do
+    with_fragment_caching do
+      get senate_path
+      assert_select "[data-testid='chamber-timeline-sparse-note']"
+
+      new_run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: model_runs(:model_run_one).started_at + 1.day)
+      ChamberForecast.create!(model_run: new_run, chamber: :senate, p_dem_control: 0.61, p_rep_control: 0.39, mean_dem_seats: 51)
+
+      get senate_path
+      assert_select "[data-testid='chamber-timeline-sparse-note']", count: 0
+      payload = JSON.parse(css_select("[data-testid='chamber-timeline'] script[type='application/json']").first.text)
+      assert_equal %w[55% 61%], payload.dig("series", "excl", "dem_labels")
+    end
+  end
+
   test "a new succeeded model run busts the Senate table's cache entry" do
     with_fragment_caching do
       get senate_path
