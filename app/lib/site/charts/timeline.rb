@@ -28,9 +28,15 @@ module Site
         incl_by_run = forecasts(:incl_internals).index_by(&:model_run_id)
         incl_points = rows.zip(runs).map { |forecast, run| point(incl_by_run[forecast.model_run_id] || forecast, run) }
 
+        baseline_runs = baseline_correction_runs(runs)
+        polling_runs = correction_runs(runs, &:poll_input_revision)
+
         {
-          baseline_corrections: baseline_corrections(runs),
-          polling_corrections: corrections(runs, &:poll_input_revision),
+          baseline_corrections: dates(baseline_runs),
+          polling_corrections: dates(polling_runs),
+          # Where the chart rules each correction, as the chamber chart does:
+          # the first run after it, so a jump there reads as a correction.
+          correction_times: (baseline_runs + polling_runs).map(&:started_at).uniq.sort.map(&:iso8601),
           points: points,
           incl_points: incl_points,
           # A third line is only worth drawing when some point actually has a
@@ -45,18 +51,19 @@ module Site
       end
 
       private
-        def baseline_corrections(runs)
+        def baseline_correction_runs(runs)
           return [] unless Forecast::HouseBaselines.current.changed?(@race)
 
-          corrections(runs, &:baseline_revision)
+          correction_runs(runs, &:baseline_revision)
         end
 
-        # The date of each run whose input revision differs from the run
-        # before it.
-        def corrections(runs, &revision)
-          runs.each_cons(2).filter_map do |before, after|
-            after.started_at.strftime("%b %-d, %Y") if revision.call(before) != revision.call(after)
-          end.uniq
+        # Each run whose input revision differs from the run before it.
+        def correction_runs(runs, &revision)
+          runs.each_cons(2).filter_map { |before, after| after if revision.call(before) != revision.call(after) }
+        end
+
+        def dates(runs)
+          runs.map { |run| run.started_at.strftime("%b %-d, %Y") }.uniq
         end
 
         # The forecasts alone: their runs come from runs_for, which loads

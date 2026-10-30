@@ -2,8 +2,11 @@
              truncate (optional) — teaser length in characters. Every context
              that renders this partial is a feed now that each piece has a
              permalink; the show page lays out the body itself rather than
-             going through here. %>
+             going through here.
+             show_race (optional) — false on the race's own page, where the
+             race link would point back at the page it sits on. %>
 <% teaser_length = local_assigns.fetch(:truncate, 300) %>
+<% show_race = local_assigns.fetch(:show_race, true) %>
 <%# The rule sits on the <article> so it spans the page's full measure, while
     everything readable is held to a column inside it. In the narrower
     contexts that also render this partial (the dashboard, a race page) the
@@ -14,7 +17,7 @@
     <span class="rounded-full px-2 py-0.5 font-medium <%= dispatch_kind_color(dispatch.kind) %>" data-testid="dispatch-kind">
       <%= dispatch.kind.humanize %>
     </span>
-    <% if dispatch.race %>
+    <% if show_race && dispatch.race %>
       <%= link_to dispatch.race.name, race_path(dispatch.race.slug), class: "font-medium text-amber-700 hover:text-amber-800" %>
     <% end %>
     <% if dispatch.published_at %>

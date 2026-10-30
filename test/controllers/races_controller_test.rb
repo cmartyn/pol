@@ -178,8 +178,38 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-testid='unpolled-empty-state']", text: /No public polling — forecast rests on fundamentals/
+    assert_select "[data-testid='unpolled-empty-state']", text: /the state's partisan lean/
     assert_select "[data-testid='polls-scatter-chart']", count: 0
     assert_select "[data-testid='poll-table']", count: 0
+  end
+
+  test "show keeps the newest three dispatches as teasers and lists the rest by headline" do
+    race = races(:senate_maine)
+    5.times do |i|
+      Dispatch.create!(race: race, kind: :movement_note, status: :published, headline: "Maine move #{i}",
+        body_markdown: "Body #{i}.", model_run: model_runs(:model_run_one), published_at: Time.zone.parse("2026-10-0#{i + 1} 09:00"))
+    end
+
+    get race_path(race.slug)
+
+    assert_select "[data-testid='dispatch-card']", count: 3
+    assert_select "[data-testid='dispatch-card'] h3", text: "Maine move 4"
+    # On the race's own page the card's race link would point back here.
+    assert_select "[data-testid='dispatch-card'] a[href='#{race_path(race.slug)}']", count: 0
+    assert_select "[data-testid='earlier-dispatches'] h3", text: /Earlier dispatches\s*·\s*3/
+    assert_select "[data-testid='earlier-dispatch']", count: 3
+    assert_select "[data-testid='earlier-dispatch'] a[href='#{dispatch_path(dispatches(:maine_poll_reaction))}']",
+                  text: dispatches(:maine_poll_reaction).headline
+  end
+
+  # Methodology: a House district's prior is its 2024 result, not a state's
+  # lean. The empty state once said "state lean" on every race.
+  test "an unpolled House district names its own fundamentals" do
+    get race_path(races(:house_ny_17).slug)
+
+    assert_response :success
+    assert_select "[data-testid='unpolled-empty-state']", text: /the district's 2024 result and the national environment/
+    assert_select "[data-testid='unpolled-empty-state']", text: /state/, count: 0
   end
 
   test "show links every poll row to its source_url" do
