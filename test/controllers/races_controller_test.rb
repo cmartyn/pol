@@ -128,6 +128,38 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-testid='percentile-interval']"
   end
 
+  test "the masthead says what moved since the last run that was meaningfully different" do
+    race = races(:senate_maine)
+    first = model_runs(:model_run_one)
+    later = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: first.started_at + 6.hours,
+                             params_snapshot: first.params_snapshot)
+    Forecast.create!(model_run: later, race: race, p_dem_win: 0.70, p_rep_win: 0.30, mean_margin: 5.0)
+
+    get race_path(race.slug)
+
+    assert_select "[data-testid='race-masthead'] [data-variant='excl_internals'] [data-testid='forecast-change']",
+                  text: /Up from D 62% on Aug 1, 6:00 AM EDT\./
+  end
+
+  test "a race with one run has no change line" do
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='forecast-change']", count: 0
+  end
+
+  # An unpolled redrawn district's forecast is its baseline and the national
+  # environment; the note named "eligible district polls" anyway.
+  test "a redrawn district with no poll in its average says so" do
+    race = Race.create!(office: :house, state: "TN", district: 9, cycle: 2026,
+      slug: "house-2026-tn-09", baseline_margin: 45.6, baseline_imputed: true)
+    Forecast.create!(race: race, model_run: model_runs(:model_run_one), p_dem_win: 0.05, p_rep_win: 0.95, mean_margin: -20.0)
+
+    get race_path(race.slug)
+
+    assert_select "[data-testid='forecast-baseline']", text: /No district poll is in the average\./
+    assert_select "[data-testid='forecast-baseline']", text: /blended/, count: 0
+  end
+
   # --- The simulation-count sentence ------------------------------------
   # These three branches are the whole of what a reader is told about how the
   # probability was arrived at, and each states a literal count of simulated
@@ -178,8 +210,38 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-testid='unpolled-empty-state']", text: /No public polling — forecast rests on fundamentals/
+    assert_select "[data-testid='unpolled-empty-state']", text: /the state's partisan lean/
     assert_select "[data-testid='polls-scatter-chart']", count: 0
     assert_select "[data-testid='poll-table']", count: 0
+  end
+
+  test "show keeps the newest three dispatches as teasers and lists the rest by headline" do
+    race = races(:senate_maine)
+    5.times do |i|
+      Dispatch.create!(race: race, kind: :movement_note, status: :published, headline: "Maine move #{i}",
+        body_markdown: "Body #{i}.", model_run: model_runs(:model_run_one), published_at: Time.zone.parse("2026-10-0#{i + 1} 09:00"))
+    end
+
+    get race_path(race.slug)
+
+    assert_select "[data-testid='dispatch-card']", count: 3
+    assert_select "[data-testid='dispatch-card'] h3", text: "Maine move 4"
+    # On the race's own page the card's race link would point back here.
+    assert_select "[data-testid='dispatch-card'] a[href='#{race_path(race.slug)}']", count: 0
+    assert_select "[data-testid='earlier-dispatches'] h3", text: /Earlier dispatches\s*·\s*3/
+    assert_select "[data-testid='earlier-dispatch']", count: 3
+    assert_select "[data-testid='earlier-dispatch'] a[href='#{dispatch_path(dispatches(:maine_poll_reaction))}']",
+                  text: dispatches(:maine_poll_reaction).headline
+  end
+
+  # Methodology: a House district's prior is its 2024 result, not a state's
+  # lean. The empty state once said "state lean" on every race.
+  test "an unpolled House district names its own fundamentals" do
+    get race_path(races(:house_ny_17).slug)
+
+    assert_response :success
+    assert_select "[data-testid='unpolled-empty-state']", text: /the district's 2024 result and the national environment/
+    assert_select "[data-testid='unpolled-empty-state']", text: /state/, count: 0
   end
 
   test "show links every poll row to its source_url" do
@@ -222,9 +284,49 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "the poll table links its adjustment column to the pollsters page" do
+    HouseEffect.create!(model_run: model_runs(:model_run_one), pollster: pollsters(:beacon_polling),
+                        effect_raw: 3.0, effect_shrunk: 1.5, residual_count: 9, applied: true)
+
     get race_path(races(:senate_maine).slug)
 
     assert_select "[data-testid='poll-table'] a[href='#{pollsters_path}']"
+  end
+
+  # A column of dashes asked every reader to work out what it was for.
+  test "a poll table with no adjusted poll has no House adj. column" do
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='poll-table'] th", text: /House adj/, count: 0
+    assert_select "[data-testid='poll-table'] td[data-label='House adj.']", count: 0
+  end
+
+  test "an unadjusted row in an adjusted table drops its empty line on a phone" do
+    HouseEffect.create!(model_run: model_runs(:model_run_one), pollster: pollsters(:beacon_polling),
+                        effect_raw: 3.0, effect_shrunk: 1.5, residual_count: 9, applied: true)
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "td[data-label='House adj.'][data-empty]", count: races(:senate_maine).polls.count - 1
+  end
+
+  test "each source link says whose poll it opens" do
+    poll = polls(:maine_poll_one)
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "a[data-testid='poll-source-link'][href='#{poll.source_url}']",
+                  text: "Source: #{poll.pollster.name}, #{Site::Format.field_dates(poll.field_start, poll.field_end)}"
+  end
+
+  test "results keep party order whoever leads" do
+    race = races(:senate_maine)
+    race.polls.destroy_all
+    create_poll(pollster: pollsters(:beacon_polling), race: race, field_end: Date.current, results: { dem: 40.0, rep: 51.0 })
+
+    get race_path(race.slug)
+
+    results = css_select("[data-testid='poll-row'] td[data-label='Results']").first.text.squish
+    assert_operator results.index("40.0%"), :<, results.index("51.0%")
   end
 
   test "polling table offers named matchup groups including missing and empty keys" do
@@ -241,7 +343,9 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "label[for='poll-matchup']", text: "Candidate matchup"
     assert_select "select#poll-matchup[aria-describedby='poll-matchup-help'][aria-controls='race-poll-table']" do
-      assert_select "option[value='']", text: "All matchups", count: 1
+      # Jones is not this race's candidate: the table opens on the other three.
+      assert_select "option[value='current'][selected]", text: "Current candidates · 3 polls", count: 1
+      assert_select "option[value='']", text: "All matchups · 4 polls", count: 1
       polls.each_with_index do |poll, index|
         assert_select "option[value='#{index}']", text: "#{poll.matchup_heading} · 1 poll"
       end
@@ -249,7 +353,10 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#poll-matchup-help", text: /Filters this polling table only.*Forecast values and scatter-chart data remain unchanged/m
     assert_select "[data-matchup-filter-target='status']", text: /Showing 4 polls across all matchups/
     assert_select "#race-poll-table tbody[data-matchup-filter-target='group']", count: 4
+    assert_select "#race-poll-table tbody[data-current='true']", count: 3
+    # The narrowing is the controller's: without JS every group shows.
     assert_select "#race-poll-table tbody[hidden]", count: 0
+    assert_select "button[data-testid='poll-matchup-more'][hidden]", text: /Show other matchups · 1 poll/
     assert_select "[data-testid='poll-matchup-heading']", count: 4
     assert_select "[data-testid='earlier-matchup-tag']", count: 1
     assert_select "[data-testid='poll-row']", count: 4
@@ -508,10 +615,37 @@ class RacesControllerTest < ActionDispatch::IntegrationTest
   test "a race page renders both internals views of its forecast" do
     get race_path(races(:senate_maine).slug)
 
-    assert_select "[data-testid='race-masthead'] [data-variant='excl_internals']", count: 1
-    assert_select "[data-testid='race-masthead'] [data-variant='incl_internals']", count: 1
+    assert_select "[data-testid='race-masthead'] [data-variant='excl_internals'] [data-testid='win-probability']", count: 1
+    assert_select "[data-testid='race-masthead'] [data-variant='incl_internals'] [data-testid='win-probability']", count: 1
     assert_select "[data-testid='forecast-detail'] [data-variant='excl_internals']", count: 1
     assert_select "[data-testid='forecast-detail'] [data-variant='incl_internals']", count: 1
+  end
+
+  # The marker is the in-body cue that the figure above it is not the
+  # published one; it shows only under the internals view.
+  test "a race page says when its figures include partisan internals, beside the published one" do
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "[data-testid='race-masthead'] [data-testid='internals-marker'][data-variant='incl_internals']", count: 1 do
+      assert_select "*", text: /The published forecast is D 62%/
+      assert_select "button[data-action='internals-toggle#turnOff']", text: /Turn off/
+    end
+    assert_select "h2 [data-testid='chart-internals-tag'][data-variant='incl_internals']", text: "With partisan internals"
+    assert_select "body[data-controller~='internals-toggle'] [role='status'][data-internals-toggle-target='status']", count: 1
+    assert_select "[data-testid='internals-toggle'] input[aria-describedby='internals-description']", count: 1
+  end
+
+  test "an internal poll says whether it is in the average of each view" do
+    create_poll(pollster: pollsters(:beacon_polling), field_end: Date.new(2026, 7, 20),
+                race: races(:senate_maine), partisan: :dem, entry_mode: :nyt,
+                results: { dem: 52.0, rep: 41.0 })
+
+    get race_path(races(:senate_maine).slug)
+
+    assert_select "tr[data-internal-poll] [data-testid='sponsor-average-status']" do
+      assert_select "[data-variant='excl_internals']", text: "Not in average"
+      assert_select "[data-variant='incl_internals']", text: "In average, adjusted"
+    end
   end
 
   test "an internal poll is badged and the table carries the per-view note" do

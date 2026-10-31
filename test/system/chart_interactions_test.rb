@@ -36,7 +36,44 @@ class ChartInteractionsTest < ApplicationSystemTestCase
     chart.send_keys :arrow_left
     within "[data-testid=timeline-chart]" do
       assert_selector "[data-testid=chart-tooltip]", text: "6:00 AM EDT"
+      # The tooltip is aria-hidden; a screen reader hears the step here.
+      assert_selector "[data-testid=timeline-status]", text: "Aug 1, 2026 · 6:00 AM EDT: Dem 62%, Rep 38%", visible: :all
+      # One run: no range to switch, and the summary is for screen readers only.
+      assert_selector "[data-testid=timeline-range-recent]", visible: :hidden
+      assert_selector "[data-testid=timeline-summary].sr-only", visible: :all
     end
+  end
+
+  # Two-hourly runs since August put ~680 arrow presses between a reader and
+  # Oct 1. The chart opens on the last 30 days; Page Up/Down move a day and
+  # Shift+arrow a week.
+  test "timeline: opens on the last 30 days, steps by day and by week, and reads each step out" do
+    start = Time.zone.parse("2026-08-02 06:00")
+    120.times do |i|
+      run = ModelRun.create!(status: :succeeded, trigger: :cron, started_at: start + (i * 12).hours,
+                             params_snapshot: model_runs(:model_run_one).params_snapshot)
+      Forecast.create!(model_run: run, race: @race, p_dem_win: 0.6, p_rep_win: 0.4, mean_margin: 3.0)
+    end
+
+    visit race_path(@race.slug)
+
+    status = "[data-testid=timeline-status]"
+    assert_selector "[data-testid=timeline-range-recent][aria-pressed=true]", text: "Last 30 days"
+    plot = find("[data-testid=timeline-chart] [tabindex='0']")
+    plot.send_keys :end
+    assert_selector status, text: "Sep 30, 2026 · 6:00 PM EDT", visible: :all
+    plot.send_keys :page_up
+    assert_selector status, text: "Sep 29, 2026 · 6:00 PM EDT", visible: :all
+    # A week back lands in the thinned history, on the day's kept run.
+    plot.send_keys [ :shift, :arrow_left ]
+    assert_selector status, text: "Sep 22, 2026 · 6:00 AM EDT", visible: :all
+    plot.send_keys :home
+    assert_selector status, text: "Sep 1, 2026 · 6:00 AM EDT", visible: :all
+
+    click_button "Full season"
+    assert_selector "[data-testid=timeline-range-all][aria-pressed=true]"
+    plot.send_keys :home
+    assert_selector status, text: "Aug 1, 2026 · 6:00 AM EDT", visible: :all
   end
 
   # Two panels on one time axis: hover and the arrow keys read out a run's

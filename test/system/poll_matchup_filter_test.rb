@@ -19,10 +19,14 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
       with_viewport(width, height) do
         visit race_path(@race.slug)
         assert_equal width, page.evaluate_script("window.innerWidth")
-        assert_selector "[data-testid='poll-row']", count: 5
-        assert_selector "[data-testid='poll-matchup-heading']", count: 4
+        # Opens on the polls that can be in the average: Jones is not this
+        # race's candidate, so his matchup waits behind "All matchups".
+        assert_selector "[data-testid='poll-row']", count: 4
+        assert_selector "[data-testid='poll-matchup-heading']", count: 3
+        assert_selector "[role='status']", text: "Showing 4 polls of the current candidates. 1 poll from other matchups is hidden."
+        assert_selector "[data-testid='poll-matchup-more']", text: "Show other matchups · 1 poll"
         matchup_select = find_field("Candidate matchup")
-        assert_equal "", matchup_select.value
+        assert_equal "current", matchup_select.value
         assert_equal "poll-matchup-help", matchup_select["aria-describedby"]
         assert_text "Filters this polling table only. Forecast values and scatter-chart data remain unchanged."
         forecast = find("[data-testid='win-probability']").text
@@ -58,6 +62,7 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
         assert_selector "[data-testid='poll-matchup-heading']", count: 4
         assert_selector "[data-testid='poll-source-link']", count: 5
         assert_selector "[role='status']", text: "Showing 5 polls across all matchups."
+        assert_no_selector "[data-testid='poll-matchup-more']"
         assert_unchanged_forecast_and_chart(forecast, chart_data)
         assert page.evaluate_script("document.documentElement.scrollWidth <= window.innerWidth"), "page fits viewport"
       end
@@ -79,9 +84,10 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
       with_viewport(375, 812) do
         visit race_path(@race.slug)
         assert_equal 375, page.evaluate_script("window.innerWidth")
-        assert_selector "[data-testid='poll-row']", count: counts.sum
-        assert_selector "[data-testid='poll-matchup-heading']", count: 3
-        assert_selector "[role='status']", text: "Showing #{counts.sum} polls across all matchups."
+        current = counts.first + counts.last
+        assert_selector "[data-testid='poll-row']", count: current
+        assert_selector "[data-testid='poll-matchup-heading']", count: 2
+        assert_selector "[role='status']", text: "Showing #{current} polls of the current candidates."
         forecast = find("[data-testid='win-probability']").text
         chart_data = find("[data-polls-scatter-chart-target='payload']", visible: :all).text(:all)
 
@@ -92,7 +98,7 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
         assert_selector "[role='status']", text: "Showing #{counts.last} #{counts.last == 1 ? 'poll' : 'polls'} for this matchup."
         assert_unchanged_forecast_and_chart(forecast, chart_data)
 
-        find_field("Candidate matchup").select("All matchups")
+        find_field("Candidate matchup").select("All matchups · #{counts.sum} polls")
         assert_selector "[data-testid='poll-row']", count: counts.sum
         assert_selector "[data-testid='poll-matchup-heading']", count: 3
         assert_selector "[data-testid='poll-source-link']", count: counts.sum
@@ -100,6 +106,20 @@ class PollMatchupFilterTest < ApplicationSystemTestCase
         assert page.evaluate_script("document.documentElement.scrollWidth <= window.innerWidth"), "page fits viewport"
       end
     end
+  end
+
+  test "the button under the table shows every matchup and hands focus to the select" do
+    add_poll("dem:ellis|rep:rivers", 0, columns: { "Jordan Ellis (D)" => "51%", "Pat Rivers (R)" => "45%" })
+    add_poll("dem:jones|rep:rivers", 30, columns: { "Pat Jones (D)" => "51%", "Pat Rivers (R)" => "45%" })
+
+    visit race_path(@race.slug)
+    assert_selector "[data-testid='poll-row']", count: 1
+    click_button "Show other matchups · 1 poll"
+
+    assert_selector "[data-testid='poll-row']", count: 2
+    assert_equal "", find_field("Candidate matchup").value
+    assert_equal "poll-matchup", page.evaluate_script("document.activeElement.id")
+    assert_no_selector "[data-testid='poll-matchup-more']"
   end
 
   test "single matchup and no polling need no filter" do

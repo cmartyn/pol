@@ -5,6 +5,16 @@
     comparable with each other, and a reader scanning the margin column
     should be able to see why. %>
 <% groups = polls.group_by(&:matchup_key) %>
+<%# The table opens on the polls that can be in this race's average: those
+    of its current candidates, and those whose matchup was never recorded.
+    Matchups taken before the field was set (earlier_matchup?) wait behind
+    "All matchups" — Texas carried 108 polls across 22 of them. Hidden by
+    the controller, not the server, so a page without JS still lists every
+    poll. %>
+<% current_keys = groups.keys.reject { |key| earlier_matchup?(race, key) } %>
+<% narrowed = groups.size > 1 && current_keys.any? && current_keys.size < groups.size %>
+<% current_count = current_keys.sum { |key| groups.fetch(key).size } %>
+<% show_adjustment = polls.any? { |poll| poll_adjustment(poll, race, house_effects) } %>
 <div data-controller="matchup-filter">
 <% if groups.size > 1 %>
   <div class="mb-4">
@@ -12,7 +22,10 @@
     <select id="poll-matchup" class="mt-1 w-full max-w-full rounded border border-slate-300 p-2 text-sm sm:w-auto"
             aria-controls="race-poll-table" aria-describedby="poll-matchup-help"
             data-matchup-filter-target="select" data-action="change->matchup-filter#filter">
-      <option value="">All matchups</option>
+      <% if narrowed %>
+        <option value="current" selected>Current candidates · <%= pluralize(current_count, "poll") %></option>
+      <% end %>
+      <option value="">All matchups · <%= pluralize(polls.size, "poll") %></option>
       <% groups.values.each_with_index do |group, index| %>
         <option value="<%= index %>"><%= group.first.matchup_heading %> · <%= pluralize(group.size, "poll") %></option>
       <% end %>
@@ -21,7 +34,8 @@
       Filters this polling table only. Forecast values and scatter-chart data remain unchanged.
       Choose All matchups to restore every group.
     </p>
-    <p class="mt-1 text-xs text-slate-600" role="status" data-matchup-filter-target="status">
+    <p class="mt-1 text-xs text-slate-600" role="status" data-matchup-filter-target="status"
+       data-total="<%= polls.size %>">
       Showing <%= pluralize(polls.size, "poll") %> across all matchups.
     </p>
   </div>
@@ -46,19 +60,23 @@
         <th class="py-2 pr-3 font-medium">Sample</th>
         <th class="py-2 pr-3 font-medium">Results</th>
         <th class="py-2 pr-3 font-medium">Margin</th>
-        <th class="py-2 pr-3 font-medium">
-          <%= link_to "House adj.", pollsters_path, class: "hover:text-amber-700",
-                      title: "Pollster house effect removed before averaging" %>
-        </th>
+        <%# Only when some poll here was adjusted: a column of dashes asked
+            every reader to work out what it was for. %>
+        <% if show_adjustment %>
+          <th class="py-2 pr-3 font-medium">
+            <%= link_to "House adj.", pollsters_path, class: "hover:text-amber-700",
+                        title: "Pollster house effect removed before averaging" %>
+          </th>
+        <% end %>
         <th class="py-2 font-medium">Source</th>
       </tr>
     </thead>
       <% if groups.size > 1 %>
         <% groups.each_with_index do |(key, group), index| %>
           <tbody class="divide-y divide-slate-100" data-matchup-filter-target="group"
-                 data-group="<%= index %>" data-count="<%= group.size %>">
+                 data-group="<%= index %>" data-count="<%= group.size %>" data-current="<%= current_keys.include?(key) %>">
           <tr class="bg-slate-50" data-testid="poll-matchup-heading" data-matchup="<%= key %>">
-            <th colspan="7" class="py-2 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <th colspan="<%= show_adjustment ? 7 : 6 %>" class="py-2 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <%= group.first.matchup_heading %>
               <span class="font-normal normal-case text-slate-600">&middot; <%= pluralize(group.size, "poll") %></span>
               <% if earlier_matchup?(race, key) %>
@@ -68,15 +86,24 @@
             </th>
           </tr>
           <%= render partial: "races/poll_row", collection: group, as: :poll,
-                     locals: { race: race, house_effects: house_effects } %>
+                     locals: { race: race, house_effects: house_effects, show_adjustment: show_adjustment } %>
           </tbody>
         <% end %>
       <% else %>
         <tbody class="divide-y divide-slate-100">
         <%= render partial: "races/poll_row", collection: polls, as: :poll,
-                   locals: { race: race, house_effects: house_effects } %>
+                   locals: { race: race, house_effects: house_effects, show_adjustment: show_adjustment } %>
         </tbody>
       <% end %>
   </table>
 </div>
+<% if narrowed %>
+  <%# The way to the rest from the bottom of the list, where a reader who
+      scrolled the current polls arrives. Shown by the controller. %>
+  <button type="button" hidden data-matchup-filter-target="more" data-action="matchup-filter#showAll"
+          data-testid="poll-matchup-more"
+          class="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-amber-700 hover:text-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600">
+    Show other matchups · <%= pluralize(polls.size - current_count, "poll") %>
+  </button>
+<% end %>
 </div>

@@ -1,4 +1,6 @@
-<%# locals: payload — Site::Charts::Timeline.build(race:) %>
+<%# locals: payload — Site::Charts::Timeline.build(race:). Its page-only
+    keys (the masthead's change line, the summary below) stay out of the
+    JSON the controller reads. %>
 <div data-testid="timeline-chart">
   <% if payload[:points].empty? %>
     <p class="text-sm text-slate-500" data-testid="timeline-empty">No model run has forecast this race yet.</p>
@@ -8,23 +10,55 @@
         Only <%= pluralize(payload[:points].size, "model run") %> so far — the trend will fill in as more land.
       </p>
     <% end %>
-    <%# tabindex puts the whole chart in the tab order for the controller's
-        arrow-key scrubbing; role="group" makes the aria-label announceable.
-        The viewBox only reserves layout space until the controller connects —
-        it renders at real pixel size and removes it. %>
-    <div data-controller="timeline-chart" class="w-full" tabindex="0" role="group"
-         aria-label="Win probability over time; use left and right arrow keys to step through model runs">
-      <svg data-timeline-chart-target="svg" viewBox="0 0 640 220" class="h-auto w-full"
-           role="img" aria-label="Win probability over time"></svg>
-      <script type="application/json" data-timeline-chart-target="payload"><%= json_escape(payload.to_json).html_safe %></script>
+    <div data-controller="timeline-chart">
+      <%# The chart opens on the last 30 days, where the news is; the
+          controller shows this switch only when the history runs longer.
+          Without JS there is no chart to switch. %>
+      <div class="mb-2 flex justify-end" hidden data-timeline-chart-target="range">
+        <div class="inline-flex rounded-md border border-slate-200 p-0.5" role="group" aria-label="Chart range">
+          <% { "recent" => "Last 30 days", "all" => "Full season" }.each do |range, label| %>
+            <button type="button" aria-pressed="<%= range == "recent" %>" data-range="<%= range %>"
+                    data-action="timeline-chart#setRange" data-testid="timeline-range-<%= range %>"
+                    class="min-h-11 rounded px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-600 aria-pressed:bg-slate-900 aria-pressed:text-white aria-pressed:hover:bg-slate-900">
+              <%= label %>
+            </button>
+          <% end %>
+        </div>
+      </div>
+      <%# tabindex puts the plot in the tab order for the controller's
+          keyboard scrubbing; role="group" makes the aria-label announceable.
+          The viewBox only reserves layout space until the controller
+          connects — it renders at real pixel size and removes it. %>
+      <div data-timeline-chart-target="plot" tabindex="0" role="group"
+           class="relative w-full rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600"
+           aria-label="Win probability over time. Left and right arrows step through model runs, Page Up and Page Down move a day, Shift with an arrow moves a week.">
+        <svg data-timeline-chart-target="svg" viewBox="0 0 640 220" class="h-auto w-full" aria-hidden="true"></svg>
+        <%# The chart in a sentence. Without JS it fills the space the chart
+            would have; with JS the controller keeps it for screen readers
+            only. Server-rendered, so it agrees with the figures above. %>
+        <p class="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-slate-600"
+           data-timeline-chart-target="summary" data-testid="timeline-summary">
+          <%= variant_swap(payload[:summary][:excl_internals], payload[:summary][:incl_internals]) %>
+        </p>
+      </div>
+      <%# Keyboard scrubbing's readout, for screen readers: the visual
+          tooltip is aria-hidden. %>
+      <p class="sr-only" aria-live="polite" data-timeline-chart-target="status" data-testid="timeline-status"></p>
+      <script type="application/json" data-timeline-chart-target="payload"><%= json_escape(payload.except(*Site::Charts::Timeline::PAGE_ONLY_KEYS).to_json).html_safe %></script>
     </div>
-    <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-      <span><span class="inline-block h-2 w-2 rounded-full bg-blue-700"></span> Dem win probability</span>
-      <span><span class="inline-block h-2 w-2 rounded-full bg-red-700"></span> Rep win probability</span>
+    <%# The swatch is the mark the chart draws: a line once there are runs to
+        join, a dot for a lone run. %>
+    <% swatch = payload[:sparse] ? "h-2 w-2 rounded-full" : "h-0.5 w-3 rounded-full" %>
+    <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+      <span class="inline-flex items-center gap-1.5"><span class="inline-block <%= swatch %> bg-blue-700"></span> Dem win probability</span>
+      <span class="inline-flex items-center gap-1.5"><span class="inline-block <%= swatch %> bg-red-700"></span> Rep win probability</span>
       <% if payload[:show_other] %>
-        <span><span class="inline-block h-2 w-2 rounded-full bg-slate-500"></span> Other win probability</span>
+        <span class="inline-flex items-center gap-1.5"><span class="inline-block <%= swatch %> bg-slate-500"></span> Other win probability</span>
       <% end %>
-      <span><span class="inline-block h-2 w-3 bg-slate-100 align-middle"></span> Tossup band</span>
+      <span class="inline-flex items-center gap-1.5"><span class="inline-block h-2 w-3 rounded-sm border border-slate-200 bg-slate-100"></span> Tossup band</span>
+      <% if payload[:correction_times].present? %>
+        <span class="inline-flex items-center gap-1.5"><span class="inline-block h-3 border-l border-dashed border-slate-400"></span> Data correction</span>
+      <% end %>
     </p>
   <% end %>
 </div>
