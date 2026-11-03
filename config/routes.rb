@@ -16,6 +16,8 @@ Rails.application.routes.draw do
   # by PublicController subclasses. Phase 6's admin lives elsewhere and is
   # untouched by this file.
   root "home#index"
+  get "election-night", to: "election_night#index", as: :election_night
+  get "election-night/snapshot", to: "election_night#snapshot", as: :election_night_snapshot
 
   get "senate", to: "races#senate"
   get "house", to: "races#house"

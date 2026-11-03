@@ -1,0 +1,827 @@
+{
+  "research_date": "2026-11-03",
+  "phase": "Before polls close; one-off feasibility probes, not an operating results collector.",
+  "limitations": [
+    "Successful parsing does not establish live cadence, continued access, or complete reporting.",
+    "Test data and zeroed production scaffolding must not be presented as counted votes.",
+    "No access controls were bypassed; failed sources remain unresolved.",
+    "Source files retained temporarily outside the repository; hashes identify the exact inspected samples."
+  ],
+  "watchlist_sizing": {
+    "source_urls": [
+      "https://535.wtf/house",
+      "https://535.wtf/senate"
+    ],
+    "selection": "First displayed favored probability <=95%, using rounded public values; sizing heuristic only.",
+    "house_races": 111,
+    "senate_races": 14,
+    "combined_states": 33,
+    "races": {
+      "senate": [
+        {
+          "race": "Alaska Senate",
+          "displayed_favored_probability": "D 64%"
+        },
+        {
+          "race": "Florida Senate",
+          "displayed_favored_probability": "R 89%"
+        },
+        {
+          "race": "Iowa Senate",
+          "displayed_favored_probability": "D 54%"
+        },
+        {
+          "race": "Kansas Senate",
+          "displayed_favored_probability": "D 79%"
+        },
+        {
+          "race": "Louisiana Senate",
+          "displayed_favored_probability": "R 94%"
+        },
+        {
+          "race": "Maine Senate",
+          "displayed_favored_probability": "D 77%"
+        },
+        {
+          "race": "Michigan Senate",
+          "displayed_favored_probability": "D 85%"
+        },
+        {
+          "race": "Minnesota Senate",
+          "displayed_favored_probability": "D 88%"
+        },
+        {
+          "race": "Mississippi Senate",
+          "displayed_favored_probability": "R 95%"
+        },
+        {
+          "race": "Nebraska Senate",
+          "displayed_favored_probability": "R 95%"
+        },
+        {
+          "race": "New Hampshire Senate",
+          "displayed_favored_probability": "D 95%"
+        },
+        {
+          "race": "Ohio Senate",
+          "displayed_favored_probability": "D 73%"
+        },
+        {
+          "race": "South Carolina Senate",
+          "displayed_favored_probability": "R 64%"
+        },
+        {
+          "race": "Texas Senate",
+          "displayed_favored_probability": "D 78%"
+        }
+      ],
+      "house": [
+        {
+          "race": "AL-2",
+          "displayed_favored_probability": "R 69%"
+        },
+        {
+          "race": "AR-2",
+          "displayed_favored_probability": "R 80%"
+        },
+        {
+          "race": "AZ-1",
+          "displayed_favored_probability": "D 81%"
+        },
+        {
+          "race": "AZ-2",
+          "displayed_favored_probability": "D 63%"
+        },
+        {
+          "race": "AZ-5",
+          "displayed_favored_probability": "R 90%"
+        },
+        {
+          "race": "AZ-6",
+          "displayed_favored_probability": "D 89%"
+        },
+        {
+          "race": "AZ-8",
+          "displayed_favored_probability": "R 59%"
+        },
+        {
+          "race": "CA-5",
+          "displayed_favored_probability": "R 93%"
+        },
+        {
+          "race": "CA-13",
+          "displayed_favored_probability": "D 93%"
+        },
+        {
+          "race": "CA-22",
+          "displayed_favored_probability": "D 88%"
+        },
+        {
+          "race": "CA-23",
+          "displayed_favored_probability": "R 89%"
+        },
+        {
+          "race": "CA-40",
+          "displayed_favored_probability": "R 61%"
+        },
+        {
+          "race": "CA-48",
+          "displayed_favored_probability": "D 95%"
+        },
+        {
+          "race": "CO-3",
+          "displayed_favored_probability": "D 81%"
+        },
+        {
+          "race": "CO-4",
+          "displayed_favored_probability": "R 52%"
+        },
+        {
+          "race": "CO-5",
+          "displayed_favored_probability": "R 63%"
+        },
+        {
+          "race": "CO-8",
+          "displayed_favored_probability": "D 93%"
+        },
+        {
+          "race": "FL-2",
+          "displayed_favored_probability": "R 95%"
+        },
+        {
+          "race": "FL-3",
+          "displayed_favored_probability": "R 93%"
+        },
+        {
+          "race": "FL-4",
+          "displayed_favored_probability": "R 67%"
+        },
+        {
+          "race": "FL-7",
+          "displayed_favored_probability": "R 59%"
+        },
+        {
+          "race": "FL-8",
+          "displayed_favored_probability": "R 79%"
+        },
+        {
+          "race": "FL-9",
+          "displayed_favored_probability": "R 85%"
+        },
+        {
+          "race": "FL-11",
+          "displayed_favored_probability": "R 77%"
+        },
+        {
+          "race": "FL-12",
+          "displayed_favored_probability": "R 76%"
+        },
+        {
+          "race": "FL-13",
+          "displayed_favored_probability": "R 66%"
+        },
+        {
+          "race": "FL-14",
+          "displayed_favored_probability": "R 51%"
+        },
+        {
+          "race": "FL-15",
+          "displayed_favored_probability": "R 91%"
+        },
+        {
+          "race": "FL-16",
+          "displayed_favored_probability": "R 68%"
+        },
+        {
+          "race": "FL-17",
+          "displayed_favored_probability": "R 95%"
+        },
+        {
+          "race": "FL-18",
+          "displayed_favored_probability": "R 82%"
+        },
+        {
+          "race": "FL-21",
+          "displayed_favored_probability": "R 80%"
+        },
+        {
+          "race": "FL-22",
+          "displayed_favored_probability": "R 50%"
+        },
+        {
+          "race": "FL-25",
+          "displayed_favored_probability": "D 56%"
+        },
+        {
+          "race": "FL-26",
+          "displayed_favored_probability": "R 87%"
+        },
+        {
+          "race": "FL-27",
+          "displayed_favored_probability": "R 72%"
+        },
+        {
+          "race": "GA-12",
+          "displayed_favored_probability": "R 90%"
+        },
+        {
+          "race": "IA-1",
+          "displayed_favored_probability": "D 94%"
+        },
+        {
+          "race": "IA-2",
+          "displayed_favored_probability": "R 68%"
+        },
+        {
+          "race": "IA-3",
+          "displayed_favored_probability": "D 85%"
+        },
+        {
+          "race": "IN-5",
+          "displayed_favored_probability": "R 80%"
+        },
+        {
+          "race": "KS-2",
+          "displayed_favored_probability": "R 85%"
+        },
+        {
+          "race": "MD-1",
+          "displayed_favored_probability": "R 93%"
+        },
+        {
+          "race": "ME-2",
+          "displayed_favored_probability": "D 80%"
+        },
+        {
+          "race": "MI-1",
+          "displayed_favored_probability": "R 91%"
+        },
+        {
+          "race": "MI-4",
+          "displayed_favored_probability": "R 52%"
+        },
+        {
+          "race": "MI-7",
+          "displayed_favored_probability": "D 86%"
+        },
+        {
+          "race": "MI-10",
+          "displayed_favored_probability": "D 77%"
+        },
+        {
+          "race": "MN-1",
+          "displayed_favored_probability": "R 75%"
+        },
+        {
+          "race": "MN-8",
+          "displayed_favored_probability": "R 74%"
+        },
+        {
+          "race": "MO-2",
+          "displayed_favored_probability": "R 51%"
+        },
+        {
+          "race": "MT-1",
+          "displayed_favored_probability": "D 74%"
+        },
+        {
+          "race": "NC-1",
+          "displayed_favored_probability": "R 54%"
+        },
+        {
+          "race": "NC-3",
+          "displayed_favored_probability": "R 68%"
+        },
+        {
+          "race": "NC-5",
+          "displayed_favored_probability": "R 85%"
+        },
+        {
+          "race": "NC-7",
+          "displayed_favored_probability": "R 79%"
+        },
+        {
+          "race": "NC-8",
+          "displayed_favored_probability": "R 86%"
+        },
+        {
+          "race": "NC-9",
+          "displayed_favored_probability": "R 84%"
+        },
+        {
+          "race": "NC-10",
+          "displayed_favored_probability": "R 86%"
+        },
+        {
+          "race": "NC-11",
+          "displayed_favored_probability": "R 54%"
+        },
+        {
+          "race": "NC-13",
+          "displayed_favored_probability": "R 79%"
+        },
+        {
+          "race": "NC-14",
+          "displayed_favored_probability": "R 75%"
+        },
+        {
+          "race": "NE-1",
+          "displayed_favored_probability": "R 89%"
+        },
+        {
+          "race": "NE-2",
+          "displayed_favored_probability": "D 90%"
+        },
+        {
+          "race": "NJ-2",
+          "displayed_favored_probability": "R 78%"
+        },
+        {
+          "race": "NJ-7",
+          "displayed_favored_probability": "D 79%"
+        },
+        {
+          "race": "NY-1",
+          "displayed_favored_probability": "D 55%"
+        },
+        {
+          "race": "NY-2",
+          "displayed_favored_probability": "R 84%"
+        },
+        {
+          "race": "NY-17",
+          "displayed_favored_probability": "D 75%"
+        },
+        {
+          "race": "NY-21",
+          "displayed_favored_probability": "R 94%"
+        },
+        {
+          "race": "OH-1",
+          "displayed_favored_probability": "D 84%"
+        },
+        {
+          "race": "OH-7",
+          "displayed_favored_probability": "R 54%"
+        },
+        {
+          "race": "OH-8",
+          "displayed_favored_probability": "R 77%"
+        },
+        {
+          "race": "OH-9",
+          "displayed_favored_probability": "R 52%"
+        },
+        {
+          "race": "OH-10",
+          "displayed_favored_probability": "D 63%"
+        },
+        {
+          "race": "OH-14",
+          "displayed_favored_probability": "R 92%"
+        },
+        {
+          "race": "OH-15",
+          "displayed_favored_probability": "D 51%"
+        },
+        {
+          "race": "OK-5",
+          "displayed_favored_probability": "R 91%"
+        },
+        {
+          "race": "PA-1",
+          "displayed_favored_probability": "R 56%"
+        },
+        {
+          "race": "PA-7",
+          "displayed_favored_probability": "D 88%"
+        },
+        {
+          "race": "PA-8",
+          "displayed_favored_probability": "D 87%"
+        },
+        {
+          "race": "PA-10",
+          "displayed_favored_probability": "D 85%"
+        },
+        {
+          "race": "SC-1",
+          "displayed_favored_probability": "R 76%"
+        },
+        {
+          "race": "SC-2",
+          "displayed_favored_probability": "R 87%"
+        },
+        {
+          "race": "SC-4",
+          "displayed_favored_probability": "R 94%"
+        },
+        {
+          "race": "TN-7",
+          "displayed_favored_probability": "R 95%"
+        },
+        {
+          "race": "TN-8",
+          "displayed_favored_probability": "R 91%"
+        },
+        {
+          "race": "TN-9",
+          "displayed_favored_probability": "R 93%"
+        },
+        {
+          "race": "TX-5",
+          "displayed_favored_probability": "R 94%"
+        },
+        {
+          "race": "TX-9",
+          "displayed_favored_probability": "R 90%"
+        },
+        {
+          "race": "TX-15",
+          "displayed_favored_probability": "R 79%"
+        },
+        {
+          "race": "TX-17",
+          "displayed_favored_probability": "R 94%"
+        },
+        {
+          "race": "TX-21",
+          "displayed_favored_probability": "R 94%"
+        },
+        {
+          "race": "TX-22",
+          "displayed_favored_probability": "R 95%"
+        },
+        {
+          "race": "TX-23",
+          "displayed_favored_probability": "R 74%"
+        },
+        {
+          "race": "TX-24",
+          "displayed_favored_probability": "R 79%"
+        },
+        {
+          "race": "TX-27",
+          "displayed_favored_probability": "R 93%"
+        },
+        {
+          "race": "TX-28",
+          "displayed_favored_probability": "R 50%"
+        },
+        {
+          "race": "TX-31",
+          "displayed_favored_probability": "R 95%"
+        },
+        {
+          "race": "TX-32",
+          "displayed_favored_probability": "R 85%"
+        },
+        {
+          "race": "TX-34",
+          "displayed_favored_probability": "D 57%"
+        },
+        {
+          "race": "TX-35",
+          "displayed_favored_probability": "R 51%"
+        },
+        {
+          "race": "TX-38",
+          "displayed_favored_probability": "R 93%"
+        },
+        {
+          "race": "VA-1",
+          "displayed_favored_probability": "R 56%"
+        },
+        {
+          "race": "VA-2",
+          "displayed_favored_probability": "D 83%"
+        },
+        {
+          "race": "VA-5",
+          "displayed_favored_probability": "R 70%"
+        },
+        {
+          "race": "WA-5",
+          "displayed_favored_probability": "R 92%"
+        },
+        {
+          "race": "WI-1",
+          "displayed_favored_probability": "D 56%"
+        },
+        {
+          "race": "WI-3",
+          "displayed_favored_probability": "D 88%"
+        },
+        {
+          "race": "WI-6",
+          "displayed_favored_probability": "R 94%"
+        },
+        {
+          "race": "WI-8",
+          "displayed_favored_probability": "R 67%"
+        }
+      ]
+    }
+  },
+  "probes": [
+    {
+      "source": "az-json",
+      "url": "https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json",
+      "http_status_observed": 200,
+      "downloaded_bytes": 71329534,
+      "sha256": "7e4d3054073a6e5ac6928764082cc250bc2621df6a2cc02a616e5c7b99b41d4c",
+      "assessment": "Current-election JSON parsed; zero vote totals before polls close. Live update behavior not tested.",
+      "election_date": "2026-11-03",
+      "election_name": "2026 General Election",
+      "local_results_count": 15,
+      "distinct_precinct_ids": 1762,
+      "voting_methods": [
+        "Early A.R.S. 16-579",
+        "Early Voting",
+        "Election Day",
+        "Late Early*",
+        "Provisional"
+      ],
+      "nonzero_local_candidate_totals": 0
+    },
+    {
+      "source": "ga-export",
+      "url": "https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json",
+      "http_status_observed": 200,
+      "downloaded_bytes": 46363141,
+      "sha256": "f464d3b037a82d594c893aef072042530a84b6b1cb3edb76b1e3873bed2dc3ba",
+      "assessment": "Current-election JSON parsed; zero vote totals before polls close. Live update behavior not tested.",
+      "election_date": "2026-11-03",
+      "election_name": "November 3, 2026 - General & Special Elections",
+      "local_results_count": 159,
+      "distinct_precinct_ids": 2582,
+      "voting_methods": [
+        "Absentee by Mail",
+        "Advance Voting",
+        "Election Day",
+        "Provisional"
+      ],
+      "nonzero_local_candidate_totals": 0
+    },
+    {
+      "source": "va-export",
+      "url": "https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json",
+      "http_status_observed": 200,
+      "downloaded_bytes": 26202160,
+      "sha256": "9c39135314880682404c2b42743a7bbc84f14a58407399e9c9f6fec56ed6dd10",
+      "assessment": "Current-election JSON parsed; zero vote totals before polls close. Live update behavior not tested.",
+      "election_date": "2026-11-03",
+      "election_name": "2026 November General",
+      "local_results_count": 133,
+      "distinct_precinct_ids": 2529,
+      "voting_methods": [
+        "Early Voting",
+        "Election Day",
+        "Mailed Absentee",
+        "Post-Election",
+        "Provisional"
+      ],
+      "nonzero_local_candidate_totals": 0
+    },
+    {
+      "source": "mi-kent-export",
+      "url": "https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json",
+      "http_status_observed": 200,
+      "downloaded_bytes": 10038279,
+      "sha256": "020c9a423fa38b44b7f6071b4289269c9cc2f13eeccbd0e077dbc049f13e3317",
+      "assessment": "Current-election JSON parsed; zero vote totals before polls close. Live update behavior not tested.",
+      "election_date": "2026-11-03",
+      "election_name": "November 3, 2026 General Election",
+      "local_results_count": 0,
+      "distinct_precinct_ids": 226,
+      "voting_methods": [
+        "AV Counting Boards",
+        "Early Voting",
+        "Election Day"
+      ],
+      "nonzero_local_candidate_totals": 0
+    },
+    {
+      "source": "nc-2026",
+      "url": "https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip",
+      "http_status_observed": 200,
+      "downloaded_bytes": 636927,
+      "sha256": "a0a046b2878157904343e9053f747094c7230a8d5c0e2e80359e264071ac73fe",
+      "assessment": "Current zeroed precinct file.",
+      "member": "results_pct_20261103.txt",
+      "rows": 141466,
+      "counties": 100,
+      "columns": [
+        "County",
+        "Election Date",
+        "Precinct",
+        "Contest Group ID",
+        "Contest Type",
+        "Contest Name",
+        "Choice",
+        "Choice Party",
+        "Vote For",
+        "Election Day",
+        "Early Voting",
+        "Absentee by Mail",
+        "Provisional",
+        "Total Votes",
+        "Real Precinct"
+      ],
+      "election_dates": [
+        "11/03/2026"
+      ],
+      "nonzero_rows": 0
+    },
+    {
+      "source": "nc-2024",
+      "url": "https://dl.ncsbe.gov/ENRS/2024_11_05/results_pct_20241105.zip",
+      "http_status_observed": 200,
+      "downloaded_bytes": 3741131,
+      "sha256": "2fab44e9b12e03c0d88ef832c2e6dc8c569e2b020d64df06a8b551b62bbdb426",
+      "assessment": "Historical final precinct results; not a timestamped election-night replay.",
+      "member": "results_pct_20241105.txt",
+      "rows": 233510,
+      "counties": 100,
+      "columns": [
+        "County",
+        "Election Date",
+        "Precinct",
+        "Contest Group ID",
+        "Contest Type",
+        "Contest Name",
+        "Choice",
+        "Choice Party",
+        "Vote For",
+        "Election Day",
+        "Early Voting",
+        "Absentee by Mail",
+        "Provisional",
+        "Total Votes",
+        "Real Precinct",
+        ""
+      ],
+      "election_dates": [
+        "11/05/2024"
+      ],
+      "nonzero_rows": 202418
+    },
+    {
+      "source": "tx-counties",
+      "url": "https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815",
+      "http_status_observed": 200,
+      "downloaded_bytes": 4168297,
+      "sha256": "eee0452664e479477a31a7d7f1d30f70317c5cb61f4c489b719f06ff19e3288c",
+      "assessment": "Public website JSON with base64-encoded payload decoded; county-by-contest totals. Undocumented UI endpoint, not a contractual API.",
+      "counties": 254,
+      "nonzero_county_totals": 0,
+      "candidate_fields": [
+        "C",
+        "EV",
+        "FN",
+        "LN",
+        "N",
+        "O",
+        "P",
+        "PE",
+        "V",
+        "id"
+      ],
+      "election_metadata_url": "https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/53815"
+    },
+    {
+      "source": "oh-xml",
+      "url": "https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob",
+      "http_status_observed": 200,
+      "downloaded_bytes": 1220414,
+      "sha256": "e7214a3e608efb57d61eb56de768953d40fbac2af8c76ca71df4dfe752df39d0",
+      "assessment": "XML parsed but IsTest=true: reject from live forecasting until production data is verified. VoteCounts are Total, not ballot-method splits.",
+      "report_attributes": {
+        "Format": "SummaryContest",
+        "GeneratedDate": "2026-11-03T05:06:34Z",
+        "IsTest": "true",
+        "Issuer": "Ohio Secretary of State Frank LaRose",
+        "IssuerAbbreviation": "OH",
+        "Sequence": "0",
+        "SequenceEnd": "0",
+        "Status": "UnofficialPartial",
+        "VendorApplicationId": "Ohio-ENR 1.0.02"
+      },
+      "county_typed_units": 176,
+      "non_electoral_county_units": 88,
+      "electoral_county_units": 88
+    },
+    {
+      "source": "ne-csv",
+      "url": "https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=SW&map=CTY",
+      "http_status_observed": 200,
+      "downloaded_bytes": 2492,
+      "sha256": "b9b2472c580aa53ae5049e8953349f4b7933ac3d77e0203d0e2a14ee6be2e03e",
+      "assessment": "CSV parsed for current election; this download is statewide contest totals, not county-level returns. County drilldowns still need validation.",
+      "columns": [
+        "RaceID",
+        "RaceName",
+        "PartyCode",
+        "AreaType",
+        "AreaNum",
+        "OfficeSeqNo",
+        "BallotOrder",
+        "CandidateID",
+        "CandidateName",
+        "CurrentDateTime",
+        "VoteFor",
+        "CandidateVotes",
+        "CandidatePercentage",
+        "PrecinctsReporting"
+      ]
+    },
+    {
+      "source": "ak-csv",
+      "url": "https://www.elections.alaska.gov/enr/26GENR/results/GA_ENR_Precinct_State%20of%20Alaska.csv",
+      "http_status_observed": 404,
+      "downloaded_bytes": 409,
+      "sha256": "d3560774c0fb2cbfb6d2b1e242e6be963167c07ef3e3da9ee8c9c5c7d6faf249",
+      "assessment": "Advertised on official 2026 page, but file not available at probe time."
+    },
+    {
+      "source": "ia",
+      "url": "https://electionresults.iowa.gov/",
+      "http_status_observed": 403,
+      "downloaded_bytes": 919,
+      "sha256": "6587553544fcd3e7a2844a8c1eaa68f587ee1afb5284f1dc3efaeb740c088155",
+      "assessment": "Access blocked from this research machine; payload not validated."
+    },
+    {
+      "source": "ks",
+      "url": "https://ent.sos.ks.gov/",
+      "http_status_observed": 403,
+      "downloaded_bytes": 659272,
+      "sha256": "85a455acd747975e6dc5ed8acd5750a45302fcf376b8f353b859ea70ec865eff",
+      "assessment": "Access blocked from this research machine; payload not validated."
+    },
+    {
+      "source": "mn-general-media",
+      "url": "https://electionresults.sos.mn.gov/Select/MediaFiles/Index?ersElectionId=201",
+      "http_status_observed": 200,
+      "downloaded_bytes": 15082,
+      "sha256": "6732a22f6a57064e74bc8ed7b3c233268ae0e59b5460f36c9e84747f77c37540",
+      "assessment": "Redirected to a bot-validation page; HTTP 200 is not election data. Source not validated."
+    },
+    {
+      "source": "nh",
+      "url": "https://www.sos.nh.gov/2026-general-election-results",
+      "http_status_observed": 403,
+      "downloaded_bytes": 411,
+      "sha256": "0c987bfc4f0433bfd66cd5664226f08cef7bdf576b07cd4c2a21df95587bcbaf",
+      "assessment": "Access blocked; indexed official text says results linked upon completion following the election. No live feed established."
+    },
+    {
+      "source": "fl",
+      "url": "https://floridaelectionwatch.gov/Downloads",
+      "http_status_observed": 403,
+      "downloaded_bytes": 5388,
+      "sha256": "52b3d12df255220ec4070cdda8778f697f8afa108bf203bf89360f879173a6dc",
+      "assessment": "Indexed official page advertises current-election Excel/text/pipe exports; downloads not validated."
+    },
+    {
+      "source": "ca",
+      "url": "https://electionresults.sos.ca.gov/",
+      "http_status_observed": 200,
+      "downloaded_bytes": 212,
+      "sha256": "d02032286070b4dd9d8fbd985a7bdca8af8edf52b89ff177db3bfcb2c8a9c43d",
+      "assessment": "Bot-protection HTML, not election data. Separate official API documentation located; current payload unvalidated."
+    },
+    {
+      "source": "pa",
+      "url": "https://electionreturns.pa.gov/",
+      "http_status_observed": 200,
+      "downloaded_bytes": 1036,
+      "sha256": "d47d8ea9b997c79d4a3130bd8d5050aebd1fbeb9d66741c6733e32e154a80b2e",
+      "assessment": "Bot-protection HTML, not election data. Official Nov 2 notice confirms statewide county-by-contest night reporting."
+    },
+    {
+      "source": "ny",
+      "url": "https://nyenr.elections.ny.gov/",
+      "http_status_observed": 403,
+      "downloaded_bytes": 5338,
+      "sha256": "ad72cf3844c0db7bbf4647e419c194e38d82b9c06d5d4f6ef18c152426a1c4bd",
+      "assessment": "Access blocked; current payload not validated."
+    },
+    {
+      "source": "nj-morris",
+      "url": "https://results.enr.clarityelections.com/NJ/Morris/127576/web.345435/",
+      "http_status_observed": 403,
+      "downloaded_bytes": 919,
+      "sha256": "596422c626aac70a97072728168c2880e839122d3513cb1e07b95d1af24ccee0",
+      "assessment": "Current county site linked by New Jersey; access blocked, payload not validated."
+    },
+    {
+      "source": "nv",
+      "url": "https://results.nv.gov/",
+      "http_status_observed": 302,
+      "downloaded_bytes": null,
+      "sha256": null,
+      "assessment": "Redirect loop at probe time; curl exited 47. Current payload not validated."
+    }
+  ]
+}

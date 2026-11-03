@@ -1,0 +1,101 @@
+# Current URLs and schemas were read and parsed on 2026-11-03 before polls
+# closed. No feed's zero scaffold demonstrates later live update reliability.
+# These are raw election counts. No provider probabilities are used.
+sources:
+  - id: nc
+    label: North Carolina State Board of Elections
+    state: NC
+    adapter: north_carolina
+    url: https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip
+    minimum_interval: 180
+    expected_counties: 100
+    baseline_url: https://dl.ncsbe.gov/ENRS/2024_11_05/results_pct_20241105.zip
+    baseline_election_date: '2024-11-05'
+    enabled: true
+  - id: az
+    label: Arizona Secretary of State
+    state: AZ
+    adapter: enhanced_voting
+    url: https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json
+    minimum_interval: 120
+    expected_counties: 15
+    baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+    baseline_adapter: county_baseline
+    baseline_election_date: '2024-11-05'
+    baseline_note: Public compilation of raw 2024 county counts; not official live data or another forecast.
+    enabled: true
+  - id: ga
+    label: Georgia Secretary of State
+    state: GA
+    adapter: enhanced_voting
+    url: https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json
+    minimum_interval: 180
+    expected_counties: 159
+    baseline_url: https://results.sos.ga.gov/cdn/results/Georgia/export-2024NovGen.json
+    baseline_election_date: '2024-11-05'
+    enabled: true
+  - id: va
+    label: Virginia Department of Elections
+    state: VA
+    adapter: enhanced_voting
+    url: https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json
+    minimum_interval: 180
+    expected_counties: 133
+    baseline_url: https://enr.elections.virginia.gov/cdn/results/Virginia/export-2024NovemberGeneral.json
+    baseline_election_date: '2024-11-05'
+    enabled: true
+  - id: tx
+    label: Texas Secretary of State
+    state: TX
+    adapter: texas
+    url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815
+    metadata_url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/53815
+    minimum_interval: 300
+    expected_counties: 254
+    baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+    baseline_adapter: county_baseline
+    baseline_election_date: '2024-11-05'
+    baseline_note: Public compilation of raw 2024 county counts; not official live data or another forecast.
+    enabled: true
+  - id: mi_kent
+    label: Kent County Clerk, Michigan
+    state: MI
+    adapter: enhanced_voting
+    url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json
+    minimum_interval: 180
+    baseline_url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-2024KentCountyGeneral.json
+    baseline_election_date: '2024-11-05'
+    coverage_note: One county only. Does not constitute statewide Michigan coverage.
+    enabled: true
+  - id: ia_ledger
+    label: Iowa Ledger, relaying Iowa Secretary of State totals
+    state: IA
+    adapter: iowa_ledger
+    url: https://iowaledger.com/results/2026.json
+    minimum_interval: 180
+    coverage_note: Alternative raw-results publisher. Contest totals only, no county breakdown or counted-vote estimate.
+    enabled: true
+  - id: oh
+    label: Ohio Secretary of State
+    state: OH
+    adapter: ohio
+    url: https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob
+    minimum_interval: 180
+    expected_counties: 88
+    baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+    baseline_adapter: county_baseline
+    baseline_election_date: '2024-11-05'
+    baseline_note: Public compilation of raw 2024 county counts; not official live data or another forecast.
+    coverage_note: Feed currently marked IsTest=true; unavailable until an explicitly production payload is published.
+    enabled: true
+  - id: fl
+    label: Florida Division of Elections
+    state: FL
+    adapter: florida
+    url: https://flelectionfiles.floridados.gov/enightfilespublic/20261103_ElecResultsFL.txt
+    minimum_interval: 180
+    expected_counties: 67
+    baseline_url: https://flelectionfiles.floridados.gov/enightfilespublic/20241105_ElecResultsFL.txt
+    baseline_election_date: '2024-11-05'
+    coverage_note: Direct official county results file; no publication timestamp or estimated vote fraction. Some uncontested races may be omitted by the state.
+    enabled: true

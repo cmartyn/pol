@@ -1,0 +1,83 @@
+.election-night { max-width: 72rem; margin: 0 auto; color: #172331; }
+.night-heading { max-width: 48rem; margin-bottom: 2rem; }
+.night-date { color: #526170; font-size: .9rem; margin-bottom: .35rem; }
+.night-heading h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 600; line-height: 1.08; letter-spacing: -.04em; }
+.night-deck { margin-top: .8rem; font-size: 1.1rem; line-height: 1.6; color: #526170; }
+.night-status { padding: 1rem 1.25rem; background: #edf3f6; border-left: 3px solid #607889; line-height: 1.5; font-size: .94rem; }
+.night-status strong { display: block; font-weight: 650; margin-bottom: .2rem; }
+.night-status--experimental { background: #f2f5f7; }
+.night-status--stale, .night-connection { background: #fff4d9; border-left: 3px solid #a16a12; }
+.night-timestamp { margin-top: .5rem; font-size: .8rem; color: #526170; }
+.night-prior-note { margin-top: .6rem; color: #835311; font-size: .85rem; }
+.night-chambers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 2.4rem; }
+.night-chamber { text-align: center; padding: .25rem 2.5rem 1.5rem; }
+.night-chamber + .night-chamber { border-left: 1px solid #dbe2e7; }
+.night-chamber h2 { font-family: Fraunces, Georgia, serif; font-size: 2.1rem; line-height: 1.2; font-weight: 600; }
+.night-probability-label { margin-top: .6rem; color: #526170; font-size: .875rem; }
+.night-probability { font-size: clamp(3.8rem, 6vw, 5rem); font-weight: 650; letter-spacing: -.05em; line-height: 1.15; margin: .3rem 0 1rem; }
+.night-dial { width: min(100%, 370px); margin: 0 auto; overflow: visible; }
+.night-dial-track { fill: none; stroke-width: 9; }
+.night-dial-track--low { stroke: #dd9b95; }
+.night-dial-track--high { stroke: #85b0d8; }
+.night-dial-tick { stroke: #728391; stroke-width: 1; }
+.night-dial-hand { stroke: #172331; stroke-width: 3; stroke-linecap: round; }
+.night-dial-hub { fill: #172331; }
+.night-dial text { fill: #526170; font: 12px "Public Sans", sans-serif; }
+.night-seat-estimate { margin-top: .6rem; font-size: .9rem; }
+.night-seat-estimate strong { font-weight: 650; }
+.night-republican { color: #526170; font-size: .85rem; margin-top: .4rem; }
+.night-control-note { max-width: 50rem; text-align: center; font-size: .8rem; line-height: 1.55; color: #526170; margin: .8rem auto 2.7rem; }
+.night-coverage, .night-sources { border-top: 1px solid #dbe2e7; padding-top: 1.5rem; margin-top: 1.8rem; }
+.night-section-heading h2 { font-family: Fraunces, Georgia, serif; font-size: 1.55rem; font-weight: 550; }
+.night-section-heading p { color: #526170; font-size: .88rem; line-height: 1.5; margin-top: .4rem; }
+.night-coverage-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; padding: 1.5rem 0; }
+.night-coverage-stats dt { color: #526170; font-size: .83rem; }
+.night-coverage-stats dd { font-size: 2rem; font-weight: 600; margin-top: .2rem; }
+.night-coverage-stats dd span { color: #728391; font-size: 1rem; font-weight: 400; }
+.night-details { border-top: 1px solid #dbe2e7; }
+.night-details summary { cursor: pointer; padding: 1rem 0; font-weight: 600; font-size: .9rem; }
+.night-details summary span { color: #728391; font-weight: 400; margin-left: .6rem; }
+.night-details summary:focus-visible, .night-table-scroll:focus-visible, .night-source-link:focus-visible { outline: 2px solid #27689f; outline-offset: 4px; }
+.night-table-scroll { overflow-x: auto; max-height: 32rem; }
+.night-table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: .82rem; }
+.night-table caption { text-align: left; }
+.night-table th, .night-table td { padding: .75rem .8rem; border-bottom: 1px solid #e7edf1; text-align: right; }
+.night-table th:first-child, .night-table td:last-child, .night-table th:last-child { text-align: left; }
+.night-table thead th { font-weight: 600; color: #526170; background: #f5f7f8; }
+.night-race-status { font-size: .78rem; color: #526170; }
+.night-race-status--returns { color: #146047; font-weight: 550; }
+.night-race-reason { max-width: 20rem; min-width: 12rem; white-space: normal; overflow-wrap: anywhere; color: #526170; font-size: .75rem; line-height: 1.5; margin-top: .3rem; }
+.night-source-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.3rem 2rem; margin-top: 1.4rem; padding-bottom: 1.3rem; list-style: none; }
+.night-source-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem .7rem; }
+.night-source-link { font-weight: 600; font-size: .9rem; text-decoration: underline; text-decoration-color: #b4c2cd; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.night-source-status { color: #146047; font-size: .73rem; }
+.night-source-status--issue { color: #955d12; }
+.night-source-time { font-size: .75rem; line-height: 1.6; margin-top: .45rem; color: #526170; }
+.night-source-issue { color: #955d12; font-size: .78rem; line-height: 1.5; margin-top: .4rem; }
+.night-source-note { color: #526170; font-size: .8rem; line-height: 1.5; margin-top: .5rem; }
+.night-source-baseline { color: #526170; font-size: .78rem; line-height: 1.55; margin-top: .65rem; padding-top: .55rem; border-top: 1px solid #e7edf1; }
+.night-source-baseline p + p { margin-top: .3rem; }
+.night-source-baseline strong { font-weight: 600; }
+.night-baseline-link { text-decoration: underline; text-underline-offset: 3px; }
+.night-baseline-link:focus-visible { outline: 2px solid #27689f; outline-offset: 4px; }
+.night-empty { color: #526170; font-size: .9rem; margin: 1.2rem 0; }
+.night-method { margin-top: 1.5rem; }
+.night-method-body { max-width: 48rem; font-size: .9rem; line-height: 1.7; color: #526170; padding-bottom: 1rem; }
+.night-method-body p + p, .night-method-body ul { margin-top: .8rem; }
+.night-method-body ul { list-style: disc; padding-left: 1.25rem; }
+.night-method-body li + li { margin-top: .5rem; }
+.night-method-body a { text-decoration: underline; text-underline-offset: 3px; color: #27689f; }
+.night-refresh-note { color: #728391; font-size: .75rem; line-height: 1.5; margin-top: 1.2rem; }
+.night-connection { padding: .75rem 1rem; font-size: .85rem; margin-bottom: 1rem; }
+.night-connection[hidden] { display: none; }
+@media (max-width: 680px) {
+  .night-heading { margin-bottom: 1.4rem; }
+  .night-chambers { grid-template-columns: 1fr; margin-top: 1.8rem; }
+  .night-chamber { padding: .5rem 0 1.5rem; }
+  .night-chamber + .night-chamber { border-left: 0; border-top: 1px solid #dbe2e7; padding-top: 1.8rem; margin-top: .5rem; }
+  .night-dial { max-width: 330px; }
+  .night-coverage-stats { gap: 1rem; grid-template-columns: 1fr; }
+  .night-coverage-stats > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+  .night-coverage-stats dd { font-size: 1.6rem; white-space: nowrap; }
+  .night-source-list { grid-template-columns: 1fr; }
+}

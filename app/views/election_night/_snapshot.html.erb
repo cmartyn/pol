@@ -1,0 +1,146 @@
+<section class="night-status night-status--<%= night_status %>" aria-label="Forecast status">
+  <% case night_status %>
+  <% when "unavailable" %>
+    <strong>Waiting for the first forecast</strong>
+    <p>The collector and model have not published a snapshot yet. Probabilities will appear here when one is available.</p>
+  <% when "stale" %>
+    <strong>Updates delayed</strong>
+    <p>These are the last available estimates. They may not include the latest returns.</p>
+  <% when "demo" %>
+    <strong>Demonstration data</strong>
+    <p>This local preview uses synthetic probabilities and vote totals. It does not describe election results.</p>
+  <% when "awaiting_results" %>
+    <strong>Awaiting usable returns</strong>
+    <p>No usable returns have entered this forecast yet. The probabilities below reflect our polling and historical priors.</p>
+  <% else %>
+    <strong>Experimental live forecast</strong>
+    <p>Our own estimates from partial returns and pre-election priors. Coverage is incomplete, and this model has not been calibrated on full election-night replays.</p>
+  <% end %>
+  <% if @snapshot %>
+    <p class="night-timestamp">Model updated <time datetime="<%= @snapshot["generated_at"] %>"><%= night_time(@snapshot["generated_at"]) %></time></p>
+    <% if @snapshot["prior_as_of"].present? %><p class="night-timestamp">Pre-election prior frozen <%= night_time(@snapshot["prior_as_of"]) %></p><% end %>
+    <% if night_prior_old? %><p class="night-prior-note" data-testid="night-old-prior">This starting point is more than 48 hours old. Areas without usable returns still depend heavily on it.</p><% end %>
+  <% end %>
+</section>
+
+<section class="night-chambers" aria-label="Chamber control probabilities">
+  <% %w[house senate].each do |chamber| %>
+    <% outcome = @snapshot&.dig("chambers", chamber) || {} %>
+    <% probability = outcome["p_dem_control"] %>
+    <% available = probability.is_a?(Numeric) && probability.finite? && probability.between?(0, 1) %>
+    <article class="night-chamber" data-testid="night-<%= chamber %>">
+      <h2><%= chamber.capitalize %></h2>
+      <p class="night-probability-label">Chance of Democratic control</p>
+      <p class="night-probability"><%= night_probability(probability) %></p>
+      <svg class="night-dial" viewBox="0 -12 360 207" aria-hidden="true" focusable="false">
+        <path class="night-dial-track night-dial-track--low" d="M 30 164 A 150 150 0 0 1 180 14" />
+        <path class="night-dial-track night-dial-track--high" d="M 180 14 A 150 150 0 0 1 330 164" />
+        <% [ 0, 0.25, 0.5, 0.75, 1 ].each do |tick| %>
+          <% a = Math::PI * (1 - tick) %>
+          <line class="night-dial-tick" x1="<%= 180 + 140 * Math.cos(a) %>" y1="<%= 164 - 140 * Math.sin(a) %>" x2="<%= 180 + 157 * Math.cos(a) %>" y2="<%= 164 - 157 * Math.sin(a) %>" />
+        <% end %>
+        <% if available %>
+          <% x, y = night_needle_point(probability) %>
+          <line class="night-dial-hand" x1="180" y1="164" x2="<%= x %>" y2="<%= y %>" />
+          <circle class="night-dial-hub" cx="180" cy="164" r="6" />
+        <% end %>
+        <text x="30" y="189" text-anchor="middle">0%</text>
+        <text x="180" y="2" text-anchor="middle">50%</text>
+        <text x="330" y="189" text-anchor="middle">100%</text>
+      </svg>
+      <p class="night-seat-estimate">
+        <% if outcome["mean_dem_seats"].is_a?(Numeric) && outcome["mean_dem_seats"].finite? %>
+          <strong><%= number_with_precision(outcome["mean_dem_seats"], precision: 1) %></strong> expected Democratic-caucus seats
+        <% else %>
+          Seat estimate not yet available
+        <% end %>
+      </p>
+      <% if available %>
+        <p class="night-republican">Republican control: <strong><%= night_probability(outcome["p_rep_control"]) %></strong></p>
+      <% end %>
+    </article>
+  <% end %>
+</section>
+
+<p class="night-control-note">Control probabilities are separate from race calls. Independents with an uncommitted caucus can leave control unresolved, so the two parties’ chances need not add to 100%.</p>
+
+<section class="night-coverage" aria-labelledby="night-coverage-heading">
+  <div class="night-section-heading">
+    <h2 id="night-coverage-heading">What is informing the forecast</h2>
+    <p>Missing areas retain uncertainty from the pre-election model.</p>
+  </div>
+  <dl class="night-coverage-stats">
+    <div><dt>Races using returns</dt><dd><%= number_with_delimiter(@coverage.fetch("races_with_returns", 0)) %><span> / <%= number_with_delimiter(@coverage.fetch("races_total", 0)) %></span></dd></div>
+    <div><dt>Races with matched baselines</dt><dd><%= number_with_delimiter(@coverage.fetch("races_with_baselines", 0)) %></dd></div>
+    <div><dt>Sources reporting successfully</dt><dd><%= @sources.count { |source| source["status"] == "ok" } %><span> / <%= @sources.size %></span></dd></div>
+  </dl>
+
+  <% if @races.any? %>
+    <details class="night-details" id="night-races">
+      <summary>Race estimates and coverage <span><%= @races.size %> races</span></summary>
+      <div class="night-table-scroll" tabindex="0" role="region" aria-label="Race estimates, scroll horizontally if needed">
+        <table class="night-table">
+          <caption class="sr-only">Race probabilities and whether usable results inform each estimate</caption>
+          <thead><tr><th scope="col">Race</th><th scope="col">Democratic win</th><th scope="col">Republican win</th><th scope="col">Other win</th><th scope="col">Observed votes</th><th scope="col">Estimate uses</th></tr></thead>
+          <tbody>
+            <% @races.each do |race| %>
+              <tr>
+                <th scope="row"><%= race["race_key"] %></th>
+                <td><%= night_probability(race["p_dem_win"]) %></td>
+                <td><%= night_probability(race["p_rep_win"]) %></td>
+                <td><%= night_probability(race["p_other_win"]) %></td>
+                <td><%= number_with_delimiter(race.fetch("observed_votes", 0)) %></td>
+                <td>
+                  <span class="night-race-status <%= "night-race-status--returns" if %w[returns returns_updated].include?(race["status"]) %>"><%= night_race_status(race["status"]) %></span>
+                  <% if race["reason"].present? %><p class="night-race-reason"><%= race["reason"] %></p><% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  <% end %>
+</section>
+
+<section class="night-sources" aria-labelledby="night-sources-heading">
+  <div class="night-section-heading"><h2 id="night-sources-heading">Results sources</h2><p>Source publication times can differ from the model update time.</p></div>
+  <% if @sources.empty? %>
+    <p class="night-empty">Source status will appear after the first collection run.</p>
+  <% else %>
+    <ul class="night-source-list">
+      <% @sources.each do |source| %>
+        <% source_ok = source["status"] == "ok" %>
+        <li>
+          <div class="night-source-heading">
+            <%= safe_external_link(source["url"], source["label"].presence || source["id"], class: "night-source-link", rel: "noopener noreferrer") %>
+            <span class="night-source-status <%= "night-source-status--issue" unless source_ok %>"><%= source_ok ? "Retrieved" : (source["status"] == "stale" ? "Delayed" : "Unavailable") %></span>
+          </div>
+          <% unless source_ok %><p class="night-source-issue">Latest collection did not provide fresh usable data. This source may be missing from the estimate.</p><% end %>
+          <% if source["coverage_note"].present? %><p class="night-source-note"><%= source["coverage_note"] %></p><% end %>
+          <p class="night-source-time">Retrieved <%= night_time(source["fetched_at"]) %><br>Results as of <%= night_time(source["published_at"]) %></p>
+          <% if source["baseline_url"].present? || source["baseline_note"].present? || source["baseline_error"].present? %>
+            <div class="night-source-baseline">
+              <p><strong>Historical comparison</strong><% if source["baseline_url"].present? %>: <%= safe_external_link(source["baseline_url"], "Vote counts", class: "night-baseline-link", rel: "noopener noreferrer") %><% end %></p>
+              <% if source["baseline_note"].present? %><p><%= source["baseline_note"] %></p><% end %>
+              <% if source["baseline_error"].present? %><p class="night-source-issue" data-testid="night-baseline-unavailable">Historical comparison unavailable. Raw results may appear without a direct model update.</p><% end %>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
+
+<details class="night-details night-method" id="night-assumptions">
+  <summary>How this works, and what we assume</summary>
+  <div class="night-method-body">
+    <p>We compare incoming results with historical results from matching areas, estimate the uncounted vote, and update correlated race outcomes together. The chamber probabilities come from our own simulations, not another forecaster’s model.</p>
+    <p>These are experimental estimates. Early reports are not a random sample of the electorate. Missing coverage, turnout assumptions and differences between voting methods can change the outlook.</p>
+    <% if @snapshot&.fetch("prior_as_of", nil).present? %><p>Pre-election prior: <%= night_time(@snapshot["prior_as_of"]) %>. Live probabilities use one frozen pre-election prior.</p><% end %>
+    <% if Array(@snapshot&.fetch("assumptions", [])).any? %>
+      <ul><% @snapshot["assumptions"].each do |assumption| %><li><%= assumption %></li><% end %></ul>
+    <% end %>
+    <p><%= link_to "Read the pre-election methodology", methodology_path %></p>
+  </div>
+</details>

@@ -84,6 +84,7 @@
             <%= nav_link "Dashboard", root_path %>
             <%= nav_link "Senate", senate_path %>
             <%= nav_link "House", house_path %>
+            <%= nav_link "Election night", election_night_path %>
             <%= nav_link "Dispatches", dispatches_path %>
           </div>
           <%# Polls before Pollsters: the corpus, then what the model does to
@@ -105,6 +106,7 @@
             a control that could never do anything is worse than none, and
             the no-JS reader already has the published view. %>
         <div class="<%= app_shell? ? "col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-x-1 justify-self-end xl:w-auto xl:gap-x-6 2xl:col-start-3" : "col-start-1 row-start-3 flex w-full items-center justify-end gap-x-6 max-sm:justify-between md:col-start-2 md:row-start-1 md:w-auto 2xl:col-start-3" %>" data-controller="subscribe-dialog">
+          <% unless controller_name == "election_night" %>
           <label class="hidden min-h-11 items-center gap-2 text-slate-600 [html[data-internals]_&]:flex"
                  data-testid="internals-toggle">
             <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"
@@ -128,6 +130,7 @@
               <% end %>
             </span>
           </label>
+          <% end %>
 
           <% if app_shell? %>
             <%= link_to "Dispatches", dispatches_path,
