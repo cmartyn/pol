@@ -11,7 +11,19 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
       assert_select ".night-dial-hand", count: 0
       assert_includes response.headers["Cache-Control"], "no-store"
       assert_equal "no-store", response.headers["CDN-Cache-Control"]
+      assert_equal "noindex, nofollow", response.headers["X-Robots-Tag"]
+      assert_select "meta[name=robots][content='noindex, nofollow']", count: 1
+      assert_select ".night-date", /Experimental preview/
+      assert_select "a[href='/election-night']", count: 0
     end
+  end
+
+  test "preview is absent from public navigation and does not change homepage indexing" do
+    get "/"
+    assert_response :success
+    assert_select "a[href='/election-night']", count: 0
+    assert_nil response.headers["X-Robots-Tag"]
+    assert_select "meta[name=robots][content*=noindex]", count: 0
   end
 
   test "shows own chamber probabilities and unresolved caucus outcomes separately" do
@@ -69,6 +81,7 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
       get "/election-night/snapshot"
       assert_response :success
       first_revision = response.parsed_body.fetch("revision")
+      assert_equal "noindex, nofollow", response.headers["X-Robots-Tag"]
       get "/election-night/snapshot"
       assert_equal first_revision, response.parsed_body.fetch("revision")
       assert_equal 0.64, response.parsed_body.dig("chambers", "house", "p_dem_control")

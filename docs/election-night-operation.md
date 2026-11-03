@@ -4,7 +4,13 @@ This feature is isolated on `codex/election-night-needle`. It does not write exi
 
 ## What exists
 
-`/election-night` is a public page with separate House and Senate probability gauges, expected Democratic-caucus seats, direct versus shared race updates, raw vote coverage, source health, timestamps and assumptions. It refreshes every 30 seconds and keeps the last display if the connection fails. `/election-night/snapshot` returns the versioned snapshot with no-store caching.
+`/election-night` is an unlisted public experimental preview with separate House and Senate probability gauges, expected Democratic-caucus seats, direct versus shared race updates, raw vote coverage, source health, timestamps and assumptions. It refreshes every 30 seconds and keeps the last display if the connection fails. `/election-night/snapshot` returns the versioned snapshot with no-store caching.
+
+The preview has no public navigation link. Both endpoints send `X-Robots-Tag: noindex, nofollow`, and the HTML also includes the equivalent robots metadata. The route is not listed in a sitemap. These indexing directives are not access control: anyone who obtains or guesses the URL can open or share it. Do not add a robots.txt disallow rule that prevents crawlers from seeing the noindex directive. Authentication would be a separate requirement for a private preview.
+
+Merging the code does not enable collection or transfer the ignored local snapshot. Without a production prior and snapshot, the route shows its waiting state. A merge can therefore expose the unlisted preview without running the experimental model on the production worker.
+
+November 3 merge preparation: the unlisted-preview and homepage checks passed (40 tests, 367 assertions), changed Ruby files passed lint, Brakeman reported no warnings, and the JavaScript dependency audit passed. The Ruby dependency audit still reports advisories for addressable, loofah, nokogiri, rack and rails-html-sanitizer. Their lockfile versions are identical to `origin/main` at `54593ee`; these are existing dependency failures, not changes introduced by this feature. The feature branch has no conflicts with that main revision, but the dependency audit must be resolved before all merge checks are green.
 
 CivicAPI is the primary collection path, with a pinned full-race catalog covering the complete 435-House/35-Senate board. The adapter validates each response independently; a catalog entry alone is not usable data. CivicAPI remains a secondary publisher of raw counts. It provides contest totals and reconciled county detail where available, without supplying our probabilities or turnout estimates.
 

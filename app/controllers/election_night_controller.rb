@@ -16,6 +16,7 @@ class ElectionNightController < PublicController
     def load_snapshot
       response.headers["Cache-Control"] = "no-store"
       response.headers["CDN-Cache-Control"] = "no-store"
+      response.headers["X-Robots-Tag"] = "noindex, nofollow"
       @snapshot = ElectionNight::Store.new.latest
       @revision = Digest::SHA256.hexdigest([ @snapshot.to_json, night_status ].join)
       @coverage = @snapshot&.fetch("coverage", {}) || {}
