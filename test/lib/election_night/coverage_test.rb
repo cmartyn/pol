@@ -16,6 +16,7 @@ class ElectionNight::CoverageTest < ActiveSupport::TestCase
 
     assert_equal({ "races_total" => 5, "races_with_returns" => 1, "races_with_baselines" => 1,
       "races_with_raw_returns" => 3, "races_with_raw_sources" => 3, "competitive_races_total" => 5,
+      "races_with_outstanding_estimates" => 0, "competitive_races_with_baselines" => 0,
       "competitive_races_with_raw_sources" => 2, "competitive_races_with_county_sources" => 1,
       "competitive_races_with_contest_sources" => 1, "competitive_races_with_partial_sources" => 1 }, coverage.summary)
     report = coverage.report

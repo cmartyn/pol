@@ -81,6 +81,13 @@
     <p class="night-coverage-note" data-testid="night-raw-breakdown"><%= number_with_delimiter(@coverage.fetch("competitive_races_with_county_sources", 0)) %> with county detail · <%= number_with_delimiter(@coverage.fetch("competitive_races_with_contest_sources", 0)) %> with contest totals · <%= number_with_delimiter(@coverage.fetch("competitive_races_with_partial_sources", 0)) %> with partial coverage only.</p>
     <p class="night-coverage-note">The connected total counts whole-race county feeds or contest totals. Partial coverage covers only some areas and is excluded. Connected feeds can still contain zero votes or delayed returns; a direct model update also needs usable returns and matched historical geography.</p>
   <% end %>
+  <% if @coverage.key?("races_with_outstanding_estimates") || @coverage.key?("competitive_races_with_baselines") %>
+    <p class="night-coverage-note" data-testid="night-outstanding-coverage">
+      <% if @coverage.key?("races_with_outstanding_estimates") %><%= number_with_delimiter(@coverage["races_with_outstanding_estimates"]) %> races have remaining-vote estimates.<% end %>
+      <% if @coverage.key?("competitive_races_with_baselines") %><%= number_with_delimiter(@coverage["competitive_races_with_baselines"]) %><% if @coverage.key?("competitive_races_total") %> of <%= number_with_delimiter(@coverage["competitive_races_total"]) %><% end %> competitive races have historical comparisons.<% end %>
+    </p>
+  <% end %>
+  <% if @races.any? %><p class="night-coverage-note" id="night-outstanding-note">Estimated votes remaining and model ranges come from historical turnout scenarios. They describe candidate votes, not an official inventory of uncounted ballots, and do not establish that counting is complete. Estimates stay unavailable when the historical comparison or vote-round meaning is unclear; an available estimate does not by itself supply direct evidence to the forecast.</p><% end %>
 
   <% if @races.any? %>
     <details class="night-details" id="night-races">
@@ -88,7 +95,7 @@
       <div class="night-table-scroll" tabindex="0" role="region" aria-label="Race estimates, scroll horizontally if needed">
         <table class="night-table">
           <caption class="sr-only">Race probabilities and whether usable results inform each estimate</caption>
-          <thead><tr><th scope="col">Race</th><th scope="col">Democratic win</th><th scope="col">Republican win</th><th scope="col">Other win</th><th scope="col">Observed votes</th><th scope="col">Estimate uses</th></tr></thead>
+          <thead><tr><th scope="col">Race</th><th scope="col">Democratic win</th><th scope="col">Republican win</th><th scope="col">Other win</th><th scope="col">Observed votes</th><th scope="col">Estimated votes remaining</th><th scope="col">Estimate uses</th></tr></thead>
           <tbody>
             <% @races.each do |race| %>
               <tr data-race-key="<%= race["race_key"] %>">
@@ -99,6 +106,15 @@
                 <td class="night-observed-votes">
                   <span><%= race["has_raw_source"] == false ? "—" : number_with_delimiter(race.fetch("observed_votes", 0)) %></span>
                   <% if (raw_coverage = night_raw_coverage(race)) %><p class="night-raw-level"><%= raw_coverage %></p><% end %>
+                </td>
+                <td class="night-outstanding-votes" aria-describedby="night-outstanding-note">
+                  <% if (outstanding = night_outstanding_estimate(race)) %>
+                    <span>≈<%= night_estimate_votes(outstanding["remaining_votes"]) %></span>
+                    <p class="night-outstanding-range">Model range: <%= night_estimate_votes(outstanding["remaining_votes_low"], rounding: :floor) %>–<%= night_estimate_votes(outstanding["remaining_votes_high"], rounding: :ceil) %></p>
+                    <p class="night-outstanding-basis"><%= { "county" => "County estimate", "contest" => "Contest estimate" }[outstanding["geography_scope"]] %><% if outstanding["turnout_basis"].present? %> · <%= outstanding["turnout_basis"] %><% end %></p>
+                  <% else %>
+                    <span>—</span>
+                  <% end %>
                 </td>
                 <td>
                   <span class="night-race-status <%= "night-race-status--returns" if %w[returns returns_updated].include?(race["status"]) %>"><%= night_race_status(race["status"]) %></span>
@@ -115,6 +131,17 @@
 
 <section class="night-sources" aria-labelledby="night-sources-heading">
   <div class="night-section-heading"><h2 id="night-sources-heading">Results sources</h2><p>Source publication times can differ from the model update time.</p></div>
+  <% if @snapshot&.fetch("historical_baselines", nil).present? %>
+    <% upstream = Array(@snapshot.dig("historical_baselines", "upstream")) %>
+    <% heideman = upstream.find { |source| source["publisher"] == "Paul Heideman" } || {} %>
+    <% mcgovern = upstream.find { |source| source["publisher"].to_s.start_with?("Tony McGovern") } %>
+    <p class="night-source-note" id="night-historical-attribution">
+      Historical comparisons use counts from <%= safe_external_link(heideman["citation"].presence || "https://doi.org/10.5281/zenodo.22976553", "Paul Heideman", class: "night-baseline-link", rel: "noopener noreferrer") %>
+      (<%= safe_external_link("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0", class: "night-baseline-link", rel: "noopener noreferrer") %>), which we normalized and validated.
+      <% if mcgovern %>Presidential county supplements come from <%= safe_external_link(mcgovern["url"], "Tony McGovern", class: "night-baseline-link", rel: "noopener noreferrer") %>.<% end %>
+      Presidential totals on current House boundaries come from <%= safe_external_link("https://docs.google.com/spreadsheets/d/1eZfaFI-c-PFOoKx1-zZA2MP0_dxRq_LVK0re3BOQqy0/edit?gid=1491069057", "The Downballot", class: "night-baseline-link", rel: "noopener noreferrer") %>.
+    </p>
+  <% end %>
   <% if @sources.empty? %>
     <p class="night-empty">Source status will appear after the first collection run.</p>
   <% else %>

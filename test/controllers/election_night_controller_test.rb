@@ -146,6 +146,32 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "frozen historical data attribution is visible with its license and normalization note" do
+    value = snapshot.deep_dup
+    value["historical_baselines"] = { "upstream" => [
+      { "publisher" => "Paul Heideman", "citation" => "https://doi.org/10.5281/zenodo.22976553", "license" => "CC BY 4.0" },
+      { "publisher" => "Tony McGovern; raw Fox News results compilation", "url" => "https://github.com/tonmcg/US_County_Level_Election_Results_08-24" }
+    ] }
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select ".night-sources > #night-historical-attribution", /which we normalized and validated/
+      assert_select "#night-historical-attribution a[href='https://doi.org/10.5281/zenodo.22976553']", "Paul Heideman"
+      assert_select "#night-historical-attribution a[href='https://creativecommons.org/licenses/by/4.0/']", "CC BY 4.0"
+      assert_select "#night-historical-attribution a", "Tony McGovern"
+      assert_select "#night-historical-attribution a[href^='https://docs.google.com/spreadsheets/']", "The Downballot"
+    end
+    value["historical_baselines"]["upstream"].first["citation"] = "javascript:alert(1)"
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select "#night-historical-attribution a[href^='javascript:']", count: 0
+      assert_select "#night-historical-attribution", /Paul Heideman/
+    end
+    with_night_snapshot(snapshot) do
+      get "/election-night"
+      assert_select "#night-historical-attribution", count: 0
+    end
+  end
+
   test "source notes explain exclusions while baseline failures remain plain and safe" do
     value = snapshot.deep_dup
     value["sources"] = [ {
@@ -235,6 +261,53 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
       assert_select "tr[data-race-key='NY-17'] .night-raw-level", "Partial coverage · delayed"
       assert_select "tr[data-race-key='NH-S'] .night-raw-level", "County detail"
       assert_select "tr[data-race-key='NH-S'] .night-race-status", "Prior only"
+    end
+  end
+
+  test "remaining vote estimates show rounded model ranges and their historical basis" do
+    value = snapshot.deep_dup
+    value["coverage"].merge!("races_with_outstanding_estimates" => 420, "competitive_races_with_baselines" => 110, "competitive_races_total" => 125)
+    value["races"].first["outstanding_votes"] = {
+      "remaining_votes" => 123_456.7, "remaining_votes_low" => 100_001.2, "remaining_votes_high" => 155_599.2,
+      "geography_scope" => "county", "turnout_basis" => "Matched 2022 county turnout"
+    }
+    value["races"] << { "race_key" => "ME-S", "outstanding_votes" => nil }
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select "th", "Estimated votes remaining"
+      assert_select "tr[data-race-key='NC-01'] .night-outstanding-votes > span", "≈123,500"
+      assert_select "tr[data-race-key='NC-01'] .night-outstanding-range", "Model range: 100,000–155,600"
+      assert_select "tr[data-race-key='NC-01'] .night-outstanding-basis", "County estimate · Matched 2022 county turnout"
+      assert_select "tr[data-race-key='ME-S'] .night-outstanding-votes > span", "—"
+      assert_select "tr[data-race-key='ME-S'] .night-outstanding-range", count: 0
+      assert_select "[data-testid='night-outstanding-coverage']", /420 races have remaining-vote estimates/
+      assert_select "[data-testid='night-outstanding-coverage']", /110 of 125 competitive races have historical comparisons/
+      assert_select "#night-outstanding-note", /historical turnout scenarios/
+      assert_select "#night-outstanding-note", /do not establish that counting is complete/
+    end
+  end
+
+  test "invalid remaining range is unknown and fallback raw sources are distinguished" do
+    value = snapshot.deep_dup
+    value["races"].first.merge!(
+      "has_raw_source" => true, "raw_coverage_level" => "contest", "raw_source_fallback" => true, "raw_source_stale" => true,
+      "outstanding_votes" => { "remaining_votes" => 200, "remaining_votes_low" => 300, "remaining_votes_high" => 400 }
+    )
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select ".night-outstanding-votes > span", "—"
+      assert_select ".night-outstanding-range", count: 0
+      assert_select ".night-raw-level", "Contest total · fallback · delayed"
+    end
+    value["races"].first["outstanding_votes"] = {
+      "remaining_votes" => 120, "remaining_votes_low" => 0, "remaining_votes_high" => 500,
+      "geography_scope" => "contest", "turnout_basis" => "<script>bad()</script>"
+    }
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select ".night-outstanding-votes > span", "≈120"
+      assert_select ".night-outstanding-range", "Model range: 0–500"
+      assert_select ".night-outstanding-basis script", count: 0
     end
   end
 

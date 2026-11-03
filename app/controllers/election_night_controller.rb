@@ -2,7 +2,8 @@ require "digest"
 
 class ElectionNightController < PublicController
   before_action :load_snapshot
-  helper_method :night_probability, :night_time, :night_status, :night_needle_point, :night_race_status, :night_prior_old?, :night_raw_coverage
+  helper_method :night_probability, :night_time, :night_status, :night_needle_point, :night_race_status, :night_prior_old?, :night_raw_coverage,
+    :night_outstanding_estimate, :night_estimate_votes
 
   def index
   end
@@ -87,6 +88,24 @@ class ElectionNightController < PublicController
       label = { "county" => "County detail", "contest" => "Contest total", "partial" => "Partial coverage" }[race["raw_coverage_level"]]
       return unless label
 
-      race["raw_source_stale"] ? "#{label} · delayed" : label
+      [ label, ("fallback" if race["raw_source_fallback"]), ("delayed" if race["raw_source_stale"]) ].compact.join(" · ")
+    end
+
+    def night_outstanding_estimate(race)
+      estimate = race["outstanding_votes"]
+      return unless estimate.is_a?(Hash)
+      point, low, high = estimate.values_at("remaining_votes", "remaining_votes_low", "remaining_votes_high")
+      return unless [ point, low, high ].all? { |value| value.is_a?(Numeric) && value.finite? && value >= 0 }
+      return unless low <= point && point <= high
+
+      estimate
+    end
+
+    def night_estimate_votes(value, rounding: :round)
+      step = value >= 1000 ? 100 : 1
+      rounded = (value.to_f / step).public_send(rounding) * step
+      return "<1" if rounding == :round && value.positive? && rounded.zero?
+
+      helpers.number_with_delimiter(rounded)
     end
 end

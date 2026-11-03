@@ -4,6 +4,20 @@ class ElectionNight::Sources::CivicApi < ElectionNight::Sources::Base
   STATES = %w[AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY].freeze
   AT_LARGE = %w[AK DE ND SD VT WY].freeze
   HOUSE_SEATS = STATES.zip([ 7, 1, 9, 4, 52, 8, 5, 1, 28, 14, 2, 2, 17, 9, 4, 4, 6, 6, 2, 8, 9, 13, 8, 4, 8, 2, 3, 4, 2, 12, 3, 26, 14, 1, 15, 5, 6, 17, 2, 7, 1, 9, 38, 4, 1, 11, 10, 2, 8, 1 ]).to_h.freeze
+  # The actual VA feed labels its 38 independent cities "City", while the
+  # official state export confirms they are county equivalents. Do not promote
+  # arbitrary municipalities in other states, or Charles/James City counties.
+  VIRGINIA_INDEPENDENT_CITIES = [
+    "ALEXANDRIA CITY", "BRISTOL CITY", "BUENA VISTA CITY", "CHARLOTTESVILLE CITY",
+    "CHESAPEAKE CITY", "COLONIAL HEIGHTS CITY", "COVINGTON CITY", "DANVILLE CITY",
+    "EMPORIA CITY", "FAIRFAX CITY", "FALLS CHURCH CITY", "FRANKLIN CITY",
+    "FREDERICKSBURG CITY", "GALAX CITY", "HAMPTON CITY", "HARRISONBURG CITY",
+    "HOPEWELL CITY", "LEXINGTON CITY", "LYNCHBURG CITY", "MANASSAS CITY",
+    "MANASSAS PARK CITY", "MARTINSVILLE CITY", "NEWPORT NEWS CITY", "NORFOLK CITY",
+    "NORTON CITY", "PETERSBURG CITY", "POQUOSON CITY", "PORTSMOUTH CITY", "RADFORD CITY",
+    "RICHMOND CITY", "ROANOKE CITY", "SALEM CITY", "STAUNTON CITY", "SUFFOLK CITY",
+    "VIRGINIA BEACH CITY", "WAYNESBORO CITY", "WILLIAMSBURG CITY", "WINCHESTER CITY"
+  ].freeze
 
   def parse(body)
     data = document(body)
@@ -22,7 +36,7 @@ class ElectionNight::Sources::CivicApi < ElectionNight::Sources::Base
 
     # The response can hold a statewide summary, counties, towns, precincts,
     # and other overlapping subdivisions. Only county equivalents enter units.
-    regional = regions.values.select { |region| region.is_a?(Hash) && [ "County", "Borough", "Parish", "Independent City" ].include?(region["type"]) }
+    regional = regions.values.select { |region| county_region?(region) }
     county_counts = regional.map { |region| candidate_counts(region.fetch("candidates")) }
     same_candidates = county_counts.all? { |counts| counts.keys.sort == candidates.keys.sort }
     matching_sums = same_candidates && regional.any? && candidates.all? do |candidate, votes|
@@ -62,6 +76,16 @@ class ElectionNight::Sources::CivicApi < ElectionNight::Sources::Base
   end
 
   private
+    def county_region?(region)
+      return false unless region.is_a?(Hash)
+      return true if [ "County", "Borough", "Parish", "Independent City" ].include?(region["type"])
+      return false unless state == "VA" && region["type"] == "City"
+      unless VIRGINIA_INDEPENDENT_CITIES.include?(unit_key(region.fetch("name")))
+        raise InvalidData, "unrecognized Virginia independent city"
+      end
+      true
+    end
+
     def federal_race(data)
       case data.fetch("election_type")
       when "US Senate"

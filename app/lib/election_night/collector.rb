@@ -1,12 +1,13 @@
 require "net/http"
 require "time"
 require "yaml"
+require "thread"
 
 class ElectionNight::Collector
   MAX_BYTES = 150 * 1024 * 1024
   # Bump when adapter normalization or validation changes. Never reuse old
   # normalized geography after a parser fix, even when raw hashes match.
-  NORMALIZATION_VERSION = 2
+  NORMALIZATION_VERSION = 3
   ADAPTERS = {
     "enhanced_voting" => "ElectionNight::Sources::EnhancedVoting",
     "north_carolina" => "ElectionNight::Sources::NorthCarolina",
@@ -30,31 +31,71 @@ class ElectionNight::Collector
     "st_charles" => "ElectionNight::Sources::StCharles"
   }.freeze
 
-  def initialize(store: ElectionNight::Store.new, config: Rails.root.join("config/election_night_sources.yml"), now: Time.current)
+  def initialize(store: ElectionNight::Store.new, config: Rails.root.join("config/election_night_sources.yml"), now: nil)
     @store, @config, @now = store, config, now
   end
 
   def call
-    YAML.safe_load_file(@config).fetch("sources").select { |s| s.fetch("enabled", true) }.map do |source|
+    configuration = YAML.safe_load_file(@config)
+    civic = configuration["civic_api"]
+    primary = if civic
+      ElectionNight::CivicCatalog.new(path: Rails.root.join(civic.fetch("catalog"))).sources(
+        minimum_interval: civic.fetch("minimum_interval", 180), priority: civic.fetch("priority", 0))
+    else
+      []
+    end
+    fallback = configuration.fetch("sources", []).select { |s| s.fetch("enabled", true) }
+    ids = (primary + fallback).map { |source| source.fetch("id") }
+    raise "Duplicate source ID" unless ids.uniq.size == ids.size
+
+    results = collect_parallel(primary, civic ? civic.fetch("concurrency", 2) : 1)
+    fallback.each do |source|
       result = collect(source)
       # State exports contain tens of MB of precinct detail; only normalized
       # county rows survive. Release parser trees before loading the next one.
       GC.start(full_mark: true, immediate_sweep: true)
-      result
+      results << result
     end
+    results
   end
 
   private
+    def now = @now || Time.current
+
+    # Bound simultaneous requests to the shared provider. Large official
+    # exports remain sequential so their parser trees cannot multiply memory.
+    def collect_parallel(sources, concurrency)
+      raise "Invalid collector concurrency" unless concurrency.is_a?(Integer) && concurrency.between?(1, 4)
+      return [] if sources.empty?
+      queue = Queue.new
+      sources.each_with_index { |source, index| queue << [ source, index ] }
+      results = Array.new(sources.size)
+      Array.new([ concurrency, sources.size ].min) do
+        Thread.new do
+          loop do
+            source, index = queue.pop(true)
+            results[index] = collect(source)
+          rescue ThreadError
+            break
+          end
+        end
+      end.each(&:value)
+      GC.start(full_mark: true, immediate_sweep: true)
+      results
+    end
+
     def collect(source)
+      attempted_at = now
       id = source.fetch("id")
       raise "Invalid source ID" unless id.match?(/\A[a-z0-9_\-]+\z/)
       previous = @store.read("sources/#{id}")
       previous = nil unless previous && previous["normalization_version"] == NORMALIZATION_VERSION
       interval = [ source.fetch("minimum_interval", 180).to_i, 120 ].max
-      if previous && @now - Time.iso8601(previous.fetch("attempted_at")) < interval
-        return freshness(previous)
+      if previous && attempted_at - Time.iso8601(previous.fetch("attempted_at")) < interval
+        # Source selection policy may change without changing parsed votes.
+        return freshness(previous.merge(source.slice("priority", "source_role", "coverage_note")))
       end
-      result = source.slice("id", "state", "label", "url", "expected_counties", "baseline_url", "baseline_note", "coverage_note", "source_kind", "upstream_url", "expected_races", "aggregate_only").merge("attempted_at" => @now.iso8601, "normalization_version" => NORMALIZATION_VERSION)
+      result = source.slice("id", "state", "label", "url", "expected_counties", "baseline_url", "baseline_note", "coverage_note", "source_kind", "upstream_url", "expected_races", "aggregate_only", "priority", "source_role").merge("attempted_at" => attempted_at.iso8601, "normalization_version" => NORMALIZATION_VERSION)
       result["url"] = source["page_url"] if source["page_url"]
       begin
         version_body = nil
@@ -89,7 +130,7 @@ class ElectionNight::Collector
         if source["expected_counties"] && counties.map { |u| u.fetch("unit_key") }.uniq.size != source["expected_counties"]
           raise "Incomplete statewide geography"
         end
-        result.merge!("results" => parsed, "fetched_at" => @now.iso8601,
+        result.merge!("results" => parsed, "fetched_at" => now.iso8601,
           "published_at" => parsed["published_at"], "status" => "ok", "usable" => true)
         body = nil
         GC.start(full_mark: true, immediate_sweep: true)
@@ -125,10 +166,10 @@ class ElectionNight::Collector
 
     def freshness(result)
       result = result.deep_dup
-      if result["fetched_at"] && @now - Time.iso8601(result["fetched_at"]) > 15.minutes
+      if result["fetched_at"] && now - Time.iso8601(result["fetched_at"]) > 15.minutes
         result["status"] = "stale"
       end
-      result["report_age_seconds"] = [ @now - Time.iso8601(result["published_at"]), 0 ].max.to_i if result["published_at"]
+      result["report_age_seconds"] = [ now - Time.iso8601(result["published_at"]), 0 ].max.to_i if result["published_at"]
       result
     end
 

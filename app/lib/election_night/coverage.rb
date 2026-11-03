@@ -14,9 +14,11 @@ class ElectionNight::Coverage
       "races_total" => @races.size,
       "races_with_returns" => @races.count { |race| race["direct_observation"] },
       "races_with_baselines" => @races.count { |race| race["has_baseline"] },
+      "races_with_outstanding_estimates" => @races.count { |race| race["outstanding_votes"] },
       "races_with_raw_returns" => @races.count { |race| race.fetch("observed_votes", 0).positive? },
       "races_with_raw_sources" => @races.count { |race| complete?(race) },
       "competitive_races_total" => @watchlist.fetch("race_keys").size,
+      "competitive_races_with_baselines" => watched.count { |race| race["has_baseline"] },
       "competitive_races_with_raw_sources" => watched.count { |race| complete?(race) },
       "competitive_races_with_county_sources" => watched.count { |race| race["raw_coverage_level"] == "county" },
       "competitive_races_with_contest_sources" => watched.count { |race| race["raw_coverage_level"] == "contest" },
@@ -29,7 +31,8 @@ class ElectionNight::Coverage
     rows = @races.map do |race|
       selected = Array(race["raw_source_ids"]).filter_map { |id| sources[id] }
       race.slice("race_key", "chamber", "state", "raw_coverage_level", "raw_reporting_units", "observed_votes",
-        "raw_source_ids", "raw_source_published_at", "raw_source_stale", "has_baseline", "reason").merge(
+        "raw_source_ids", "raw_source_published_at", "raw_source_stale", "raw_source_fallback",
+        "model_source_ids", "has_baseline", "outstanding_votes", "reason").merge(
           "competitive" => @watchlist.fetch("race_keys").include?(race.fetch("race_key")),
           "source_kinds" => selected.map { |source| source["source_kind"] }.compact.uniq,
           "source_urls" => selected.map { |source| source["url"] }

@@ -1,0 +1,3309 @@
+{
+  "election_date": "2026-11-03",
+  "catalog_sources": [
+    {
+      "chamber": "house",
+      "url": "https://civicapi.org/api/v2/race/87524",
+      "sha256": "40c5c07efb029f919ef7e0b74a7de1ffa58f0cbc33e8a60a51cc75d1112a35f4",
+      "last_updated": "2026-10-23T15:37:21.662Z"
+    },
+    {
+      "chamber": "senate",
+      "url": "https://civicapi.org/api/v2/race/87528",
+      "sha256": "a78a53b8dd63d560e89916cdd5c96af5b1527ee2ea1c3b2e92ac3216d795e22b",
+      "last_updated": "2026-10-23T15:37:21.863Z"
+    }
+  ],
+  "races": [
+    {
+      "race_key": "AK-AL",
+      "state": "AK",
+      "chamber": "house",
+      "id": 86915,
+      "url": "https://civicapi.org/api/v2/race/86915"
+    },
+    {
+      "race_key": "AK-S",
+      "state": "AK",
+      "chamber": "senate",
+      "id": 86916,
+      "url": "https://civicapi.org/api/v2/race/86916"
+    },
+    {
+      "race_key": "AL-01",
+      "state": "AL",
+      "chamber": "house",
+      "id": 86900,
+      "url": "https://civicapi.org/api/v2/race/86900"
+    },
+    {
+      "race_key": "AL-02",
+      "state": "AL",
+      "chamber": "house",
+      "id": 86901,
+      "url": "https://civicapi.org/api/v2/race/86901"
+    },
+    {
+      "race_key": "AL-03",
+      "state": "AL",
+      "chamber": "house",
+      "id": 86902,
+      "url": "https://civicapi.org/api/v2/race/86902"
+    },
+    {
+      "race_key": "AL-04",
+      "state": "AL",
+      "chamber": "house",
+      "id": 86903,
+      "url": "https://civicapi.org/api/v2/race/86903"
+    },
+    {
+      "race_key": "AL-05",
+      "state": "AL",
+      "chamber": "house",
+      "id": 86904,
+      "url": "https://civicapi.org/api/v2/race/86904"
+    },
+    {
+      "race_key": "AL-06",
+      "state": "AL",
+      "chamber": "house",
+      "id": 86905,
+      "url": "https://civicapi.org/api/v2/race/86905"
+    },
+    {
+      "race_key": "AL-07",
+      "state": "AL",
+      "chamber": "house",
+      "id": 86906,
+      "url": "https://civicapi.org/api/v2/race/86906"
+    },
+    {
+      "race_key": "AL-S",
+      "state": "AL",
+      "chamber": "senate",
+      "id": 86907,
+      "url": "https://civicapi.org/api/v2/race/86907"
+    },
+    {
+      "race_key": "AR-01",
+      "state": "AR",
+      "chamber": "house",
+      "id": 86945,
+      "url": "https://civicapi.org/api/v2/race/86945"
+    },
+    {
+      "race_key": "AR-02",
+      "state": "AR",
+      "chamber": "house",
+      "id": 86946,
+      "url": "https://civicapi.org/api/v2/race/86946"
+    },
+    {
+      "race_key": "AR-03",
+      "state": "AR",
+      "chamber": "house",
+      "id": 86947,
+      "url": "https://civicapi.org/api/v2/race/86947"
+    },
+    {
+      "race_key": "AR-04",
+      "state": "AR",
+      "chamber": "house",
+      "id": 86948,
+      "url": "https://civicapi.org/api/v2/race/86948"
+    },
+    {
+      "race_key": "AR-S",
+      "state": "AR",
+      "chamber": "senate",
+      "id": 86949,
+      "url": "https://civicapi.org/api/v2/race/86949"
+    },
+    {
+      "race_key": "AZ-01",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86917,
+      "url": "https://civicapi.org/api/v2/race/86917"
+    },
+    {
+      "race_key": "AZ-02",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86918,
+      "url": "https://civicapi.org/api/v2/race/86918"
+    },
+    {
+      "race_key": "AZ-03",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86919,
+      "url": "https://civicapi.org/api/v2/race/86919"
+    },
+    {
+      "race_key": "AZ-04",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86920,
+      "url": "https://civicapi.org/api/v2/race/86920"
+    },
+    {
+      "race_key": "AZ-05",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86921,
+      "url": "https://civicapi.org/api/v2/race/86921"
+    },
+    {
+      "race_key": "AZ-06",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86922,
+      "url": "https://civicapi.org/api/v2/race/86922"
+    },
+    {
+      "race_key": "AZ-07",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86923,
+      "url": "https://civicapi.org/api/v2/race/86923"
+    },
+    {
+      "race_key": "AZ-08",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86924,
+      "url": "https://civicapi.org/api/v2/race/86924"
+    },
+    {
+      "race_key": "AZ-09",
+      "state": "AZ",
+      "chamber": "house",
+      "id": 86925,
+      "url": "https://civicapi.org/api/v2/race/86925"
+    },
+    {
+      "race_key": "CA-01",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86968,
+      "url": "https://civicapi.org/api/v2/race/86968"
+    },
+    {
+      "race_key": "CA-02",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86979,
+      "url": "https://civicapi.org/api/v2/race/86979"
+    },
+    {
+      "race_key": "CA-03",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86990,
+      "url": "https://civicapi.org/api/v2/race/86990"
+    },
+    {
+      "race_key": "CA-04",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87001,
+      "url": "https://civicapi.org/api/v2/race/87001"
+    },
+    {
+      "race_key": "CA-05",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87005,
+      "url": "https://civicapi.org/api/v2/race/87005"
+    },
+    {
+      "race_key": "CA-06",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87006,
+      "url": "https://civicapi.org/api/v2/race/87006"
+    },
+    {
+      "race_key": "CA-07",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87007,
+      "url": "https://civicapi.org/api/v2/race/87007"
+    },
+    {
+      "race_key": "CA-08",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87008,
+      "url": "https://civicapi.org/api/v2/race/87008"
+    },
+    {
+      "race_key": "CA-09",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87009,
+      "url": "https://civicapi.org/api/v2/race/87009"
+    },
+    {
+      "race_key": "CA-10",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86958,
+      "url": "https://civicapi.org/api/v2/race/86958"
+    },
+    {
+      "race_key": "CA-11",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86959,
+      "url": "https://civicapi.org/api/v2/race/86959"
+    },
+    {
+      "race_key": "CA-12",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86960,
+      "url": "https://civicapi.org/api/v2/race/86960"
+    },
+    {
+      "race_key": "CA-13",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86961,
+      "url": "https://civicapi.org/api/v2/race/86961"
+    },
+    {
+      "race_key": "CA-14",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86962,
+      "url": "https://civicapi.org/api/v2/race/86962"
+    },
+    {
+      "race_key": "CA-15",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86963,
+      "url": "https://civicapi.org/api/v2/race/86963"
+    },
+    {
+      "race_key": "CA-16",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86964,
+      "url": "https://civicapi.org/api/v2/race/86964"
+    },
+    {
+      "race_key": "CA-17",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86965,
+      "url": "https://civicapi.org/api/v2/race/86965"
+    },
+    {
+      "race_key": "CA-18",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86966,
+      "url": "https://civicapi.org/api/v2/race/86966"
+    },
+    {
+      "race_key": "CA-19",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86967,
+      "url": "https://civicapi.org/api/v2/race/86967"
+    },
+    {
+      "race_key": "CA-20",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86969,
+      "url": "https://civicapi.org/api/v2/race/86969"
+    },
+    {
+      "race_key": "CA-21",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86970,
+      "url": "https://civicapi.org/api/v2/race/86970"
+    },
+    {
+      "race_key": "CA-22",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86971,
+      "url": "https://civicapi.org/api/v2/race/86971"
+    },
+    {
+      "race_key": "CA-23",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86972,
+      "url": "https://civicapi.org/api/v2/race/86972"
+    },
+    {
+      "race_key": "CA-24",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86973,
+      "url": "https://civicapi.org/api/v2/race/86973"
+    },
+    {
+      "race_key": "CA-25",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86974,
+      "url": "https://civicapi.org/api/v2/race/86974"
+    },
+    {
+      "race_key": "CA-26",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86975,
+      "url": "https://civicapi.org/api/v2/race/86975"
+    },
+    {
+      "race_key": "CA-27",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86976,
+      "url": "https://civicapi.org/api/v2/race/86976"
+    },
+    {
+      "race_key": "CA-28",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86977,
+      "url": "https://civicapi.org/api/v2/race/86977"
+    },
+    {
+      "race_key": "CA-29",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86978,
+      "url": "https://civicapi.org/api/v2/race/86978"
+    },
+    {
+      "race_key": "CA-30",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86980,
+      "url": "https://civicapi.org/api/v2/race/86980"
+    },
+    {
+      "race_key": "CA-31",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86981,
+      "url": "https://civicapi.org/api/v2/race/86981"
+    },
+    {
+      "race_key": "CA-32",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86982,
+      "url": "https://civicapi.org/api/v2/race/86982"
+    },
+    {
+      "race_key": "CA-33",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86983,
+      "url": "https://civicapi.org/api/v2/race/86983"
+    },
+    {
+      "race_key": "CA-34",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86984,
+      "url": "https://civicapi.org/api/v2/race/86984"
+    },
+    {
+      "race_key": "CA-35",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86985,
+      "url": "https://civicapi.org/api/v2/race/86985"
+    },
+    {
+      "race_key": "CA-36",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86986,
+      "url": "https://civicapi.org/api/v2/race/86986"
+    },
+    {
+      "race_key": "CA-37",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86987,
+      "url": "https://civicapi.org/api/v2/race/86987"
+    },
+    {
+      "race_key": "CA-38",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86988,
+      "url": "https://civicapi.org/api/v2/race/86988"
+    },
+    {
+      "race_key": "CA-39",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86989,
+      "url": "https://civicapi.org/api/v2/race/86989"
+    },
+    {
+      "race_key": "CA-40",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86991,
+      "url": "https://civicapi.org/api/v2/race/86991"
+    },
+    {
+      "race_key": "CA-41",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86992,
+      "url": "https://civicapi.org/api/v2/race/86992"
+    },
+    {
+      "race_key": "CA-42",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86993,
+      "url": "https://civicapi.org/api/v2/race/86993"
+    },
+    {
+      "race_key": "CA-43",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86994,
+      "url": "https://civicapi.org/api/v2/race/86994"
+    },
+    {
+      "race_key": "CA-44",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86995,
+      "url": "https://civicapi.org/api/v2/race/86995"
+    },
+    {
+      "race_key": "CA-45",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86996,
+      "url": "https://civicapi.org/api/v2/race/86996"
+    },
+    {
+      "race_key": "CA-46",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86997,
+      "url": "https://civicapi.org/api/v2/race/86997"
+    },
+    {
+      "race_key": "CA-47",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86998,
+      "url": "https://civicapi.org/api/v2/race/86998"
+    },
+    {
+      "race_key": "CA-48",
+      "state": "CA",
+      "chamber": "house",
+      "id": 86999,
+      "url": "https://civicapi.org/api/v2/race/86999"
+    },
+    {
+      "race_key": "CA-49",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87000,
+      "url": "https://civicapi.org/api/v2/race/87000"
+    },
+    {
+      "race_key": "CA-50",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87002,
+      "url": "https://civicapi.org/api/v2/race/87002"
+    },
+    {
+      "race_key": "CA-51",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87003,
+      "url": "https://civicapi.org/api/v2/race/87003"
+    },
+    {
+      "race_key": "CA-52",
+      "state": "CA",
+      "chamber": "house",
+      "id": 87004,
+      "url": "https://civicapi.org/api/v2/race/87004"
+    },
+    {
+      "race_key": "CO-01",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87010,
+      "url": "https://civicapi.org/api/v2/race/87010"
+    },
+    {
+      "race_key": "CO-02",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87011,
+      "url": "https://civicapi.org/api/v2/race/87011"
+    },
+    {
+      "race_key": "CO-03",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87012,
+      "url": "https://civicapi.org/api/v2/race/87012"
+    },
+    {
+      "race_key": "CO-04",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87013,
+      "url": "https://civicapi.org/api/v2/race/87013"
+    },
+    {
+      "race_key": "CO-05",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87014,
+      "url": "https://civicapi.org/api/v2/race/87014"
+    },
+    {
+      "race_key": "CO-06",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87015,
+      "url": "https://civicapi.org/api/v2/race/87015"
+    },
+    {
+      "race_key": "CO-07",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87016,
+      "url": "https://civicapi.org/api/v2/race/87016"
+    },
+    {
+      "race_key": "CO-08",
+      "state": "CO",
+      "chamber": "house",
+      "id": 87017,
+      "url": "https://civicapi.org/api/v2/race/87017"
+    },
+    {
+      "race_key": "CO-S",
+      "state": "CO",
+      "chamber": "senate",
+      "id": 87022,
+      "url": "https://civicapi.org/api/v2/race/87022"
+    },
+    {
+      "race_key": "CT-01",
+      "state": "CT",
+      "chamber": "house",
+      "id": 87023,
+      "url": "https://civicapi.org/api/v2/race/87023"
+    },
+    {
+      "race_key": "CT-02",
+      "state": "CT",
+      "chamber": "house",
+      "id": 87027,
+      "url": "https://civicapi.org/api/v2/race/87027"
+    },
+    {
+      "race_key": "CT-03",
+      "state": "CT",
+      "chamber": "house",
+      "id": 87028,
+      "url": "https://civicapi.org/api/v2/race/87028"
+    },
+    {
+      "race_key": "CT-04",
+      "state": "CT",
+      "chamber": "house",
+      "id": 87024,
+      "url": "https://civicapi.org/api/v2/race/87024"
+    },
+    {
+      "race_key": "CT-05",
+      "state": "CT",
+      "chamber": "house",
+      "id": 87025,
+      "url": "https://civicapi.org/api/v2/race/87025"
+    },
+    {
+      "race_key": "DE-AL",
+      "state": "DE",
+      "chamber": "house",
+      "id": 87035,
+      "url": "https://civicapi.org/api/v2/race/87035"
+    },
+    {
+      "race_key": "DE-S",
+      "state": "DE",
+      "chamber": "senate",
+      "id": 87036,
+      "url": "https://civicapi.org/api/v2/race/87036"
+    },
+    {
+      "race_key": "FL-01",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87040,
+      "url": "https://civicapi.org/api/v2/race/87040"
+    },
+    {
+      "race_key": "FL-02",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87041,
+      "url": "https://civicapi.org/api/v2/race/87041"
+    },
+    {
+      "race_key": "FL-03",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87042,
+      "url": "https://civicapi.org/api/v2/race/87042"
+    },
+    {
+      "race_key": "FL-04",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87043,
+      "url": "https://civicapi.org/api/v2/race/87043"
+    },
+    {
+      "race_key": "FL-05",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87044,
+      "url": "https://civicapi.org/api/v2/race/87044"
+    },
+    {
+      "race_key": "FL-06",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87045,
+      "url": "https://civicapi.org/api/v2/race/87045"
+    },
+    {
+      "race_key": "FL-07",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87046,
+      "url": "https://civicapi.org/api/v2/race/87046"
+    },
+    {
+      "race_key": "FL-08",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87047,
+      "url": "https://civicapi.org/api/v2/race/87047"
+    },
+    {
+      "race_key": "FL-09",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87048,
+      "url": "https://civicapi.org/api/v2/race/87048"
+    },
+    {
+      "race_key": "FL-10",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87049,
+      "url": "https://civicapi.org/api/v2/race/87049"
+    },
+    {
+      "race_key": "FL-11",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87050,
+      "url": "https://civicapi.org/api/v2/race/87050"
+    },
+    {
+      "race_key": "FL-12",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87051,
+      "url": "https://civicapi.org/api/v2/race/87051"
+    },
+    {
+      "race_key": "FL-13",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87052,
+      "url": "https://civicapi.org/api/v2/race/87052"
+    },
+    {
+      "race_key": "FL-14",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87053,
+      "url": "https://civicapi.org/api/v2/race/87053"
+    },
+    {
+      "race_key": "FL-15",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87054,
+      "url": "https://civicapi.org/api/v2/race/87054"
+    },
+    {
+      "race_key": "FL-16",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87055,
+      "url": "https://civicapi.org/api/v2/race/87055"
+    },
+    {
+      "race_key": "FL-17",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87056,
+      "url": "https://civicapi.org/api/v2/race/87056"
+    },
+    {
+      "race_key": "FL-18",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87057,
+      "url": "https://civicapi.org/api/v2/race/87057"
+    },
+    {
+      "race_key": "FL-19",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87058,
+      "url": "https://civicapi.org/api/v2/race/87058"
+    },
+    {
+      "race_key": "FL-20",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87059,
+      "url": "https://civicapi.org/api/v2/race/87059"
+    },
+    {
+      "race_key": "FL-21",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87060,
+      "url": "https://civicapi.org/api/v2/race/87060"
+    },
+    {
+      "race_key": "FL-22",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87061,
+      "url": "https://civicapi.org/api/v2/race/87061"
+    },
+    {
+      "race_key": "FL-23",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87062,
+      "url": "https://civicapi.org/api/v2/race/87062"
+    },
+    {
+      "race_key": "FL-24",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87063,
+      "url": "https://civicapi.org/api/v2/race/87063"
+    },
+    {
+      "race_key": "FL-25",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87064,
+      "url": "https://civicapi.org/api/v2/race/87064"
+    },
+    {
+      "race_key": "FL-26",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87065,
+      "url": "https://civicapi.org/api/v2/race/87065"
+    },
+    {
+      "race_key": "FL-27",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87066,
+      "url": "https://civicapi.org/api/v2/race/87066"
+    },
+    {
+      "race_key": "FL-28",
+      "state": "FL",
+      "chamber": "house",
+      "id": 87067,
+      "url": "https://civicapi.org/api/v2/race/87067"
+    },
+    {
+      "race_key": "FL-S",
+      "state": "FL",
+      "chamber": "senate",
+      "id": 87068,
+      "url": "https://civicapi.org/api/v2/race/87068"
+    },
+    {
+      "race_key": "GA-01",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87073,
+      "url": "https://civicapi.org/api/v2/race/87073"
+    },
+    {
+      "race_key": "GA-02",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87074,
+      "url": "https://civicapi.org/api/v2/race/87074"
+    },
+    {
+      "race_key": "GA-03",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87075,
+      "url": "https://civicapi.org/api/v2/race/87075"
+    },
+    {
+      "race_key": "GA-04",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87076,
+      "url": "https://civicapi.org/api/v2/race/87076"
+    },
+    {
+      "race_key": "GA-05",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87077,
+      "url": "https://civicapi.org/api/v2/race/87077"
+    },
+    {
+      "race_key": "GA-06",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87078,
+      "url": "https://civicapi.org/api/v2/race/87078"
+    },
+    {
+      "race_key": "GA-07",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87079,
+      "url": "https://civicapi.org/api/v2/race/87079"
+    },
+    {
+      "race_key": "GA-08",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87080,
+      "url": "https://civicapi.org/api/v2/race/87080"
+    },
+    {
+      "race_key": "GA-09",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87081,
+      "url": "https://civicapi.org/api/v2/race/87081"
+    },
+    {
+      "race_key": "GA-10",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87082,
+      "url": "https://civicapi.org/api/v2/race/87082"
+    },
+    {
+      "race_key": "GA-11",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87083,
+      "url": "https://civicapi.org/api/v2/race/87083"
+    },
+    {
+      "race_key": "GA-12",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87084,
+      "url": "https://civicapi.org/api/v2/race/87084"
+    },
+    {
+      "race_key": "GA-13",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87085,
+      "url": "https://civicapi.org/api/v2/race/87085"
+    },
+    {
+      "race_key": "GA-14",
+      "state": "GA",
+      "chamber": "house",
+      "id": 87086,
+      "url": "https://civicapi.org/api/v2/race/87086"
+    },
+    {
+      "race_key": "GA-S",
+      "state": "GA",
+      "chamber": "senate",
+      "id": 87087,
+      "url": "https://civicapi.org/api/v2/race/87087"
+    },
+    {
+      "race_key": "HI-01",
+      "state": "HI",
+      "chamber": "house",
+      "id": 87098,
+      "url": "https://civicapi.org/api/v2/race/87098"
+    },
+    {
+      "race_key": "HI-02",
+      "state": "HI",
+      "chamber": "house",
+      "id": 87099,
+      "url": "https://civicapi.org/api/v2/race/87099"
+    },
+    {
+      "race_key": "IA-01",
+      "state": "IA",
+      "chamber": "house",
+      "id": 87147,
+      "url": "https://civicapi.org/api/v2/race/87147"
+    },
+    {
+      "race_key": "IA-02",
+      "state": "IA",
+      "chamber": "house",
+      "id": 87148,
+      "url": "https://civicapi.org/api/v2/race/87148"
+    },
+    {
+      "race_key": "IA-03",
+      "state": "IA",
+      "chamber": "house",
+      "id": 87149,
+      "url": "https://civicapi.org/api/v2/race/87149"
+    },
+    {
+      "race_key": "IA-04",
+      "state": "IA",
+      "chamber": "house",
+      "id": 87150,
+      "url": "https://civicapi.org/api/v2/race/87150"
+    },
+    {
+      "race_key": "IA-S",
+      "state": "IA",
+      "chamber": "senate",
+      "id": 87151,
+      "url": "https://civicapi.org/api/v2/race/87151"
+    },
+    {
+      "race_key": "ID-01",
+      "state": "ID",
+      "chamber": "house",
+      "id": 87104,
+      "url": "https://civicapi.org/api/v2/race/87104"
+    },
+    {
+      "race_key": "ID-02",
+      "state": "ID",
+      "chamber": "house",
+      "id": 87105,
+      "url": "https://civicapi.org/api/v2/race/87105"
+    },
+    {
+      "race_key": "ID-S",
+      "state": "ID",
+      "chamber": "senate",
+      "id": 87103,
+      "url": "https://civicapi.org/api/v2/race/87103"
+    },
+    {
+      "race_key": "IL-01",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87112,
+      "url": "https://civicapi.org/api/v2/race/87112"
+    },
+    {
+      "race_key": "IL-02",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87113,
+      "url": "https://civicapi.org/api/v2/race/87113"
+    },
+    {
+      "race_key": "IL-03",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87114,
+      "url": "https://civicapi.org/api/v2/race/87114"
+    },
+    {
+      "race_key": "IL-04",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87115,
+      "url": "https://civicapi.org/api/v2/race/87115"
+    },
+    {
+      "race_key": "IL-05",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87116,
+      "url": "https://civicapi.org/api/v2/race/87116"
+    },
+    {
+      "race_key": "IL-06",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87117,
+      "url": "https://civicapi.org/api/v2/race/87117"
+    },
+    {
+      "race_key": "IL-07",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87118,
+      "url": "https://civicapi.org/api/v2/race/87118"
+    },
+    {
+      "race_key": "IL-08",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87119,
+      "url": "https://civicapi.org/api/v2/race/87119"
+    },
+    {
+      "race_key": "IL-09",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87120,
+      "url": "https://civicapi.org/api/v2/race/87120"
+    },
+    {
+      "race_key": "IL-10",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87121,
+      "url": "https://civicapi.org/api/v2/race/87121"
+    },
+    {
+      "race_key": "IL-11",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87122,
+      "url": "https://civicapi.org/api/v2/race/87122"
+    },
+    {
+      "race_key": "IL-12",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87123,
+      "url": "https://civicapi.org/api/v2/race/87123"
+    },
+    {
+      "race_key": "IL-13",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87124,
+      "url": "https://civicapi.org/api/v2/race/87124"
+    },
+    {
+      "race_key": "IL-14",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87125,
+      "url": "https://civicapi.org/api/v2/race/87125"
+    },
+    {
+      "race_key": "IL-15",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87126,
+      "url": "https://civicapi.org/api/v2/race/87126"
+    },
+    {
+      "race_key": "IL-16",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87127,
+      "url": "https://civicapi.org/api/v2/race/87127"
+    },
+    {
+      "race_key": "IL-17",
+      "state": "IL",
+      "chamber": "house",
+      "id": 87128,
+      "url": "https://civicapi.org/api/v2/race/87128"
+    },
+    {
+      "race_key": "IL-S",
+      "state": "IL",
+      "chamber": "senate",
+      "id": 87129,
+      "url": "https://civicapi.org/api/v2/race/87129"
+    },
+    {
+      "race_key": "IN-01",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87135,
+      "url": "https://civicapi.org/api/v2/race/87135"
+    },
+    {
+      "race_key": "IN-02",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87136,
+      "url": "https://civicapi.org/api/v2/race/87136"
+    },
+    {
+      "race_key": "IN-03",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87137,
+      "url": "https://civicapi.org/api/v2/race/87137"
+    },
+    {
+      "race_key": "IN-04",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87138,
+      "url": "https://civicapi.org/api/v2/race/87138"
+    },
+    {
+      "race_key": "IN-05",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87139,
+      "url": "https://civicapi.org/api/v2/race/87139"
+    },
+    {
+      "race_key": "IN-06",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87140,
+      "url": "https://civicapi.org/api/v2/race/87140"
+    },
+    {
+      "race_key": "IN-07",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87141,
+      "url": "https://civicapi.org/api/v2/race/87141"
+    },
+    {
+      "race_key": "IN-08",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87142,
+      "url": "https://civicapi.org/api/v2/race/87142"
+    },
+    {
+      "race_key": "IN-09",
+      "state": "IN",
+      "chamber": "house",
+      "id": 87143,
+      "url": "https://civicapi.org/api/v2/race/87143"
+    },
+    {
+      "race_key": "KS-01",
+      "state": "KS",
+      "chamber": "house",
+      "id": 87158,
+      "url": "https://civicapi.org/api/v2/race/87158"
+    },
+    {
+      "race_key": "KS-02",
+      "state": "KS",
+      "chamber": "house",
+      "id": 87159,
+      "url": "https://civicapi.org/api/v2/race/87159"
+    },
+    {
+      "race_key": "KS-03",
+      "state": "KS",
+      "chamber": "house",
+      "id": 87160,
+      "url": "https://civicapi.org/api/v2/race/87160"
+    },
+    {
+      "race_key": "KS-04",
+      "state": "KS",
+      "chamber": "house",
+      "id": 87161,
+      "url": "https://civicapi.org/api/v2/race/87161"
+    },
+    {
+      "race_key": "KS-S",
+      "state": "KS",
+      "chamber": "senate",
+      "id": 87162,
+      "url": "https://civicapi.org/api/v2/race/87162"
+    },
+    {
+      "race_key": "KY-01",
+      "state": "KY",
+      "chamber": "house",
+      "id": 87168,
+      "url": "https://civicapi.org/api/v2/race/87168"
+    },
+    {
+      "race_key": "KY-02",
+      "state": "KY",
+      "chamber": "house",
+      "id": 87169,
+      "url": "https://civicapi.org/api/v2/race/87169"
+    },
+    {
+      "race_key": "KY-03",
+      "state": "KY",
+      "chamber": "house",
+      "id": 87170,
+      "url": "https://civicapi.org/api/v2/race/87170"
+    },
+    {
+      "race_key": "KY-04",
+      "state": "KY",
+      "chamber": "house",
+      "id": 87171,
+      "url": "https://civicapi.org/api/v2/race/87171"
+    },
+    {
+      "race_key": "KY-05",
+      "state": "KY",
+      "chamber": "house",
+      "id": 87172,
+      "url": "https://civicapi.org/api/v2/race/87172"
+    },
+    {
+      "race_key": "KY-06",
+      "state": "KY",
+      "chamber": "house",
+      "id": 87173,
+      "url": "https://civicapi.org/api/v2/race/87173"
+    },
+    {
+      "race_key": "KY-S",
+      "state": "KY",
+      "chamber": "senate",
+      "id": 87174,
+      "url": "https://civicapi.org/api/v2/race/87174"
+    },
+    {
+      "race_key": "LA-01",
+      "state": "LA",
+      "chamber": "house",
+      "id": 87177,
+      "url": "https://civicapi.org/api/v2/race/87177"
+    },
+    {
+      "race_key": "LA-02",
+      "state": "LA",
+      "chamber": "house",
+      "id": 87178,
+      "url": "https://civicapi.org/api/v2/race/87178"
+    },
+    {
+      "race_key": "LA-03",
+      "state": "LA",
+      "chamber": "house",
+      "id": 87179,
+      "url": "https://civicapi.org/api/v2/race/87179"
+    },
+    {
+      "race_key": "LA-04",
+      "state": "LA",
+      "chamber": "house",
+      "id": 87180,
+      "url": "https://civicapi.org/api/v2/race/87180"
+    },
+    {
+      "race_key": "LA-05",
+      "state": "LA",
+      "chamber": "house",
+      "id": 87181,
+      "url": "https://civicapi.org/api/v2/race/87181"
+    },
+    {
+      "race_key": "LA-06",
+      "state": "LA",
+      "chamber": "house",
+      "id": 87182,
+      "url": "https://civicapi.org/api/v2/race/87182"
+    },
+    {
+      "race_key": "LA-S",
+      "state": "LA",
+      "chamber": "senate",
+      "id": 87183,
+      "url": "https://civicapi.org/api/v2/race/87183"
+    },
+    {
+      "race_key": "MA-01",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87266,
+      "url": "https://civicapi.org/api/v2/race/87266"
+    },
+    {
+      "race_key": "MA-02",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87267,
+      "url": "https://civicapi.org/api/v2/race/87267"
+    },
+    {
+      "race_key": "MA-03",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87268,
+      "url": "https://civicapi.org/api/v2/race/87268"
+    },
+    {
+      "race_key": "MA-04",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87269,
+      "url": "https://civicapi.org/api/v2/race/87269"
+    },
+    {
+      "race_key": "MA-05",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87270,
+      "url": "https://civicapi.org/api/v2/race/87270"
+    },
+    {
+      "race_key": "MA-06",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87271,
+      "url": "https://civicapi.org/api/v2/race/87271"
+    },
+    {
+      "race_key": "MA-07",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87272,
+      "url": "https://civicapi.org/api/v2/race/87272"
+    },
+    {
+      "race_key": "MA-08",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87273,
+      "url": "https://civicapi.org/api/v2/race/87273"
+    },
+    {
+      "race_key": "MA-09",
+      "state": "MA",
+      "chamber": "house",
+      "id": 87274,
+      "url": "https://civicapi.org/api/v2/race/87274"
+    },
+    {
+      "race_key": "MA-S",
+      "state": "MA",
+      "chamber": "senate",
+      "id": 87275,
+      "url": "https://civicapi.org/api/v2/race/87275"
+    },
+    {
+      "race_key": "MD-01",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87190,
+      "url": "https://civicapi.org/api/v2/race/87190"
+    },
+    {
+      "race_key": "MD-02",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87191,
+      "url": "https://civicapi.org/api/v2/race/87191"
+    },
+    {
+      "race_key": "MD-03",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87192,
+      "url": "https://civicapi.org/api/v2/race/87192"
+    },
+    {
+      "race_key": "MD-04",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87193,
+      "url": "https://civicapi.org/api/v2/race/87193"
+    },
+    {
+      "race_key": "MD-05",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87194,
+      "url": "https://civicapi.org/api/v2/race/87194"
+    },
+    {
+      "race_key": "MD-06",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87195,
+      "url": "https://civicapi.org/api/v2/race/87195"
+    },
+    {
+      "race_key": "MD-07",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87196,
+      "url": "https://civicapi.org/api/v2/race/87196"
+    },
+    {
+      "race_key": "MD-08",
+      "state": "MD",
+      "chamber": "house",
+      "id": 87197,
+      "url": "https://civicapi.org/api/v2/race/87197"
+    },
+    {
+      "race_key": "ME-01",
+      "state": "ME",
+      "chamber": "house",
+      "id": 87186,
+      "url": "https://civicapi.org/api/v2/race/87186"
+    },
+    {
+      "race_key": "ME-02",
+      "state": "ME",
+      "chamber": "house",
+      "id": 87187,
+      "url": "https://civicapi.org/api/v2/race/87187"
+    },
+    {
+      "race_key": "ME-S",
+      "state": "ME",
+      "chamber": "senate",
+      "id": 87188,
+      "url": "https://civicapi.org/api/v2/race/87188"
+    },
+    {
+      "race_key": "MI-01",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87201,
+      "url": "https://civicapi.org/api/v2/race/87201"
+    },
+    {
+      "race_key": "MI-02",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87202,
+      "url": "https://civicapi.org/api/v2/race/87202"
+    },
+    {
+      "race_key": "MI-03",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87203,
+      "url": "https://civicapi.org/api/v2/race/87203"
+    },
+    {
+      "race_key": "MI-04",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87204,
+      "url": "https://civicapi.org/api/v2/race/87204"
+    },
+    {
+      "race_key": "MI-05",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87205,
+      "url": "https://civicapi.org/api/v2/race/87205"
+    },
+    {
+      "race_key": "MI-06",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87206,
+      "url": "https://civicapi.org/api/v2/race/87206"
+    },
+    {
+      "race_key": "MI-07",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87207,
+      "url": "https://civicapi.org/api/v2/race/87207"
+    },
+    {
+      "race_key": "MI-08",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87208,
+      "url": "https://civicapi.org/api/v2/race/87208"
+    },
+    {
+      "race_key": "MI-09",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87209,
+      "url": "https://civicapi.org/api/v2/race/87209"
+    },
+    {
+      "race_key": "MI-10",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87210,
+      "url": "https://civicapi.org/api/v2/race/87210"
+    },
+    {
+      "race_key": "MI-11",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87211,
+      "url": "https://civicapi.org/api/v2/race/87211"
+    },
+    {
+      "race_key": "MI-12",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87212,
+      "url": "https://civicapi.org/api/v2/race/87212"
+    },
+    {
+      "race_key": "MI-13",
+      "state": "MI",
+      "chamber": "house",
+      "id": 87213,
+      "url": "https://civicapi.org/api/v2/race/87213"
+    },
+    {
+      "race_key": "MI-S",
+      "state": "MI",
+      "chamber": "senate",
+      "id": 87214,
+      "url": "https://civicapi.org/api/v2/race/87214"
+    },
+    {
+      "race_key": "MN-01",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87221,
+      "url": "https://civicapi.org/api/v2/race/87221"
+    },
+    {
+      "race_key": "MN-02",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87222,
+      "url": "https://civicapi.org/api/v2/race/87222"
+    },
+    {
+      "race_key": "MN-03",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87223,
+      "url": "https://civicapi.org/api/v2/race/87223"
+    },
+    {
+      "race_key": "MN-04",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87224,
+      "url": "https://civicapi.org/api/v2/race/87224"
+    },
+    {
+      "race_key": "MN-05",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87225,
+      "url": "https://civicapi.org/api/v2/race/87225"
+    },
+    {
+      "race_key": "MN-06",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87226,
+      "url": "https://civicapi.org/api/v2/race/87226"
+    },
+    {
+      "race_key": "MN-07",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87227,
+      "url": "https://civicapi.org/api/v2/race/87227"
+    },
+    {
+      "race_key": "MN-08",
+      "state": "MN",
+      "chamber": "house",
+      "id": 87228,
+      "url": "https://civicapi.org/api/v2/race/87228"
+    },
+    {
+      "race_key": "MN-S",
+      "state": "MN",
+      "chamber": "senate",
+      "id": 87229,
+      "url": "https://civicapi.org/api/v2/race/87229"
+    },
+    {
+      "race_key": "MO-01",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87234,
+      "url": "https://civicapi.org/api/v2/race/87234"
+    },
+    {
+      "race_key": "MO-02",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87235,
+      "url": "https://civicapi.org/api/v2/race/87235"
+    },
+    {
+      "race_key": "MO-03",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87236,
+      "url": "https://civicapi.org/api/v2/race/87236"
+    },
+    {
+      "race_key": "MO-04",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87237,
+      "url": "https://civicapi.org/api/v2/race/87237"
+    },
+    {
+      "race_key": "MO-05",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87238,
+      "url": "https://civicapi.org/api/v2/race/87238"
+    },
+    {
+      "race_key": "MO-06",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87239,
+      "url": "https://civicapi.org/api/v2/race/87239"
+    },
+    {
+      "race_key": "MO-07",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87240,
+      "url": "https://civicapi.org/api/v2/race/87240"
+    },
+    {
+      "race_key": "MO-08",
+      "state": "MO",
+      "chamber": "house",
+      "id": 87241,
+      "url": "https://civicapi.org/api/v2/race/87241"
+    },
+    {
+      "race_key": "MS-01",
+      "state": "MS",
+      "chamber": "house",
+      "id": 81000,
+      "url": "https://civicapi.org/api/v2/race/81000"
+    },
+    {
+      "race_key": "MS-02",
+      "state": "MS",
+      "chamber": "house",
+      "id": 81001,
+      "url": "https://civicapi.org/api/v2/race/81001"
+    },
+    {
+      "race_key": "MS-03",
+      "state": "MS",
+      "chamber": "house",
+      "id": 81002,
+      "url": "https://civicapi.org/api/v2/race/81002"
+    },
+    {
+      "race_key": "MS-04",
+      "state": "MS",
+      "chamber": "house",
+      "id": 81003,
+      "url": "https://civicapi.org/api/v2/race/81003"
+    },
+    {
+      "race_key": "MS-S",
+      "state": "MS",
+      "chamber": "senate",
+      "id": 81004,
+      "url": "https://civicapi.org/api/v2/race/81004"
+    },
+    {
+      "race_key": "MT-01",
+      "state": "MT",
+      "chamber": "house",
+      "id": 87245,
+      "url": "https://civicapi.org/api/v2/race/87245"
+    },
+    {
+      "race_key": "MT-02",
+      "state": "MT",
+      "chamber": "house",
+      "id": 87246,
+      "url": "https://civicapi.org/api/v2/race/87246"
+    },
+    {
+      "race_key": "MT-S",
+      "state": "MT",
+      "chamber": "senate",
+      "id": 87247,
+      "url": "https://civicapi.org/api/v2/race/87247"
+    },
+    {
+      "race_key": "NC-01",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87332,
+      "url": "https://civicapi.org/api/v2/race/87332"
+    },
+    {
+      "race_key": "NC-02",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87333,
+      "url": "https://civicapi.org/api/v2/race/87333"
+    },
+    {
+      "race_key": "NC-03",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87334,
+      "url": "https://civicapi.org/api/v2/race/87334"
+    },
+    {
+      "race_key": "NC-04",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87335,
+      "url": "https://civicapi.org/api/v2/race/87335"
+    },
+    {
+      "race_key": "NC-05",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87336,
+      "url": "https://civicapi.org/api/v2/race/87336"
+    },
+    {
+      "race_key": "NC-06",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87337,
+      "url": "https://civicapi.org/api/v2/race/87337"
+    },
+    {
+      "race_key": "NC-07",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87338,
+      "url": "https://civicapi.org/api/v2/race/87338"
+    },
+    {
+      "race_key": "NC-08",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87339,
+      "url": "https://civicapi.org/api/v2/race/87339"
+    },
+    {
+      "race_key": "NC-09",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87340,
+      "url": "https://civicapi.org/api/v2/race/87340"
+    },
+    {
+      "race_key": "NC-10",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87341,
+      "url": "https://civicapi.org/api/v2/race/87341"
+    },
+    {
+      "race_key": "NC-11",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87342,
+      "url": "https://civicapi.org/api/v2/race/87342"
+    },
+    {
+      "race_key": "NC-12",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87343,
+      "url": "https://civicapi.org/api/v2/race/87343"
+    },
+    {
+      "race_key": "NC-13",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87344,
+      "url": "https://civicapi.org/api/v2/race/87344"
+    },
+    {
+      "race_key": "NC-14",
+      "state": "NC",
+      "chamber": "house",
+      "id": 87345,
+      "url": "https://civicapi.org/api/v2/race/87345"
+    },
+    {
+      "race_key": "NC-S",
+      "state": "NC",
+      "chamber": "senate",
+      "id": 87346,
+      "url": "https://civicapi.org/api/v2/race/87346"
+    },
+    {
+      "race_key": "ND-AL",
+      "state": "ND",
+      "chamber": "house",
+      "id": 87347,
+      "url": "https://civicapi.org/api/v2/race/87347"
+    },
+    {
+      "race_key": "NE-01",
+      "state": "NE",
+      "chamber": "house",
+      "id": 87251,
+      "url": "https://civicapi.org/api/v2/race/87251"
+    },
+    {
+      "race_key": "NE-02",
+      "state": "NE",
+      "chamber": "house",
+      "id": 87252,
+      "url": "https://civicapi.org/api/v2/race/87252"
+    },
+    {
+      "race_key": "NE-03",
+      "state": "NE",
+      "chamber": "house",
+      "id": 87253,
+      "url": "https://civicapi.org/api/v2/race/87253"
+    },
+    {
+      "race_key": "NE-S",
+      "state": "NE",
+      "chamber": "senate",
+      "id": 87254,
+      "url": "https://civicapi.org/api/v2/race/87254"
+    },
+    {
+      "race_key": "NH-01",
+      "state": "NH",
+      "chamber": "house",
+      "id": 87281,
+      "url": "https://civicapi.org/api/v2/race/87281"
+    },
+    {
+      "race_key": "NH-02",
+      "state": "NH",
+      "chamber": "house",
+      "id": 87282,
+      "url": "https://civicapi.org/api/v2/race/87282"
+    },
+    {
+      "race_key": "NH-S",
+      "state": "NH",
+      "chamber": "senate",
+      "id": 87283,
+      "url": "https://civicapi.org/api/v2/race/87283"
+    },
+    {
+      "race_key": "NJ-01",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87290,
+      "url": "https://civicapi.org/api/v2/race/87290"
+    },
+    {
+      "race_key": "NJ-02",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87291,
+      "url": "https://civicapi.org/api/v2/race/87291"
+    },
+    {
+      "race_key": "NJ-03",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87292,
+      "url": "https://civicapi.org/api/v2/race/87292"
+    },
+    {
+      "race_key": "NJ-04",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87293,
+      "url": "https://civicapi.org/api/v2/race/87293"
+    },
+    {
+      "race_key": "NJ-05",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87294,
+      "url": "https://civicapi.org/api/v2/race/87294"
+    },
+    {
+      "race_key": "NJ-06",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87295,
+      "url": "https://civicapi.org/api/v2/race/87295"
+    },
+    {
+      "race_key": "NJ-07",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87296,
+      "url": "https://civicapi.org/api/v2/race/87296"
+    },
+    {
+      "race_key": "NJ-08",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87297,
+      "url": "https://civicapi.org/api/v2/race/87297"
+    },
+    {
+      "race_key": "NJ-09",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87298,
+      "url": "https://civicapi.org/api/v2/race/87298"
+    },
+    {
+      "race_key": "NJ-10",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87299,
+      "url": "https://civicapi.org/api/v2/race/87299"
+    },
+    {
+      "race_key": "NJ-11",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87300,
+      "url": "https://civicapi.org/api/v2/race/87300"
+    },
+    {
+      "race_key": "NJ-12",
+      "state": "NJ",
+      "chamber": "house",
+      "id": 87301,
+      "url": "https://civicapi.org/api/v2/race/87301"
+    },
+    {
+      "race_key": "NJ-S",
+      "state": "NJ",
+      "chamber": "senate",
+      "id": 87302,
+      "url": "https://civicapi.org/api/v2/race/87302"
+    },
+    {
+      "race_key": "NM-01",
+      "state": "NM",
+      "chamber": "house",
+      "id": 87285,
+      "url": "https://civicapi.org/api/v2/race/87285"
+    },
+    {
+      "race_key": "NM-02",
+      "state": "NM",
+      "chamber": "house",
+      "id": 87286,
+      "url": "https://civicapi.org/api/v2/race/87286"
+    },
+    {
+      "race_key": "NM-03",
+      "state": "NM",
+      "chamber": "house",
+      "id": 87287,
+      "url": "https://civicapi.org/api/v2/race/87287"
+    },
+    {
+      "race_key": "NM-S",
+      "state": "NM",
+      "chamber": "senate",
+      "id": 87288,
+      "url": "https://civicapi.org/api/v2/race/87288"
+    },
+    {
+      "race_key": "NV-01",
+      "state": "NV",
+      "chamber": "house",
+      "id": 87256,
+      "url": "https://civicapi.org/api/v2/race/87256"
+    },
+    {
+      "race_key": "NV-02",
+      "state": "NV",
+      "chamber": "house",
+      "id": 87257,
+      "url": "https://civicapi.org/api/v2/race/87257"
+    },
+    {
+      "race_key": "NV-03",
+      "state": "NV",
+      "chamber": "house",
+      "id": 87258,
+      "url": "https://civicapi.org/api/v2/race/87258"
+    },
+    {
+      "race_key": "NV-04",
+      "state": "NV",
+      "chamber": "house",
+      "id": 87259,
+      "url": "https://civicapi.org/api/v2/race/87259"
+    },
+    {
+      "race_key": "NY-01",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87303,
+      "url": "https://civicapi.org/api/v2/race/87303"
+    },
+    {
+      "race_key": "NY-02",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87304,
+      "url": "https://civicapi.org/api/v2/race/87304"
+    },
+    {
+      "race_key": "NY-03",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87305,
+      "url": "https://civicapi.org/api/v2/race/87305"
+    },
+    {
+      "race_key": "NY-04",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87306,
+      "url": "https://civicapi.org/api/v2/race/87306"
+    },
+    {
+      "race_key": "NY-05",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87307,
+      "url": "https://civicapi.org/api/v2/race/87307"
+    },
+    {
+      "race_key": "NY-06",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87308,
+      "url": "https://civicapi.org/api/v2/race/87308"
+    },
+    {
+      "race_key": "NY-07",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87309,
+      "url": "https://civicapi.org/api/v2/race/87309"
+    },
+    {
+      "race_key": "NY-08",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87310,
+      "url": "https://civicapi.org/api/v2/race/87310"
+    },
+    {
+      "race_key": "NY-09",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87311,
+      "url": "https://civicapi.org/api/v2/race/87311"
+    },
+    {
+      "race_key": "NY-10",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87312,
+      "url": "https://civicapi.org/api/v2/race/87312"
+    },
+    {
+      "race_key": "NY-11",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87313,
+      "url": "https://civicapi.org/api/v2/race/87313"
+    },
+    {
+      "race_key": "NY-12",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87314,
+      "url": "https://civicapi.org/api/v2/race/87314"
+    },
+    {
+      "race_key": "NY-13",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87315,
+      "url": "https://civicapi.org/api/v2/race/87315"
+    },
+    {
+      "race_key": "NY-14",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87316,
+      "url": "https://civicapi.org/api/v2/race/87316"
+    },
+    {
+      "race_key": "NY-15",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87317,
+      "url": "https://civicapi.org/api/v2/race/87317"
+    },
+    {
+      "race_key": "NY-16",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87318,
+      "url": "https://civicapi.org/api/v2/race/87318"
+    },
+    {
+      "race_key": "NY-17",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87319,
+      "url": "https://civicapi.org/api/v2/race/87319"
+    },
+    {
+      "race_key": "NY-18",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87320,
+      "url": "https://civicapi.org/api/v2/race/87320"
+    },
+    {
+      "race_key": "NY-19",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87321,
+      "url": "https://civicapi.org/api/v2/race/87321"
+    },
+    {
+      "race_key": "NY-20",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87322,
+      "url": "https://civicapi.org/api/v2/race/87322"
+    },
+    {
+      "race_key": "NY-21",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87323,
+      "url": "https://civicapi.org/api/v2/race/87323"
+    },
+    {
+      "race_key": "NY-22",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87324,
+      "url": "https://civicapi.org/api/v2/race/87324"
+    },
+    {
+      "race_key": "NY-23",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87325,
+      "url": "https://civicapi.org/api/v2/race/87325"
+    },
+    {
+      "race_key": "NY-24",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87326,
+      "url": "https://civicapi.org/api/v2/race/87326"
+    },
+    {
+      "race_key": "NY-25",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87327,
+      "url": "https://civicapi.org/api/v2/race/87327"
+    },
+    {
+      "race_key": "NY-26",
+      "state": "NY",
+      "chamber": "house",
+      "id": 87328,
+      "url": "https://civicapi.org/api/v2/race/87328"
+    },
+    {
+      "race_key": "OH-01",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87350,
+      "url": "https://civicapi.org/api/v2/race/87350"
+    },
+    {
+      "race_key": "OH-02",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87351,
+      "url": "https://civicapi.org/api/v2/race/87351"
+    },
+    {
+      "race_key": "OH-03",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87352,
+      "url": "https://civicapi.org/api/v2/race/87352"
+    },
+    {
+      "race_key": "OH-04",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87353,
+      "url": "https://civicapi.org/api/v2/race/87353"
+    },
+    {
+      "race_key": "OH-05",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87354,
+      "url": "https://civicapi.org/api/v2/race/87354"
+    },
+    {
+      "race_key": "OH-06",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87355,
+      "url": "https://civicapi.org/api/v2/race/87355"
+    },
+    {
+      "race_key": "OH-07",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87356,
+      "url": "https://civicapi.org/api/v2/race/87356"
+    },
+    {
+      "race_key": "OH-08",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87357,
+      "url": "https://civicapi.org/api/v2/race/87357"
+    },
+    {
+      "race_key": "OH-09",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87358,
+      "url": "https://civicapi.org/api/v2/race/87358"
+    },
+    {
+      "race_key": "OH-10",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87359,
+      "url": "https://civicapi.org/api/v2/race/87359"
+    },
+    {
+      "race_key": "OH-11",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87360,
+      "url": "https://civicapi.org/api/v2/race/87360"
+    },
+    {
+      "race_key": "OH-12",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87361,
+      "url": "https://civicapi.org/api/v2/race/87361"
+    },
+    {
+      "race_key": "OH-13",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87362,
+      "url": "https://civicapi.org/api/v2/race/87362"
+    },
+    {
+      "race_key": "OH-14",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87363,
+      "url": "https://civicapi.org/api/v2/race/87363"
+    },
+    {
+      "race_key": "OH-15",
+      "state": "OH",
+      "chamber": "house",
+      "id": 87364,
+      "url": "https://civicapi.org/api/v2/race/87364"
+    },
+    {
+      "race_key": "OH-S",
+      "state": "OH",
+      "chamber": "senate",
+      "id": 87527,
+      "url": "https://civicapi.org/api/v2/race/87527"
+    },
+    {
+      "race_key": "OK-01",
+      "state": "OK",
+      "chamber": "house",
+      "id": 87509,
+      "url": "https://civicapi.org/api/v2/race/87509"
+    },
+    {
+      "race_key": "OK-02",
+      "state": "OK",
+      "chamber": "house",
+      "id": 87510,
+      "url": "https://civicapi.org/api/v2/race/87510"
+    },
+    {
+      "race_key": "OK-03",
+      "state": "OK",
+      "chamber": "house",
+      "id": 87511,
+      "url": "https://civicapi.org/api/v2/race/87511"
+    },
+    {
+      "race_key": "OK-04",
+      "state": "OK",
+      "chamber": "house",
+      "id": 87512,
+      "url": "https://civicapi.org/api/v2/race/87512"
+    },
+    {
+      "race_key": "OK-05",
+      "state": "OK",
+      "chamber": "house",
+      "id": 87513,
+      "url": "https://civicapi.org/api/v2/race/87513"
+    },
+    {
+      "race_key": "OK-S",
+      "state": "OK",
+      "chamber": "senate",
+      "id": 87526,
+      "url": "https://civicapi.org/api/v2/race/87526"
+    },
+    {
+      "race_key": "OR-01",
+      "state": "OR",
+      "chamber": "house",
+      "id": 87368,
+      "url": "https://civicapi.org/api/v2/race/87368"
+    },
+    {
+      "race_key": "OR-02",
+      "state": "OR",
+      "chamber": "house",
+      "id": 87369,
+      "url": "https://civicapi.org/api/v2/race/87369"
+    },
+    {
+      "race_key": "OR-03",
+      "state": "OR",
+      "chamber": "house",
+      "id": 87370,
+      "url": "https://civicapi.org/api/v2/race/87370"
+    },
+    {
+      "race_key": "OR-04",
+      "state": "OR",
+      "chamber": "house",
+      "id": 87371,
+      "url": "https://civicapi.org/api/v2/race/87371"
+    },
+    {
+      "race_key": "OR-05",
+      "state": "OR",
+      "chamber": "house",
+      "id": 87372,
+      "url": "https://civicapi.org/api/v2/race/87372"
+    },
+    {
+      "race_key": "OR-06",
+      "state": "OR",
+      "chamber": "house",
+      "id": 87373,
+      "url": "https://civicapi.org/api/v2/race/87373"
+    },
+    {
+      "race_key": "OR-S",
+      "state": "OR",
+      "chamber": "senate",
+      "id": 87374,
+      "url": "https://civicapi.org/api/v2/race/87374"
+    },
+    {
+      "race_key": "PA-01",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87376,
+      "url": "https://civicapi.org/api/v2/race/87376"
+    },
+    {
+      "race_key": "PA-02",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87377,
+      "url": "https://civicapi.org/api/v2/race/87377"
+    },
+    {
+      "race_key": "PA-03",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87378,
+      "url": "https://civicapi.org/api/v2/race/87378"
+    },
+    {
+      "race_key": "PA-04",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87379,
+      "url": "https://civicapi.org/api/v2/race/87379"
+    },
+    {
+      "race_key": "PA-05",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87380,
+      "url": "https://civicapi.org/api/v2/race/87380"
+    },
+    {
+      "race_key": "PA-06",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87381,
+      "url": "https://civicapi.org/api/v2/race/87381"
+    },
+    {
+      "race_key": "PA-07",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87382,
+      "url": "https://civicapi.org/api/v2/race/87382"
+    },
+    {
+      "race_key": "PA-08",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87383,
+      "url": "https://civicapi.org/api/v2/race/87383"
+    },
+    {
+      "race_key": "PA-09",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87384,
+      "url": "https://civicapi.org/api/v2/race/87384"
+    },
+    {
+      "race_key": "PA-10",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87385,
+      "url": "https://civicapi.org/api/v2/race/87385"
+    },
+    {
+      "race_key": "PA-11",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87386,
+      "url": "https://civicapi.org/api/v2/race/87386"
+    },
+    {
+      "race_key": "PA-12",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87387,
+      "url": "https://civicapi.org/api/v2/race/87387"
+    },
+    {
+      "race_key": "PA-13",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87388,
+      "url": "https://civicapi.org/api/v2/race/87388"
+    },
+    {
+      "race_key": "PA-14",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87389,
+      "url": "https://civicapi.org/api/v2/race/87389"
+    },
+    {
+      "race_key": "PA-15",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87390,
+      "url": "https://civicapi.org/api/v2/race/87390"
+    },
+    {
+      "race_key": "PA-16",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87391,
+      "url": "https://civicapi.org/api/v2/race/87391"
+    },
+    {
+      "race_key": "PA-17",
+      "state": "PA",
+      "chamber": "house",
+      "id": 87392,
+      "url": "https://civicapi.org/api/v2/race/87392"
+    },
+    {
+      "race_key": "RI-01",
+      "state": "RI",
+      "chamber": "house",
+      "id": 87394,
+      "url": "https://civicapi.org/api/v2/race/87394"
+    },
+    {
+      "race_key": "RI-02",
+      "state": "RI",
+      "chamber": "house",
+      "id": 87395,
+      "url": "https://civicapi.org/api/v2/race/87395"
+    },
+    {
+      "race_key": "RI-S",
+      "state": "RI",
+      "chamber": "senate",
+      "id": 87396,
+      "url": "https://civicapi.org/api/v2/race/87396"
+    },
+    {
+      "race_key": "SC-01",
+      "state": "SC",
+      "chamber": "house",
+      "id": 87402,
+      "url": "https://civicapi.org/api/v2/race/87402"
+    },
+    {
+      "race_key": "SC-02",
+      "state": "SC",
+      "chamber": "house",
+      "id": 87403,
+      "url": "https://civicapi.org/api/v2/race/87403"
+    },
+    {
+      "race_key": "SC-03",
+      "state": "SC",
+      "chamber": "house",
+      "id": 87404,
+      "url": "https://civicapi.org/api/v2/race/87404"
+    },
+    {
+      "race_key": "SC-04",
+      "state": "SC",
+      "chamber": "house",
+      "id": 87405,
+      "url": "https://civicapi.org/api/v2/race/87405"
+    },
+    {
+      "race_key": "SC-05",
+      "state": "SC",
+      "chamber": "house",
+      "id": 87406,
+      "url": "https://civicapi.org/api/v2/race/87406"
+    },
+    {
+      "race_key": "SC-06",
+      "state": "SC",
+      "chamber": "house",
+      "id": 87407,
+      "url": "https://civicapi.org/api/v2/race/87407"
+    },
+    {
+      "race_key": "SC-07",
+      "state": "SC",
+      "chamber": "house",
+      "id": 87408,
+      "url": "https://civicapi.org/api/v2/race/87408"
+    },
+    {
+      "race_key": "SC-S",
+      "state": "SC",
+      "chamber": "senate",
+      "id": 87409,
+      "url": "https://civicapi.org/api/v2/race/87409"
+    },
+    {
+      "race_key": "SD-AL",
+      "state": "SD",
+      "chamber": "house",
+      "id": 87445,
+      "url": "https://civicapi.org/api/v2/race/87445"
+    },
+    {
+      "race_key": "SD-S",
+      "state": "SD",
+      "chamber": "senate",
+      "id": 87446,
+      "url": "https://civicapi.org/api/v2/race/87446"
+    },
+    {
+      "race_key": "TN-01",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87448,
+      "url": "https://civicapi.org/api/v2/race/87448"
+    },
+    {
+      "race_key": "TN-02",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87449,
+      "url": "https://civicapi.org/api/v2/race/87449"
+    },
+    {
+      "race_key": "TN-03",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87450,
+      "url": "https://civicapi.org/api/v2/race/87450"
+    },
+    {
+      "race_key": "TN-04",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87451,
+      "url": "https://civicapi.org/api/v2/race/87451"
+    },
+    {
+      "race_key": "TN-05",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87452,
+      "url": "https://civicapi.org/api/v2/race/87452"
+    },
+    {
+      "race_key": "TN-06",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87453,
+      "url": "https://civicapi.org/api/v2/race/87453"
+    },
+    {
+      "race_key": "TN-07",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87454,
+      "url": "https://civicapi.org/api/v2/race/87454"
+    },
+    {
+      "race_key": "TN-08",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87455,
+      "url": "https://civicapi.org/api/v2/race/87455"
+    },
+    {
+      "race_key": "TN-09",
+      "state": "TN",
+      "chamber": "house",
+      "id": 87456,
+      "url": "https://civicapi.org/api/v2/race/87456"
+    },
+    {
+      "race_key": "TN-S",
+      "state": "TN",
+      "chamber": "senate",
+      "id": 87475,
+      "url": "https://civicapi.org/api/v2/race/87475"
+    },
+    {
+      "race_key": "TX-01",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87411,
+      "url": "https://civicapi.org/api/v2/race/87411"
+    },
+    {
+      "race_key": "TX-02",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87412,
+      "url": "https://civicapi.org/api/v2/race/87412"
+    },
+    {
+      "race_key": "TX-03",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87413,
+      "url": "https://civicapi.org/api/v2/race/87413"
+    },
+    {
+      "race_key": "TX-04",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56004,
+      "url": "https://civicapi.org/api/v2/race/56004"
+    },
+    {
+      "race_key": "TX-05",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87414,
+      "url": "https://civicapi.org/api/v2/race/87414"
+    },
+    {
+      "race_key": "TX-06",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87415,
+      "url": "https://civicapi.org/api/v2/race/87415"
+    },
+    {
+      "race_key": "TX-07",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87416,
+      "url": "https://civicapi.org/api/v2/race/87416"
+    },
+    {
+      "race_key": "TX-08",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56005,
+      "url": "https://civicapi.org/api/v2/race/56005"
+    },
+    {
+      "race_key": "TX-09",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87417,
+      "url": "https://civicapi.org/api/v2/race/87417"
+    },
+    {
+      "race_key": "TX-10",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56006,
+      "url": "https://civicapi.org/api/v2/race/56006"
+    },
+    {
+      "race_key": "TX-11",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87418,
+      "url": "https://civicapi.org/api/v2/race/87418"
+    },
+    {
+      "race_key": "TX-12",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87419,
+      "url": "https://civicapi.org/api/v2/race/87419"
+    },
+    {
+      "race_key": "TX-13",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87420,
+      "url": "https://civicapi.org/api/v2/race/87420"
+    },
+    {
+      "race_key": "TX-14",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87421,
+      "url": "https://civicapi.org/api/v2/race/87421"
+    },
+    {
+      "race_key": "TX-15",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87422,
+      "url": "https://civicapi.org/api/v2/race/87422"
+    },
+    {
+      "race_key": "TX-16",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87423,
+      "url": "https://civicapi.org/api/v2/race/87423"
+    },
+    {
+      "race_key": "TX-17",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87424,
+      "url": "https://civicapi.org/api/v2/race/87424"
+    },
+    {
+      "race_key": "TX-18",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87425,
+      "url": "https://civicapi.org/api/v2/race/87425"
+    },
+    {
+      "race_key": "TX-19",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87426,
+      "url": "https://civicapi.org/api/v2/race/87426"
+    },
+    {
+      "race_key": "TX-20",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87427,
+      "url": "https://civicapi.org/api/v2/race/87427"
+    },
+    {
+      "race_key": "TX-21",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56007,
+      "url": "https://civicapi.org/api/v2/race/56007"
+    },
+    {
+      "race_key": "TX-22",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56008,
+      "url": "https://civicapi.org/api/v2/race/56008"
+    },
+    {
+      "race_key": "TX-23",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87428,
+      "url": "https://civicapi.org/api/v2/race/87428"
+    },
+    {
+      "race_key": "TX-24",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87429,
+      "url": "https://civicapi.org/api/v2/race/87429"
+    },
+    {
+      "race_key": "TX-25",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87430,
+      "url": "https://civicapi.org/api/v2/race/87430"
+    },
+    {
+      "race_key": "TX-26",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56009,
+      "url": "https://civicapi.org/api/v2/race/56009"
+    },
+    {
+      "race_key": "TX-27",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56010,
+      "url": "https://civicapi.org/api/v2/race/56010"
+    },
+    {
+      "race_key": "TX-28",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56011,
+      "url": "https://civicapi.org/api/v2/race/56011"
+    },
+    {
+      "race_key": "TX-29",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87431,
+      "url": "https://civicapi.org/api/v2/race/87431"
+    },
+    {
+      "race_key": "TX-30",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87432,
+      "url": "https://civicapi.org/api/v2/race/87432"
+    },
+    {
+      "race_key": "TX-31",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56012,
+      "url": "https://civicapi.org/api/v2/race/56012"
+    },
+    {
+      "race_key": "TX-32",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87433,
+      "url": "https://civicapi.org/api/v2/race/87433"
+    },
+    {
+      "race_key": "TX-33",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87434,
+      "url": "https://civicapi.org/api/v2/race/87434"
+    },
+    {
+      "race_key": "TX-34",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56013,
+      "url": "https://civicapi.org/api/v2/race/56013"
+    },
+    {
+      "race_key": "TX-35",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87435,
+      "url": "https://civicapi.org/api/v2/race/87435"
+    },
+    {
+      "race_key": "TX-36",
+      "state": "TX",
+      "chamber": "house",
+      "id": 56014,
+      "url": "https://civicapi.org/api/v2/race/56014"
+    },
+    {
+      "race_key": "TX-37",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87436,
+      "url": "https://civicapi.org/api/v2/race/87436"
+    },
+    {
+      "race_key": "TX-38",
+      "state": "TX",
+      "chamber": "house",
+      "id": 87437,
+      "url": "https://civicapi.org/api/v2/race/87437"
+    },
+    {
+      "race_key": "TX-S",
+      "state": "TX",
+      "chamber": "senate",
+      "id": 87438,
+      "url": "https://civicapi.org/api/v2/race/87438"
+    },
+    {
+      "race_key": "UT-01",
+      "state": "UT",
+      "chamber": "house",
+      "id": 87457,
+      "url": "https://civicapi.org/api/v2/race/87457"
+    },
+    {
+      "race_key": "UT-02",
+      "state": "UT",
+      "chamber": "house",
+      "id": 87458,
+      "url": "https://civicapi.org/api/v2/race/87458"
+    },
+    {
+      "race_key": "UT-03",
+      "state": "UT",
+      "chamber": "house",
+      "id": 87459,
+      "url": "https://civicapi.org/api/v2/race/87459"
+    },
+    {
+      "race_key": "UT-04",
+      "state": "UT",
+      "chamber": "house",
+      "id": 87460,
+      "url": "https://civicapi.org/api/v2/race/87460"
+    },
+    {
+      "race_key": "VA-01",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87461,
+      "url": "https://civicapi.org/api/v2/race/87461"
+    },
+    {
+      "race_key": "VA-02",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87462,
+      "url": "https://civicapi.org/api/v2/race/87462"
+    },
+    {
+      "race_key": "VA-03",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87463,
+      "url": "https://civicapi.org/api/v2/race/87463"
+    },
+    {
+      "race_key": "VA-04",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87464,
+      "url": "https://civicapi.org/api/v2/race/87464"
+    },
+    {
+      "race_key": "VA-05",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87465,
+      "url": "https://civicapi.org/api/v2/race/87465"
+    },
+    {
+      "race_key": "VA-06",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87466,
+      "url": "https://civicapi.org/api/v2/race/87466"
+    },
+    {
+      "race_key": "VA-07",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87467,
+      "url": "https://civicapi.org/api/v2/race/87467"
+    },
+    {
+      "race_key": "VA-08",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87468,
+      "url": "https://civicapi.org/api/v2/race/87468"
+    },
+    {
+      "race_key": "VA-09",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87469,
+      "url": "https://civicapi.org/api/v2/race/87469"
+    },
+    {
+      "race_key": "VA-10",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87470,
+      "url": "https://civicapi.org/api/v2/race/87470"
+    },
+    {
+      "race_key": "VA-11",
+      "state": "VA",
+      "chamber": "house",
+      "id": 87471,
+      "url": "https://civicapi.org/api/v2/race/87471"
+    },
+    {
+      "race_key": "VA-S",
+      "state": "VA",
+      "chamber": "senate",
+      "id": 87472,
+      "url": "https://civicapi.org/api/v2/race/87472"
+    },
+    {
+      "race_key": "VT-AL",
+      "state": "VT",
+      "chamber": "house",
+      "id": 87502,
+      "url": "https://civicapi.org/api/v2/race/87502"
+    },
+    {
+      "race_key": "WA-01",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87514,
+      "url": "https://civicapi.org/api/v2/race/87514"
+    },
+    {
+      "race_key": "WA-02",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87515,
+      "url": "https://civicapi.org/api/v2/race/87515"
+    },
+    {
+      "race_key": "WA-03",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87516,
+      "url": "https://civicapi.org/api/v2/race/87516"
+    },
+    {
+      "race_key": "WA-04",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87517,
+      "url": "https://civicapi.org/api/v2/race/87517"
+    },
+    {
+      "race_key": "WA-05",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87518,
+      "url": "https://civicapi.org/api/v2/race/87518"
+    },
+    {
+      "race_key": "WA-06",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87519,
+      "url": "https://civicapi.org/api/v2/race/87519"
+    },
+    {
+      "race_key": "WA-07",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87520,
+      "url": "https://civicapi.org/api/v2/race/87520"
+    },
+    {
+      "race_key": "WA-08",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87521,
+      "url": "https://civicapi.org/api/v2/race/87521"
+    },
+    {
+      "race_key": "WA-09",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87522,
+      "url": "https://civicapi.org/api/v2/race/87522"
+    },
+    {
+      "race_key": "WA-10",
+      "state": "WA",
+      "chamber": "house",
+      "id": 87523,
+      "url": "https://civicapi.org/api/v2/race/87523"
+    },
+    {
+      "race_key": "WI-01",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87483,
+      "url": "https://civicapi.org/api/v2/race/87483"
+    },
+    {
+      "race_key": "WI-02",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87484,
+      "url": "https://civicapi.org/api/v2/race/87484"
+    },
+    {
+      "race_key": "WI-03",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87485,
+      "url": "https://civicapi.org/api/v2/race/87485"
+    },
+    {
+      "race_key": "WI-04",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87486,
+      "url": "https://civicapi.org/api/v2/race/87486"
+    },
+    {
+      "race_key": "WI-05",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87487,
+      "url": "https://civicapi.org/api/v2/race/87487"
+    },
+    {
+      "race_key": "WI-06",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87488,
+      "url": "https://civicapi.org/api/v2/race/87488"
+    },
+    {
+      "race_key": "WI-07",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87489,
+      "url": "https://civicapi.org/api/v2/race/87489"
+    },
+    {
+      "race_key": "WI-08",
+      "state": "WI",
+      "chamber": "house",
+      "id": 87490,
+      "url": "https://civicapi.org/api/v2/race/87490"
+    },
+    {
+      "race_key": "WV-01",
+      "state": "WV",
+      "chamber": "house",
+      "id": 87473,
+      "url": "https://civicapi.org/api/v2/race/87473"
+    },
+    {
+      "race_key": "WV-02",
+      "state": "WV",
+      "chamber": "house",
+      "id": 87474,
+      "url": "https://civicapi.org/api/v2/race/87474"
+    },
+    {
+      "race_key": "WV-S",
+      "state": "WV",
+      "chamber": "senate",
+      "id": 87477,
+      "url": "https://civicapi.org/api/v2/race/87477"
+    },
+    {
+      "race_key": "WY-AL",
+      "state": "WY",
+      "chamber": "house",
+      "id": 87495,
+      "url": "https://civicapi.org/api/v2/race/87495"
+    },
+    {
+      "race_key": "WY-S",
+      "state": "WY",
+      "chamber": "senate",
+      "id": 87496,
+      "url": "https://civicapi.org/api/v2/race/87496"
+    }
+  ]
+}

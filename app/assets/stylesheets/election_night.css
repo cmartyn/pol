@@ -48,6 +48,7 @@
 .night-race-status { font-size: .78rem; color: #526170; }
 .night-race-status--returns { color: #146047; font-weight: 550; }
 .night-raw-level { max-width: 11rem; white-space: normal; color: #526170; font-size: .73rem; line-height: 1.45; margin-top: .25rem; }
+.night-outstanding-range, .night-outstanding-basis { max-width: 14rem; white-space: normal; color: #526170; font-size: .73rem; line-height: 1.45; margin-top: .25rem; }
 .night-race-reason { max-width: 20rem; min-width: 12rem; white-space: normal; overflow-wrap: anywhere; color: #526170; font-size: .75rem; line-height: 1.5; margin-top: .3rem; }
 .night-source-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.3rem 2rem; margin-top: 1.4rem; padding-bottom: 1.3rem; list-style: none; }
 .night-source-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem .7rem; }

@@ -38,6 +38,25 @@ class ElectionNightCivicApiTest < Minitest::Test
     assert result["county_totals_match_aggregate"]
   end
 
+  def test_real_virginia_independent_cities_are_county_equivalents
+    body = File.binread(File.expand_path("../../../fixtures/files/election_night/civic_va_house_cities.json", __dir__))
+    result = parser("VA").parse(body)
+    assert_equal 5, result["units"].size
+    assert_equal [ "CHESAPEAKE CITY", "HAMPTON CITY", "NEWPORT NEWS CITY", "NORFOLK CITY", "PORTSMOUTH CITY" ], result["units"].map { |u| u["unit_key"] }
+    assert result["county_totals_match_aggregate"]
+    data = JSON.parse(body)
+    data["region_results"].values.first["name"] = "Unknown City"
+    assert_raises(Error) { parser("VA").parse(data) }
+  end
+
+  def test_ordinary_cities_are_not_promoted_to_counties
+    data = fixture
+    data["region_results"].each_value { |region| region["type"] = "City" }
+    result = parser.parse(data)
+    assert_empty result["units"]
+    assert_equal 1, result["aggregate_units"].size
+  end
+
   def test_towns_and_precincts_are_not_added_to_counties
     data = fixture
     county = data["region_results"].values.first

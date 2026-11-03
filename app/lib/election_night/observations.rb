@@ -1,134 +1,159 @@
-# County matching removes geographic mix from the reported margin. It cannot
-# remove within-county reporting-order bias: a deliberately wide error term
-# remains. House races need a complete historical district manifest on
-# independently verified unchanged lines; present-day county multiplicity is
-# not proof that a county is unsplit (another contest may simply be omitted).
+# Raw-source coverage, turnout diagnostics and evidence eligibility are distinct.
+# Only complete independently matched county snapshots can condition the model.
 class ElectionNight::Observations
-  TURNOUT_RATIO = 0.75
   MIN_VOTES = 5_000
   MIN_COVERAGE = 0.50
   RCV_STATES = %w[AK ME].freeze
 
-  attr_reader :coverage
+  attr_reader :coverage, :county_rejections
 
-  def initialize(prior:, sources:)
-    @prior, @sources = prior, sources
+  def initialize(prior:, sources:, historical: {})
+    @prior, @sources, @historical = prior, sources, historical
     @coverage = {}
   end
 
   def call
-    # Raw totals are selected independently from model evidence. A complete
-    # district aggregate can be displayed while partial counties are withheld
-    # from inference; they never enter county manifests or get added together.
-    raw = ElectionNight::RawResults.new(sources: @sources)
-    units = raw.county_units
-    baselines = {}
-    house_baselines = {}
-    state_manifests = raw.state_manifests
-    @sources.each do |source|
-      next unless source["usable"]
-      Array(source.dig("baseline", "units")).each do |unit|
-        baselines[[ source.fetch("state"), unit.fetch("unit_key") ]] ||= unit
-      end
-      Array(source.dig("baseline", "house_units")).each do |unit|
-        house_baselines[[ ElectionNight::RawResults.canonical_race_key(unit.fetch("race_key")), unit.fetch("unit_key") ]] ||= unit
-      end
-    end
-    @prior.fetch("races").filter_map do |race|
-      key = race.fetch("race_key")
-      source_key = ElectionNight::RawResults.canonical_race_key(key)
-      rows = units.values.select { |u| u["race_key"] == source_key }
-      votes = rows.sum { |u| u.fetch("total_votes") }
-      historical_counties = if race["chamber"] == "house" && race["historical_house_compatible"]
-        house_baselines.keys.filter_map { |race_key, county| county if race_key == source_key }.uniq.sort
-      else
-        []
-      end
-      @coverage[key] = raw.for_race(race, historical_counties: historical_counties).merge(
-        "coverage_fraction" => 0.0, "reason" => "No matched historical baseline"
-      )
-      if rows.empty?
-        @coverage[key]["reason"] = @coverage[key]["has_raw_source"] ?
-          "Contest totals available; no matched county geography for direct update" : "No raw source available"
-        next
-      end
-      unless state_manifests.key?(race["state"])
-        @coverage[key]["reason"] = "Partial state source; complete race geography not established"
-        next
-      end
-      if RCV_STATES.include?(race["state"]) || race.dig("side_a", "party") != "dem" || race.dig("side_b", "party") != "rep" || race["certain"]
-        @coverage[key]["reason"] = "Returns displayed; ranked-choice, independent or uncontested outcome not conditioned"
-        next
-      end
-      expected_counties = if race["chamber"] == "senate"
-        state_manifests.fetch(race.fetch("state"))
-      elsif race["historical_house_compatible"]
-        house_baselines.keys.filter_map { |race_key, county| county if race_key == source_key }.uniq.sort
-      else
-        []
-      end
-      if expected_counties.empty?
-        @coverage[key]["reason"] = "Current district geography lacks a verified unchanged historical district manifest; direct update withheld"
-        next
-      end
-      unless rows.map { |row| row.fetch("unit_key") }.uniq.sort == expected_counties
-        @coverage[key]["reason"] = "Race county scaffold differs from its complete geographic manifest; direct update withheld"
-        next
-      end
-      # Senate uses the whole-state county manifest. House uses actual county
-      # portions of the same district, never an inferred whole-county proxy.
-      matched = rows.filter_map do |row|
-        historical = if race["chamber"] == "house"
-          house_baselines[[ source_key, row["unit_key"] ]]
-        else
-          baselines[[ race["state"], row["unit_key"] ]]
-        end
-        next unless historical
-        if race["chamber"] == "house"
-          # An uncontested historical race is not a useful partisan baseline.
-          next if [ historical["dem_votes"], historical["rep_votes"] ].min.to_f / [ historical["total_votes"], 1 ].max < 0.05
-        end
-        historical_total = historical.fetch("dem_votes") + historical.fetch("rep_votes")
-        next unless historical_total.positive?
-        [ row, historical, historical_total ]
-      end
-      # Every component must match. House portions use a historical district
-      # match only when the repository's boundary catalog verifies same lines.
-      if matched.size != rows.size
-        @coverage[key]["reason"] = "Split-county district or missing county baseline; direct update withheld"
-        next
-      end
-      total_history = matched.sum { |_, _, n| n }.to_f
-      expected = total_history * TURNOUT_RATIO
-      reporting = matched.select { |row, _, _| row["dem_votes"] + row["rep_votes"] >= 100 }
-      represented = reporting.sum { |_, _, n| n } / total_history
-      counted = matched.sum { |row, _, _| row["dem_votes"] + row["rep_votes"] }.to_f
-      fraction = [ counted / expected, 0.99 ].min
-      @coverage[key].merge!("coverage_fraction" => represented, "counted_fraction" => fraction,
-        "reason" => "Matched counties; waiting for sufficient returns", "has_baseline" => true)
-      next if counted < MIN_VOTES || represented < MIN_COVERAGE || fraction < 0.15
-      historical_margin = 100.0 * matched.sum { |_, h, _| h["dem_votes"] - h["rep_votes"] } / total_history
-      # Expected county performance is shifted so its full-race weighted mean
-      # is our frozen race prior, preserving candidate and national expectations.
-      shift = race.fetch("mu") - historical_margin
-      residual = reporting.sum do |row, history, history_total|
-        n = row["dem_votes"] + row["rep_votes"]
-        observed = 100.0 * (row["dem_votes"] - row["rep_votes"]) / n
-        baseline = 100.0 * (history["dem_votes"] - history["rep_votes"]) / history_total + shift
-        (observed - baseline) * n
-      end / reporting.sum { |row, _, _| row["dem_votes"] + row["rep_votes"] }
-      # A third-party surge invalidates a two-party transfer assumption.
-      if votes.positive? && rows.sum { |r| r["other_votes"] }.to_f / votes > 0.10
-        @coverage[key]["reason"] = "Third-party share exceeds the two-party observation model's limit; direct update withheld"
-        next
-      end
-      @coverage[key]["reason"] = "County-adjusted returns; turnout and reporting-order assumptions apply"
-      {
-        "race_key" => key, "observed_margin" => (race.fetch("mu") + residual).clamp(-100, 100),
-        "counted_fraction" => fraction,
-        "sigma" => 4.0 + 10.0 * (1.0 - fraction) + 4.0 * (1.0 - represented),
-        "source_ids" => reporting.map { |row, _, _| row["source_id"] }.uniq
-      }
-    end
+    prepare_history
+    @raw = ElectionNight::RawResults.new(sources: @sources, county_identity: @identity)
+    @county_rejections = @raw.county_rejections
+    # An inferred publisher county count cannot replace an independently
+    # verified named roster. Changed current geography must fail the match.
+    @state_manifests = @raw.state_manifests.merge(@historical.fetch("state_manifests", {}).transform_values(&:sort))
+    @prior.fetch("races").filter_map { |race| observation(race) }
   end
+
+  private
+    def prepare_history
+      legacy = @sources.select { |s| s["usable"] }.flat_map do |source|
+        %w[units house_units].flat_map do |kind|
+          Array(source.dig("baseline", kind)).map { |unit| unit.merge("state" => source.fetch("state"), "baseline_kind" => kind) }
+        end
+      end
+      frozen = %w[units house_units].flat_map { |kind| @historical.fetch(kind, []).map { |unit| unit.merge("baseline_kind" => kind) } }
+      @identity = ElectionNight::CountyIdentity.new(frozen + legacy)
+      @baselines, @house_baselines = {}, {}
+      # Official archives and the frozen bundle share a verified identity join.
+      (legacy + frozen).each do |unit|
+        unit = @identity.normalize(unit.fetch("state"), unit)
+        if unit["baseline_kind"] == "house_units"
+          @house_baselines[[ canonical(unit.fetch("race_key")), unit.fetch("unit_key") ]] ||= unit
+        else
+          @baselines[[ unit.fetch("state"), unit.fetch("unit_key") ]] ||= unit
+        end
+      end
+      @current_line_totals = @historical.fetch("house_totals_current_lines", []).index_by { |row| canonical(row.fetch("race_key")) }
+      @midterm = @historical.fetch("turnout_2022", []).select { |row| row.fetch("race_key").end_with?("-S") }
+        .group_by { |row| row.fetch("state") }
+    end
+
+    def canonical(key) = ElectionNight::RawResults.canonical_race_key(key)
+
+    def expected_counties(race)
+      if race["chamber"] == "senate"
+        @state_manifests.fetch(race.fetch("state"), [])
+      elsif race["historical_house_compatible"]
+        @house_baselines.keys.filter_map { |race_key, county| county if race_key == canonical(race.fetch("race_key")) }.sort
+      else
+        []
+      end
+    end
+
+    def observation(race)
+      key = race.fetch("race_key")
+      expected = expected_counties(race)
+      coverage = @coverage[key] = @raw.for_race(race, historical_counties: expected).merge(
+        "coverage_fraction" => 0.0, "reason" => "No matched historical baseline")
+      coverage["outstanding_votes"] = aggregate_outstanding(race, coverage)
+      if RCV_STATES.include?(race["state"])
+        coverage["reason"] = "Returns displayed; ranked-choice rounds are not modeled"
+        return
+      end
+      rows = @raw.matched_counties(key, expected_counties: expected)
+      unless rows
+        coverage["reason"] = if !coverage["has_raw_source"]
+          "No raw source available"
+        elsif @raw.county_units.values.none? { |row| row["race_key"] == canonical(key) }
+          "Contest totals available; no matched county geography for direct update"
+        elsif race["chamber"] == "senate" && expected.empty?
+          "Partial state source; complete race geography not established"
+        elsif expected.empty?
+          "Current district geography lacks a verified unchanged historical district manifest; direct update withheld"
+        else
+          "Race county scaffold differs from its complete geographic manifest; direct update withheld"
+        end
+        return
+      end
+      matched = rows.filter_map do |row|
+        history = race["chamber"] == "house" ? @house_baselines[[ canonical(key), row["unit_key"] ]] : @baselines[[ race["state"], row["unit_key"] ]]
+        next unless history
+        total = history.fetch("dem_votes") + history.fetch("rep_votes")
+        [ row, history, total ] if total.positive?
+      end
+      if matched.size != rows.size
+        coverage["reason"] = "Split-county district or missing county baseline; direct update withheld"
+        return
+      end
+      estimate = ElectionNight::OutstandingVotes.new(matched: matched, race_prior: race, midterm_totals: midterm_totals(race, expected)).call
+      model_ids = rows.map { |row| row.fetch("source_id") }.uniq
+      # The visible remaining estimate must subtract the same counted votes
+      # shown in the table. A fallback may independently supply model evidence,
+      # but cannot replace this diagnostic with a different count snapshot.
+      if model_ids.sort == coverage.fetch("raw_source_ids").sort
+        coverage["outstanding_votes"] = public_estimate(estimate, "county")
+      end
+      coverage.merge!("coverage_fraction" => estimate.fetch("represented_fraction"),
+        "counted_fraction" => estimate.fetch("counted_fraction"), "model_source_ids" => model_ids)
+      if race.dig("side_a", "party") != "dem" || race.dig("side_b", "party") != "rep" || race["certain"]
+        coverage["reason"] = "Returns displayed; independent or uncontested outcome not conditioned"
+        return
+      end
+      # A partisan county is valid evidence. The historical race as a whole
+      # must have a contested major-party baseline.
+      historical_total = matched.sum { |_, history, _| history.fetch("total_votes") }
+      if race["chamber"] == "house" && %w[dem_votes rep_votes].any? { |party| matched.sum { |_, history, _| history.fetch(party) }.to_f / historical_total < 0.05 }
+        coverage["reason"] = "Historical House race lacks a contested partisan baseline; direct update withheld"
+        return
+      end
+      coverage.merge!("has_baseline" => true, "reason" => "Matched counties; waiting for sufficient returns")
+      return if estimate.fetch("counted_two_party_votes") < MIN_VOTES || estimate.fetch("represented_fraction") < MIN_COVERAGE || estimate.fetch("counted_fraction_low") < 0.15
+      if rows.sum { |row| row.fetch("other_votes") }.to_f / estimate.fetch("counted_votes") > 0.10
+        coverage["reason"] = "Third-party share exceeds the partisan observation model's limit; direct update withheld"
+        return
+      end
+      coverage["reason"] = "County-adjusted remaining-vote projection; turnout and reporting-order assumptions apply"
+      estimate.fetch("measurement").merge("race_key" => key)
+    end
+
+    def midterm_totals(race, expected)
+      # 2022–2024 House boundary compatibility has not been verified here.
+      return {} unless race["chamber"] == "senate"
+      manifest = @historical.fetch("turnout_state_manifests", {})[race.fetch("state")]
+      return {} unless manifest
+      keys = manifest.map { |key| @identity.normalize(race.fetch("state"), { "unit_key" => key }).fetch("unit_key") }
+      return {} unless keys.sort == expected.sort
+      rows = @midterm.fetch(race.fetch("state"), []).map { |row| @identity.normalize(race.fetch("state"), row) }
+      return {} unless rows.none? { |row| row["historical_county_match"] == false } && rows.map { |row| row.fetch("unit_key") }.sort == expected.sort
+      rows.to_h { |row| [ row.fetch("unit_key"), row.fetch("total_votes") ] }
+    end
+
+    def aggregate_outstanding(race, coverage)
+      return unless coverage["has_raw_source"] && %w[county contest].include?(coverage["raw_coverage_level"]) && !RCV_STATES.include?(race["state"])
+      history = if race["chamber"] == "house"
+        @current_line_totals[canonical(race.fetch("race_key"))]
+      elsif @historical.fetch("state_manifests", {}).key?(race.fetch("state"))
+        rows = @historical.fetch("units").select { |row| row["state"] == race["state"] }
+        %w[dem_votes rep_votes other_votes total_votes].to_h { |field| [ field, rows.sum { |row| row.fetch(field) } ] }.merge("unit_key" => "CONTEST")
+      end
+      return unless history
+      row = { "unit_key" => "CONTEST", "dem_votes" => coverage.fetch("raw_dem_votes"), "rep_votes" => coverage.fetch("raw_rep_votes"),
+        "other_votes" => coverage.fetch("raw_other_votes"), "total_votes" => coverage.fetch("observed_votes") }
+      estimate = ElectionNight::OutstandingVotes.new(matched: [ [ row, history, history.fetch("dem_votes") + history.fetch("rep_votes") ] ], race_prior: race).call
+      public_estimate(estimate, "contest")
+    end
+
+    def public_estimate(estimate, scope)
+      estimate.except("units", "measurement").merge("geography_scope" => scope,
+        "turnout_basis" => estimate.fetch("midterm_anchored_units").positive? ? "Matched 2022 midterm county votes" :
+          (scope == "county" ? "75% of matched 2024 county votes" : "75% of 2024 presidential votes on current boundaries"))
+    end
 end
