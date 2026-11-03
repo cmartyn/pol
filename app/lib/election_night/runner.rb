@@ -31,12 +31,9 @@ class ElectionNight::Runner
         "generated_at" => stamp, "prior_as_of" => prior.fetch("as_of"),
         "status" => sources.any? { |s| s["usable"] && s["status"] != "ok" } ? "stale" : (observations.empty? ? "awaiting_results" : "experimental"),
         "sources" => sources.map { |s| s.except("results", "baseline", "usable") },
-        "coverage" => {
-          "races_with_returns" => observations.size, "races_total" => prior.fetch("races").size,
-          "races_with_baselines" => builder.coverage.values.count { |v| v["has_baseline"] },
-          "races_with_raw_returns" => builder.coverage.values.count { |v| v["observed_votes"].positive? }
-        }, "assumptions" => ASSUMPTIONS + [ prior_freshness["prior_warning"] ].compact,
-        "input_hashes" => sources.to_h { |s| [ s["id"], s.slice("raw_hash", "baseline_hash", "metadata_hash") ] },
+        "coverage" => ElectionNight::Coverage.new(races: result.fetch("races"), sources: sources).summary,
+        "assumptions" => ASSUMPTIONS + [ prior_freshness["prior_warning"] ].compact,
+        "input_hashes" => sources.to_h { |s| [ s["id"], s.slice("raw_hash", "baseline_hash", "metadata_hash", "version_hash") ] },
         "observations" => observations
       ).merge(prior_freshness)
       @store.write("history/#{Time.current.utc.strftime('%Y%m%dT%H%M%S%6N')}", payload)

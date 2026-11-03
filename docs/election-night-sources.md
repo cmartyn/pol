@@ -2,25 +2,43 @@
 
 Implemented on `codex/election-night-needle`, November 3, 2026. These adapters read raw candidate vote totals. They never import win probabilities, forecasts or a provider's modeled vote-remaining estimate.
 
-## Sources enabled in the registry
+## Official source families
 
-`config/election_night_sources.yml` contains current URLs, optional companion metadata, conservative request intervals and historical baselines. Current samples were downloaded before polls closed; the eight accepted feeds showed zero votes. Ohio's ninth configured feed was explicitly marked as test data and was rejected. Successful parsing establishes the schema, not election-night update reliability.
+`config/election_night_sources.yml` is the authority for enabled URLs, source priority, companion metadata, request intervals and historical baselines. The table describes implemented adapters and their scope; it is not a final count of operational or model-ready races. Dated audits under `docs/research/` record the inspected responses, hashes and unresolved gaps. A successfully parsed zero scaffold establishes format and election identity, not later election-night update reliability.
 
-| Source | Current parsed coverage | Historical baseline |
+| Source | Raw geographic scope | Identity and baseline notes |
 | --- | --- | --- |
-| North Carolina SBE | 215 county/race units across 100 counties, Senate and House | Official 2024 precinct file aggregated to counties: 100 presidential units / 5,699,141 votes; also actual county portions of 2024 House districts |
-| Arizona SOS | 30 county/House units across 15 counties | Raw 2024 presidential county compilation: 15 counties / 3,389,319 votes |
-| Georgia SOS | 340 county/race units across 159 counties | Official 2024 export: 159 presidential units / 5,250,066 votes; also actual county portions of House districts |
-| Virginia ELECT | 278 county/city/race units across 133 localities | Official 2024 export: 133 presidential units / 4,505,941 votes; also actual county portions of House districts |
-| Texas SOS | 564 county/race units across 254 counties | Raw 2024 presidential county compilation: 254 counties / 11,380,105 votes |
-| Kent County, Michigan | Three county/race units: Senate, MI-02, MI-03 | Official 2024 export: 372,930 presidential votes; actual county portions of MI-02 and MI-03 |
-| Iowa Ledger | All five federal contests, statewide/district totals only | No county breakdown; remains an explicit aggregate-only source |
-| Florida Division of Elections | 165 county/race units across all 67 counties; Senate and 27 House contests | Official 2024 file: 67 presidential units / 10,893,752 votes; 94 actual county portions of House districts |
-| Ohio SOS — awaiting production file | Current XML has `IsTest="true"` and is rejected; structural rehearsal covers 88 counties | Raw 2024 presidential county compilation: 88 counties / 5,765,017 votes |
+| North Carolina SBE | Senate and House county totals aggregated from precinct rows | Dated official ZIP; official 2024 president and actual House county portions |
+| Arizona SOS | House county portions | Dated Enhanced Voting export; historical presidential county compilation |
+| Georgia SOS | Senate and House county portions | Dated Enhanced Voting export; official 2024 president and House county portions |
+| Virginia ELECT | Senate and House county/city portions | Independent cities remain distinct; official 2024 president and House county portions |
+| Texas SOS | Senate and House county portions | Base64 county JSON requires dated companion metadata; historical presidential county compilation |
+| Florida Division of Elections | Senate and House county portions | Dated official tab file and official 2024 president/House file; FL-10 absent from the inspected current export |
+| California SOS | House county portions | Companion endpoint index supplies the general-election date missing from results JSON; new district boundaries need compatible history |
+| Washington SOS | House county portions | Dated Enhanced Voting export with Washington-specific office and party labels |
+| Arkansas SOS | Senate and House county portions | Tally election-info metadata binds UUID, date, party IDs, county names and vote methods to the raw export |
+| Indiana SOS | House county portions | Official settings select the current A/B data version; county totals reconcile with district and statewide summaries |
+| Nebraska SOS | Senate and House contest aggregates | Official page supplies date; pinned contest/candidate IDs validate the CSV. `map=CTY` does not make these county data |
+| Alaska Division of Elections | Senate and House statewide first-choice aggregates | Dated official summary PDF; ranked-choice transfers are not represented |
+| Louisiana SOS | Senate parish totals | Date-specific Senate CSV requires official metadata identifying the pinned election; no House coverage is claimed by this adapter |
+| Maryland SBE | House district aggregates when reported | State HTML identifies election/office; `NR` remains unavailable, never zero |
+| Ohio SOS | County totals when a production file appears | Inspected XML says `IsTest="true"` and is rejected; historical presidential county compilation available |
+| Michigan county clerks | Kent and Kalamazoo county portions only | Dated official exports; Kent has official historical president and House portions |
+| New York county board | Rockland portion of NY-17 | Exact candidate-name matching consolidates fusion ballot lines; no complete district manifest implied |
+| New Jersey county clerks | Atlantic, Ocean and Gloucester county portions | Versioned Clarity summary and settings fetched together; inspected Morris test version is not usable |
+| Missouri county authority | St. Charles portions of MO-02/MO-03 | CSV plus dated official election-page metadata; voting-method totals reconcile |
 
 County presidential baselines alone do **not** establish the historic vote inside a congressional district that splits the county. The `house_units` output preserves actual 2024 district portions where official files provide them. Consumers must still check district-boundary compatibility for 2026. Historical candidate effects and presidential-to-midterm turnout changes remain modeling assumptions, not observations in these files.
 
-## Additional sources when officials' websites are inaccessible
+## Secondary raw counts and shared upstreams
+
+[CivicAPI](https://civicapi.org/) supplies full-race raw responses with candidate counts and, where available, county-equivalent results. The adapter uses the full-race endpoint, validates United States/state/office/district/general-election identity and requires an explicit `test_data: false`. It does not use search or national-summary responses as complete candidate rosters. County detail is accepted only when candidate identities align with the full race and every candidate's county sum matches the contest total. If detail is absent or fails reconciliation, the validated contest aggregate remains available and county detail is withheld.
+
+Reconciliation of all-zero county rows is not proof of a complete county manifest: an arbitrary subset also sums to zero. Those rows remain separately available detail, while the selected raw coverage stays contest-level unless independent geography establishes completeness. The coverage audit lists available county units separately from selected scope.
+
+[PollingDesk's results catalog](https://polling-desk.com/results) is a lower-priority aggregate fallback. Its CSV identifies **CivicAPI as its upstream**, so CivicAPI and PollingDesk are two delivery paths for the same source, not independent corroboration. The CSV lacks explicit election-date and test-data fields. Its general-election identity is based on the inspected, pinned 2026 catalog, supported by cycle/race identifiers, candidate records and required upstream attribution. The adapter discloses that limitation and marks all records aggregate-only; a current fetch date does not establish election identity. Recheck the publisher context if the catalog changes.
+
+Neither adapter imports forecast probabilities, winner/call fields, modeled expected vote, percent-reporting fields or chamber-control estimates. Raw-result selection chooses one coherent total for each race; county portions, statewide summaries and publisher mirrors are never added together. County detail that reconciles with a secondary publisher's total still does not supply the independent geographic manifest and historical match required for direct model conditioning.
 
 The [Iowa Ledger results page](https://iowaledger.com/results/) was accessible even though the official results root returned 403 to this client. Its public browser script identifies [a raw JSON endpoint](https://iowaledger.com/results/2026.json), which was successfully retrieved and parsed. The document identifies the 2026 general election, links [the official upstream election](https://electionresults.iowa.gov/IA/127077/), records upstream and publisher timestamps, and provides each candidate's actual vote total. The adapter ignores its `leader`/share presentation fields. It is a secondary publisher of official counts, not an independent collection of county returns and not another forecasting model. The feed has no county vote splits, and “counties reporting” must never be substituted for votes counted.
 
@@ -30,7 +48,7 @@ Florida illustrates why a failed results homepage is not the end of the investig
 
 [Open America's public results API](https://openamerica.io/elections/api/) was also reachable, but its 2026 House and Senate feeds had empty race collections and no publication time when checked. Its historical 2024 House data includes Florida, but not Kansas. It was not enabled as a current source. [The People's Tally open-data page](https://thepeoplestally.com/open-data/) and its advertised raw file returned 403 and were not used. These are recorded access findings, not a claim that an unverified alternate feed fills coverage gaps.
 
-[watch.vote's API documentation](https://watch.vote/docs/api-reference/elections) offers raw result routes, but its Iowa endpoint returned 403. It was not enabled. Kent County's public export supplies a working Michigan county fallback, but covers only one county; it must not stand in for the whole Michigan Senate electorate. The source audit's remaining state gaps still apply. No access control was bypassed and no publisher was contacted.
+[watch.vote's API documentation](https://watch.vote/docs/api-reference/elections) offers raw result routes, but its Iowa endpoint returned 403. It was not enabled. County-only Michigan, New Jersey, New York and Missouri feeds remain partial even when they are the most authoritative local counts. Official access gaps, including blocked Colorado, Montana and South Carolina routes, are recorded in the regional audits; a secondary raw fallback does not turn those routes into verified official access. No access control was bypassed and no publisher was contacted.
 
 ## Adapter interface
 
@@ -55,9 +73,13 @@ Each class lives under `ElectionNight::Sources` and is constructed with `state:`
 }
 ```
 
-Senate keys end in `-S`; congressional keys have two-digit districts. The county key is uppercase with the ` COUNTY` suffix removed, preserving independent-city suffixes. `&` and `AND` are normalized to match the historical/current King and Queen County name change. Votes remain integer counts; blank, negative, fractional or nonnumeric totals raise `Base::InvalidData`.
+Senate keys end in `-S`; congressional keys use two-digit districts or `-AL`. The county key is uppercase with the ` COUNTY` suffix removed, preserving independent-city suffixes. `&` and `AND` are normalized to match the historical/current King and Queen County name change. Votes remain integer counts; blank, negative, fractional or nonnumeric totals raise `Base::InvalidData`. `NR`, missing values and test results never become zero votes. Maryland explicitly returns unavailable-race reasons for `NR`; a source can be reachable while its contests remain unreported.
+
+Contest aggregates use `aggregate_only: true` and `geography_level: "contest"`. CivicAPI can return county `units` and separate `aggregate_units` in the same response; consumers must choose the appropriate scope instead of summing both. `county_totals_match_aggregate` records candidate-level reconciliation, not an independent verification of a county manifest. Alaska additionally marks `first_choice_only: true`.
 
 `Texas#parse(body, metadata:)` additionally requires the raw companion election metadata. The county payload has no election date, so a URL alone is insufficient. The adapter checks the decoded `Home.ElecDate`, decodes the base64 county JSON, and verifies contest totals against candidates. Its source timestamp lacks a UTC offset; it is preserved as `source_time_text`, with `published_at` left null rather than inventing a timezone.
+
+California, Arkansas, Indiana, Nebraska, Louisiana, Clarity county and St. Charles adapters also require their configured companion metadata. Its meaning differs by publisher: an election index, election-info object, settings file or official page. California uses the dated official endpoint index; Arkansas uses the same election UUID in the full export and election-info response. Indiana resolves `VersionType` from settings, and Clarity resolves `current_ver.txt`; the collector substitutes the same validated version token into results and metadata URLs. Raw bodies, metadata and version responses each receive archived hashes so a replay can reconstruct the binding.
 
 `parse_baselines(body)` selects the 2024-11-05 presidential contest regardless of the current adapter constructor date and returns the same county vote fields under `units`, with race keys ending `-P`. Enhanced Voting, North Carolina and Florida additionally return `house_units` for actual 2024 congressional county portions. AZ/TX/OH specify `baseline_adapter: county_baseline` in the registry. The CSV's year is established by its configured, inspected 2024 dataset; it is never used as a live-results adapter.
 
@@ -68,17 +90,27 @@ Senate keys end in `-S`; congressional keys have two-digit districts. The county
 - Texas reads candidate `V` and does not add `EV` to it. The exact method split is not inferred.
 - Florida reads the tab-delimited `CanVotes` once per candidate/county/contest. Embedded quotation marks in candidate names are literal text. It validates row dates, district identifiers and matching county coverage across candidates, with no addition of precinct counts.
 - Ohio's [NIST-format XML download](https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob) must have an explicit production flag (`IsTest="false"` or `"0"`), the correct election date, state FIPS and namespace. Only county reporting units with `IsElectoralDistrict="false"` and `VoteCounts Type="Total"` count. Its similarly named county electoral-scope units and statewide totals are excluded. DTDs, duplicate candidate counts and mismatched candidate county coverage are rejected. The actual downloaded test file was rejected; a synthetic flag change used only in a local structural check does not qualify it as production coverage.
+- California ignores districtwide summaries when county portions are present. Washington maps `(Prefers Democratic Party)` and `(Prefers Republican Party)` explicitly. New York assigns a fusion ballot line to a major-party candidate only when the normalized candidate name matches exactly within that contest; unrelated minor-party votes remain separate.
+- Arkansas sums only the metadata-identified Absentee, Election Day and Early Voting components. A standalone Total Votes field is accepted separately; mixed totals and components, duplicate methods or unknown/missing methods fail validation. County totals exclude nested precincts. Party IDs are resolved through metadata, not guessed from candidate-name prefixes.
+- Indiana follows the current A/B version instead of pinning yesterday's file. Nebraska's CSV generation time is diagnostic only, not a new vote-report timestamp. The Louisiana adapter accepts the pinned Senate office and complete parish scaffold; it does not fabricate House rows.
+- Alaska extracts the first federal-contest pages of the official PDF with `pdftotext`, supplied by `poppler-utils`. Candidate sums must match the printed totals. Missing party labels and independent candidates remain `other_votes`; first-choice totals cannot establish ranked-choice outcomes. Missing PDF tooling or a changed layout fails the source rather than supplying empty counts.
 - No adapter infers finality from all precincts or counties reporting. Later mail, provisional or corrected ballots remain possible; `complete` stays false. No race calls are made here.
 - Corrected totals can decrease. Parsers validate each complete snapshot, rather than imposing monotonic counts that would reject legitimate corrections.
-- The collector must enforce source-wide expected county coverage, poll-opening rules, stale/future timestamps, error retention and atomic publication. An isolated county or aggregate-only record does not establish complete statewide observation.
+- The collector validates configured expected counties/races and retains source/version provenance. Poll timing, source freshness and model eligibility remain separate checks. An isolated county, aggregate-only record or secondary county reconciliation does not establish complete statewide modeling geography. Expanded raw coverage does not relax direct-model gates.
 - Party buckets retain minor-party votes under `other_votes`. They are not assigned to Democratic or Republican caucuses. Mapping independent candidates and ranked-choice transfers requires separate modeling and roster work.
 
 ## Verification
 
-Parser tests cover double counting, source/contest schemas, wrong election dates, test flags, duplicate rows, malformed/negative counts, county name aliases, third-party totals, independent-city keys, and actual congressional portions in historical data. The focused command is:
+Parser tests cover double counting, source/contest schemas, companion metadata, version changes, wrong election dates, test flags, duplicate rows, malformed/negative counts, county aliases, fusion lines, third-party totals, independent-city keys, PDF first-choice limits, `NR`, and actual congressional portions in historical data. Run the election-night test directory, including the source-specific test files:
 
 ```sh
-bundle exec ruby test/lib/election_night/sources/adapters_test.rb
+bin/rails test test/lib/election_night
 ```
 
-The focused suite has 16 tests and 76 assertions. The parsers were also run against seven accepted current official files, the Iowa alternative JSON, NC's 2024 ZIP, GA/VA/Kent's official 2024 exports, Florida's current/historical tab files, and the AZ/TX/OH fallback historical CSV. Ohio's actual test XML was checked for rejection. Large raw downloads remain outside Git; the collector owns versioned storage and replay.
+Dated regional audit files record actual URL/status pairs, election identity, hashes, local samples, parsed race IDs, geographic scope and unresolved gaps. They distinguish accessible zero scaffolds, unreported values, rejected tests and blocked downloads. Integration counts and performance measurements must be taken from a run against the current registry, not reused from an earlier smaller collection. Large raw downloads remain outside Git; the collector owns versioned storage and replay.
+
+The final November 3 check at **14:43:29 Eastern** validated raw sources for all **470 races**, including **125/125** on the frozen competitive watchlist. The selected competitive totals comprise **65 county-level** and **60 contest-level** races; **68 use official sources** and **57 use secondary sources**. All accepted current counts were zero. This establishes pre-poll availability, not proven election-night delivery. Historical direct baselines remain available for **44 races**, including **16 competitive races**; there were no direct observations.
+
+Of 84 configured source records, 82 parsed successfully. Ohio's test payload was rejected and Alaska's official PDF request failed certificate verification; TLS verification was not disabled. Maryland parsed successfully but all inspected House values were `NR`, so it supplied no counts. California recovered from a first-pass timeout, and St. Charles parsed after the encoding fix. All 60 CivicAPI full-race feeds validated. Their 1,233 available county rows do not establish complete geography while all counts are zero.
+
+The [470-row coverage CSV](research/election-night-coverage-2026-11-03.csv) records selected source, scope, direct-baseline availability and separate available county detail for every race. Its [provenance audit](research/election-night-coverage-audit-2026-11-03.json) records source URLs, status, archived raw/metadata/version/baseline hashes, timing and exclusions. Every recorded archive hash was checked against stored bytes, and all 82 usable sources reproduced identical normalization and coverage when reparsed from those archives. No forecast probabilities appear in either artifact.

@@ -1,101 +1,1219 @@
-# Current URLs and schemas were read and parsed on 2026-11-03 before polls
-# closed. No feed's zero scaffold demonstrates later live update reliability.
-# These are raw election counts. No provider probabilities are used.
+# Raw candidate counts only; no provider forecasts, race calls or vote-fraction estimates.
+# Verified pre-poll scaffolds do not demonstrate later live-update reliability.
+---
 sources:
-  - id: nc
-    label: North Carolina State Board of Elections
-    state: NC
-    adapter: north_carolina
-    url: https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip
-    minimum_interval: 180
-    expected_counties: 100
-    baseline_url: https://dl.ncsbe.gov/ENRS/2024_11_05/results_pct_20241105.zip
-    baseline_election_date: '2024-11-05'
-    enabled: true
-  - id: az
-    label: Arizona Secretary of State
-    state: AZ
-    adapter: enhanced_voting
-    url: https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json
-    minimum_interval: 120
-    expected_counties: 15
-    baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
-    baseline_adapter: county_baseline
-    baseline_election_date: '2024-11-05'
-    baseline_note: Public compilation of raw 2024 county counts; not official live data or another forecast.
-    enabled: true
-  - id: ga
-    label: Georgia Secretary of State
-    state: GA
-    adapter: enhanced_voting
-    url: https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json
-    minimum_interval: 180
-    expected_counties: 159
-    baseline_url: https://results.sos.ga.gov/cdn/results/Georgia/export-2024NovGen.json
-    baseline_election_date: '2024-11-05'
-    enabled: true
-  - id: va
-    label: Virginia Department of Elections
-    state: VA
-    adapter: enhanced_voting
-    url: https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json
-    minimum_interval: 180
-    expected_counties: 133
-    baseline_url: https://enr.elections.virginia.gov/cdn/results/Virginia/export-2024NovemberGeneral.json
-    baseline_election_date: '2024-11-05'
-    enabled: true
-  - id: tx
-    label: Texas Secretary of State
-    state: TX
-    adapter: texas
-    url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815
-    metadata_url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/53815
-    minimum_interval: 300
-    expected_counties: 254
-    baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
-    baseline_adapter: county_baseline
-    baseline_election_date: '2024-11-05'
-    baseline_note: Public compilation of raw 2024 county counts; not official live data or another forecast.
-    enabled: true
-  - id: mi_kent
-    label: Kent County Clerk, Michigan
-    state: MI
-    adapter: enhanced_voting
-    url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json
-    minimum_interval: 180
-    baseline_url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-2024KentCountyGeneral.json
-    baseline_election_date: '2024-11-05'
-    coverage_note: One county only. Does not constitute statewide Michigan coverage.
-    enabled: true
-  - id: ia_ledger
-    label: Iowa Ledger, relaying Iowa Secretary of State totals
-    state: IA
-    adapter: iowa_ledger
-    url: https://iowaledger.com/results/2026.json
-    minimum_interval: 180
-    coverage_note: Alternative raw-results publisher. Contest totals only, no county breakdown or counted-vote estimate.
-    enabled: true
-  - id: oh
-    label: Ohio Secretary of State
-    state: OH
-    adapter: ohio
-    url: https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob
-    minimum_interval: 180
-    expected_counties: 88
-    baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
-    baseline_adapter: county_baseline
-    baseline_election_date: '2024-11-05'
-    baseline_note: Public compilation of raw 2024 county counts; not official live data or another forecast.
-    coverage_note: Feed currently marked IsTest=true; unavailable until an explicitly production payload is published.
-    enabled: true
-  - id: fl
-    label: Florida Division of Elections
-    state: FL
-    adapter: florida
-    url: https://flelectionfiles.floridados.gov/enightfilespublic/20261103_ElecResultsFL.txt
-    minimum_interval: 180
-    expected_counties: 67
-    baseline_url: https://flelectionfiles.floridados.gov/enightfilespublic/20241105_ElecResultsFL.txt
-    baseline_election_date: '2024-11-05'
-    coverage_note: Direct official county results file; no publication timestamp or estimated vote fraction. Some uncontested races may be omitted by the state.
-    enabled: true
+- id: nc
+  label: North Carolina State Board of Elections
+  state: NC
+  adapter: north_carolina
+  url: https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip
+  minimum_interval: 180
+  expected_counties: 100
+  baseline_url: https://dl.ncsbe.gov/ENRS/2024_11_05/results_pct_20241105.zip
+  baseline_election_date: '2024-11-05'
+  enabled: true
+  source_kind: official
+- id: az
+  label: Arizona Secretary of State
+  state: AZ
+  adapter: enhanced_voting
+  url: https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json
+  minimum_interval: 120
+  expected_counties: 15
+  baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+  baseline_adapter: county_baseline
+  baseline_election_date: '2024-11-05'
+  baseline_note: Public compilation of raw 2024 county counts; not official live data
+    or another forecast.
+  enabled: true
+  source_kind: official
+- id: ga
+  label: Georgia Secretary of State
+  state: GA
+  adapter: enhanced_voting
+  url: https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json
+  minimum_interval: 180
+  expected_counties: 159
+  baseline_url: https://results.sos.ga.gov/cdn/results/Georgia/export-2024NovGen.json
+  baseline_election_date: '2024-11-05'
+  enabled: true
+  source_kind: official
+- id: va
+  label: Virginia Department of Elections
+  state: VA
+  adapter: enhanced_voting
+  url: https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json
+  minimum_interval: 180
+  expected_counties: 133
+  baseline_url: https://enr.elections.virginia.gov/cdn/results/Virginia/export-2024NovemberGeneral.json
+  baseline_election_date: '2024-11-05'
+  enabled: true
+  source_kind: official
+- id: tx
+  label: Texas Secretary of State
+  state: TX
+  adapter: texas
+  url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815
+  metadata_url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/53815
+  minimum_interval: 300
+  expected_counties: 254
+  baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+  baseline_adapter: county_baseline
+  baseline_election_date: '2024-11-05'
+  baseline_note: Public compilation of raw 2024 county counts; not official live data
+    or another forecast.
+  enabled: true
+  source_kind: official
+- id: mi_kent
+  label: Kent County Clerk, Michigan
+  state: MI
+  adapter: enhanced_voting
+  url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json
+  minimum_interval: 180
+  baseline_url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-2024KentCountyGeneral.json
+  baseline_election_date: '2024-11-05'
+  coverage_note: One county only. Does not constitute statewide Michigan coverage.
+  enabled: true
+  source_kind: official
+- id: ia_ledger
+  label: Iowa Ledger, relaying Iowa Secretary of State totals
+  state: IA
+  adapter: iowa_ledger
+  url: https://iowaledger.com/results/2026.json
+  minimum_interval: 180
+  coverage_note: Alternative raw-results publisher. Contest totals only, no county
+    breakdown or counted-vote estimate.
+  enabled: true
+  source_kind: secondary
+- id: oh
+  label: Ohio Secretary of State
+  state: OH
+  adapter: ohio
+  url: https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob
+  minimum_interval: 180
+  expected_counties: 88
+  baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+  baseline_adapter: county_baseline
+  baseline_election_date: '2024-11-05'
+  baseline_note: Public compilation of raw 2024 county counts; not official live data
+    or another forecast.
+  coverage_note: Feed currently marked IsTest=true; unavailable until an explicitly
+    production payload is published.
+  enabled: true
+  source_kind: official
+- id: fl
+  label: Florida Division of Elections
+  state: FL
+  adapter: florida
+  url: https://flelectionfiles.floridados.gov/enightfilespublic/20261103_ElecResultsFL.txt
+  minimum_interval: 180
+  expected_counties: 67
+  baseline_url: https://flelectionfiles.floridados.gov/enightfilespublic/20241105_ElecResultsFL.txt
+  baseline_election_date: '2024-11-05'
+  coverage_note: Direct official county results file; no publication timestamp or
+    estimated vote fraction. Some uncontested races may be omitted by the state.
+  enabled: true
+  source_kind: official
+- id: ca
+  label: California Secretary of State
+  state: CA
+  adapter: california
+  url: https://media.sos.ca.gov/media/us-rep.json
+  metadata_url: https://media.sos.ca.gov/media/json-endpoints.csv
+  minimum_interval: 180
+  expected_counties: 58
+  coverage_note: All 52 House districts and 58 counties. Companion official endpoint
+    index binds the undated JSON to the November 3 general election. New congressional
+    boundaries require compatible historical baselines.
+  enabled: true
+  source_kind: official
+- id: wa
+  label: Washington Secretary of State
+  state: WA
+  adapter: washington
+  url: https://app.enhancedvoting.com/cdn/results/washington/export-20261103.json
+  minimum_interval: 180
+  expected_counties: 39
+  coverage_note: All 10 House districts and 39 counties. County totals only; precinct
+    percentages are not used as vote fractions.
+  enabled: true
+  source_kind: official
+- id: ak_summary
+  label: Alaska Division of Elections, official summary PDF
+  state: AK
+  adapter: alaska_summary
+  url: https://www.elections.alaska.gov/enr/26GENR/results/ElectionSummaryReportRPT.pdf
+  minimum_interval: 300
+  coverage_note: Statewide Senate and House first-choice totals only. Aggregate-only;
+    excludes ranked-choice transfers and makes no finality inference. Requires pdftotext
+    (poppler-utils).
+  enabled: true
+  source_kind: official
+- id: ar
+  label: Arkansas Secretary of State, Tally results
+  state: AR
+  adapter: arkansas_tally
+  url: https://results.tally-enr.com/results/arkansas/11b07106-031e-4d7c-911a-d01fb473d6dd/FullDataFile.json
+  metadata_url: https://enr-results-api.totalresults.com/Election/GetElectionInfo?cId=arkansas&electionID=11b07106-031e-4d7c-911a-d01fb473d6dd
+  minimum_interval: 180
+  expected_counties: 75
+  coverage_note: Official Senate and all four House contests, county totals. Election
+    metadata validates UUID/date, county and party identities, and disjoint vote methods.
+    Nested precincts and statewide summaries are excluded.
+  enabled: true
+  source_kind: official
+- id: mo_st_charles
+  label: St. Charles County Election Authority, Missouri
+  state: MO
+  adapter: st_charles
+  url: https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/summary_33.csv
+  metadata_url: https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/en/Index_33.html
+  minimum_interval: 300
+  coverage_note: Official St. Charles County portions of House districts 2 and 3 only;
+    does not constitute full district coverage. CSV counts reconcile against voting-method
+    subtotals; linked election page supplies current-date proof.
+  enabled: true
+  source_kind: official
+- id: in
+  label: Indiana Secretary of State
+  state: IN
+  adapter: indiana
+  url: https://enr.indianavoters.in.gov/site/data/OffCatC_1005_{version}.json
+  version_url: https://enr.indianavoters.in.gov/site/data/settings.json
+  metadata_url: https://enr.indianavoters.in.gov/site/data/settings.json
+  version_path:
+  - Root
+  - VersionType
+  minimum_interval: 120
+  expected_counties: 92
+  coverage_note: Official county portions across all nine House districts. County
+    totals are checked against both statewide and district summaries. No historical
+    House manifest is supplied, so this addition alone does not authorize direct inference.
+  enabled: true
+  source_kind: official
+- id: ne
+  label: Nebraska Secretary of State
+  state: NE
+  adapter: nebraska
+  url: https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=All&map=CTY
+  metadata_url: https://electionresults.nebraska.gov/
+  minimum_interval: 180
+  aggregate_only: true
+  coverage_note: Official totals for Senate and all three House districts. Despite
+    map=CTY in the URL, rows are contest aggregates. Election date is checked against
+    the official homepage and 2026 contest/candidate IDs; CSV generation time is not
+    a new vote report.
+  enabled: true
+  source_kind: official
+- id: mi_kalamazoo
+  label: Kalamazoo County Clerk, Michigan
+  state: MI
+  adapter: enhanced_voting
+  url: https://app.enhancedvoting.com/cdn/results/kalamazoo-county-mi/export-2026-General-Election.json
+  minimum_interval: 180
+  coverage_note: Kalamazoo County only, including Senate and county portions of House
+    districts 4 and 5. This is not complete Michigan statewide or district coverage.
+  enabled: true
+  source_kind: official
+- id: ny_rockland
+  label: Rockland County Board of Elections, New York
+  state: NY
+  adapter: new_york_county
+  url: https://app.enhancedvoting.com/cdn/results/rockland-county-ny/export-GE2026.json
+  page_url: https://app.enhancedvoting.com/results/public/rockland-county-ny/GE2026
+  minimum_interval: 180
+  coverage_note: Rockland County portion of NY-17 only. Exact matching candidate names
+    consolidate fusion ballot lines. No complete district geography or historical
+    baseline established.
+  enabled: true
+  source_kind: official
+- id: md_house
+  label: Maryland State Board of Elections
+  state: MD
+  adapter: maryland_house
+  url: https://elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html
+  minimum_interval: 180
+  coverage_note: Official totals for all eight House districts. NR means not reported;
+    affected contests remain unknown. Contest totals only; no county inference.
+  enabled: true
+  source_kind: official
+- id: nj_atlantic
+  label: Atlantic County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/#/summary
+  minimum_interval: 180
+  coverage_note: Atlantic County portion of NJ-02 and Senate only. County reporting
+    does not establish complete district geography or remaining vote.
+  enabled: true
+  source_kind: official
+- id: nj_ocean
+  label: Ocean County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Ocean/127556/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/web.345435/#/summary
+  minimum_interval: 180
+  coverage_note: Ocean County portions of NJ-02, NJ-04 and Senate only. No complete
+    district geography or historical baseline established.
+  enabled: true
+  source_kind: official
+- id: nj_gloucester
+  label: Gloucester County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/web.345435/#/summary
+  minimum_interval: 180
+  coverage_note: Gloucester County portions of NJ-01, NJ-02 and Senate only. Explicit
+    congressional names identify House contests despite the publisher's State category.
+  enabled: true
+  source_kind: official
+- id: nj_morris
+  label: Morris County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Morris/127576/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Morris/127576/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Morris/127576/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Morris/127576/web.345435/#/summary
+  minimum_interval: 180
+  coverage_note: Disabled. Inspected version 382416 explicitly has istestmode=1. NJ-07
+    and NJ-11 county portions require production validation before use.
+  enabled: false
+  source_kind: official
+- id: la_senate
+  state: LA
+  label: Louisiana Secretary of State, Senate by parish
+  adapter: louisiana_senate
+  source_kind: official
+  url: https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=20261103/csv/ByParish_67997.csv
+  metadata_url: https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=ElectionDates.htm
+  minimum_interval: 180
+  expected_counties: 64
+  expected_races:
+  - LA-S
+  coverage_note: Official Senate candidate totals for all 64 parishes. Date is bound
+    by the dated download and official election catalog; CSV has no publication timestamp.
+  enabled: true
+- id: civic_ak_s
+  label: CivicAPI raw results — AK-S
+  state: AK
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/86916
+  expected_races:
+  - AK-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_al_02
+  label: CivicAPI raw results — AL-02
+  state: AL
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/86901
+  expected_races:
+  - AL-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_co_03
+  label: CivicAPI raw results — CO-03
+  state: CO
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87012
+  expected_races:
+  - CO-03
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_co_04
+  label: CivicAPI raw results — CO-04
+  state: CO
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87013
+  expected_races:
+  - CO-04
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_co_05
+  label: CivicAPI raw results — CO-05
+  state: CO
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87014
+  expected_races:
+  - CO-05
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_co_08
+  label: CivicAPI raw results — CO-08
+  state: CO
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87017
+  expected_races:
+  - CO-08
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ia_01
+  label: CivicAPI raw results — IA-01
+  state: IA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87147
+  expected_races:
+  - IA-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ia_02
+  label: CivicAPI raw results — IA-02
+  state: IA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87148
+  expected_races:
+  - IA-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ia_03
+  label: CivicAPI raw results — IA-03
+  state: IA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87149
+  expected_races:
+  - IA-03
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ia_s
+  label: CivicAPI raw results — IA-S
+  state: IA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87151
+  expected_races:
+  - IA-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ks_02
+  label: CivicAPI raw results — KS-02
+  state: KS
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87159
+  expected_races:
+  - KS-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ks_s
+  label: CivicAPI raw results — KS-S
+  state: KS
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87162
+  expected_races:
+  - KS-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_md_01
+  label: CivicAPI raw results — MD-01
+  state: MD
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87190
+  expected_races:
+  - MD-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_me_02
+  label: CivicAPI raw results — ME-02
+  state: ME
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87187
+  expected_races:
+  - ME-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_me_s
+  label: CivicAPI raw results — ME-S
+  state: ME
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87188
+  expected_races:
+  - ME-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mi_01
+  label: CivicAPI raw results — MI-01
+  state: MI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87201
+  expected_races:
+  - MI-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mi_04
+  label: CivicAPI raw results — MI-04
+  state: MI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87204
+  expected_races:
+  - MI-04
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mi_07
+  label: CivicAPI raw results — MI-07
+  state: MI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87207
+  expected_races:
+  - MI-07
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mi_10
+  label: CivicAPI raw results — MI-10
+  state: MI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87210
+  expected_races:
+  - MI-10
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mi_s
+  label: CivicAPI raw results — MI-S
+  state: MI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87214
+  expected_races:
+  - MI-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mn_01
+  label: CivicAPI raw results — MN-01
+  state: MN
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87221
+  expected_races:
+  - MN-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mn_08
+  label: CivicAPI raw results — MN-08
+  state: MN
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87228
+  expected_races:
+  - MN-08
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mn_s
+  label: CivicAPI raw results — MN-S
+  state: MN
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87229
+  expected_races:
+  - MN-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mo_02
+  label: CivicAPI raw results — MO-02
+  state: MO
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87235
+  expected_races:
+  - MO-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ms_s
+  label: CivicAPI raw results — MS-S
+  state: MS
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/81004
+  expected_races:
+  - MS-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_mt_01
+  label: CivicAPI raw results — MT-01
+  state: MT
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87245
+  expected_races:
+  - MT-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ne_01
+  label: CivicAPI raw results — NE-01
+  state: NE
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87251
+  expected_races:
+  - NE-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ne_02
+  label: CivicAPI raw results — NE-02
+  state: NE
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87252
+  expected_races:
+  - NE-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ne_s
+  label: CivicAPI raw results — NE-S
+  state: NE
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87254
+  expected_races:
+  - NE-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_nh_s
+  label: CivicAPI raw results — NH-S
+  state: NH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87283
+  expected_races:
+  - NH-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_nj_02
+  label: CivicAPI raw results — NJ-02
+  state: NJ
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87291
+  expected_races:
+  - NJ-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_nj_07
+  label: CivicAPI raw results — NJ-07
+  state: NJ
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87296
+  expected_races:
+  - NJ-07
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ny_01
+  label: CivicAPI raw results — NY-01
+  state: NY
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87303
+  expected_races:
+  - NY-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ny_02
+  label: CivicAPI raw results — NY-02
+  state: NY
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87304
+  expected_races:
+  - NY-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ny_17
+  label: CivicAPI raw results — NY-17
+  state: NY
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87319
+  expected_races:
+  - NY-17
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ny_21
+  label: CivicAPI raw results — NY-21
+  state: NY
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87323
+  expected_races:
+  - NY-21
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_01
+  label: CivicAPI raw results — OH-01
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87350
+  expected_races:
+  - OH-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_07
+  label: CivicAPI raw results — OH-07
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87356
+  expected_races:
+  - OH-07
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_08
+  label: CivicAPI raw results — OH-08
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87357
+  expected_races:
+  - OH-08
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_09
+  label: CivicAPI raw results — OH-09
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87358
+  expected_races:
+  - OH-09
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_10
+  label: CivicAPI raw results — OH-10
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87359
+  expected_races:
+  - OH-10
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_14
+  label: CivicAPI raw results — OH-14
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87363
+  expected_races:
+  - OH-14
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_15
+  label: CivicAPI raw results — OH-15
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87364
+  expected_races:
+  - OH-15
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_oh_s
+  label: CivicAPI raw results — OH-S
+  state: OH
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87527
+  expected_races:
+  - OH-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_ok_05
+  label: CivicAPI raw results — OK-05
+  state: OK
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87513
+  expected_races:
+  - OK-05
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_pa_01
+  label: CivicAPI raw results — PA-01
+  state: PA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87376
+  expected_races:
+  - PA-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_pa_07
+  label: CivicAPI raw results — PA-07
+  state: PA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87382
+  expected_races:
+  - PA-07
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_pa_08
+  label: CivicAPI raw results — PA-08
+  state: PA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87383
+  expected_races:
+  - PA-08
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_pa_10
+  label: CivicAPI raw results — PA-10
+  state: PA
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87385
+  expected_races:
+  - PA-10
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_sc_01
+  label: CivicAPI raw results — SC-01
+  state: SC
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87402
+  expected_races:
+  - SC-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_sc_02
+  label: CivicAPI raw results — SC-02
+  state: SC
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87403
+  expected_races:
+  - SC-02
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_sc_04
+  label: CivicAPI raw results — SC-04
+  state: SC
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87405
+  expected_races:
+  - SC-04
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_sc_s
+  label: CivicAPI raw results — SC-S
+  state: SC
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87409
+  expected_races:
+  - SC-S
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_tn_07
+  label: CivicAPI raw results — TN-07
+  state: TN
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87454
+  expected_races:
+  - TN-07
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_tn_08
+  label: CivicAPI raw results — TN-08
+  state: TN
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87455
+  expected_races:
+  - TN-08
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_tn_09
+  label: CivicAPI raw results — TN-09
+  state: TN
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87456
+  expected_races:
+  - TN-09
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_wi_01
+  label: CivicAPI raw results — WI-01
+  state: WI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87483
+  expected_races:
+  - WI-01
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_wi_03
+  label: CivicAPI raw results — WI-03
+  state: WI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87485
+  expected_races:
+  - WI-03
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_wi_06
+  label: CivicAPI raw results — WI-06
+  state: WI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87488
+  expected_races:
+  - WI-06
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: civic_wi_08
+  label: CivicAPI raw results — WI-08
+  state: WI
+  adapter: civic_api
+  source_kind: secondary
+  url: https://civicapi.org/api/v2/race/87490
+  expected_races:
+  - WI-08
+  minimum_interval: 300
+  upstream_url: https://civicapi.org/
+  coverage_note: Full-race candidate counts only; provider calls, forecasts and expected-vote
+    percentages are ignored. County detail is used only when candidate rosters and
+    sums reconcile to the contest total. No independent historical geography is supplied
+    by this source.
+  enabled: true
+- id: polling_desk
+  label: Polling Desk raw totals, via CivicAPI
+  state: US
+  adapter: polling_desk
+  source_kind: secondary
+  url: https://polling-desk.com/results.csv
+  upstream_url: https://civicapi.org/
+  minimum_interval: 300
+  aggregate_only: true
+  coverage_note: 'Whole-board fallback: 435 House and 35 Senate contest totals. Same
+    CivicAPI upstream, not independent corroboration. CSV has a 2026 catalog identifier
+    but no explicit election-date or test-data field; lower-priority raw display only,
+    never direct model evidence.'
+  enabled: true

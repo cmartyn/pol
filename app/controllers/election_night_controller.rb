@@ -2,7 +2,7 @@ require "digest"
 
 class ElectionNightController < PublicController
   before_action :load_snapshot
-  helper_method :night_probability, :night_time, :night_status, :night_needle_point, :night_race_status, :night_prior_old?
+  helper_method :night_probability, :night_time, :night_status, :night_needle_point, :night_race_status, :night_prior_old?, :night_raw_coverage
 
   def index
   end
@@ -79,5 +79,14 @@ class ElectionNightController < PublicController
       when "uncontested" then "Uncontested"
       else "Prior only"
       end
+    end
+
+    def night_raw_coverage(race)
+      return "No raw source" if race["has_raw_source"] == false
+
+      label = { "county" => "County detail", "contest" => "Contest total", "partial" => "Partial coverage" }[race["raw_coverage_level"]]
+      return unless label
+
+      race["raw_source_stale"] ? "#{label} · delayed" : label
     end
 end

@@ -34,6 +34,7 @@
 .night-coverage-stats dt { color: #526170; font-size: .83rem; }
 .night-coverage-stats dd { font-size: 2rem; font-weight: 600; margin-top: .2rem; }
 .night-coverage-stats dd span { color: #728391; font-size: 1rem; font-weight: 400; }
+.night-coverage-note { color: #526170; font-size: .8rem; line-height: 1.55; margin-bottom: .7rem; max-width: 54rem; }
 .night-details { border-top: 1px solid #dbe2e7; }
 .night-details summary { cursor: pointer; padding: 1rem 0; font-weight: 600; font-size: .9rem; }
 .night-details summary span { color: #728391; font-weight: 400; margin-left: .6rem; }
@@ -46,6 +47,7 @@
 .night-table thead th { font-weight: 600; color: #526170; background: #f5f7f8; }
 .night-race-status { font-size: .78rem; color: #526170; }
 .night-race-status--returns { color: #146047; font-weight: 550; }
+.night-raw-level { max-width: 11rem; white-space: normal; color: #526170; font-size: .73rem; line-height: 1.45; margin-top: .25rem; }
 .night-race-reason { max-width: 20rem; min-width: 12rem; white-space: normal; overflow-wrap: anywhere; color: #526170; font-size: .75rem; line-height: 1.5; margin-top: .3rem; }
 .night-source-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.3rem 2rem; margin-top: 1.4rem; padding-bottom: 1.3rem; list-style: none; }
 .night-source-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem .7rem; }

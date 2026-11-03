@@ -1,0 +1,14 @@
+{
+  "parententityname": "nj",
+  "entityname": "Atlantic",
+  "websiteupdatedat": "11/2/2026 7:48:27 AM EST",
+  "settings": {
+    "electiondetails": {
+      "electiondate": "11/3/2026",
+      "isstate": false,
+      "istestmode": "false",
+      "showtestdatawatermark": "0",
+      "internalname": "2026 General Election"
+    }
+  }
+}

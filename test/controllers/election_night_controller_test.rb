@@ -24,6 +24,7 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
       assert_select ".night-dial-hand", count: 2
       assert_select ".night-status strong", "Experimental live forecast"
       assert_select ".night-race-status", "Returns + prior"
+      assert_select ".night-observed-votes > span", "12,345"
       assert_select ".night-method-body", /Independent historical turnout assumption/
     end
   end
@@ -124,6 +125,27 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "source provenance is collapsed while upstream attribution remains visible" do
+    value = snapshot.deep_dup
+    value["sources"] += [
+      { "id" => "civic_nc_01", "label" => "CivicAPI raw results — NC-01", "url" => "https://civicapi.org/api/v2/race/87299", "status" => "ok" },
+      { "id" => "polling_desk", "label" => "Polling Desk raw totals, via CivicAPI", "url" => "https://polling-desk.com/results.csv", "status" => "ok" }
+    ]
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select "#night-source-details[open]", count: 0
+      assert_select "#night-source-details > summary", /Source status and provenance/
+      assert_select "#night-source-details > summary span", "3 sources"
+      assert_select "#night-source-details .night-source-list > li", count: 3
+      assert_select ".night-sources > #night-source-attribution a[href='https://civicapi.org/']", "CivicAPI"
+      assert_select ".night-sources > #night-source-attribution a[href='https://polling-desk.com/results']", "Polling Desk"
+    end
+    with_night_snapshot(snapshot) do
+      get "/election-night"
+      assert_select "#night-source-attribution", count: 0
+    end
+  end
+
   test "source notes explain exclusions while baseline failures remain plain and safe" do
     value = snapshot.deep_dup
     value["sources"] = [ {
@@ -169,6 +191,50 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
         assert_select "[data-testid='night-old-prior']", count: 0
         assert_select ".night-timestamp", /Pre-election prior frozen Not yet available/
       end
+    end
+  end
+
+  test "connected competitive coverage is separate from partial coverage and model evidence" do
+    value = snapshot.deep_dup
+    value["coverage"].merge!(
+      "races_with_raw_sources" => 400,
+      "competitive_races_total" => 125,
+      "competitive_races_with_raw_sources" => 10,
+      "competitive_races_with_county_sources" => 3,
+      "competitive_races_with_contest_sources" => 7,
+      "competitive_races_with_partial_sources" => 2
+    )
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select "[data-testid='night-competitive-coverage'] dt", "Competitive races with raw sources"
+      assert_select "[data-testid='night-competitive-coverage'] dd", "10 / 125"
+      assert_select "[data-testid='night-model-coverage'] dt", "Races directly using returns"
+      assert_select "[data-testid='night-model-coverage'] dd", "1 / 470"
+      assert_select "[data-testid='night-raw-breakdown']", "3 with county detail · 7 with contest totals · 2 with partial coverage only."
+      assert_select ".night-coverage-note", /Partial coverage covers only some areas and is excluded/
+      assert_select ".night-coverage-note", /direct model update also needs usable returns/
+      assert_select ".night-method-body", /400 of 470 have whole-race raw sources/
+    end
+  end
+
+  test "missing raw source is unknown while a connected zero and delayed partial total remain distinct" do
+    value = snapshot.deep_dup
+    value["races"] = [
+      { "race_key" => "NC-01", "has_raw_source" => true, "raw_coverage_level" => "contest", "observed_votes" => 0, "status" => "prior_only" },
+      { "race_key" => "VA-01", "has_raw_source" => false, "raw_coverage_level" => "none", "observed_votes" => 999, "status" => "shared_update" },
+      { "race_key" => "NY-17", "has_raw_source" => true, "raw_coverage_level" => "partial", "raw_source_stale" => true, "observed_votes" => 1234, "status" => "prior_only" },
+      { "race_key" => "NH-S", "has_raw_source" => true, "raw_coverage_level" => "county", "observed_votes" => 5678, "status" => "prior_only" }
+    ]
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select "tr[data-race-key='NC-01'] .night-observed-votes > span", "0"
+      assert_select "tr[data-race-key='NC-01'] .night-raw-level", "Contest total"
+      assert_select "tr[data-race-key='VA-01'] .night-observed-votes > span", "—"
+      assert_select "tr[data-race-key='VA-01'] .night-raw-level", "No raw source"
+      assert_select "tr[data-race-key='NY-17'] .night-observed-votes > span", "1,234"
+      assert_select "tr[data-race-key='NY-17'] .night-raw-level", "Partial coverage · delayed"
+      assert_select "tr[data-race-key='NH-S'] .night-raw-level", "County detail"
+      assert_select "tr[data-race-key='NH-S'] .night-race-status", "Prior only"
     end
   end
 

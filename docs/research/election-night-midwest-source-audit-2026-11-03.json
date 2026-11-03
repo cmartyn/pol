@@ -1,0 +1,652 @@
+{
+  "checked_on": "2026-11-03",
+  "purpose": "Midwest direct-source coverage audit; raw candidate vote counts only. No publisher forecasts/probabilities ingested.",
+  "scope_note": "Aggregate national fallback investigated independently by parent agent. This audit records only this agent's verified official additions and remaining gaps; successful HTTP alone does not establish usable data.",
+  "proposals_file": "docs/research/election-night-midwest-sources.yml",
+  "states": [
+    {
+      "state": "IN",
+      "target_races": [
+        "IN-05"
+      ],
+      "status": "official_county_adapter_ready",
+      "race_keys": [
+        "IN-01",
+        "IN-02",
+        "IN-03",
+        "IN-04",
+        "IN-05",
+        "IN-06",
+        "IN-07",
+        "IN-08",
+        "IN-09"
+      ],
+      "geography": "100 county/district units; 92 distinct counties",
+      "election_identity": "settings.Root.CurrentElection=11/03/2026; ElectionType=G; StateFP=18. VersionType=B in archived sample.",
+      "samples": [
+        "in-settings",
+        "in-house",
+        "in-index",
+        "in-controller",
+        "in-fetcher"
+      ],
+      "missing": "No prior-year House geographic manifest attached; raw coverage is not direct-model eligibility."
+    },
+    {
+      "state": "NE",
+      "target_races": [
+        "NE-S",
+        "NE-01",
+        "NE-02"
+      ],
+      "status": "official_contest_aggregate_adapter_ready",
+      "race_keys": [
+        "NE-S",
+        "NE-01",
+        "NE-02",
+        "NE-03"
+      ],
+      "geography": "Contest totals only; query map=CTY does not mean county rows",
+      "election_identity": "Official homepage hidElectionDate=11/3/2026; heading General Election November 3, 2026; pinned race/candidate IDs in parser.",
+      "samples": [
+        "ne-home",
+        "ne-media",
+        "ne-csv",
+        "ne-cg",
+        "ne-counties"
+      ],
+      "missing": "No county breakdown from tested CSV. Dan Osborn PET remains other_votes; no implied Democratic caucus."
+    },
+    {
+      "state": "MI",
+      "target_races": [
+        "MI-S",
+        "MI-01",
+        "MI-04",
+        "MI-07",
+        "MI-10"
+      ],
+      "status": "additional_official_county_source_ready_statewide_fallback_needed",
+      "race_keys": [
+        "MI-S",
+        "MI-04",
+        "MI-05"
+      ],
+      "geography": "Kalamazoo County only; existing registry already has Kent County",
+      "election_identity": "Kalamazoo export electionDate=2026-11-03 and electionName November 3rd, 2026 General Election. Official county announcement links exact election app.",
+      "samples": [
+        "mi-kalamazoo",
+        "mi-kalamazoo-page",
+        "mi-livingston",
+        "mi-macomb",
+        "mi-marquette",
+        "mi-wdiv"
+      ],
+      "missing": "MI-01/07/10 full district and MI-S complete statewide county coverage absent. Livingston PDF exists but official page says disregard before election-night (test); Macomb links Clarity challenge and PDF; Marquette archive latest August primary. WDIV secondary raw-result page found; no external probabilities consumed.",
+      "official_link_proof": "https://www.kalcounty.gov/m/NewsFlash/Home/Detail/270"
+    },
+    {
+      "state": "OH",
+      "target_races": [
+        "OH-S",
+        "OH-01",
+        "OH-07",
+        "OH-08",
+        "OH-09",
+        "OH-10",
+        "OH-14",
+        "OH-15"
+      ],
+      "status": "official_test_data_quarantined_fallback_needed",
+      "race_keys": [],
+      "geography": "Official XML scaffolds all counties, but test data is not live coverage",
+      "election_identity": "ElectionReport IsTest=true in fresh archived sample; existing adapter rejects it.",
+      "samples": [
+        "oh-xml",
+        "oh-hamilton"
+      ],
+      "missing": "All targeted production official returns until test flag clears. Hamilton official results link leads to bot challenge; no bypass attempted."
+    },
+    {
+      "state": "MN",
+      "target_races": [
+        "MN-S",
+        "MN-01",
+        "MN-08"
+      ],
+      "status": "official_test_data_quarantined_fallback_needed",
+      "race_keys": [],
+      "geography": "Public county text file and county dictionary available, but current election media page explicitly Test Results",
+      "election_identity": "Media page ID201 says Test Results Tuesday, November 3, 2026. Files under /20261103/; test flag is only on metadata page, cannot safely use files alone.",
+      "samples": [
+        "mn-media",
+        "mn-allcounties",
+        "mn-counties",
+        "mn-house",
+        "mn-layout",
+        "mn-county",
+        "mn-npr"
+      ],
+      "missing": "All current production direct returns. Layout request returned bot challenge despite HTTP200. St Louis County points August primary. NPR general election page is an alternative raw publisher to investigate."
+    },
+    {
+      "state": "KS",
+      "target_races": [
+        "KS-S",
+        "KS-02"
+      ],
+      "status": "official_blocked_fallback_needed",
+      "race_keys": [],
+      "geography": "No verified complete current county set",
+      "samples": [
+        "ks-index",
+        "ks-shawnee",
+        "ks-kmbc"
+      ],
+      "missing": "Official ent.sos.ks.gov returns403. Shawnee official election page provides election information and past results but no current data export found. KMBC current general-election page available as secondary raw publisher."
+    },
+    {
+      "state": "WI",
+      "target_races": [
+        "WI-01",
+        "WI-03",
+        "WI-06",
+        "WI-08"
+      ],
+      "status": "county_collection_incomplete_fallback_needed",
+      "race_keys": [],
+      "geography": "County-published returns; no complete targeted district sets assembled",
+      "samples": [
+        "wi-lacrosse",
+        "wi-milwaukee",
+        "wi-brown",
+        "wi-fox",
+        "wi-brown-results",
+        "wi-brown-2026"
+      ],
+      "missing": "WEC directory, La Crosse and Milwaukee direct requests blocked. La Crosse web index exposes November PDFs; Brown official 2026 directory links November zero-report PDFs but no current machine-readable export. Racine/Fond du Lac county alternatives searched. Fox AP raw-result page available; not ingested by this adapter work."
+    },
+    {
+      "state": "MO",
+      "target_races": [
+        "MO-02"
+      ],
+      "status": "additional_official_county_source_ready_full_district_fallback_needed",
+      "race_keys": [
+        "MO-02",
+        "MO-03"
+      ],
+      "geography": "St. Charles County portions only",
+      "samples": [
+        "mo-index",
+        "mo-sos",
+        "mo-saintcharles",
+        "mo-saintcharles-current",
+        "mo-kcur",
+        "mo-saintcharles-results",
+        "mo-saintcharles-csv",
+        "mo-live-js"
+      ],
+      "missing": "SOS index and ENR host return403. St Charles public summary CSV now added after following current official page rather than stale search index. Other county portions remain absent; full MO-02 aggregate fallback still needed. KCUR secondary raw-result page archived.",
+      "election_identity": "Official county page links election33; live metadata heading November 3, 2026 General Election; CSV county heading and full candidate scaffold verified."
+    }
+  ],
+  "samples": [
+    {
+      "id": "in-additional",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-additional.body",
+      "sha256": "023ff2b23e349fc2cc7246bd89e4dbb0188acb6b561596b8620ebee3c864531c",
+      "bytes": 645,
+      "retrieved_at": "2026-11-03T19:21:50.442831+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/clientData/additionalSettings.json"
+    },
+    {
+      "id": "in-controller",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-controller.body",
+      "sha256": "90c0050c786746e38602c53919d6a1ac855b94bb120731bc81cac8e05a7d92fb",
+      "bytes": 25033,
+      "retrieved_at": "2026-11-03T19:21:21.540593+00:00",
+      "http_status": null,
+      "url": "https://enr.indianavoters.in.gov/site/Scripts/EnrAngular/Initialization/enrMainController.js?version=1.0"
+    },
+    {
+      "id": "in-download",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-download.body",
+      "sha256": "5bb39ce1e496bf21f3fc7ad502e5a36ba88deab9d899a62c5b2528b832e562e2",
+      "bytes": 2511,
+      "retrieved_at": "2026-11-03T19:22:02.862352+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/Scripts/EnrAngular/Directives/enrDownloadResults.js"
+    },
+    {
+      "id": "in-export",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-export.body",
+      "sha256": "51798b3db5e3f58138da96ea7afb36a559b3dd8d104a625fd211c971227eae33",
+      "bytes": 9622,
+      "retrieved_at": "2026-11-03T19:22:03.908788+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/Scripts/EnrAngular/Services/exportService.js"
+    },
+    {
+      "id": "in-fetcher",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-fetcher.body",
+      "sha256": "3441d67db473b1986764f0cf1f8854e6427a4d842eba84010ae5416e9b93ed33",
+      "bytes": 3730,
+      "retrieved_at": "2026-11-03T19:20:37.103363+00:00",
+      "http_status": null,
+      "url": "https://enr.indianavoters.in.gov/site/Scripts/EnrAngular/Services/jsonDataFetcher.js"
+    },
+    {
+      "id": "in-house",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-house.body",
+      "sha256": "39688234ac93a7e7f43eb81ffd9605f58cf2533b2a0eaf8776ec9f5c8a1b604e",
+      "bytes": 115592,
+      "retrieved_at": "2026-11-03T19:23:02.996059+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/data/OffCatC_1005_B.json"
+    },
+    {
+      "id": "in-index",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-index.body",
+      "sha256": "ddef65a2e1c9cb154f5327d9c9665af092fd899e06d6ff9d3a791e207e82fd62",
+      "bytes": 16509,
+      "retrieved_at": "2026-11-03T19:20:06.497311+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/index.html"
+    },
+    {
+      "id": "in-init",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-init.body",
+      "sha256": "407f7136b15bcf2a77601cbf0020f781a5a21f236fb2f25d51102fe87d3f79e5",
+      "bytes": 1028,
+      "retrieved_at": "2026-11-03T19:20:37.522813+00:00",
+      "http_status": null,
+      "url": "https://enr.indianavoters.in.gov/site/Scripts/EnrAngular/Initialization/initApp.js"
+    },
+    {
+      "id": "in-offices",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-offices.body",
+      "sha256": "0341eb39fa5d62ba27809f01f82c861f3d4468739e81f2deabcb2e385222b44b",
+      "bytes": 21554,
+      "retrieved_at": "2026-11-03T19:22:03.957721+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/data/statewideElectionsC_B.json"
+    },
+    {
+      "id": "in-settings",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-settings.body",
+      "sha256": "d9e6735bd0d88f2ba1288e84960abeefe7e2bcf7d79ac2eb66329f066a971d7a",
+      "bytes": 3577,
+      "retrieved_at": "2026-11-03T19:21:52.453924+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/data/settings.json"
+    },
+    {
+      "id": "in-ticker",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-in-ticker.body",
+      "sha256": "4e0d2aa570b3328eb7ee8672547010bbe9b326ae9a7c61870324cf4821ac02bb",
+      "bytes": 6010,
+      "retrieved_at": "2026-11-03T19:22:04.093814+00:00",
+      "http_status": 200,
+      "url": "https://enr.indianavoters.in.gov/site/data/statewideTickerC_B.json"
+    },
+    {
+      "id": "ks-index",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ks-index.body",
+      "sha256": "ad64c71ac2eb367580d3b72a13f20b11f90a41045368da57ced5bf1113bb01cf",
+      "bytes": 659272,
+      "retrieved_at": "2026-11-03T19:20:06.580648+00:00",
+      "http_status": 403,
+      "url": "https://ent.sos.ks.gov/"
+    },
+    {
+      "id": "ks-kmbc",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ks-kmbc.body",
+      "sha256": "ab783fc31a6523a411d4b7ca2aef7d2674d13b80312c371e57f51fe6438ace1a",
+      "bytes": 430348,
+      "retrieved_at": "2026-11-03T19:23:03.863482+00:00",
+      "http_status": 200,
+      "url": "https://www.kmbc.com/article/kansas-election-results-us-senate-governor-ag/74298121"
+    },
+    {
+      "id": "ks-shawnee",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ks-shawnee.body",
+      "sha256": "3033c4146b0a242c5d7be32b1fd3b7c5ec008f5daede3f47317f2bb3d6727d5e",
+      "bytes": 175395,
+      "retrieved_at": "2026-11-03T19:21:52.248313+00:00",
+      "http_status": 200,
+      "url": "https://snco.gov/election/"
+    },
+    {
+      "id": "mi-kalamazoo-page",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mi-kalamazoo-page.body",
+      "sha256": "b8aeb5748b55ff38686a1ad166b5ee5bffdd40dee95c40441d235c10a7b9b6d8",
+      "bytes": 5662,
+      "retrieved_at": "2026-11-03T19:21:51.442683+00:00",
+      "http_status": 403,
+      "url": "https://www.kalcounty.gov/m/NewsFlash/Home/Detail/270"
+    },
+    {
+      "id": "mi-kalamazoo",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mi-kalamazoo.body",
+      "sha256": "c170c528af8140e86b4708362f4a6caf9b1ac245a870e17b69a09e135c46bff0",
+      "bytes": 4352967,
+      "retrieved_at": "2026-11-03T19:21:33.873274+00:00",
+      "http_status": null,
+      "url": "https://app.enhancedvoting.com/cdn/results/kalamazoo-county-mi/export-2026-General-Election.json"
+    },
+    {
+      "id": "mi-livingston",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mi-livingston.body",
+      "sha256": "167b6dd02e740be69155171cf5a14d2f4b3de35fe05b4d77bc743b0860cda1c8",
+      "bytes": 395855,
+      "retrieved_at": "2026-11-03T19:23:04.256295+00:00",
+      "http_status": 200,
+      "url": "https://milivcounty.gov/elections/election-results/"
+    },
+    {
+      "id": "mi-macomb",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mi-macomb.body",
+      "sha256": "d857e3d01fcfbf3ceb235782338cd257bac6a685ce350ff74f534007bf173271",
+      "bytes": 58160,
+      "retrieved_at": "2026-11-03T19:25:32.251648+00:00",
+      "http_status": 200,
+      "url": "https://www.macombgov.org/departments/clerk-register-deeds/elections"
+    },
+    {
+      "id": "mi-marquette",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mi-marquette.body",
+      "sha256": "3746f8d26882d15a6e2d4ed796d13730cd4e9f98962b0a7585f5192b7eb48afb",
+      "bytes": 234365,
+      "retrieved_at": "2026-11-03T19:26:28.457064+00:00",
+      "http_status": 200,
+      "url": "https://electionarchive.mqtco.org/eng"
+    },
+    {
+      "id": "mi-wdiv",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mi-wdiv.body",
+      "sha256": "fc900ff2536e6ae3f20320258c943b1f575784d93a55f759b9f8a6eb5fbe8fa8",
+      "bytes": 676673,
+      "retrieved_at": "2026-11-03T19:26:28.188419+00:00",
+      "http_status": 200,
+      "url": "https://www.clickondetroit.com/decision-2026/"
+    },
+    {
+      "id": "mn-allcounties",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mn-allcounties.body",
+      "sha256": "374608a6ff43ec0f7868610b72200723ab388485e62dc4abea8c88a3b1cacf0a",
+      "bytes": 654902,
+      "retrieved_at": "2026-11-03T19:25:31.876196+00:00",
+      "http_status": 200,
+      "url": "https://electionresultsfiles.sos.mn.gov/20261103/allracesbycounty.txt"
+    },
+    {
+      "id": "mn-counties",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mn-counties.body",
+      "sha256": "1830c4b1993606049c397c7f318cf36db33219d660b1528ba4df074ab8e5a570",
+      "bytes": 1319,
+      "retrieved_at": "2026-11-03T19:25:32.044531+00:00",
+      "http_status": 200,
+      "url": "https://electionresultsfiles.sos.mn.gov/20261103/Cntytbl.txt"
+    },
+    {
+      "id": "mn-county",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mn-county.body",
+      "sha256": "16f94431e6159c0154e41fc44194ebb3b3ef99a225c5ea6e4d0ac6e93b7982d4",
+      "bytes": 112778,
+      "retrieved_at": "2026-11-03T19:23:04.649994+00:00",
+      "http_status": 200,
+      "url": "https://www.stlouiscountymn.gov/departments-a-z/auditor/elections-voting"
+    },
+    {
+      "id": "mn-house",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mn-house.body",
+      "sha256": "e65c3961287f225ef0e23dc3213df2fe94c80673417ceb52777a0875886eccb1",
+      "bytes": 2026,
+      "retrieved_at": "2026-11-03T19:21:51.138588+00:00",
+      "http_status": 200,
+      "url": "https://electionresultsfiles.sos.mn.gov/20261103/ushouse.txt"
+    },
+    {
+      "id": "mn-layout",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mn-layout.body",
+      "sha256": "564ef239f9177c92f081296ba0fdfbe67943c14b7cf5b8e36d0d36bfdd6209e7",
+      "bytes": 15088,
+      "retrieved_at": "2026-11-03T19:25:31.826003+00:00",
+      "http_status": 200,
+      "url": "https://electionresults.sos.mn.gov/Results/MediaFileLayout/Index?erselectionId=201"
+    },
+    {
+      "id": "mn-media",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mn-media.body",
+      "sha256": "1d1985d26463ba1f4b6a0767299ae8ea6af24edf12e8ceecaab404a3f7ac0b43",
+      "bytes": 44644,
+      "retrieved_at": "2026-11-03T19:20:06.516641+00:00",
+      "http_status": 200,
+      "url": "https://electionresults.sos.mn.gov/Select/MediaFiles/Index?ersElectionId=201"
+    },
+    {
+      "id": "mn-npr",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mn-npr.body",
+      "sha256": "50fa9c1a025be67b53abe00b7b42264975049e47e82c6bdef9ff83d49475e0d7",
+      "bytes": 15875,
+      "retrieved_at": "2026-11-03T19:26:28.073733+00:00",
+      "http_status": 200,
+      "url": "https://apps.npr.org/2026-election-results/minnesota.html"
+    },
+    {
+      "id": "mo-index",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-index.body",
+      "sha256": "15eab84c7bcac18877769059a2a1bc4c1c73dd1acd67df4c971e8193a5c3f178",
+      "bytes": 5385,
+      "retrieved_at": "2026-11-03T19:20:06.470323+00:00",
+      "http_status": 403,
+      "url": "https://www.sos.mo.gov/elections/results"
+    },
+    {
+      "id": "mo-kcur",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-kcur.body",
+      "sha256": "a2cc271e295c2b675fa6d00ab89a40a819c261bfd206e12d211a264460bbc106",
+      "bytes": 203386,
+      "retrieved_at": "2026-11-03T19:23:03.979758+00:00",
+      "http_status": 200,
+      "url": "https://www.kcur.org/politics-elections-and-government/2026-11-03/missouri-election-results-2026-november-amendments-proposition-congress"
+    },
+    {
+      "id": "mo-saintcharles-current",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-saintcharles-current.body",
+      "sha256": "35b14ae2de33c2f6dbc3c61d31e1292a2e38564813c6b23c11fc601ce0fda8f2",
+      "bytes": 153982,
+      "retrieved_at": "2026-11-03T19:26:29.382413+00:00",
+      "http_status": 200,
+      "url": "https://www.sccmo.org/410/Election-Authority?lv=true"
+    },
+    {
+      "id": "mo-saintcharles",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-saintcharles.body",
+      "sha256": "8663a4d014e8d823f4616223ba25c3f8c7491bf0fdd137295ac7111694371d3d",
+      "bytes": 101267,
+      "retrieved_at": "2026-11-03T19:21:51.324573+00:00",
+      "http_status": 404,
+      "url": "https://www.sccmo.org/415/Election-Results"
+    },
+    {
+      "id": "mo-sos",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-sos.body",
+      "sha256": "ab87e8bc478fcdf7f8fbb31819a003452fb39a3a30a1befcfbc0e820e2463ee9",
+      "bytes": 5385,
+      "retrieved_at": "2026-11-03T19:21:51.191653+00:00",
+      "http_status": 403,
+      "url": "https://enr.sos.mo.gov/"
+    },
+    {
+      "id": "ne-cg",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ne-cg.body",
+      "sha256": "cfdc2890859b124d50e6743f5665024f35aa8ff531899bc9901084ff1273448d",
+      "bytes": 1913,
+      "retrieved_at": "2026-11-03T19:20:06.547338+00:00",
+      "http_status": 200,
+      "url": "https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=CG&map=DIST"
+    },
+    {
+      "id": "ne-counties",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ne-counties.body",
+      "sha256": "9a4a5699e5767d9343585867b762decec8a493dd158eab9225a909d7c6951b22",
+      "bytes": 34720,
+      "retrieved_at": "2026-11-03T19:25:35.331681+00:00",
+      "http_status": 200,
+      "url": "https://countyelectionresults.nebraska.gov/default.aspx"
+    },
+    {
+      "id": "ne-csv",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ne-csv.body",
+      "sha256": "9bb49246800114a7a8f8335a906b4fa3c383403c7ebde5c30e41d894680668b0",
+      "bytes": 97065,
+      "retrieved_at": "2026-11-03T19:20:06.567965+00:00",
+      "http_status": 200,
+      "url": "https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=All&map=CTY"
+    },
+    {
+      "id": "ne-home",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ne-home.body",
+      "sha256": "6c15560d792e2e1eb641ddb4180ad055e5c95e51c0387f7dc6e08aac2d1d9463",
+      "bytes": 54873,
+      "retrieved_at": "2026-11-03T19:20:06.645726+00:00",
+      "http_status": 200,
+      "url": "https://electionresults.nebraska.gov/"
+    },
+    {
+      "id": "ne-media",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-ne-media.body",
+      "sha256": "14ad5b702d0590399481206dfb7887a4d08a78ba18c0236c4eb8f33e7b9810d1",
+      "bytes": 29236,
+      "retrieved_at": "2026-11-03T19:22:03.963054+00:00",
+      "http_status": 200,
+      "url": "https://electionresults.nebraska.gov/ResultsMedia.aspx"
+    },
+    {
+      "id": "oh-hamilton",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-oh-hamilton.body",
+      "sha256": "178dac37b6d7970daea3b73ce2f716c4092cc87ee661cd206ded4692773c68f1",
+      "bytes": 919,
+      "retrieved_at": "2026-11-03T19:26:28.099803+00:00",
+      "http_status": 403,
+      "url": "https://results.votehamiltoncountyohio.gov/OH/Hamilton/127473"
+    },
+    {
+      "id": "oh-xml",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-oh-xml.body",
+      "sha256": "61eeb855861e00da7ccdd2a527793595bd33dc2f22a3225ab5cfac68b37093a6",
+      "bytes": 1220414,
+      "retrieved_at": "2026-11-03T19:20:07.046287+00:00",
+      "http_status": 200,
+      "url": "https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob"
+    },
+    {
+      "id": "wi-brown",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-wi-brown.body",
+      "sha256": "ec0a27af94b5af3a6827b63511ca8ee92d4807afc9178df482a8fadc52f3b6fc",
+      "bytes": 59991,
+      "retrieved_at": "2026-11-03T19:26:27.850326+00:00",
+      "http_status": 200,
+      "url": "https://www.browncountywi.gov/departments/county-clerk/elections/"
+    },
+    {
+      "id": "wi-fox",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-wi-fox.body",
+      "sha256": "6549221ce509dca31c644ab86cda69a45a0cf07e0d26415ac714b7c54d5900dc",
+      "bytes": 591950,
+      "retrieved_at": "2026-11-03T19:25:32.291507+00:00",
+      "http_status": 200,
+      "url": "https://www.foxnews.com/elections/2026/midterm-results/state/wisconsin"
+    },
+    {
+      "id": "wi-lacrosse",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-wi-lacrosse.body",
+      "sha256": "dbf14e8ea09741ac23ec4317178c095566c9f86701ef26d86b2ec5e52644daa0",
+      "bytes": 5664,
+      "retrieved_at": "2026-11-03T19:21:52.432596+00:00",
+      "http_status": 403,
+      "url": "https://www.lacrossecounty.org/countyclerk/elections/election-results"
+    },
+    {
+      "id": "wi-milwaukee",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-wi-milwaukee.body",
+      "sha256": "2f910897c1f376eef7066699b388fb51862b2bff4f32dacb28fde4d0aca06ab9",
+      "bytes": 5830,
+      "retrieved_at": "2026-11-03T19:23:04.251399+00:00",
+      "http_status": 403,
+      "url": "https://county.milwaukee.gov/EN/County-Clerk/Off-Nav/Election-Results/11-3-26-General-Election--Unofficial-Results-Election-Night-Website"
+    },
+    {
+      "id": "wi-brown-results",
+      "url": "https://www.browncountywi.gov/departments/county-clerk/elections/election-results/",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-wi-brown-results.body",
+      "sha256": "19e49de951ee873a969649353bdb1e23b89770d31e21e77863813e46844cbf5b",
+      "bytes": 58099,
+      "retrieved_at": "2026-11-03T19:32:03.388593+00:00",
+      "http_status": 200
+    },
+    {
+      "id": "wi-brown-2026",
+      "url": "https://www.browncountywi.gov/departments/county-clerk/elections/2026-election-results/",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-wi-brown-2026.body",
+      "sha256": "bb88a40f55d153db492b6db19cc85c02ce959ee5d0114f119c2a32e482f1d6d3",
+      "bytes": 52030,
+      "retrieved_at": "2026-11-03T19:32:14.065775+00:00",
+      "http_status": 200
+    },
+    {
+      "id": "mo-saintcharles-results",
+      "url": "https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/en/Index_33.html",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-saintcharles-results.body",
+      "sha256": "65a2fa4b8599308c4f9fc297685a569d702e334bb3a74da533cc0179f3e1755f",
+      "bytes": 9403254,
+      "retrieved_at": "2026-11-03T19:32:03.478173+00:00",
+      "http_status": 200
+    },
+    {
+      "id": "mo-saintcharles-csv",
+      "url": "https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/summary_33.csv",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-saintcharles-csv.body",
+      "sha256": "57c4ec0a269ebc28e095092c52ce430ced196ee9bd0051cecd3b6994290c37bb",
+      "bytes": 11175,
+      "retrieved_at": "2026-11-03T19:32:34.772641+00:00",
+      "http_status": 200
+    },
+    {
+      "id": "mo-live-js",
+      "url": "https://www.livevoterturnout.com/ENR/shared/scripts/LiveResultsScripts_v4.1.js?v=20260928035423",
+      "local_raw_sample_path": "/private/tmp/pol-midwest-mo-live-js.body",
+      "sha256": "2101ca8eaf3acec3edda66b4fa4356f4a13fcfc5f75dd9fe7a81c3b2114cddc8",
+      "bytes": 70371,
+      "retrieved_at": "2026-11-03T19:32:23.121975+00:00",
+      "http_status": null
+    }
+  ],
+  "validation": {
+    "tests": "bundle exec ruby test/lib/election_night/sources/midwest_adapters_test.rb",
+    "result": "12 tests, 44 assertions, zero failures",
+    "rubocop": "3 files, no offenses",
+    "live_sample_normalization": {
+      "IN": {
+        "units": 100,
+        "distinct_counties": 92,
+        "races": 9
+      },
+      "NE": {
+        "units": 4,
+        "aggregate_only": true
+      },
+      "MI_Kalamazoo": {
+        "units": 3,
+        "distinct_counties": 1
+      },
+      "MO_St_Charles": {
+        "units": 2,
+        "distinct_counties": 1
+      }
+    }
+  }
+}

@@ -20,7 +20,7 @@ class ElectionNight::Prior
       model = Forecast::RaceModel.new(race: race, national_env: 0, averager: nil)
       key = if race.office == "senate"
         "#{race.state}-S"
-      elsif race.district.to_i.zero?
+      elsif %w[AK DE ND SD VT WY].include?(race.state) || race.district.to_i.zero?
         "#{race.state}-AL"
       else
         format("%s-%02d", race.state, race.district)

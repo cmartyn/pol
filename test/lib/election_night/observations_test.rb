@@ -92,4 +92,51 @@ class ElectionNight::ObservationsTest < ActiveSupport::TestCase
     assert_empty builder.call
     assert_match(/lacks a verified/, builder.coverage.fetch("NC-01").fetch("reason"))
   end
+
+  test "aggregate mirror changes neither geography evidence nor displayed vote count" do
+    official = source([ unit("NC-S", "URBAN", 40_000, 10_000), unit("NC-S", "RURAL", 10_000, 40_000) ])
+    aggregate = { "id" => "totals", "state" => "NC", "usable" => true,
+      "results" => { "units" => [ unit("NC-S", "STATEWIDE", 50_000, 50_000).merge("aggregate_only" => true) ] } }
+    builder = ElectionNight::Observations.new(prior: { "races" => [ race ] }, sources: [ official, aggregate ])
+    result = builder.call
+    assert_equal 1, result.size
+    assert_in_delta 0, result.first["observed_margin"], 0.001
+    assert_equal [ "nc" ], result.first["source_ids"]
+    assert_equal 100_000, builder.coverage["NC-S"]["observed_votes"]
+    assert_equal [ "nc" ], builder.coverage["NC-S"]["raw_source_ids"]
+  end
+
+  test "aggregate only returns are visible but cannot establish a state manifest or condition probabilities" do
+    aggregate = { "id" => "totals", "state" => "NC", "usable" => true, "expected_counties" => 1,
+      "results" => { "units" => [ unit("NC-S", "STATEWIDE", 60_000, 40_000).merge("aggregate_only" => true) ] } }
+    builder = ElectionNight::Observations.new(prior: { "races" => [ race ] }, sources: [ aggregate ])
+    assert_empty builder.call
+    coverage = builder.coverage["NC-S"]
+    assert_equal 100_000, coverage["observed_votes"]
+    assert_equal "contest", coverage["raw_coverage_level"]
+    assert coverage["has_raw_source"]
+    assert_match(/Contest totals available/, coverage["reason"])
+  end
+
+  test "partial county plus full aggregate displays full total while keeping direct update withheld" do
+    partial = source([ unit("NC-S", "URBAN", 40_000, 10_000) ])
+    partial.delete("expected_counties")
+    aggregate = { "id" => "totals", "state" => "NC", "usable" => true,
+      "results" => { "aggregate_units" => [ unit("NC-S", "STATEWIDE", 60_000, 40_000) ], "units" => [] } }
+    builder = ElectionNight::Observations.new(prior: { "races" => [ race ] }, sources: [ partial, aggregate ])
+    assert_empty builder.call
+    assert_equal 100_000, builder.coverage["NC-S"]["observed_votes"]
+    assert_equal [ "totals" ], builder.coverage["NC-S"]["raw_source_ids"]
+    assert_equal "contest", builder.coverage["NC-S"]["raw_coverage_level"]
+  end
+
+  test "publisher reconciled counties do not manufacture an independent model manifest" do
+    civic = source([ unit("NC-S", "URBAN", 40_000, 10_000), unit("NC-S", "RURAL", 10_000, 40_000) ])
+    civic.delete("expected_counties")
+    civic["results"].merge!("aggregate_units" => [ unit("NC-S", "STATEWIDE", 50_000, 50_000) ], "county_totals_match_aggregate" => true)
+    builder = ElectionNight::Observations.new(prior: { "races" => [ race ] }, sources: [ civic ])
+    assert_empty builder.call
+    assert_equal "county", builder.coverage["NC-S"]["raw_coverage_level"]
+    assert_match(/complete race geography not established/, builder.coverage["NC-S"]["reason"])
+  end
 end

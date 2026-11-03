@@ -17,34 +17,41 @@ class ElectionNight::Observations
   end
 
   def call
-    # Registry order is priority. State and county mirrors never add votes.
-    units = {}
+    # Raw totals are selected independently from model evidence. A complete
+    # district aggregate can be displayed while partial counties are withheld
+    # from inference; they never enter county manifests or get added together.
+    raw = ElectionNight::RawResults.new(sources: @sources)
+    units = raw.county_units
     baselines = {}
     house_baselines = {}
-    state_manifests = {}
+    state_manifests = raw.state_manifests
     @sources.each do |source|
       next unless source["usable"]
-      if source["expected_counties"].to_i.positive?
-        counties = Array(source.dig("results", "units")).map { |unit| unit.fetch("unit_key") }.uniq.sort
-        state_manifests[source.fetch("state")] ||= counties if counties.size == source.fetch("expected_counties").to_i
-      end
-      Array(source.dig("results", "units")).each do |unit|
-        key = [ unit.fetch("race_key"), unit.fetch("unit_key") ]
-        units[key] ||= unit.merge("source_id" => source.fetch("id"))
-      end
       Array(source.dig("baseline", "units")).each do |unit|
         baselines[[ source.fetch("state"), unit.fetch("unit_key") ]] ||= unit
       end
       Array(source.dig("baseline", "house_units")).each do |unit|
-        house_baselines[[ unit.fetch("race_key"), unit.fetch("unit_key") ]] ||= unit
+        house_baselines[[ ElectionNight::RawResults.canonical_race_key(unit.fetch("race_key")), unit.fetch("unit_key") ]] ||= unit
       end
     end
     @prior.fetch("races").filter_map do |race|
       key = race.fetch("race_key")
-      rows = units.values.select { |u| u["race_key"] == key }
+      source_key = ElectionNight::RawResults.canonical_race_key(key)
+      rows = units.values.select { |u| u["race_key"] == source_key }
       votes = rows.sum { |u| u.fetch("total_votes") }
-      @coverage[key] = { "observed_votes" => votes, "coverage_fraction" => 0.0, "reason" => "No matched historical baseline" }
-      next if rows.empty?
+      historical_counties = if race["chamber"] == "house" && race["historical_house_compatible"]
+        house_baselines.keys.filter_map { |race_key, county| county if race_key == source_key }.uniq.sort
+      else
+        []
+      end
+      @coverage[key] = raw.for_race(race, historical_counties: historical_counties).merge(
+        "coverage_fraction" => 0.0, "reason" => "No matched historical baseline"
+      )
+      if rows.empty?
+        @coverage[key]["reason"] = @coverage[key]["has_raw_source"] ?
+          "Contest totals available; no matched county geography for direct update" : "No raw source available"
+        next
+      end
       unless state_manifests.key?(race["state"])
         @coverage[key]["reason"] = "Partial state source; complete race geography not established"
         next
@@ -56,7 +63,7 @@ class ElectionNight::Observations
       expected_counties = if race["chamber"] == "senate"
         state_manifests.fetch(race.fetch("state"))
       elsif race["historical_house_compatible"]
-        house_baselines.keys.filter_map { |race_key, county| county if race_key == key }.uniq.sort
+        house_baselines.keys.filter_map { |race_key, county| county if race_key == source_key }.uniq.sort
       else
         []
       end
@@ -72,7 +79,7 @@ class ElectionNight::Observations
       # portions of the same district, never an inferred whole-county proxy.
       matched = rows.filter_map do |row|
         historical = if race["chamber"] == "house"
-          house_baselines[[ key, row["unit_key"] ]]
+          house_baselines[[ source_key, row["unit_key"] ]]
         else
           baselines[[ race["state"], row["unit_key"] ]]
         end

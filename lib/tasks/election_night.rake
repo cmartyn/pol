@@ -10,9 +10,17 @@ namespace :election_night do
     end
   end
 
-  desc "Collect official returns and atomically publish our experimental needle snapshot once"
+  desc "Collect raw returns and atomically publish our experimental needle snapshot once"
   task sweep: :environment do
     result = ElectionNight::Runner.new.call
     puts "#{result.fetch('status')}: #{result.dig('coverage', 'races_with_returns')} races directly updated"
+  end
+
+  desc "Print a per-race JSON coverage audit of the latest snapshot (no network requests)"
+  task coverage: :environment do
+    snapshot = ElectionNight::Store.new.latest
+    abort "Collect a snapshot first: bin/rails election_night:sweep" unless snapshot
+    report = ElectionNight::Coverage.new(races: snapshot.fetch("races"), sources: snapshot.fetch("sources")).report
+    puts JSON.pretty_generate(report.merge("generated_at" => snapshot.fetch("generated_at"), "input_hashes" => snapshot.fetch("input_hashes")))
   end
 end
