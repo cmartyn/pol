@@ -26,6 +26,18 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=robots][content*=noindex]", count: 0
   end
 
+  test "live preview uses its refreshed model timestamp without the polling forecast header stamp" do
+    value = snapshot
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select "[data-testid='header-updated']", count: 0
+      assert_select "[data-election-night-target='content'] .night-timestamp time[datetime=?]", value["generated_at"], count: 1
+    end
+
+    get "/"
+    assert_select "[data-testid='header-updated']", count: 1
+  end
+
   test "shows own chamber probabilities and unresolved caucus outcomes separately" do
     with_night_snapshot(snapshot) do
       get "/election-night"
