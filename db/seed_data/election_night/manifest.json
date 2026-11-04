@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "election_date": "2024-11-05",
+  "midterm_election_date": "2022-11-08",
+  "retrieved_at": "2026-11-03",
+  "files": {
+    "county_president_2024.csv": {
+      "sha256": "92e92f9f8d54ee10c642d2fd1728b95b1256d1947032ea9f8d129e736bba71d9",
+      "rows": 3111,
+      "races": 49
+    },
+    "house_county_2024.csv": {
+      "sha256": "e22910b5bb4593c504e4ae18e0b4e2035ccca53fad1199a06d97c2d58e680435",
+      "rows": 3621,
+      "races": 419
+    },
+    "turnout_2022.csv": {
+      "sha256": "07542bcb44bc9d4bc51f4ea9b98672afe8d10b3210aff2822edcac5ecc9641dd",
+      "rows": 5059,
+      "races": 439
+    },
+    "source_catalog.json": {
+      "sha256": "636605813822e82428cf02a3aff3c58d606dd7985b939bcac8e9e0901344c96b"
+    },
+    "validation.json": {
+      "sha256": "f26e988c1254514ad470731a520d54c3e9c8d0c218a0ccc606fe0e337a6a6c65"
+    },
+    "county_roster.json": {
+      "sha256": "b8b0714d6b292461c883fa5e52643769c9f52c0716564ed5f7a386818be3b7e2"
+    }
+  },
+  "upstream": [
+    {
+      "url": "https://github.com/pmheideman/us-county-election-results/releases/download/v1.0.0/us_county_results_long.csv",
+      "sha256": "da8736c5e6e288b603c2b8a148333ecb3f6363cd6df3521a432fd2e128dfbd04",
+      "publisher": "Paul Heideman",
+      "release": "v1.0.0",
+      "published_at": "2026-09-26T11:40:59Z",
+      "citation": "https://doi.org/10.5281/zenodo.22976553",
+      "license": "CC BY 4.0"
+    },
+    {
+      "url": "https://github.com/pmheideman/us-county-election-results/releases/download/v1.0.0/SOURCES.csv",
+      "sha256": "0870e3ac621c205d20246a2873943aa49478b62be590c4b5ee34563c313c4c45"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv",
+      "sha256": "538a8fbe2d7a20524b049dd1b3b9ec7e215c4433d99f91fbd7b0dea05270136a",
+      "publisher": "Tony McGovern; raw Fox News results compilation"
+    },
+    {
+      "url": "https://clerk.house.gov/member_info/electionInfo/2022/statistics2022.pdf",
+      "sha256": "ef9b8cefcc44bebbdc4928bf346b50e00a72dd3bb54a71ed93ec60d4ebf47690",
+      "text_sha256": "8959d0648818a8865144d394e8d0763f998cddf4e924936f5456b7ea37fa9280",
+      "publisher": "Clerk of the U.S. House of Representatives"
+    },
+    {
+      "url": "https://clerk.house.gov/member_info/electionInfo/2024/statistics2024.pdf",
+      "sha256": "d4ba800fc17135b616ae556c92861080ab962d95916ace34b546c5aac824aec4",
+      "text_sha256": "4fa7f4e40b263e28cdb527c424ad2739ec87c0f038762eb4ad6b31a32914b7c9",
+      "publisher": "Clerk of the U.S. House of Representatives"
+    },
+    {
+      "url": "https://www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt",
+      "sha256": "9f6e5f6eb6ac2f5e9a36d5fd01dec77991bddc75118f748a069441a4782970d6",
+      "publisher": "U.S. Census Bureau"
+    },
+    {
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_counties_national.zip",
+      "sha256": "3c337402b5c6e8d5aa26b4278ccf4edc8989f2683765b3ffbf22296cdb2df3a0",
+      "text_sha256": "0a121d136b434e3ae749d053db19dfbacbb56eebf30335cfa5031388803b4451",
+      "publisher": "U.S. Census Bureau"
+    },
+    {
+      "url": "https://elections.hawaii.gov/wp-content/uploads/2024-Elections-Audit.pdf",
+      "sha256": "646097991a3246b0560dc684a95e6fc28076e5ac502c57e4f3c506dc918edf3d",
+      "page": 37,
+      "publisher": "Hawaii Office of Elections",
+      "note": "For election administration, Kalawao is included in Maui."
+    }
+  ],
+  "excluded_races": {
+    "president_2024": [],
+    "house_2024": [
+      "CA-13",
+      "CA-23",
+      "ME-01",
+      "ME-02",
+      "MO-05",
+      "NY-17",
+      "NY-25",
+      "OR-05",
+      "RI-01",
+      "WA-04"
+    ],
+    "turnout_2022": [
+      "AR-01",
+      "AR-S",
+      "AZ-07",
+      "CA-S",
+      "GA-07",
+      "ME-02",
+      "MI-01",
+      "MI-08",
+      "MO-05",
+      "MO-S",
+      "NY-06",
+      "NY-12",
+      "NY-19",
+      "NY-21",
+      "OK-S",
+      "OR-04",
+      "SC-04",
+      "TX-11",
+      "TX-14",
+      "WA-05",
+      "WA-08",
+      "WI-08"
+    ]
+  },
+  "zero_vote_combinations_removed": 1235,
+  "geography_validation": {
+    "method": "Exact FIPS set match with independent Census 2020 and 2024 county inventories; current rows must match the same reporting units.",
+    "exceptions": {
+      "CT": "Eight historical counties matched to Census2020, not interchangeable with nine Census2024 planning regions.",
+      "HI": "Census county15005 Kalawao consolidated into reporting county15009 Maui per official election audit manual page37.",
+      "SD": "Obsolete source FIPS46113 corrected to46102 (Oglala Lakota, renamed2015), with no boundary allocation."
+    }
+  },
+  "unallocated_house_other_votes": [
+    {
+      "year": 2022,
+      "state": "AZ",
+      "votes": 3065
+    },
+    {
+      "year": 2022,
+      "state": "WA",
+      "votes": 27569
+    },
+    {
+      "year": 2024,
+      "state": "NY",
+      "votes": 769
+    },
+    {
+      "year": 2024,
+      "state": "RI",
+      "votes": 1213
+    }
+  ],
+  "validation": "County sums must match Clerk major-party candidate totals within max(100 votes, 0.5% per party). Fusion ballot lines assigned to their major-party candidate. No geographic compatibility with 2026 is implied.",
+  "limitations": [
+    "Alaska has no verified county-equivalent presidential baseline here.",
+    "Connecticut reports eight historical counties; these cannot be interchanged with its nine planning regions.",
+    "Hawaii has four election reporting counties; Kalawao is not a separate reporting unit.",
+    "House rows are actual 2024 district-county portions, never whole-county estimates. Changed districts remain ineligible for geographic inference.",
+    "2022 House turnout cannot be used without an independent 2022-to-current boundary check.",
+    "Some unallocated write-ins are omitted from House other_votes; no blank or invalid ballots are counted.",
+    "Zero-vote district-county combinations are excluded: export cross-products do not prove geographic membership.",
+    "Aggregate validation detects missing votes but does not independently certify each county allocation."
+  ]
+}

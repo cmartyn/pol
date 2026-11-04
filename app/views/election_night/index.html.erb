@@ -1,0 +1,24 @@
+<% content_for :title, "Election night — 535" %>
+<% content_for :description, "535's independent, experimental election-night forecast of Democratic control of the House and Senate, with live returns coverage and transparent assumptions." %>
+<% content_for :head do %>
+  <meta name="robots" content="noindex, nofollow">
+<% end %>
+
+<div class="election-night" data-controller="election-night"
+     data-election-night-url-value="<%= election_night_snapshot_path %>"
+     data-election-night-revision-value="<%= @revision %>">
+  <header class="night-heading">
+    <p class="night-date">Experimental preview · November 3, 2026</p>
+    <h1>Election night</h1>
+    <p class="night-deck">Who will control Congress? Our model updates as usable returns arrive.</p>
+  </header>
+
+  <p class="night-connection" role="status" data-election-night-target="connection" hidden></p>
+
+  <div data-election-night-target="content" data-revision="<%= @revision %>">
+    <%= render "snapshot" %>
+  </div>
+
+  <p class="night-refresh-note">Checks for updates every 30 seconds. The needles move only when the forecast changes.</p>
+  <noscript><p class="night-refresh-note">JavaScript is off. Refresh this page to check for a new forecast.</p></noscript>
+</div>

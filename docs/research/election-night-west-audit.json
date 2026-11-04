@@ -1,0 +1,503 @@
+{
+  "assessed_at": "2026-11-03T19:25:53.346066+00:00",
+  "election_date": "2026-11-03",
+  "scope": "Western source audit; no external forecasts or expected-vote estimates imported. Public files only; no access controls bypassed. Successful pre-close zero scaffolds do not prove later update reliability.",
+  "verified_sources": [
+    {
+      "state": "CA",
+      "adapter": "california",
+      "election_date": "2026-11-03",
+      "sample_probe": "ca-house",
+      "covered_race_ids": [
+        "CA-01",
+        "CA-02",
+        "CA-03",
+        "CA-04",
+        "CA-05",
+        "CA-06",
+        "CA-07",
+        "CA-08",
+        "CA-09",
+        "CA-10",
+        "CA-11",
+        "CA-12",
+        "CA-13",
+        "CA-14",
+        "CA-15",
+        "CA-16",
+        "CA-17",
+        "CA-18",
+        "CA-19",
+        "CA-20",
+        "CA-21",
+        "CA-22",
+        "CA-23",
+        "CA-24",
+        "CA-25",
+        "CA-26",
+        "CA-27",
+        "CA-28",
+        "CA-29",
+        "CA-30",
+        "CA-31",
+        "CA-32",
+        "CA-33",
+        "CA-34",
+        "CA-35",
+        "CA-36",
+        "CA-37",
+        "CA-38",
+        "CA-39",
+        "CA-40",
+        "CA-41",
+        "CA-42",
+        "CA-43",
+        "CA-44",
+        "CA-45",
+        "CA-46",
+        "CA-47",
+        "CA-48",
+        "CA-49",
+        "CA-50",
+        "CA-51",
+        "CA-52"
+      ],
+      "reporting_units": 144,
+      "county_count": 58,
+      "geography_level": "county_district_portion",
+      "aggregate_only": false,
+      "zero_scaffold": true,
+      "published_at": null,
+      "missing_assigned_races": []
+    },
+    {
+      "state": "WA",
+      "adapter": "washington",
+      "election_date": "2026-11-03",
+      "sample_probe": "wa-export",
+      "covered_race_ids": [
+        "WA-01",
+        "WA-02",
+        "WA-03",
+        "WA-04",
+        "WA-05",
+        "WA-06",
+        "WA-07",
+        "WA-08",
+        "WA-09",
+        "WA-10"
+      ],
+      "reporting_units": 50,
+      "county_count": 39,
+      "geography_level": "county_district_portion",
+      "aggregate_only": false,
+      "zero_scaffold": true,
+      "published_at": "2026-10-22T15:55:37Z",
+      "missing_assigned_races": []
+    },
+    {
+      "state": "AK",
+      "adapter": "alaska_summary",
+      "election_date": "2026-11-03",
+      "sample_probe": "ak-summary",
+      "covered_race_ids": [
+        "AK-AL",
+        "AK-S"
+      ],
+      "reporting_units": 2,
+      "county_count": null,
+      "geography_level": "statewide_first_choice_aggregate",
+      "aggregate_only": true,
+      "zero_scaffold": true,
+      "published_at": null,
+      "missing_assigned_races": []
+    }
+  ],
+  "remaining_official_gaps": [
+    {
+      "races": [
+        "CO-03",
+        "CO-04",
+        "CO-05",
+        "CO-08"
+      ],
+      "state_attempts": [
+        "co-results",
+        "co-detail",
+        "co-counties"
+      ],
+      "county_attempts": [
+        "co-mesa-county",
+        "co-mesa-feed",
+        "co-dougco",
+        "co-elpaso",
+        "co-elpaso-feed",
+        "co-weld",
+        "co-weld-app"
+      ],
+      "secondary_attempts": [
+        "co-dcco-alternative",
+        "co-dcco-json",
+        "co-ddc-alternative"
+      ],
+      "finding": "State and El Paso/Mesa Clarity endpoints return 403. Weld public app advertises results after 19:10 with no current counts. Douglas official index has no current raw export; DCCO secondary returns em dashes for unavailable results; DiscoverDougCo presents county/district counts but no verified separate machine feed was located. Broader root collector has independently verified PollingDesk aggregate fallback."
+    },
+    {
+      "races": [
+        "MT-01"
+      ],
+      "state_attempts": [
+        "mt-results",
+        "mt-index"
+      ],
+      "county_attempts": [
+        "mt-missoula"
+      ],
+      "secondary_attempts": [
+        "mt-mtpr",
+        "mt-ap",
+        "mt-tally-config"
+      ],
+      "finding": "State official pages return 403. Missoula directs federal results to state site and exposes no current general file. MTPR embeds AP results whose widget returns 403. Public Tally config lookup returns 204 empty, so frontend slug alone does not establish coverage. Broader root collector has independently verified PollingDesk aggregate fallback."
+    }
+  ],
+  "limitations": [
+    "CA JSON lacks election identifier: adapter requires companion official endpoint index identifying November 3 general. ReportingTime lacks UTC offset and stays source_time_text.",
+    "WA historical EnhancedVoting export attempt 404; no matching historical baseline added.",
+    "AK advertised CSV and map are 404. Official PDF works and contains current unofficial first-choice counts; parser requires pdftotext and never claims RCV transfers or completion.",
+    "CA 2026 district boundaries differ from 2024; no old district baseline is assumed compatible.",
+    "NV client lookup was an optional lead only and returned204; no NV coverage is claimed by this audit."
+  ],
+  "probes": [
+    {
+      "id": "ca-media",
+      "url": "https://media.sos.ca.gov/",
+      "kind": "official_index",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:08.282496+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ca-media.body",
+      "sha256": "c2429584238f5636f43488396bb87e158d9e79f765ca37c93651c2f854511307",
+      "bytes": 8139
+    },
+    {
+      "id": "ca-house",
+      "url": "https://media.sos.ca.gov/media/us-rep.json",
+      "kind": "official_live_county_results",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:57.128705+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ca-house.body",
+      "sha256": "c175eef7bf04a60f786ccec10931e9de5d75375a97296db601a7bce5ab0f22bf",
+      "bytes": 127644
+    },
+    {
+      "id": "ca-json-index",
+      "url": "https://media.sos.ca.gov/media/json-endpoints.csv",
+      "kind": "official_election_metadata",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:40.590248+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ca-json-index.body",
+      "sha256": "0ee593e797cb8e2cc76bed50f5a8de2928c2742d1a8caf89e59efb3a59c35c34",
+      "bytes": 2118
+    },
+    {
+      "id": "ca-votes",
+      "url": "https://media.sos.ca.gov/media/V26GG.txt",
+      "kind": "official_alternative_pipe_file",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:40.077233+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ca-votes.body",
+      "sha256": "da65ef0f2ede0f7ad665c8670fb728937fac2c54125f25a7d046372f326671db",
+      "bytes": 159325
+    },
+    {
+      "id": "wa-page",
+      "url": "https://app.enhancedvoting.com/results/public/washington/elections/20261103",
+      "kind": "official_results_page",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:40.200448+00:00",
+      "local_raw_path": "/private/tmp/pol-west-wa-page.body",
+      "sha256": "9dd05c94e983f0b7fd09faaeb6073991fa1f6416a59df99262d7c522272d7512",
+      "bytes": 9684
+    },
+    {
+      "id": "wa-export",
+      "url": "https://app.enhancedvoting.com/cdn/results/washington/export-20261103.json",
+      "kind": "official_live_county_results",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:56.097507+00:00",
+      "local_raw_path": "/private/tmp/pol-west-wa-export.body",
+      "sha256": "289d703ca074cc16a8701df3260055ee721788c43d839b39e1431afbe4650fd7",
+      "bytes": 842274
+    },
+    {
+      "id": "wa-history",
+      "url": "https://app.enhancedvoting.com/cdn/results/washington/export-20241105.json",
+      "kind": "historical_attempt",
+      "http_status": 404,
+      "fetched_at": "2026-11-03T19:22:23.872829+00:00",
+      "local_raw_path": "/private/tmp/pol-west-wa-history.body",
+      "sha256": "ae669fb6fdb22a721c05b4cb966aa6db941f0ed1751647287d28a6003e8e69d1",
+      "bytes": 215
+    },
+    {
+      "id": "ak-results",
+      "url": "https://www.elections.alaska.gov/election-results/e/?id=26genr",
+      "kind": "official_index",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:07.347555+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ak-results.body",
+      "sha256": "7bbfb91841028b0d1535dd6656fc7d692973a6bdd6f9dac22843f7c5aa557d75",
+      "bytes": 108962
+    },
+    {
+      "id": "ak-csv",
+      "url": "https://www.elections.alaska.gov/enr/26GENR/results/GA_ENR_Precinct_State%20of%20Alaska.csv",
+      "kind": "official_csv_attempt",
+      "http_status": 404,
+      "fetched_at": "2026-11-03T19:18:40.642442+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ak-csv.body",
+      "sha256": "37c237f9beacc23ca4177971100a140e718391d68562bad2f019a70cf72dfb89",
+      "bytes": 389
+    },
+    {
+      "id": "ak-map",
+      "url": "https://www.elections.alaska.gov/enr/26GENR/results/map/",
+      "kind": "official_geographic_attempt",
+      "http_status": 404,
+      "fetched_at": "2026-11-03T19:18:57.267963+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ak-map.body",
+      "sha256": "c8a76d6e238242a1de862d2dbe6f68a8fa5938d8c854d664316819cb20b63ede",
+      "bytes": 388
+    },
+    {
+      "id": "ak-summary",
+      "url": "https://www.elections.alaska.gov/enr/26GENR/results/ElectionSummaryReportRPT.pdf",
+      "kind": "official_live_aggregate_results",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:57.325724+00:00",
+      "local_raw_path": "/private/tmp/pol-west-ak-summary.body",
+      "sha256": "a77b07ef1267c55afdba68c051039962cac8aa01efd404dc446ddbbf775379dd",
+      "bytes": 270134
+    },
+    {
+      "id": "co-home",
+      "url": "https://www.sos.state.co.us/pubs/elections/",
+      "kind": "official_index",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:40.599112+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-home.body",
+      "sha256": "daac0d03e44615c6ae7fa6985fbcc94160fef5a380800a5ab59544b30c1ec1f6",
+      "bytes": 33377
+    },
+    {
+      "id": "co-results",
+      "url": "https://results.enr.clarityelections.com/CO/127407/",
+      "kind": "official_statewide_attempt",
+      "http_status": 403,
+      "fetched_at": "2026-11-03T19:18:57.166535+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-results.body",
+      "sha256": "0ccab7e37fd2d61e386dc50b5f9adc917f9d2ff71469ea8cb74dfdcf7dca3176",
+      "bytes": 919
+    },
+    {
+      "id": "co-detail",
+      "url": "https://results.enr.clarityelections.com/CO/127407/reports/detailxml.zip",
+      "kind": "official_xml_attempt",
+      "http_status": 403,
+      "fetched_at": "2026-11-03T19:21:19.360445+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-detail.body",
+      "sha256": "e6e9091a398133ba4b1c7bfe049dfa6d28c20f2376cb8ceb83eb2cd648fe6119",
+      "bytes": 919
+    },
+    {
+      "id": "co-counties",
+      "url": "https://www.coloradosos.gov/pubs/elections/Results/ENR/countyLevelResults.html",
+      "kind": "official_county_fallback_index",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:56.843785+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-counties.body",
+      "sha256": "090f5c610eecae774bbc30a3f59d7dc49242a46e6f33c66370798f543e0e592e",
+      "bytes": 27048
+    },
+    {
+      "id": "co-elpaso",
+      "url": "https://clerkandrecorder.elpasoco.com/elections/election-records-results/",
+      "kind": "official_county_index_CO05",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:21:35.998966+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-elpaso.body",
+      "sha256": "e8bc383380e8b48bc783ba64ad076c621a0676c8d2e3fe3f17f23f0d7e2f15e6",
+      "bytes": 163814
+    },
+    {
+      "id": "co-elpaso-feed",
+      "url": "https://results.enr.clarityelections.com/CO/El_Paso/127430/reports/detailxml.zip",
+      "kind": "official_county_attempt_CO05",
+      "http_status": 403,
+      "fetched_at": "2026-11-03T19:22:23.748420+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-elpaso-feed.body",
+      "sha256": "4e58850bb5dc896ffb36c86c16fdcf8cfa94ea76715c5d977b5d7999fafdb60a",
+      "bytes": 919
+    },
+    {
+      "id": "co-weld",
+      "url": "https://www.weld.gov/Government/Departments/Clerk-and-Recorder/Elections-Department/Election-Results",
+      "kind": "official_county_index_CO08",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:21:35.536725+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-weld.body",
+      "sha256": "bda6d08222d761cdc18aa1c334a06d20a8582e7d43c34b942d029344686e9407",
+      "bytes": 205776
+    },
+    {
+      "id": "co-weld-app",
+      "url": "https://apps.weld.gov/clerkrecorder/elections/results/",
+      "kind": "official_county_attempt_CO08",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:22:23.976865+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-weld-app.body",
+      "sha256": "d333ce668eb2926d794344a0488a84277be01f3ad7ddad8adb2d691fca6b5433",
+      "bytes": 10347
+    },
+    {
+      "id": "co-mesa-county",
+      "url": "https://www.mesacounty.us/departments-and-services/clerk-and-recorder/elections/election-results/election-results-mesa-county",
+      "kind": "official_county_index_CO03",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:23:09.886531+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-mesa-county.body",
+      "sha256": "aa0f89d847fdb3d1c98243d29b72f79c526c209a3f06c6e4478d35ac005e919c",
+      "bytes": 36435
+    },
+    {
+      "id": "co-mesa-feed",
+      "url": "https://results.enr.clarityelections.com/CO/Mesa/126632/reports/detailxml.zip",
+      "kind": "official_county_attempt_CO03",
+      "http_status": 403,
+      "fetched_at": "2026-11-03T19:24:05.129187+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-mesa-feed.body",
+      "sha256": "819e9c73e164416296f74c0071c87bab25a172e8ea3c6610be2e14a2f9a301af",
+      "bytes": 919
+    },
+    {
+      "id": "co-dougco",
+      "url": "https://www.douglasco.gov/elections/",
+      "kind": "official_county_index_CO04",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:21:34.236198+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-dougco.body",
+      "sha256": "46afb87ec7c71ad34dbbf5d27344783a7ad01bdcd7f99b81eb3718497bece99c",
+      "bytes": 103857
+    },
+    {
+      "id": "co-dcco-alternative",
+      "url": "https://douglascountyco.com/election-results/",
+      "kind": "secondary_raw_publisher_CO04",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:21:34.525605+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-dcco-alternative.body",
+      "sha256": "9bb01ed9f220c6527735076286b35277a65be34128c737013d252637b7a8d544",
+      "bytes": 167725
+    },
+    {
+      "id": "co-dcco-json",
+      "url": "https://douglascountyco.com/api/election-results.php?fmt=page",
+      "kind": "secondary_public_html_feed_CO04",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:23:12.321447+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-dcco-json.body",
+      "sha256": "85bef4ced21231a3692238c7b23caa7effebc13c2906736f511682ae1ddd219f",
+      "bytes": 51043
+    },
+    {
+      "id": "co-ddc-alternative",
+      "url": "https://www.discoverdougco.com/elections/2026-general/results",
+      "kind": "secondary_raw_publisher_CO04",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:21:35.121465+00:00",
+      "local_raw_path": "/private/tmp/pol-west-co-ddc-alternative.body",
+      "sha256": "b1ddf6500388e1df3043083703618cb3d4718166bba2961c6e0aa96af38f7ca5",
+      "bytes": 767578
+    },
+    {
+      "id": "mt-results",
+      "url": "https://electionresults.mt.gov/",
+      "kind": "official_statewide_attempt",
+      "http_status": 403,
+      "fetched_at": "2026-11-03T19:18:07.713218+00:00",
+      "local_raw_path": "/private/tmp/pol-west-mt-results.body",
+      "sha256": "a7579426768eeb00e273cebe223954ce6cdf2d770eb8376ff0e93eefb904ff5b",
+      "bytes": 8233
+    },
+    {
+      "id": "mt-index",
+      "url": "https://sosmt.gov/ELECTIONS/Results/",
+      "kind": "official_index_attempt",
+      "http_status": 403,
+      "fetched_at": "2026-11-03T19:18:40.604930+00:00",
+      "local_raw_path": "/private/tmp/pol-west-mt-index.body",
+      "sha256": "90015e9baddca49f25c78b07db76b8414ab77e5a494b2da1cc46fd79d6aad60d",
+      "bytes": 8233
+    },
+    {
+      "id": "mt-missoula",
+      "url": "https://www.missoulacounty.gov/departments/elections/election-results",
+      "kind": "official_county_attempt_MT01",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:21:02.557003+00:00",
+      "local_raw_path": "/private/tmp/pol-west-mt-missoula.body",
+      "sha256": "d9c56d70ae461a0e63aee84aa5ced96e08559521a259a14b7c62ac0dea22612e",
+      "bytes": 175041
+    },
+    {
+      "id": "mt-mtpr",
+      "url": "https://www.mtpr.org/2026-election-results",
+      "kind": "secondary_raw_publisher_MT01",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:21:20.430097+00:00",
+      "local_raw_path": "/private/tmp/pol-west-mt-mtpr.body",
+      "sha256": "d045e65017b8735cb97049890b2100d9fe539addccf20c22e763d499b504e2b0",
+      "bytes": 136304
+    },
+    {
+      "id": "mt-ap",
+      "url": "https://interactives.apelections.org/election-results/customers/layouts/organization-layouts/published/57255/40671.html",
+      "kind": "secondary_embedded_raw_widget_MT01",
+      "http_status": 403,
+      "fetched_at": "2026-11-03T19:21:55.837369+00:00",
+      "local_raw_path": "/private/tmp/pol-west-mt-ap.body",
+      "sha256": "a10c6a37336f8c19a3b23ad2ef77b8568a95cb91fad9b6f6f60df626da669249",
+      "bytes": 919
+    },
+    {
+      "id": "mt-tally-config",
+      "url": "https://enr-results-api.totalresults.com/Client/GetClientConfig?cId=montana",
+      "kind": "public_vendor_config_attempt",
+      "http_status": 204,
+      "fetched_at": "2026-11-03T19:23:08.969187+00:00",
+      "local_raw_path": "/private/tmp/pol-west-mt-tally-config.body",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "id": "nv-tally-config",
+      "url": "https://enr-results-api.totalresults.com/Client/GetClientConfig?cId=clarkcountynv",
+      "kind": "optional_public_vendor_config_attempt",
+      "http_status": 204,
+      "fetched_at": "2026-11-03T19:24:05.140579+00:00",
+      "local_raw_path": "/private/tmp/pol-west-nv-tally-config.body",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "id": "signaldata-summary",
+      "url": "https://signaldata.org/api/results/summary.json",
+      "kind": "secondary_cross_state_attempt",
+      "http_status": 200,
+      "fetched_at": "2026-11-03T19:18:07.852837+00:00",
+      "local_raw_path": "/private/tmp/pol-west-signaldata-summary.body",
+      "sha256": "37c80f3e5a67013f5afe19b01b6850acc7a97be1609d33022377b24efe564d27",
+      "bytes": 26
+    }
+  ]
+}

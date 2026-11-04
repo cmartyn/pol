@@ -1,0 +1,146 @@
+{
+  "electionDate": "2026-11-03",
+  "electionName": "2026 General Election",
+  "createdAt": "2026-10-26T17:27:23.100473Z",
+  "results": {
+    "id": "44",
+    "name": "Rockland County",
+    "ballotItems": [
+      {
+        "type": "Local",
+        "id": "4",
+        "name": "Representative in Congress 17th Congressional District",
+        "voteFor": 1,
+        "ballotOrder": 4,
+        "precinctsParticipating": 307,
+        "precinctsReporting": 0,
+        "contestType": "Candidate",
+        "ballotOptions": [
+          {
+            "id": "1",
+            "name": "DEM Cait Conley",
+            "ballotOrder": 1,
+            "voteCount": 0,
+            "politicalParty": "Democratic",
+            "groupResults": [
+              {
+                "groupName": "Election Day",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Early Voting",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Absentee",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              }
+            ]
+          },
+          {
+            "id": "2",
+            "name": "REP Mike Lawler",
+            "ballotOrder": 2,
+            "voteCount": 0,
+            "politicalParty": "Republican",
+            "groupResults": [
+              {
+                "groupName": "Election Day",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Early Voting",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Absentee",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              }
+            ]
+          },
+          {
+            "id": "3",
+            "name": "CON Mike Lawler",
+            "ballotOrder": 3,
+            "voteCount": 0,
+            "politicalParty": "Conservative",
+            "groupResults": [
+              {
+                "groupName": "Election Day",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Early Voting",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Absentee",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              }
+            ]
+          },
+          {
+            "id": "4",
+            "name": "WOR Cait Conley",
+            "ballotOrder": 4,
+            "voteCount": 0,
+            "politicalParty": "Working Families",
+            "groupResults": [
+              {
+                "groupName": "Election Day",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Early Voting",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Absentee",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              }
+            ]
+          },
+          {
+            "id": "5",
+            "name": "Write-in",
+            "ballotOrder": 5,
+            "voteCount": 0,
+            "politicalParty": "NONPARTISAN",
+            "groupResults": [
+              {
+                "groupName": "Election Day",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Early Voting",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              },
+              {
+                "groupName": "Absentee",
+                "voteCount": 0,
+                "isFromVirtualPrecinct": false
+              }
+            ]
+          }
+        ],
+        "rankedChoiceResults": null
+      }
+    ],
+    "reportingStatuses": null
+  },
+  "localResults": []
+}

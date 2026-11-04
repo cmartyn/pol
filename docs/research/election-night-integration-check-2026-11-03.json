@@ -1,0 +1,71 @@
+{
+  "kind": "synthetic integration check, NOT election results or historical calibration",
+  "description": "Archived actual zeroed feeds form the control. Synthetic ballots represent 60% of 2024 two-party turnout, shifted 8pp toward Republicans relative to the frozen race expectations, in matched reporting units.",
+  "prior_as_of": "2026-10-21T07:00:35-04:00",
+  "real_feed_coverage": {
+    "races_with_returns": 0,
+    "races_total": 470,
+    "races_with_baselines": 44,
+    "races_with_raw_returns": 0
+  },
+  "synthetic_direct_observations": 44,
+  "before_dem_control": {
+    "house": 0.9963,
+    "senate": 0.5749
+  },
+  "after_dem_control": {
+    "house": 0.9795,
+    "senate": 0.1264
+  },
+  "matched_races": [
+    "FL-01",
+    "FL-02",
+    "FL-04",
+    "FL-05",
+    "FL-07",
+    "FL-S",
+    "GA-01",
+    "GA-03",
+    "GA-04",
+    "GA-05",
+    "GA-06",
+    "GA-07",
+    "GA-08",
+    "GA-09",
+    "GA-10",
+    "GA-11",
+    "GA-13",
+    "GA-14",
+    "GA-S",
+    "NC-02",
+    "NC-04",
+    "NC-05",
+    "NC-07",
+    "NC-08",
+    "NC-09",
+    "NC-10",
+    "NC-11",
+    "NC-12",
+    "NC-13",
+    "NC-14",
+    "NC-S",
+    "TX-S",
+    "VA-01",
+    "VA-02",
+    "VA-03",
+    "VA-04",
+    "VA-05",
+    "VA-06",
+    "VA-07",
+    "VA-08",
+    "VA-09",
+    "VA-10",
+    "VA-11",
+    "VA-S"
+  ],
+  "local_runtime_check": {
+    "wall_seconds": 21.48,
+    "peak_rss_bytes": 431210496,
+    "workload": "Cold parsing of archived current and historical files for nine sources, followed by two independent 10,000-draw inferences. Network fetch time excluded."
+  }
+}

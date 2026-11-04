@@ -1,0 +1,36 @@
+{
+  "election_date": "2026-11-03",
+  "state": "SC",
+  "official_index": "https://www.enr-scvotes.org/SC/127300/",
+  "index_sample": "/private/tmp/pol-coverage/ff5a11354a16b552.body",
+  "status": "official_raw_access_blocked",
+  "finding": "The official current-election page decompresses to a JavaScript redirect that requests versions.txt and falls back to web.345435. The public version file and both standard raw XML/JSON exports return HTTP 403. No bot protection or access control was bypassed. No official South Carolina adapter was enabled from these responses.",
+  "attempts": [
+    {
+      "url": "https://www.enr-scvotes.org/SC/127300/versions.txt",
+      "http_status": 403,
+      "local_raw_path": "/private/tmp/pol-west-sc-versions.body",
+      "sha256": "4c927029d07545ffccb24b3e112069dc04bfe71ffde4b50a85f68f9beb654ec9",
+      "fetched_at": "2026-11-03T19:29:05.493386+00:00",
+      "bytes": 919
+    },
+    {
+      "url": "https://www.enr-scvotes.org/SC/127300/reports/detailxml.zip",
+      "http_status": 403,
+      "local_raw_path": "/private/tmp/pol-west-sc-detail.body",
+      "sha256": "c3924ec2dcb8cf2cda898615ee9419d89362d81af5ef7a4e02eff6ae211f62d2",
+      "fetched_at": "2026-11-03T19:29:04.776849+00:00",
+      "bytes": 919
+    },
+    {
+      "url": "https://www.enr-scvotes.org/SC/127300/json/en/summary.json",
+      "http_status": 403,
+      "local_raw_path": "/private/tmp/pol-west-sc-summary.body",
+      "sha256": "6a5b9296fe0df75d66f20bb85c8524cf4429de36f2c0c60346c0c6b8a5e46300",
+      "fetched_at": "2026-11-03T19:29:05.617868+00:00",
+      "bytes": 919
+    }
+  ],
+  "assessed_at": "2026-11-03T19:29:17.160466+00:00",
+  "index_sha256": "e2693b3d914e72b7b6831bb51d103004d6d07d780f9a14f6f335117f1e036311"
+}

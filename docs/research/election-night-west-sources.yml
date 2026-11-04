@@ -1,0 +1,29 @@
+# Verified on November 3, 2026. Proposal file; root integrates shared registry.
+sources:
+  - id: ca
+    label: California Secretary of State
+    state: CA
+    adapter: california
+    url: https://media.sos.ca.gov/media/us-rep.json
+    metadata_url: https://media.sos.ca.gov/media/json-endpoints.csv
+    minimum_interval: 180
+    expected_counties: 58
+    coverage_note: All 52 House districts and 58 counties. Companion official endpoint index binds the undated JSON to the November 3 general election. New congressional boundaries require compatible historical baselines.
+    enabled: true
+  - id: wa
+    label: Washington Secretary of State
+    state: WA
+    adapter: washington
+    url: https://app.enhancedvoting.com/cdn/results/washington/export-20261103.json
+    minimum_interval: 180
+    expected_counties: 39
+    coverage_note: All 10 House districts and 39 counties. County totals only; precinct percentages are not used as vote fractions.
+    enabled: true
+  - id: ak_summary
+    label: Alaska Division of Elections, official summary PDF
+    state: AK
+    adapter: alaska_summary
+    url: https://www.elections.alaska.gov/enr/26GENR/results/ElectionSummaryReportRPT.pdf
+    minimum_interval: 300
+    coverage_note: Statewide Senate and House first-choice totals only. Aggregate-only; excludes ranked-choice transfers and makes no finality inference. Requires pdftotext (poppler-utils).
+    enabled: true

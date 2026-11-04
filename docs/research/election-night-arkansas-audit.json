@@ -1,0 +1,64 @@
+{
+  "assessed_at": "2026-11-03T19:28:55.597558+00:00",
+  "election_date": "2026-11-03",
+  "adapter": "arkansas_tally",
+  "state": "AR",
+  "geography_level": "county_district_portion",
+  "covered_race_ids": [
+    "AR-01",
+    "AR-02",
+    "AR-03",
+    "AR-04",
+    "AR-S"
+  ],
+  "reporting_units": 153,
+  "county_count": 75,
+  "zero_scaffold": true,
+  "published_at": "2026-11-02T22:43:53Z",
+  "missing_federal_races": [],
+  "vote_method_validation": {
+    "3998ba83-6287-4edd-a0ba-da27ce914447": "Absentee",
+    "5bc379df-1ba9-467b-b332-de83d2be5b41": "Election Day",
+    "d58daa89-d7d6-4a9c-8b01-3fe57b2e14b7": "Early Voting",
+    "ec325495-c010-4b1b-998d-1619222f796c": "TV - Total Votes"
+  },
+  "counting_rule": "Candidate components Absentee, Election Day and Early Voting are summed exactly once. Total Votes is accepted only as a standalone candidate total; overlapping, duplicate, missing or unknown components fail validation. Statewide summaries, nested precincts and turnout are excluded. Party names come from metadata PartyID lookups, not candidate-name heuristics.",
+  "memory_rule": "JSON on_load removes nested Locations from county objects and releases unsupported local-contest objects. Complete JSON syntax is still validated.",
+  "metadata_rule": "The raw ElectionID must exactly equal both metadata election IDs. Current general-election date/name, county FIPS/name and vote-type descriptions must match. Config advertises passwordRequired=false.",
+  "limitations": [
+    "First sample is an official zero scaffold, not evidence of later live update reliability.",
+    "No matched historical baseline added for Arkansas.",
+    "Timestamp is the companion election-info lastUpdated, archived alongside raw export.",
+    "If both aggregate and named write-in choices appear, adapter fails rather than double-counting them."
+  ],
+  "probes": [
+    {
+      "kind": "results",
+      "url": "https://results.tally-enr.com/results/arkansas/11b07106-031e-4d7c-911a-d01fb473d6dd/FullDataFile.json",
+      "http_status": 200,
+      "local_raw_path": "/private/tmp/pol-coverage/351e462c2982e5af.body",
+      "bytes": 50019832,
+      "sha256": "5ea618cef227512260eb4f21351b0083c48310ffcf46d9f7a6eb82a4e15059b4",
+      "fetched_at": "2026-11-03T19:23:51.338522+00:00"
+    },
+    {
+      "kind": "metadata",
+      "url": "https://enr-results-api.totalresults.com/Election/GetElectionInfo?cId=arkansas&electionID=11b07106-031e-4d7c-911a-d01fb473d6dd",
+      "http_status": 200,
+      "local_raw_path": "/private/tmp/pol-west-ar-info.body",
+      "bytes": 598172,
+      "sha256": "dbff531bc014d9119e7f5e312b80b5d1d5be1ca8f4cd9dc927277782c97b44f5",
+      "fetched_at": "2026-11-03T19:26:19.804055+00:00"
+    },
+    {
+      "kind": "configuration",
+      "url": "https://enr-results-api.totalresults.com/Election/GetElectionConfig?cId=arkansas&electionID=11b07106-031e-4d7c-911a-d01fb473d6dd",
+      "http_status": 200,
+      "local_raw_path": "/private/tmp/pol-west-ar-config.body",
+      "bytes": 313,
+      "sha256": "3e4555bc02af03970ae139245a09f8a98aba57567cbe24088aaf8f84fdcf7e50",
+      "fetched_at": "2026-11-03T19:26:19.234639+00:00"
+    }
+  ],
+  "verification": "Four focused tests / 16 assertions pass; real current file parsed to 153 county/race units; RuboCop clean."
+}

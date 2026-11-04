@@ -1,0 +1,66 @@
+# Verified November 3, 2026 before polls close. These county sources are
+# incomplete portions of races; do not add them to an aggregate fallback.
+# current_ver.txt must be archived and digit-validated by the collector before
+# substituting the SAME version into both summary and metadata URLs.
+sources:
+  - id: ny_rockland
+    label: Rockland County Board of Elections, New York
+    state: NY
+    adapter: new_york_county
+    url: https://app.enhancedvoting.com/cdn/results/rockland-county-ny/export-GE2026.json
+    page_url: https://app.enhancedvoting.com/results/public/rockland-county-ny/GE2026
+    minimum_interval: 180
+    coverage_note: Rockland County portion of NY-17 only. Exact matching candidate names consolidate fusion ballot lines. No complete district geography or historical baseline established.
+    enabled: true
+  - id: md_house
+    label: Maryland State Board of Elections
+    state: MD
+    adapter: maryland_house
+    url: https://elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html
+    minimum_interval: 180
+    coverage_note: Official totals for all eight House districts. NR means not reported; affected contests remain unknown. Contest totals only; no county inference.
+    enabled: true
+  - id: nj_atlantic
+    label: Atlantic County Clerk, New Jersey
+    state: NJ
+    adapter: clarity_county
+    version_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/current_ver.txt
+    url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/{version}/json/en/summary.json
+    metadata_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/{version}/json/en/electionsettings.json
+    page_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/#/summary
+    minimum_interval: 180
+    coverage_note: Atlantic County portion of NJ-02 and Senate only. County reporting does not establish complete district geography or remaining vote.
+    enabled: true
+  - id: nj_ocean
+    label: Ocean County Clerk, New Jersey
+    state: NJ
+    adapter: clarity_county
+    version_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/current_ver.txt
+    url: https://results.enr.clarityelections.com/NJ/Ocean/127556/{version}/json/en/summary.json
+    metadata_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/{version}/json/en/electionsettings.json
+    page_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/web.345435/#/summary
+    minimum_interval: 180
+    coverage_note: Ocean County portions of NJ-02, NJ-04 and Senate only. No complete district geography or historical baseline established.
+    enabled: true
+  - id: nj_gloucester
+    label: Gloucester County Clerk, New Jersey
+    state: NJ
+    adapter: clarity_county
+    version_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/current_ver.txt
+    url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/{version}/json/en/summary.json
+    metadata_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/{version}/json/en/electionsettings.json
+    page_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/web.345435/#/summary
+    minimum_interval: 180
+    coverage_note: Gloucester County portions of NJ-01, NJ-02 and Senate only. Explicit congressional names identify House contests despite the publisher's State category.
+    enabled: true
+  - id: nj_morris
+    label: Morris County Clerk, New Jersey
+    state: NJ
+    adapter: clarity_county
+    version_url: https://results.enr.clarityelections.com/NJ/Morris/127576/current_ver.txt
+    url: https://results.enr.clarityelections.com/NJ/Morris/127576/{version}/json/en/summary.json
+    metadata_url: https://results.enr.clarityelections.com/NJ/Morris/127576/{version}/json/en/electionsettings.json
+    page_url: https://results.enr.clarityelections.com/NJ/Morris/127576/web.345435/#/summary
+    minimum_interval: 180
+    coverage_note: Disabled. Inspected version 382416 explicitly has istestmode=1. NJ-07 and NJ-11 county portions require production validation before use.
+    enabled: false

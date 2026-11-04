@@ -24,6 +24,39 @@ bin/kamal app exec 'bin/rails pol:model'   # any one-off task
 
 Kamal builds from git HEAD — commit before deploying.
 
+## Election-night preview
+
+The unlisted preview is `https://535.wtf/election-night`. It has no public
+navigation link, and both the HTML and snapshot endpoint request no indexing.
+Anyone with the URL can open it; it is not authenticated.
+
+The production `job` role enables `ELECTION_NIGHT_ENABLED=true` and uses one
+GoodJob worker thread on this 2 GB host. SweepJob caps queued plus running
+sweeps at one, skips overlapping manual collection, and waits for a frozen
+prior before attempting its first scheduled run. The web role does not
+schedule collection. Both roles use `pol_storage:/rails/storage`.
+
+Initialize a new production store once, from the complete polling forecast
+that finished before the first poll-close cutoff:
+
+```sh
+bin/kamal app exec --reuse --roles job 'bin/rails election_night:freeze'
+bin/kamal app exec --reuse --roles job 'bin/rails runner "ElectionNight::SweepJob.perform_later"'
+```
+
+Do not copy a development prior or change an existing frozen prior in place.
+The page stays in its waiting state until a complete sweep publishes an atomic
+snapshot. Check the public snapshot's generation time, source health and actual
+nonzero vote coverage; a working HTTP response alone does not prove the provider
+has newer counts. Election-night results do not write the polling forecasts or
+start newsroom/email publication.
+
+To stop automatic collection, remove the worker's election-night flag and
+redeploy that role. Retained snapshots remain visible with their age. The
+pre-preview production release `54593ee45f7c96cb19cf3f4136182223b97ee643`
+is the rollback target for a failed launch; use `bin/kamal rollback VERSION`
+while that image is retained on the server.
+
 ## First-boot / rebuild checklist
 
 1. `bin/kamal setup` (installs docker on the host, boots Postgres, deploys).
