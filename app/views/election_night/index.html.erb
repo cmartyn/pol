@@ -13,12 +13,30 @@
     <p class="night-deck">Who will control Congress? Our model updates as usable returns arrive.</p>
   </header>
 
+  <section class="night-anxiety" aria-labelledby="night-anxiety-label" data-election-night-target="anxietyPanel" hidden>
+    <div class="night-anxiety-heading">
+      <label id="night-anxiety-label" for="night-anxiety-input">Anxiety dial</label>
+      <output for="night-anxiety-input" data-election-night-target="anxietyLabel" aria-live="polite">Touching grass</output>
+    </div>
+    <p class="night-anxiety-explanation" id="night-anxiety-explanation">Purely theatrical. The numbers are the real forecast.</p>
+    <div class="night-anxiety-controls">
+      <div class="night-anxiety-range">
+        <input id="night-anxiety-input" type="range" min="0" max="4" step="1" value="0"
+               aria-valuetext="Touching grass" aria-describedby="night-anxiety-explanation night-anxiety-note"
+               data-election-night-target="anxietyInput" data-action="input->election-night#changeAnxiety">
+        <div class="night-anxiety-scale" aria-hidden="true"><span>Chill</span><span>All tabs open</span></div>
+      </div>
+      <button class="night-anxiety-reset" type="button" data-action="click->election-night#calmDown">Take a breath</button>
+    </div>
+    <p class="night-anxiety-note" id="night-anxiety-note" data-election-night-target="anxietyNote" hidden></p>
+  </section>
+
   <p class="night-connection" role="status" data-election-night-target="connection" hidden></p>
 
   <div data-election-night-target="content" data-revision="<%= @revision %>">
     <%= render "snapshot" %>
   </div>
 
-  <p class="night-refresh-note">Checks for updates every 30 seconds. The needles move only when the forecast changes.</p>
+  <p class="night-refresh-note">Checks for updates every 30 seconds. Anxiety wiggles are just for fun; forecast changes come from the model.</p>
   <noscript><p class="night-refresh-note">JavaScript is off. Refresh this page to check for a new forecast.</p></noscript>
 </div>

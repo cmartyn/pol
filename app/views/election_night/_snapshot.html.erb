@@ -32,6 +32,7 @@
       <h2><%= chamber.capitalize %></h2>
       <p class="night-probability-label">Chance of Democratic control</p>
       <p class="night-probability"><%= night_probability(probability) %></p>
+      <% if available %><p class="night-anxiety-badge" data-election-night-target="anxietyBadge" hidden>Anxiety wiggle · real odds above</p><% end %>
       <svg class="night-dial" viewBox="0 -12 360 207" aria-hidden="true" focusable="false">
         <path class="night-dial-track night-dial-track--low" d="M 30 164 A 150 150 0 0 1 180 14" />
         <path class="night-dial-track night-dial-track--high" d="M 180 14 A 150 150 0 0 1 330 164" />
@@ -41,7 +42,7 @@
         <% end %>
         <% if available %>
           <% x, y = night_needle_point(probability) %>
-          <line class="night-dial-hand" x1="180" y1="164" x2="<%= x %>" y2="<%= y %>" />
+          <line class="night-dial-hand" x1="180" y1="164" x2="<%= x %>" y2="<%= y %>" data-election-night-target="needle" data-probability="<%= probability %>" />
           <circle class="night-dial-hub" cx="180" cy="164" r="6" />
         <% end %>
         <text x="30" y="189" text-anchor="middle">0%</text>

@@ -3,6 +3,20 @@
 .night-date { color: #526170; font-size: .9rem; margin-bottom: .35rem; }
 .night-heading h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 600; line-height: 1.08; letter-spacing: -.04em; }
 .night-deck { margin-top: .8rem; font-size: 1.1rem; line-height: 1.6; color: #526170; }
+.night-anxiety { max-width: 42rem; padding: 1.1rem 0 1.4rem; margin: -.4rem 0 1.3rem; border-top: 1px solid #dbe2e7; }
+.night-anxiety-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .3rem 1rem; }
+.night-anxiety-heading label { font-weight: 650; font-size: .95rem; }
+.night-anxiety-heading output { font-size: .88rem; color: #526170; }
+.night-anxiety-explanation, .night-anxiety-note { color: #526170; font-size: .8rem; line-height: 1.5; margin-top: .35rem; }
+.night-anxiety-controls { display: flex; align-items: flex-start; gap: 1.3rem; margin-top: .6rem; }
+.night-anxiety-range { flex: 1; min-width: 0; }
+.night-anxiety-range input { display: block; width: 100%; min-height: 2.75rem; cursor: pointer; accent-color: #27689f; }
+.night-anxiety-scale { display: flex; justify-content: space-between; gap: 1rem; color: #728391; font-size: .73rem; line-height: 1.4; }
+.night-anxiety-reset { flex: none; min-height: 2.75rem; padding: .55rem .9rem; border: 1px solid #b4c2cd; border-radius: .2rem; background: transparent; color: #172331; font-size: .8rem; cursor: pointer; }
+.night-anxiety-reset:hover { background: #edf3f6; }
+.night-anxiety-range input:focus-visible, .night-anxiety-reset:focus-visible { outline: 2px solid #27689f; outline-offset: 4px; }
+.night-anxiety-badge { color: #835311; font-size: .75rem; line-height: 1.5; margin: -.5rem 0 .8rem; }
+.night-anxiety[hidden], .night-anxiety-note[hidden], .night-anxiety-badge[hidden] { display: none; }
 .night-status { padding: 1rem 1.25rem; background: #edf3f6; line-height: 1.5; font-size: .94rem; }
 .night-status strong { display: block; font-weight: 650; margin-bottom: .2rem; }
 .night-status--experimental { background: #f2f5f7; }
@@ -75,6 +89,9 @@
 .night-connection[hidden] { display: none; }
 @media (max-width: 680px) {
   .night-heading { margin-bottom: 1.4rem; }
+  .night-anxiety { margin-top: 0; }
+  .night-anxiety-controls { gap: .8rem; }
+  .night-anxiety-reset { padding-inline: .65rem; }
   .night-chambers { grid-template-columns: 1fr; margin-top: 1.8rem; }
   .night-chamber { padding: .5rem 0 1.5rem; }
   .night-chamber + .night-chamber { border-left: 0; border-top: 1px solid #dbe2e7; padding-top: 1.8rem; margin-top: .5rem; }
