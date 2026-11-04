@@ -1,3 +1,4 @@
+<% races_with_reported_votes = @coverage.fetch("races_with_raw_returns") { @races.count { |race| night_reported_votes?(race) } } %>
 <section class="night-status night-status--<%= night_status %>" aria-label="Forecast status">
   <% case night_status %>
   <% when "unavailable" %>
@@ -9,16 +10,20 @@
   <% when "demo" %>
     <strong>Demonstration data</strong>
     <p>This local preview uses synthetic probabilities and vote totals. It does not describe election results.</p>
-  <% when "awaiting_results" %>
-    <strong>Awaiting usable returns</strong>
-    <p>No usable returns have entered this forecast yet. The probabilities below reflect our polling and historical priors.</p>
+  <% when "pre_election", "awaiting_results" %>
+    <strong>Pre-election forecast · awaiting returns</strong>
+    <% if races_with_reported_votes.positive? %>
+      <p>The estimates below start from our pre-election forecast. We’re waiting for enough usable returns to update it.</p>
+    <% else %>
+      <p>The estimates below start from our pre-election forecast and will update as enough usable returns arrive.</p>
+    <% end %>
   <% else %>
     <strong>Experimental live forecast</strong>
     <p>Our own estimates from partial returns and pre-election priors. Coverage is incomplete, and this model has not been calibrated on full election-night replays.</p>
   <% end %>
   <% if @snapshot %>
-    <p class="night-timestamp">Model updated <time datetime="<%= @snapshot["generated_at"] %>"><%= night_time(@snapshot["generated_at"]) %></time></p>
-    <% if @snapshot["prior_as_of"].present? %><p class="night-timestamp">Pre-election prior frozen <%= night_time(@snapshot["prior_as_of"]) %></p><% end %>
+    <p class="night-timestamp"><%= night_status == "pre_election" ? "Pre-election forecast as of" : "Model updated" %> <time datetime="<%= @snapshot["generated_at"] %>"><%= night_time(@snapshot["generated_at"]) %></time></p>
+    <% if @snapshot["prior_as_of"].present? && night_status != "pre_election" %><p class="night-timestamp">Pre-election prior frozen <%= night_time(@snapshot["prior_as_of"]) %></p><% end %>
     <% if night_prior_old? %><p class="night-prior-note" data-testid="night-old-prior">This starting point is more than 48 hours old. Areas without usable returns still depend heavily on it.</p><% end %>
   <% end %>
 </section>
@@ -68,19 +73,18 @@
 <section class="night-coverage" aria-labelledby="night-coverage-heading">
   <div class="night-section-heading">
     <h2 id="night-coverage-heading">What is informing the forecast</h2>
-    <p>Missing areas retain uncertainty from the pre-election model.</p>
+    <p>Unreported races start with the pre-election forecast and may receive shared trend updates from races that are reporting.</p>
   </div>
   <dl class="night-coverage-stats">
     <% if @coverage.key?("competitive_races_total") %>
       <div data-testid="night-competitive-coverage"><dt>Competitive races with raw sources</dt><dd><%= number_with_delimiter(@coverage.fetch("competitive_races_with_raw_sources", 0)) %><span> / <%= number_with_delimiter(@coverage["competitive_races_total"]) %></span></dd></div>
     <% end %>
-    <div data-testid="night-model-coverage"><dt>Races directly using returns</dt><dd><%= number_with_delimiter(@coverage.fetch("races_with_returns", 0)) %><span> / <%= number_with_delimiter(@coverage.fetch("races_total", 0)) %></span></dd></div>
-    <% unless @coverage.key?("competitive_races_total") %><div><dt>Races with matched baselines</dt><dd><%= number_with_delimiter(@coverage.fetch("races_with_baselines", 0)) %></dd></div><% end %>
-    <div><dt>Sources reporting successfully</dt><dd><%= @sources.count { |source| source["status"] == "ok" } %><span> / <%= @sources.size %></span></dd></div>
+    <div data-testid="night-reported-coverage"><dt>Races with reported votes</dt><dd><%= number_with_delimiter(races_with_reported_votes) %><span> / <%= number_with_delimiter(@coverage.fetch("races_total", 0)) %></span></dd></div>
+    <div data-testid="night-model-coverage"><dt>Races directly updating the forecast</dt><dd><%= number_with_delimiter(@coverage.fetch("races_with_returns", 0)) %><span> / <%= number_with_delimiter(@coverage.fetch("races_total", 0)) %></span></dd></div>
   </dl>
   <% if @coverage.key?("competitive_races_total") %>
     <p class="night-coverage-note" data-testid="night-raw-breakdown"><%= number_with_delimiter(@coverage.fetch("competitive_races_with_county_sources", 0)) %> with county detail · <%= number_with_delimiter(@coverage.fetch("competitive_races_with_contest_sources", 0)) %> with contest totals · <%= number_with_delimiter(@coverage.fetch("competitive_races_with_partial_sources", 0)) %> with partial coverage only.</p>
-    <p class="night-coverage-note">The connected total counts whole-race county feeds or contest totals. Partial coverage covers only some areas and is excluded. Connected feeds can still contain zero votes or delayed returns; a direct model update also needs usable returns and matched historical geography.</p>
+    <p class="night-coverage-note">The connected total counts whole-race county feeds or contest totals. Partial coverage covers only some areas and is excluded. A connected race may still be awaiting returns; a direct model update also needs usable returns and matched historical geography. Until then, its estimate starts from the pre-election forecast and may receive shared trend updates from reporting races.</p>
   <% end %>
   <% if @coverage.key?("races_with_outstanding_estimates") || @coverage.key?("competitive_races_with_baselines") %>
     <p class="night-coverage-note" data-testid="night-outstanding-coverage">
@@ -105,8 +109,9 @@
                 <td><%= night_probability(race["p_rep_win"]) %></td>
                 <td><%= night_probability(race["p_other_win"]) %></td>
                 <td class="night-observed-votes">
-                  <span><%= race["has_raw_source"] == false ? "—" : number_with_delimiter(race.fetch("observed_votes", 0)) %></span>
-                  <% if (raw_coverage = night_raw_coverage(race)) %><p class="night-raw-level"><%= raw_coverage %></p><% end %>
+                  <% observed_votes = race["observed_votes"] %>
+                  <span><%= night_reported_votes?(race) ? number_with_delimiter(observed_votes) : "Awaiting returns" %></span>
+                  <% if race["has_raw_source"] != false && (raw_coverage = night_raw_coverage(race)) %><p class="night-raw-level"><%= raw_coverage %></p><% end %>
                 </td>
                 <td class="night-outstanding-votes" aria-describedby="night-outstanding-note">
                   <% if (outstanding = night_outstanding_estimate(race)) %>
@@ -119,7 +124,7 @@
                 </td>
                 <td>
                   <span class="night-race-status <%= "night-race-status--returns" if %w[returns returns_updated].include?(race["status"]) %>"><%= night_race_status(race["status"]) %></span>
-                  <% if race["reason"].present? %><p class="night-race-reason"><%= race["reason"] %></p><% end %>
+                  <% if night_reported_votes?(race) && race["reason"].present? %><p class="night-race-reason"><%= race["reason"] %></p><% end %>
                 </td>
               </tr>
             <% end %>
@@ -144,7 +149,7 @@
     </p>
   <% end %>
   <% if @sources.empty? %>
-    <p class="night-empty">Source status will appear after the first collection run.</p>
+    <p class="night-empty">Source details will appear as returns become available.</p>
   <% else %>
     <% civic_data = @sources.any? { |source| source["id"].to_s.start_with?("civic_") || source["upstream_url"] == "https://civicapi.org/" || source["id"] == "polling_desk" } %>
     <% polling_desk_data = @sources.any? { |source| source["id"] == "polling_desk" } %>

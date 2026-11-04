@@ -3,7 +3,7 @@ require "digest"
 class ElectionNightController < PublicController
   before_action :load_snapshot
   helper_method :night_probability, :night_time, :night_status, :night_needle_point, :night_race_status, :night_prior_old?, :night_raw_coverage,
-    :night_outstanding_estimate, :night_estimate_votes
+    :night_outstanding_estimate, :night_estimate_votes, :night_reported_votes?
 
   def index
   end
@@ -17,7 +17,8 @@ class ElectionNightController < PublicController
       response.headers["Cache-Control"] = "no-store"
       response.headers["CDN-Cache-Control"] = "no-store"
       response.headers["X-Robots-Tag"] = "noindex, nofollow"
-      @snapshot = ElectionNight::Store.new.latest
+      store = ElectionNight::Store.new
+      @snapshot = store.latest || ElectionNight::PreElectionSnapshot.new(prior: store.read("prior")).call
       @revision = Digest::SHA256.hexdigest([ @snapshot.to_json, night_status ].join)
       @coverage = @snapshot&.fetch("coverage", {}) || {}
       @sources = Array(@snapshot&.fetch("sources", []))
@@ -45,6 +46,9 @@ class ElectionNightController < PublicController
 
     def night_status
       return "unavailable" unless @snapshot
+      # A saved polling forecast is the starting point, not a stale returns
+      # feed. Its real date remains visible while we wait for the first sweep.
+      return "pre_election" if @snapshot["status"] == "pre_election"
       return "stale" if @snapshot["status"] == "stale"
 
       generated = Time.iso8601(@snapshot.fetch("generated_at", ""))
@@ -79,8 +83,13 @@ class ElectionNightController < PublicController
       when "returns", "returns_updated" then "Returns + prior"
       when "shared_update" then "Related races + prior"
       when "uncontested" then "Uncontested"
-      else "Prior only"
+      else "Pre-election forecast"
       end
+    end
+
+    def night_reported_votes?(race)
+      votes = race["observed_votes"]
+      race["has_raw_source"] != false && votes.is_a?(Numeric) && votes.finite? && votes.positive?
     end
 
     def night_raw_coverage(race)
