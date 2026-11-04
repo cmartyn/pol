@@ -21,6 +21,14 @@ servers:
     hosts:
       - 68.183.55.31
     cmd: bundle exec good_job start
+    env:
+      clear:
+        # The preview is unlisted. Only the worker schedules collection; the
+        # web process reads atomic snapshots from the shared storage volume.
+        ELECTION_NIGHT_ENABLED: "true"
+        # A cold official export can use hundreds of MB. Serialize worker
+        # jobs on this 2 GB host; SweepJob's enqueue cap prevents a backlog.
+        GOOD_JOB_MAX_THREADS: "1"
 
 # kamal-proxy terminates SSL for these hostnames with an auto-issued Let's
 # Encrypt certificate (production.rb's assume_ssl/force_ssl are on to

@@ -1,6 +1,6 @@
 # Operating the independent election-night prototype
 
-This feature is isolated on `codex/election-night-needle`. It does not write existing forecasts, trigger newsroom stories or send email. Collection is disabled by default. Nothing has been deployed.
+This feature was developed on `codex/election-night-needle` and is released as an unlisted experimental preview. It does not write existing forecasts, trigger newsroom stories or send email. Collection is disabled by default in application code; the production deployment explicitly enables it on the job role.
 
 ## What exists
 
@@ -8,9 +8,15 @@ This feature is isolated on `codex/election-night-needle`. It does not write exi
 
 The preview has no public navigation link. Both endpoints send `X-Robots-Tag: noindex, nofollow`, and the HTML also includes the equivalent robots metadata. The route is not listed in a sitemap. These indexing directives are not access control: anyone who obtains or guesses the URL can open or share it. Do not add a robots.txt disallow rule that prevents crawlers from seeing the noindex directive. Authentication would be a separate requirement for a private preview.
 
-Merging the code does not enable collection or transfer the ignored local snapshot. Without a production prior and snapshot, the route shows its waiting state. A merge can therefore expose the unlisted preview without running the experimental model on the production worker.
+Deploying the configured production job role enables scheduled collection. It waits for a frozen production prior, and the page shows its waiting state until a complete sweep publishes a snapshot. The ignored local snapshot is never transferred to production. Follow the initialization and rollback steps in the deployment guide.
 
-November 3 merge preparation: the unlisted-preview and homepage checks passed (40 tests, 367 assertions), changed Ruby files passed lint, Brakeman reported no warnings, and the JavaScript dependency audit passed. The Ruby dependency audit still reports advisories for addressable, loofah, nokogiri, rack and rails-html-sanitizer. Their lockfile versions are identical to `origin/main` at `54593ee`; these are existing dependency failures, not changes introduced by this feature. The feature branch has no conflicts with that main revision, but the dependency audit must be resolved before all merge checks are green.
+November 3 release preparation resolved the existing Ruby dependency advisories
+with patch updates to addressable, loofah, nokogiri, rack and rails-html-sanitizer.
+The refreshed dependency audit is clean; the full application suite passed
+1,626 tests and 7,023 assertions after those updates and the release guards. The unlisted-preview and
+homepage checks, application security scan, JavaScript dependency audit and
+lint also passed. Production worker configuration and startup commands are in
+[the deployment guide](DEPLOY.md#election-night-preview).
 
 CivicAPI is the primary collection path, with a pinned full-race catalog covering the complete 435-House/35-Senate board. The adapter validates each response independently; a catalog entry alone is not usable data. CivicAPI remains a secondary publisher of raw counts. It provides contest totals and reconciled county detail where available, without supplying our probabilities or turnout estimates.
 
@@ -54,6 +60,8 @@ The collection policy is explicit:
 | PollingDesk fallback | 30 | 300 seconds | Sequential |
 
 Source intervals still apply within scheduled sweeps. The process lock prevents overlapping passes; a three-minute schedule does not guarantee a complete national refresh every three minutes. A slow full pass can outlast that interval, and an unchanged report can be fetched successfully. Measure full-sweep duration from the intended hosting network and monitor repeated failures without increasing concurrency or bypassing publisher limits.
+
+Four consecutive CivicAPI transport, rate-limit or server failures stop new primary requests for that sweep so fallback collection can proceed. Civic requests use five-second connection and ten-second read timeouts without automatic retries. Each sweep rotates its initial probes and starts a fresh failure count; schema failures, per-race 404s and cached errors do not count as a provider outage. Deferred sources retain any previously validated counts and their original timestamps, hashes and explicit error status.
 
 In the current live pass, the 470 primary fetch timestamps spanned **15:25:24–15:29:36 Eastern**, approximately **252 seconds**, before the snapshot published at 15:29:47. A full-board pass can therefore exceed the three-minute scheduler interval. The single-writer lock prevents a second pass from overlapping, and readers keep the previous atomic snapshot until the next publication. Background collection remains disabled by default; this audit did not enable it.
 
