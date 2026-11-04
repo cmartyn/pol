@@ -28,8 +28,8 @@ class ElectionNightController < PublicController
 
     def night_probability(value)
       return "—" unless value.is_a?(Numeric) && value.finite? && value.between?(0, 1)
-      return "<1%" if value.positive? && value < 0.01
-      return ">99%" if value < 1 && value > 0.99
+      return "<1%" if value < 0.01
+      return ">99%" if value > 0.99
 
       "#{(value * 100).round}%"
     end
