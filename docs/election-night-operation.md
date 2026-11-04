@@ -8,7 +8,11 @@ This feature was developed on `codex/election-night-needle` and is released as a
 
 The preview has no public navigation link. Both endpoints send `X-Robots-Tag: noindex, nofollow`, and the HTML also includes the equivalent robots metadata. The route is not listed in a sitemap. These indexing directives are not access control: anyone who obtains or guesses the URL can open or share it. Do not add a robots.txt disallow rule that prevents crawlers from seeing the noindex directive. Authentication would be a separate requirement for a private preview.
 
-Deploying the configured production job role enables scheduled collection. It waits for a frozen production prior, and the page shows its waiting state until a complete sweep publishes a snapshot. The ignored local snapshot is never transferred to production. Follow the initialization and rollback steps in the deployment guide.
+Deploying the configured production job role enables scheduled collection. It waits for a frozen production prior. Before the first snapshot exists, the page reads the saved pre-election forecast, using the frozen run ID when present or the latest successful pre-close run otherwise. It preserves the saved probabilities and forecast timestamp; an invalid frozen run never silently selects a different run. The ignored local snapshot is never transferred to production. Follow the initialization and rollback steps in the deployment guide.
+
+Missing or zero returns are a normal waiting state. Race rows say “Awaiting returns,” and the headline coverage distinguishes races reporting votes from races directly updating the forecast. Races without usable direct evidence start from the frozen pre-election model and can receive shared trend updates from reporting races. Source failures remain visible in the source details; an old live snapshot still gets the stale-data warning. No poll-closing schedule is maintained.
+
+The optional Anxiety dial adds theatrical movement only to the SVG hands. Numeric probabilities and snapshots remain unchanged. Its five levels run from “Touching grass” to “I am the needle,” with a “Take a breath” reset. The choice persists in the current tab, survives snapshot refreshes, pauses in hidden tabs and respects reduced-motion preferences.
 
 November 3 release preparation resolved the existing Ruby dependency advisories
 with patch updates to addressable, loofah, nokogiri, rack and rails-html-sanitizer.

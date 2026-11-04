@@ -1,7 +1,8 @@
 require "test_helper"
 
 class ElectionNightControllerTest < ActionDispatch::IntegrationTest
-  test "empty state never invents a probability" do
+  test "empty state never invents a probability when no published forecast exists" do
+    ChamberForecast.delete_all
     with_night_snapshot(nil) do
       get "/election-night"
       assert_response :success
@@ -15,6 +16,23 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
       assert_select "meta[name=robots][content='noindex, nofollow']", count: 1
       assert_select ".night-date", /Experimental preview/
       assert_select "a[href='/election-night']", count: 0
+    end
+  end
+
+  test "before the first returns snapshot the saved pre-election forecast stays visible" do
+    with_night_snapshot(nil) do
+      get "/election-night"
+      assert_select ".night-status--pre_election strong", "Pre-election forecast · awaiting returns"
+      assert_select "[data-testid='night-house'] .night-probability", "48%"
+      assert_select "[data-testid='night-senate'] .night-probability", "55%"
+      assert_select ".night-dial-hand", count: 2
+      assert_select ".night-timestamp", /Pre-election forecast as of/
+      assert_select ".night-status--stale", count: 0
+      assert_select ".night-observed-votes > span", text: "Awaiting returns", minimum: 1
+      get "/election-night/snapshot"
+      assert_equal "pre_election", response.parsed_body["status"]
+      assert_equal 0.48, response.parsed_body.dig("chambers", "house", "p_dem_control")
+      assert_equal model_runs(:model_run_one).id, response.parsed_body["prior_model_run_id"]
     end
   end
 
@@ -56,8 +74,28 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
   test "waiting for results labels probabilities as the pre-election starting point" do
     with_night_snapshot(snapshot.merge("status" => "awaiting_results")) do
       get "/election-night"
-      assert_select ".night-status strong", "Awaiting usable returns"
-      assert_select ".night-status p", /No usable returns/
+      assert_select ".night-status strong", "Pre-election forecast · awaiting returns"
+      assert_select ".night-status p", /waiting for enough usable returns/
+    end
+  end
+
+  test "zero returns are a normal waiting state without implying failed sources" do
+    value = snapshot.deep_dup
+    value["status"] = "awaiting_results"
+    value["races"].first.merge!("observed_votes" => 0, "status" => "prior_only",
+      "reason" => "Returns displayed; ranked-choice rounds are not modeled")
+    value["coverage"].merge!("races_with_returns" => 0, "races_with_raw_returns" => 0)
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select ".night-status strong", "Pre-election forecast · awaiting returns"
+      assert_select "[data-testid='night-house'] .night-probability", "64%"
+      assert_select "[data-testid='night-reported-coverage'] dd", "0 / 470"
+      assert_select ".night-race-status", "Pre-election forecast"
+      assert_select ".night-observed-votes > span", "Awaiting returns"
+      assert_select ".night-race-reason", count: 0
+      assert_select ".night-status--stale", count: 0
+      assert_select ".night-source-status--issue", count: 0
+      assert_not_includes response.body, "Sources reporting successfully"
     end
   end
 
@@ -127,7 +165,8 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
   test "indirect evidence and uncontested seats are distinguished from direct returns" do
     value = snapshot.deep_dup
     value["races"] = [
-      { "race_key" => "VA-01", "status" => "shared_update", "reason" => "Split-county district or missing county baseline; direct update withheld" },
+      { "race_key" => "VA-01", "status" => "shared_update", "observed_votes" => 1_234,
+        "reason" => "Split-county district or missing county baseline; direct update withheld" },
       { "race_key" => "AL-01", "status" => "uncontested" }
     ]
     with_night_snapshot(value) do
@@ -278,8 +317,9 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
       get "/election-night"
       assert_select "[data-testid='night-competitive-coverage'] dt", "Competitive races with raw sources"
       assert_select "[data-testid='night-competitive-coverage'] dd", "10 / 125"
-      assert_select "[data-testid='night-model-coverage'] dt", "Races directly using returns"
+      assert_select "[data-testid='night-model-coverage'] dt", "Races directly updating the forecast"
       assert_select "[data-testid='night-model-coverage'] dd", "1 / 470"
+      assert_select "[data-testid='night-reported-coverage'] dd", "1 / 470"
       assert_select "[data-testid='night-raw-breakdown']", "3 with county detail · 7 with contest totals · 2 with partial coverage only."
       assert_select ".night-coverage-note", /Partial coverage covers only some areas and is excluded/
       assert_select ".night-coverage-note", /direct model update also needs usable returns/
@@ -297,14 +337,14 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
     ]
     with_night_snapshot(value) do
       get "/election-night"
-      assert_select "tr[data-race-key='NC-01'] .night-observed-votes > span", "0"
+      assert_select "tr[data-race-key='NC-01'] .night-observed-votes > span", "Awaiting returns"
       assert_select "tr[data-race-key='NC-01'] .night-raw-level", "Contest total"
-      assert_select "tr[data-race-key='VA-01'] .night-observed-votes > span", "—"
-      assert_select "tr[data-race-key='VA-01'] .night-raw-level", "No raw source"
+      assert_select "tr[data-race-key='VA-01'] .night-observed-votes > span", "Awaiting returns"
+      assert_select "tr[data-race-key='VA-01'] .night-raw-level", count: 0
       assert_select "tr[data-race-key='NY-17'] .night-observed-votes > span", "1,234"
       assert_select "tr[data-race-key='NY-17'] .night-raw-level", "Partial coverage · delayed"
       assert_select "tr[data-race-key='NH-S'] .night-raw-level", "County detail"
-      assert_select "tr[data-race-key='NH-S'] .night-race-status", "Prior only"
+      assert_select "tr[data-race-key='NH-S'] .night-race-status", "Pre-election forecast"
     end
   end
 
@@ -358,6 +398,7 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
   private
     def with_night_snapshot(value, &block)
       store = Struct.new(:latest).new(value)
+      store.define_singleton_method(:read) { |_name| nil }
       stubbing(ElectionNight::Store, :new, store, &block)
     end
 
