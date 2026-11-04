@@ -150,6 +150,14 @@ class DispatchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  # The route reads "feed.xml" as id "feed" in xml format; the 404 page only
+  # exists as HTML, so this must still come back a 404, not a 500.
+  test "show 404s for a missing dispatch requested as xml" do
+    get "/dispatches/feed.xml"
+
+    assert_response :not_found
+  end
+
   # to_param appends a readable slug, but the id is what resolves — so a link
   # shared before a headline was edited keeps working instead of 404ing.
   test "the permalink reads as a headline but resolves by id" do
