@@ -1,0 +1,48 @@
+{
+  "research_date": "2026-11-03",
+  "samples": [
+    {
+      "url": "https://factsfirstok.com/election-results/results.json",
+      "sample_path": "/private/tmp/pol-coverage/04ddb203fc16c1a7-ebdc764b170a62c8.body",
+      "bytes": 90945,
+      "sha256": "ebdc764b170a62c8d675419b2729ee5d1c7011ccdf784d9117923637b9426887",
+      "finding": "Oklahoma alternative publisher. Explicit 20261103 date, status pre and is_official=false. Candidate roster/county associations present, but vote arrays and county values are null; not imported or treated as zero. Potential independent delivery path to revisit when actual counts appear."
+    },
+    {
+      "url": "https://huguleyite.github.io/rtr-returns-data/returns.json",
+      "sample_path": "/private/tmp/pol-coverage/893dbee54f3bdaa5.body",
+      "bytes": 79,
+      "sha256": "63d02d58d7479df00f0ab75c882565b51456f6dfd02a9d709e1489c7a825778d",
+      "finding": "Alabama alternative publisher returns status pre and an empty contests list. No usable raw race counts."
+    },
+    {
+      "url": "https://www2.alabamavotes.gov/electionNight/",
+      "sample_path": "/private/tmp/pol-coverage/510643aaeb50d45d.body",
+      "bytes": 468,
+      "sha256": "83016dae17acb85a46803ede90afa1f52f776209b5b06ab48809b708bf49e260",
+      "finding": "Official Alabama election-night endpoint returned an ASP.NET form without current raw results in the inspected document. AL-02 uses the validated full-race CivicAPI response."
+    },
+    {
+      "url": "https://polling-desk.com/results.csv",
+      "sample_path": "/private/tmp/pol-coverage/9844241eb23bd8d0.body",
+      "bytes": 270656,
+      "sha256": "93151f368a68362d9eb06b97e33913f8b1d4909301d374fed5bce934a2376718",
+      "finding": "National CSV: 435 House and 35 Senate candidate totals, plus other offices ignored. All inspected votes zero. Explicit CivicAPI attribution; no explicit election-date/test-data columns. Strict catalog validation, aggregate-only lower-priority fallback. Full-race CivicAPI endpoint validation and official feeds remain preferred."
+    },
+    {
+      "url": "https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=20261103/csv/ByParish_67997.csv",
+      "sample_path": "/private/tmp/pol-coverage/316c14b69a78dbe5.body",
+      "bytes": 2437,
+      "sha256": "cccc059d578ffaaa0bc726dadf5511ded0ffbcc50deea7945feb616254111f55",
+      "finding": "Official Louisiana Senate raw counts by all64 parishes. Adapter binds dated file to the official election catalog and rejects malformed values. Final collector source la_senate archives both payload and election metadata."
+    }
+  ],
+  "retrieval_findings": [
+    "Tennessee official state results page and elections.tn.gov/results.php returned HTTP403 to this client; competitive TN races use full-race CivicAPI counts.",
+    "Oklahoma official current-election app returned HTTP403. The secondary Facts First scaffold contains null vote fields, so it was not promoted to a zero-vote source.",
+    "An initial parallel CivicAPI probe had many transient HTTP502 responses. A slower retry recovered52 of53 selected failed requests; a bounded final Minnesota Senate retry succeeded. The final actual Collector pass validated all60 configured CivicAPI race endpoints. Gateway failure is distinct from missing votes.",
+    "Alaska official PDF previously parsed successfully but later failed TLS certificate verification. Collection fails closed without disabling certificate checks.",
+    "Maryland results subdomain began redirecting to elections.maryland.gov; registry uses the verified canonical HTTPS URL. The final page still reports NR for all8 House contests."
+  ],
+  "scope": "Public raw counts only. No forecast, call, expected-vote or prediction endpoint contributes to the model."
+}

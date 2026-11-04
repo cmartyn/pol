@@ -92,6 +92,12 @@ Rails.application.configure do
   # a separate worker process. Production runs a dedicated worker instead
   # (`bundle exec good_job start`), started as its own process/service.
   config.good_job.execution_mode = :async if Rails.env.development?
+  if ENV["ELECTION_NIGHT_ENABLED"] == "true"
+    config.good_job.cron[:election_night] = {
+      cron: "*/3 * * * *", class: "ElectionNight::SweepJob",
+      description: "Collect official results and update the independent experimental needle"
+    }
+  end
 
   # The dashboard is mounted at /admin/good_job (config/routes.rb) and must
   # be gated by the exact same session cookie the rest of /admin uses, not a

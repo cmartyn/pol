@@ -1,0 +1,11 @@
+sources:
+  - id: ar
+    label: Arkansas Secretary of State, Tally results
+    state: AR
+    adapter: arkansas_tally
+    url: https://results.tally-enr.com/results/arkansas/11b07106-031e-4d7c-911a-d01fb473d6dd/FullDataFile.json
+    metadata_url: https://enr-results-api.totalresults.com/Election/GetElectionInfo?cId=arkansas&electionID=11b07106-031e-4d7c-911a-d01fb473d6dd
+    minimum_interval: 180
+    expected_counties: 75
+    coverage_note: Official Senate and all four House contests, county totals. Election metadata validates UUID/date, county and party identities, and disjoint vote methods. Nested precincts and statewide summaries are excluded.
+    enabled: true

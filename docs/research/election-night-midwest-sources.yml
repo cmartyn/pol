@@ -1,0 +1,41 @@
+# Registry proposals. Root integrates these with the shared collector registry.
+sources:
+  - id: mo_st_charles
+    label: St. Charles County Election Authority, Missouri
+    state: MO
+    adapter: st_charles
+    url: https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/summary_33.csv
+    metadata_url: https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/en/Index_33.html
+    minimum_interval: 300
+    coverage_note: Official St. Charles County portions of House districts 2 and 3 only; does not constitute full district coverage. CSV counts reconcile against voting-method subtotals; linked election page supplies current-date proof.
+    enabled: true
+  - id: in
+    label: Indiana Secretary of State
+    state: IN
+    adapter: indiana
+    url: https://enr.indianavoters.in.gov/site/data/OffCatC_1005_{version}.json
+    version_url: https://enr.indianavoters.in.gov/site/data/settings.json
+    metadata_url: https://enr.indianavoters.in.gov/site/data/settings.json
+    version_path: [Root, VersionType]
+    minimum_interval: 120
+    expected_counties: 92
+    coverage_note: Official county portions across all nine House districts. County totals are checked against both statewide and district summaries. No historical House manifest is supplied, so this addition alone does not authorize direct inference.
+    enabled: true
+  - id: ne
+    label: Nebraska Secretary of State
+    state: NE
+    adapter: nebraska
+    url: https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=All&map=CTY
+    metadata_url: https://electionresults.nebraska.gov/
+    minimum_interval: 180
+    aggregate_only: true
+    coverage_note: Official totals for Senate and all three House districts. Despite map=CTY in the URL, rows are contest aggregates. Election date is checked against the official homepage and 2026 contest/candidate IDs; CSV generation time is not a new vote report.
+    enabled: true
+  - id: mi_kalamazoo
+    label: Kalamazoo County Clerk, Michigan
+    state: MI
+    adapter: enhanced_voting
+    url: https://app.enhancedvoting.com/cdn/results/kalamazoo-county-mi/export-2026-General-Election.json
+    minimum_interval: 180
+    coverage_note: Kalamazoo County only, including Senate and county portions of House districts 4 and 5. This is not complete Michigan statewide or district coverage.
+    enabled: true

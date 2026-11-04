@@ -1,0 +1,22 @@
+{
+  "research_date": "2026-11-03",
+  "samples": [
+    {
+      "fixture": "civic_al_house.json",
+      "url": "https://civicapi.org/api/v2/race/86901",
+      "research_date": "2026-11-03",
+      "sha256": "633df27e41ba84a661fedce643fcc4c42e4d0ab3aebabe57961c69b401940634",
+      "bytes": 7869,
+      "sample_path": "/private/tmp/pol-coverage/a9453e8f163b26ff-633df27e41ba84a6.body"
+    },
+    {
+      "fixture": "civic_ak_senate.json",
+      "url": "https://civicapi.org/api/v2/race/86916",
+      "research_date": "2026-11-03",
+      "sha256": "2fff9a859724988620ea9870e53fe6fd63c0d177b36035e1f89304c38adbb191",
+      "bytes": 57280,
+      "sample_path": "/private/tmp/pol-coverage/fa88c996d612fe88-2fff9a8597249886.body"
+    }
+  ],
+  "validation": "Full-race metadata and candidate counts only; no provider expected vote, calls or probabilities. County totals must reconcile candidate by candidate. No independent county geography manifest claimed."
+}

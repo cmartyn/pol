@@ -68,7 +68,7 @@
             At xl the group is a flex row again: wordmark, then the stamp. %>
         <div class="<%= app_shell? ? "contents xl:col-start-1 xl:row-start-1 xl:flex xl:min-w-0 xl:flex-none xl:flex-wrap xl:items-baseline xl:gap-x-2.5" : "col-start-1 row-start-1 flex min-w-0 flex-wrap items-baseline gap-x-2.5" %>">
           <%= link_to "535", root_path, class: "inline-flex min-h-11 items-center font-serif text-2xl font-semibold tracking-tight text-slate-900#{ " col-start-1 row-start-1" if app_shell? }" %>
-          <% if (run = latest_model_run) %>
+          <% if controller_name != "election_night" && (run = latest_model_run) %>
             <span class="font-figure text-xs tracking-tight text-slate-600<%= " col-span-2 row-start-2 mt-0.5 xl:mt-0" if app_shell? %>" data-testid="header-updated">
               <%= Site::Format.last_updated(run.started_at) %>
             </span>
@@ -105,6 +105,7 @@
             a control that could never do anything is worse than none, and
             the no-JS reader already has the published view. %>
         <div class="<%= app_shell? ? "col-start-2 row-start-1 flex shrink-0 items-center justify-end gap-x-1 justify-self-end xl:w-auto xl:gap-x-6 2xl:col-start-3" : "col-start-1 row-start-3 flex w-full items-center justify-end gap-x-6 max-sm:justify-between md:col-start-2 md:row-start-1 md:w-auto 2xl:col-start-3" %>" data-controller="subscribe-dialog">
+          <% unless controller_name == "election_night" %>
           <label class="hidden min-h-11 items-center gap-2 text-slate-600 [html[data-internals]_&]:flex"
                  data-testid="internals-toggle">
             <input type="checkbox" class="peer sr-only" data-internals-toggle-target="switch"
@@ -128,6 +129,7 @@
               <% end %>
             </span>
           </label>
+          <% end %>
 
           <% if app_shell? %>
             <%= link_to "Dispatches", dispatches_path,

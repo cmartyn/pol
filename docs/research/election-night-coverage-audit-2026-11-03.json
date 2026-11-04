@@ -1,0 +1,4569 @@
+{
+  "audit_version": 1,
+  "election_date": "2026-11-03",
+  "generated_at": "2026-11-03T14:43:29-05:00",
+  "snapshot_status": "awaiting_results",
+  "scope": "Raw-result availability and provenance only. No model probabilities or provider forecasts are included. Pre-poll zero scaffolds do not demonstrate live counting reliability.",
+  "inputs": {
+    "snapshot": {
+      "path": "/private/tmp/pol-election-expanded-store/latest.json",
+      "sha256": "c116b1673fe851e92f6b9a9071a345c7eeef5b035a5cc34f172406e2281f07c0"
+    },
+    "source_store": "/private/tmp/pol-election-expanded-store/sources",
+    "registry": {
+      "path": "config/election_night_sources.yml",
+      "sha256": "0c27500570186daac033a2ba0206166c416ad0ed748b5601779b07ad746a0537"
+    },
+    "watchlist": {
+      "path": "config/election_night_watchlist.json",
+      "sha256": "d34dc50fcb3eda7d9d0b784b6ce717f760b8405879f323ad0b9497ebad75214d",
+      "competitive_definition": "Exact membership in the frozen watchlist; no probability values copied into this audit."
+    }
+  },
+  "coverage": {
+    "races_total": 470,
+    "races_with_returns": 0,
+    "races_with_baselines": 44,
+    "races_with_raw_returns": 0,
+    "races_with_raw_sources": 470,
+    "competitive_races_total": 125,
+    "competitive_races_with_raw_sources": 125,
+    "competitive_races_with_county_sources": 65,
+    "competitive_races_with_contest_sources": 60,
+    "competitive_races_with_partial_sources": 0
+  },
+  "breakdown": {
+    "chambers": {
+      "house": 435,
+      "senate": 35
+    },
+    "selected_scope_all": {
+      "contest": 275,
+      "county": 195
+    },
+    "selected_source_kind_all": {
+      "secondary": 271,
+      "official": 199
+    },
+    "selected_source_kind_competitive": {
+      "secondary": 57,
+      "official": 68
+    },
+    "competitive_direct_baselines": 16,
+    "source_records": 84,
+    "source_statuses": {
+      "ok": 82,
+      "error": 2
+    },
+    "usable_source_records": 82,
+    "source_kinds": {
+      "official": 22,
+      "secondary": 62
+    },
+    "validated_full_race_civic_sources": 60,
+    "civic_county_units_available": 1233,
+    "selected_civic_competitive_races": 53
+  },
+  "csv": {
+    "path": "docs/research/election-night-coverage-2026-11-03.csv",
+    "sha256": "8be71819118e01963181fc56c4d06ea5f449c6749a8350618f8fe74b4778f76d",
+    "rows": 470,
+    "definitions": {
+      "selected_scope": "Exactly the published snapshot selection; county, contest or partial. One coherent total per race.",
+      "available_county_fields": "Available accepted county detail, counted separately per source. Does not establish complete geography or permit adding sources together. Zero CivicAPI subsets are not validated complete manifests.",
+      "direct_baseline_available": "Snapshot has_baseline flag only. Does not establish enough counted votes or eligibility for a direct measurement.",
+      "competitive": "Membership in config/election_night_watchlist.json.",
+      "canonical_race_key": "At-large AK/DE/ND/SD/VT/WY -01 or -00 aliases normalize to -AL for source matching.",
+      "selected_source_urls": "Resolved raw download URLs, pipe-separated in the same order as selected_source_ids.",
+      "model_gate_reason": "Snapshot reason for withholding/using direct observation; contains no forecast estimate."
+    }
+  },
+  "at_large_aliases": [
+    {
+      "board_race_key": "AK-01",
+      "canonical_race_key": "AK-AL",
+      "selected_source_ids": [
+        "polling_desk"
+      ]
+    },
+    {
+      "board_race_key": "DE-01",
+      "canonical_race_key": "DE-AL",
+      "selected_source_ids": [
+        "polling_desk"
+      ]
+    },
+    {
+      "board_race_key": "ND-01",
+      "canonical_race_key": "ND-AL",
+      "selected_source_ids": [
+        "polling_desk"
+      ]
+    },
+    {
+      "board_race_key": "SD-01",
+      "canonical_race_key": "SD-AL",
+      "selected_source_ids": [
+        "polling_desk"
+      ]
+    },
+    {
+      "board_race_key": "VT-01",
+      "canonical_race_key": "VT-AL",
+      "selected_source_ids": [
+        "polling_desk"
+      ]
+    },
+    {
+      "board_race_key": "WY-01",
+      "canonical_race_key": "WY-AL",
+      "selected_source_ids": [
+        "polling_desk"
+      ]
+    }
+  ],
+  "timings": {
+    "first_network_sweep": {
+      "log_path": "/private/tmp/pol-election-expanded-run.log",
+      "log_sha256": "cfdd362f7dbd9f4b16443329ca5e113eaddc5ef55dae7fd661762934858435c7",
+      "real_seconds": 102.23,
+      "user_seconds": 18.18,
+      "system_seconds": 0.97,
+      "maximum_resident_set_bytes": 636895232,
+      "maximum_resident_set_mib": 607.39,
+      "context": "First expanded network sweep, superseded by fixes and recovery. Not the final coverage audit."
+    },
+    "final_network_refresh": {
+      "log_path": "/private/tmp/pol-election-expanded-final-run.log",
+      "log_sha256": "8a88b4413152448661a1a5591c2073194e011bc325d76352e7ebe1c0a265b32f",
+      "real_seconds": 45.96,
+      "user_seconds": 13.31,
+      "system_seconds": 0.63,
+      "maximum_resident_set_bytes": 461848576,
+      "maximum_resident_set_mib": 440.45,
+      "context": "Subsequent network refresh using existing historical caches and in-interval source reuse; not a cold benchmark."
+    },
+    "archived_input_replay": {
+      "log_path": "/private/tmp/pol-election-expanded-replay.log",
+      "log_sha256": "a7991716580b13b83e554d1542e78611b91e18be8bf990236204712878dd9a14",
+      "real_seconds": 11.61,
+      "user_seconds": 11.27,
+      "system_seconds": 0.33,
+      "reparsed_usable_sources": 82,
+      "identical_normalization_and_coverage": true,
+      "context": "Reparsed immutable archived raw and companion metadata, without network. RSS unavailable because sandbox denied the timing utility sysctl; no RSS claim."
+    }
+  },
+  "verification": {
+    "test_suite": {
+      "tests": 1550,
+      "assertions": 6474,
+      "failures": 0,
+      "errors": 0,
+      "reported_by": "Root integration runner"
+    },
+    "autoload": "Passed Rails autoload check",
+    "ruby_lint": "48 election-night Ruby files passed",
+    "browser": "Desktop and 375px mobile checked; no horizontal overflow; source accordion verified.",
+    "archive_hashes": "Every recorded raw, metadata, version and baseline hash verified against stored bytes.",
+    "snapshot_source_hashes": "Every source hash set matches the final snapshot input_hashes."
+  },
+  "limitations": [
+    "All accepted current vote counts are zero; no race has a direct observation. This is a pre-poll availability check.",
+    "Raw coverage expanded to the whole board, but 44 races have historical direct baselines, including 16 competitive races. Direct model gates remain unchanged.",
+    "CivicAPI and PollingDesk share CivicAPI as upstream. They are delivery alternatives, not independent corroboration.",
+    "PollingDesk CSV lacks explicit election-date and test-data fields. It is a pinned 2026 general-election catalog, lower-priority aggregate raw display only.",
+    "Sixty CivicAPI full-race feeds validated election/state/race identity and explicit test_data=false. Available zero county subsets do not prove complete geography.",
+    "The development prior is dated 2026-10-21T07:00:35-04:00 and is stale for public election-day operation.",
+    "Collection remains disabled by default; this branch has not been deployed."
+  ],
+  "known_source_findings": [
+    {
+      "id": "oh",
+      "finding": "Actual official XML has IsTest=true; rejected and unavailable until a production payload validates."
+    },
+    {
+      "id": "ak_summary",
+      "finding": "Final collector failed TLS certificate verification: unable to get local issuer certificate. No official PDF counts accepted; TLS verification remains enabled."
+    },
+    {
+      "id": "md_house",
+      "finding": "HTTP/parser succeeded but every inspected House contest is NR. No vote total substituted; secondary fallback supplies raw coverage."
+    },
+    {
+      "id": "ca",
+      "finding": "First sweep timed out; successful validated official fetch recovered before the final snapshot."
+    },
+    {
+      "id": "mo_st_charles",
+      "finding": "Initial encoding incompatibility was fixed; final official county CSV plus metadata parsed successfully."
+    },
+    {
+      "id": "fl",
+      "finding": "FL-10 absent from official current export; missing contest is not zero or a call. Whole-board fallback covers its display."
+    }
+  ],
+  "sources": [
+    {
+      "id": "nc",
+      "state": "NC",
+      "label": "North Carolina State Board of Elections",
+      "source_kind": "official",
+      "url": "https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip",
+      "download_url": "https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "expected_counties": 100,
+      "adapter": "north_carolina",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip",
+          "sha256": "a0a046b2878157904343e9053f747094c7230a8d5c0e2e80359e264071ac73fe",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nc/a0a046b2878157904343e9053f747094c7230a8d5c0e2e80359e264071ac73fe",
+          "bytes": 636927,
+          "hash_verified": true
+        },
+        "baseline": {
+          "url": "https://dl.ncsbe.gov/ENRS/2024_11_05/results_pct_20241105.zip",
+          "sha256": "2fab44e9b12e03c0d88ef832c2e6dc8c569e2b020d64df06a8b551b62bbdb426",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nc-baseline/2fab44e9b12e03c0d88ef832c2e6dc8c569e2b020d64df06a8b551b62bbdb426",
+          "bytes": 3741131,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 215,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "NC-01",
+          "NC-02",
+          "NC-03",
+          "NC-04",
+          "NC-05",
+          "NC-06",
+          "NC-07",
+          "NC-08",
+          "NC-09",
+          "NC-10",
+          "NC-11",
+          "NC-12",
+          "NC-13",
+          "NC-14",
+          "NC-S"
+        ],
+        "county_unit_count": 215,
+        "county_race_count": 15,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "az",
+      "state": "AZ",
+      "label": "Arizona Secretary of State",
+      "source_kind": "official",
+      "url": "https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json",
+      "download_url": "https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T17:25:40Z",
+      "normalization_version": 2,
+      "expected_counties": 15,
+      "adapter": "enhanced_voting",
+      "minimum_interval_seconds": 120,
+      "archives": {
+        "raw": {
+          "url": "https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json",
+          "sha256": "745cc237441f6891bf85254719b90926e56bea4798977e0891c585f77a0fea68",
+          "path": "/private/tmp/pol-election-expanded-store/raw/az/745cc237441f6891bf85254719b90926e56bea4798977e0891c585f77a0fea68",
+          "bytes": 71329749,
+          "hash_verified": true
+        },
+        "baseline": {
+          "url": "https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv",
+          "sha256": "538a8fbe2d7a20524b049dd1b3b9ec7e215c4433d99f91fbd7b0dea05270136a",
+          "path": "/private/tmp/pol-election-expanded-store/raw/az-baseline/538a8fbe2d7a20524b049dd1b3b9ec7e215c4433d99f91fbd7b0dea05270136a",
+          "bytes": 352475,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 30,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "AZ-01",
+          "AZ-02",
+          "AZ-03",
+          "AZ-04",
+          "AZ-05",
+          "AZ-06",
+          "AZ-07",
+          "AZ-08",
+          "AZ-09"
+        ],
+        "county_unit_count": 30,
+        "county_race_count": 9,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "ga",
+      "state": "GA",
+      "label": "Georgia Secretary of State",
+      "source_kind": "official",
+      "url": "https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json",
+      "download_url": "https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T10:28:19Z",
+      "normalization_version": 2,
+      "expected_counties": 159,
+      "adapter": "enhanced_voting",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json",
+          "sha256": "f464d3b037a82d594c893aef072042530a84b6b1cb3edb76b1e3873bed2dc3ba",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ga/f464d3b037a82d594c893aef072042530a84b6b1cb3edb76b1e3873bed2dc3ba",
+          "bytes": 46363141,
+          "hash_verified": true
+        },
+        "baseline": {
+          "url": "https://results.sos.ga.gov/cdn/results/Georgia/export-2024NovGen.json",
+          "sha256": "a4c996808791683703951815387b4b1e5001f659f8839b5d667b03a0023e6a9b",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ga-baseline/a4c996808791683703951815387b4b1e5001f659f8839b5d667b03a0023e6a9b",
+          "bytes": 33718327,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 340,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "GA-01",
+          "GA-02",
+          "GA-03",
+          "GA-04",
+          "GA-05",
+          "GA-06",
+          "GA-07",
+          "GA-08",
+          "GA-09",
+          "GA-10",
+          "GA-11",
+          "GA-12",
+          "GA-13",
+          "GA-14",
+          "GA-S"
+        ],
+        "county_unit_count": 340,
+        "county_race_count": 15,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "va",
+      "state": "VA",
+      "label": "Virginia Department of Elections",
+      "source_kind": "official",
+      "url": "https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json",
+      "download_url": "https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-02T22:13:22Z",
+      "normalization_version": 2,
+      "expected_counties": 133,
+      "adapter": "enhanced_voting",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json",
+          "sha256": "9c39135314880682404c2b42743a7bbc84f14a58407399e9c9f6fec56ed6dd10",
+          "path": "/private/tmp/pol-election-expanded-store/raw/va/9c39135314880682404c2b42743a7bbc84f14a58407399e9c9f6fec56ed6dd10",
+          "bytes": 26202160,
+          "hash_verified": true
+        },
+        "baseline": {
+          "url": "https://enr.elections.virginia.gov/cdn/results/Virginia/export-2024NovemberGeneral.json",
+          "sha256": "c6b91f92e3850cdbc89b170ccca6612a321528d42245cf7fee4bdd0e93a8857e",
+          "path": "/private/tmp/pol-election-expanded-store/raw/va-baseline/c6b91f92e3850cdbc89b170ccca6612a321528d42245cf7fee4bdd0e93a8857e",
+          "bytes": 31963759,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 278,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "VA-01",
+          "VA-02",
+          "VA-03",
+          "VA-04",
+          "VA-05",
+          "VA-06",
+          "VA-07",
+          "VA-08",
+          "VA-09",
+          "VA-10",
+          "VA-11",
+          "VA-S"
+        ],
+        "county_unit_count": 278,
+        "county_race_count": 12,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "tx",
+      "state": "TX",
+      "label": "Texas Secretary of State",
+      "source_kind": "official",
+      "url": "https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815",
+      "download_url": "https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "expected_counties": 254,
+      "adapter": "texas",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815",
+          "sha256": "eee0452664e479477a31a7d7f1d30f70317c5cb61f4c489b719f06ff19e3288c",
+          "path": "/private/tmp/pol-election-expanded-store/raw/tx/eee0452664e479477a31a7d7f1d30f70317c5cb61f4c489b719f06ff19e3288c",
+          "bytes": 4168297,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/53815",
+          "sha256": "32ab9ac37d316df8c0e2c851ac5808e6c1ed3d10453b4331d3e9578c35c43c38",
+          "path": "/private/tmp/pol-election-expanded-store/raw/tx-metadata/32ab9ac37d316df8c0e2c851ac5808e6c1ed3d10453b4331d3e9578c35c43c38",
+          "bytes": 1613174,
+          "hash_verified": true
+        },
+        "baseline": {
+          "url": "https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv",
+          "sha256": "538a8fbe2d7a20524b049dd1b3b9ec7e215c4433d99f91fbd7b0dea05270136a",
+          "path": "/private/tmp/pol-election-expanded-store/raw/tx-baseline/538a8fbe2d7a20524b049dd1b3b9ec7e215c4433d99f91fbd7b0dea05270136a",
+          "bytes": 352475,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 564,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "TX-01",
+          "TX-02",
+          "TX-03",
+          "TX-04",
+          "TX-05",
+          "TX-06",
+          "TX-07",
+          "TX-08",
+          "TX-09",
+          "TX-10",
+          "TX-11",
+          "TX-12",
+          "TX-13",
+          "TX-14",
+          "TX-15",
+          "TX-16",
+          "TX-17",
+          "TX-18",
+          "TX-19",
+          "TX-20",
+          "TX-21",
+          "TX-22",
+          "TX-23",
+          "TX-24",
+          "TX-25",
+          "TX-26",
+          "TX-27",
+          "TX-28",
+          "TX-29",
+          "TX-30",
+          "TX-31",
+          "TX-32",
+          "TX-33",
+          "TX-34",
+          "TX-35",
+          "TX-36",
+          "TX-37",
+          "TX-38",
+          "TX-S"
+        ],
+        "county_unit_count": 564,
+        "county_race_count": 39,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "mi_kent",
+      "state": "MI",
+      "label": "Kent County Clerk, Michigan",
+      "source_kind": "official",
+      "url": "https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json",
+      "download_url": "https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-13T14:16:18Z",
+      "normalization_version": 2,
+      "adapter": "enhanced_voting",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json",
+          "sha256": "020c9a423fa38b44b7f6071b4289269c9cc2f13eeccbd0e077dbc049f13e3317",
+          "path": "/private/tmp/pol-election-expanded-store/raw/mi_kent/020c9a423fa38b44b7f6071b4289269c9cc2f13eeccbd0e077dbc049f13e3317",
+          "bytes": 10038279,
+          "hash_verified": true
+        },
+        "baseline": {
+          "url": "https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-2024KentCountyGeneral.json",
+          "sha256": "e09ba38ffe8dc7324fdc9fe6465d228f6961dd677b5599d96cc2863286b58e1a",
+          "path": "/private/tmp/pol-election-expanded-store/raw/mi_kent-baseline/e09ba38ffe8dc7324fdc9fe6465d228f6961dd677b5599d96cc2863286b58e1a",
+          "bytes": 11221370,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "MI-02",
+          "MI-03",
+          "MI-S"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 3,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "ia_ledger",
+      "state": "IA",
+      "label": "Iowa Ledger, relaying Iowa Secretary of State totals",
+      "source_kind": "secondary",
+      "url": "https://iowaledger.com/results/2026.json",
+      "download_url": "https://iowaledger.com/results/2026.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T16:53:23Z",
+      "normalization_version": 2,
+      "adapter": "iowa_ledger",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://iowaledger.com/results/2026.json",
+          "sha256": "ae6f925c131c9fc2bc9eab690a1a53a809015c91b0e529746db76c1b47a228ec",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ia_ledger/ae6f925c131c9fc2bc9eab690a1a53a809015c91b0e529746db76c1b47a228ec",
+          "bytes": 277160,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 5,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "IA-01",
+          "IA-02",
+          "IA-03",
+          "IA-04",
+          "IA-S"
+        ],
+        "county_unit_count": 0,
+        "county_race_count": 0,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "oh",
+      "state": "OH",
+      "label": "Ohio Secretary of State",
+      "source_kind": "official",
+      "url": "https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob",
+      "download_url": "https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob",
+      "status": "error",
+      "usable": false,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "error": "Results unavailable or failed validation (ElectionNight::Sources::Base::InvalidData)",
+      "last_good_at": null,
+      "normalization_version": 2,
+      "expected_counties": 88,
+      "adapter": "ohio",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob",
+          "sha256": "b41489cdcf08bb31939126affc3ac1d7a94182ca01479ba7673091747db5548b",
+          "path": "/private/tmp/pol-election-expanded-store/raw/oh/b41489cdcf08bb31939126affc3ac1d7a94182ca01479ba7673091747db5548b",
+          "bytes": 1220414,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": null,
+        "test": null,
+        "unit_count": 0,
+        "aggregate_unit_count": 0,
+        "race_keys": [],
+        "county_unit_count": 0,
+        "county_race_count": 0,
+        "all_current_counts_zero": null
+      }
+    },
+    {
+      "id": "fl",
+      "state": "FL",
+      "label": "Florida Division of Elections",
+      "source_kind": "official",
+      "url": "https://flelectionfiles.floridados.gov/enightfilespublic/20261103_ElecResultsFL.txt",
+      "download_url": "https://flelectionfiles.floridados.gov/enightfilespublic/20261103_ElecResultsFL.txt",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "expected_counties": 67,
+      "adapter": "florida",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://flelectionfiles.floridados.gov/enightfilespublic/20261103_ElecResultsFL.txt",
+          "sha256": "56a7a695676c05eae148e808bdf9a97a046fef4eb8695d5c050e924166ab6651",
+          "path": "/private/tmp/pol-election-expanded-store/raw/fl/56a7a695676c05eae148e808bdf9a97a046fef4eb8695d5c050e924166ab6651",
+          "bytes": 352661,
+          "hash_verified": true
+        },
+        "baseline": {
+          "url": "https://flelectionfiles.floridados.gov/enightfilespublic/20241105_ElecResultsFL.txt",
+          "sha256": "2db5386aa9180af553fcb71c353363d1bfa41fd4b9e9650b8ba1065c9d90fc03",
+          "path": "/private/tmp/pol-election-expanded-store/raw/fl-baseline/2db5386aa9180af553fcb71c353363d1bfa41fd4b9e9650b8ba1065c9d90fc03",
+          "bytes": 392733,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 165,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "FL-01",
+          "FL-02",
+          "FL-03",
+          "FL-04",
+          "FL-05",
+          "FL-06",
+          "FL-07",
+          "FL-08",
+          "FL-09",
+          "FL-11",
+          "FL-12",
+          "FL-13",
+          "FL-14",
+          "FL-15",
+          "FL-16",
+          "FL-17",
+          "FL-18",
+          "FL-19",
+          "FL-20",
+          "FL-21",
+          "FL-22",
+          "FL-23",
+          "FL-24",
+          "FL-25",
+          "FL-26",
+          "FL-27",
+          "FL-28",
+          "FL-S"
+        ],
+        "county_unit_count": 165,
+        "county_race_count": 28,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "ca",
+      "state": "CA",
+      "label": "California Secretary of State",
+      "source_kind": "official",
+      "url": "https://media.sos.ca.gov/media/us-rep.json",
+      "download_url": "https://media.sos.ca.gov/media/us-rep.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:41:39-05:00",
+      "fetched_at": "2026-11-03T14:41:39-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "expected_counties": 58,
+      "adapter": "california",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://media.sos.ca.gov/media/us-rep.json",
+          "sha256": "c175eef7bf04a60f786ccec10931e9de5d75375a97296db601a7bce5ab0f22bf",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ca/c175eef7bf04a60f786ccec10931e9de5d75375a97296db601a7bce5ab0f22bf",
+          "bytes": 127644,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://media.sos.ca.gov/media/json-endpoints.csv",
+          "sha256": "0ee593e797cb8e2cc76bed50f5a8de2928c2742d1a8caf89e59efb3a59c35c34",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ca-metadata/0ee593e797cb8e2cc76bed50f5a8de2928c2742d1a8caf89e59efb3a59c35c34",
+          "bytes": 2118,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 144,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "CA-01",
+          "CA-02",
+          "CA-03",
+          "CA-04",
+          "CA-05",
+          "CA-06",
+          "CA-07",
+          "CA-08",
+          "CA-09",
+          "CA-10",
+          "CA-11",
+          "CA-12",
+          "CA-13",
+          "CA-14",
+          "CA-15",
+          "CA-16",
+          "CA-17",
+          "CA-18",
+          "CA-19",
+          "CA-20",
+          "CA-21",
+          "CA-22",
+          "CA-23",
+          "CA-24",
+          "CA-25",
+          "CA-26",
+          "CA-27",
+          "CA-28",
+          "CA-29",
+          "CA-30",
+          "CA-31",
+          "CA-32",
+          "CA-33",
+          "CA-34",
+          "CA-35",
+          "CA-36",
+          "CA-37",
+          "CA-38",
+          "CA-39",
+          "CA-40",
+          "CA-41",
+          "CA-42",
+          "CA-43",
+          "CA-44",
+          "CA-45",
+          "CA-46",
+          "CA-47",
+          "CA-48",
+          "CA-49",
+          "CA-50",
+          "CA-51",
+          "CA-52"
+        ],
+        "county_unit_count": 144,
+        "county_race_count": 52,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "wa",
+      "state": "WA",
+      "label": "Washington Secretary of State",
+      "source_kind": "official",
+      "url": "https://app.enhancedvoting.com/cdn/results/washington/export-20261103.json",
+      "download_url": "https://app.enhancedvoting.com/cdn/results/washington/export-20261103.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-22T15:55:37Z",
+      "normalization_version": 2,
+      "expected_counties": 39,
+      "adapter": "washington",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://app.enhancedvoting.com/cdn/results/washington/export-20261103.json",
+          "sha256": "289d703ca074cc16a8701df3260055ee721788c43d839b39e1431afbe4650fd7",
+          "path": "/private/tmp/pol-election-expanded-store/raw/wa/289d703ca074cc16a8701df3260055ee721788c43d839b39e1431afbe4650fd7",
+          "bytes": 842274,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 50,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "WA-01",
+          "WA-02",
+          "WA-03",
+          "WA-04",
+          "WA-05",
+          "WA-06",
+          "WA-07",
+          "WA-08",
+          "WA-09",
+          "WA-10"
+        ],
+        "county_unit_count": 50,
+        "county_race_count": 10,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "ak_summary",
+      "state": "AK",
+      "label": "Alaska Division of Elections, official summary PDF",
+      "source_kind": "official",
+      "url": "https://www.elections.alaska.gov/enr/26GENR/results/ElectionSummaryReportRPT.pdf",
+      "download_url": "https://www.elections.alaska.gov/enr/26GENR/results/ElectionSummaryReportRPT.pdf",
+      "status": "error",
+      "usable": false,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "error": "Results unavailable or failed validation (OpenSSL::SSL::SSLError)",
+      "last_good_at": null,
+      "normalization_version": 2,
+      "adapter": "alaska_summary",
+      "minimum_interval_seconds": 300,
+      "archives": {},
+      "normalized": {
+        "election_date": null,
+        "test": null,
+        "unit_count": 0,
+        "aggregate_unit_count": 0,
+        "race_keys": [],
+        "county_unit_count": 0,
+        "county_race_count": 0,
+        "all_current_counts_zero": null
+      }
+    },
+    {
+      "id": "ar",
+      "state": "AR",
+      "label": "Arkansas Secretary of State, Tally results",
+      "source_kind": "official",
+      "url": "https://results.tally-enr.com/results/arkansas/11b07106-031e-4d7c-911a-d01fb473d6dd/FullDataFile.json",
+      "download_url": "https://results.tally-enr.com/results/arkansas/11b07106-031e-4d7c-911a-d01fb473d6dd/FullDataFile.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-02T22:43:53Z",
+      "normalization_version": 2,
+      "expected_counties": 75,
+      "adapter": "arkansas_tally",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://results.tally-enr.com/results/arkansas/11b07106-031e-4d7c-911a-d01fb473d6dd/FullDataFile.json",
+          "sha256": "5ea618cef227512260eb4f21351b0083c48310ffcf46d9f7a6eb82a4e15059b4",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ar/5ea618cef227512260eb4f21351b0083c48310ffcf46d9f7a6eb82a4e15059b4",
+          "bytes": 50019832,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://enr-results-api.totalresults.com/Election/GetElectionInfo?cId=arkansas&electionID=11b07106-031e-4d7c-911a-d01fb473d6dd",
+          "sha256": "dbff531bc014d9119e7f5e312b80b5d1d5be1ca8f4cd9dc927277782c97b44f5",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ar-metadata/dbff531bc014d9119e7f5e312b80b5d1d5be1ca8f4cd9dc927277782c97b44f5",
+          "bytes": 598172,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 153,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "AR-01",
+          "AR-02",
+          "AR-03",
+          "AR-04",
+          "AR-S"
+        ],
+        "county_unit_count": 153,
+        "county_race_count": 5,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "mo_st_charles",
+      "state": "MO",
+      "label": "St. Charles County Election Authority, Missouri",
+      "source_kind": "official",
+      "url": "https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/summary_33.csv",
+      "download_url": "https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/summary_33.csv",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "adapter": "st_charles",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/summary_33.csv",
+          "sha256": "57c4ec0a269ebc28e095092c52ce430ced196ee9bd0051cecd3b6994290c37bb",
+          "path": "/private/tmp/pol-election-expanded-store/raw/mo_st_charles/57c4ec0a269ebc28e095092c52ce430ced196ee9bd0051cecd3b6994290c37bb",
+          "bytes": 11175,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/en/Index_33.html",
+          "sha256": "65a2fa4b8599308c4f9fc297685a569d702e334bb3a74da533cc0179f3e1755f",
+          "path": "/private/tmp/pol-election-expanded-store/raw/mo_st_charles-metadata/65a2fa4b8599308c4f9fc297685a569d702e334bb3a74da533cc0179f3e1755f",
+          "bytes": 9403254,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 2,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "MO-02",
+          "MO-03"
+        ],
+        "county_unit_count": 2,
+        "county_race_count": 2,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "in",
+      "state": "IN",
+      "label": "Indiana Secretary of State",
+      "source_kind": "official",
+      "url": "https://enr.indianavoters.in.gov/site/data/OffCatC_1005_B.json",
+      "download_url": "https://enr.indianavoters.in.gov/site/data/OffCatC_1005_B.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T16:12:46Z",
+      "normalization_version": 2,
+      "expected_counties": 92,
+      "adapter": "indiana",
+      "minimum_interval_seconds": 120,
+      "archives": {
+        "raw": {
+          "url": "https://enr.indianavoters.in.gov/site/data/OffCatC_1005_B.json",
+          "sha256": "39688234ac93a7e7f43eb81ffd9605f58cf2533b2a0eaf8776ec9f5c8a1b604e",
+          "path": "/private/tmp/pol-election-expanded-store/raw/in/39688234ac93a7e7f43eb81ffd9605f58cf2533b2a0eaf8776ec9f5c8a1b604e",
+          "bytes": 115592,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://enr.indianavoters.in.gov/site/data/settings.json",
+          "sha256": "d9e6735bd0d88f2ba1288e84960abeefe7e2bcf7d79ac2eb66329f066a971d7a",
+          "path": "/private/tmp/pol-election-expanded-store/raw/in-metadata/d9e6735bd0d88f2ba1288e84960abeefe7e2bcf7d79ac2eb66329f066a971d7a",
+          "bytes": 3577,
+          "hash_verified": true
+        },
+        "version": {
+          "url": "https://enr.indianavoters.in.gov/site/data/settings.json",
+          "sha256": "d9e6735bd0d88f2ba1288e84960abeefe7e2bcf7d79ac2eb66329f066a971d7a",
+          "path": "/private/tmp/pol-election-expanded-store/raw/in-version/d9e6735bd0d88f2ba1288e84960abeefe7e2bcf7d79ac2eb66329f066a971d7a",
+          "bytes": 3577,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 100,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "IN-01",
+          "IN-02",
+          "IN-03",
+          "IN-04",
+          "IN-05",
+          "IN-06",
+          "IN-07",
+          "IN-08",
+          "IN-09"
+        ],
+        "county_unit_count": 100,
+        "county_race_count": 9,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "ne",
+      "state": "NE",
+      "label": "Nebraska Secretary of State",
+      "source_kind": "official",
+      "url": "https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=All&map=CTY",
+      "download_url": "https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=All&map=CTY",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "aggregate_only": true,
+      "adapter": "nebraska",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=All&map=CTY",
+          "sha256": "d8b0d093c0af81058cc1a3ae08f179e418d7062e17915613bff2073557541457",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ne/d8b0d093c0af81058cc1a3ae08f179e418d7062e17915613bff2073557541457",
+          "bytes": 97065,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://electionresults.nebraska.gov/",
+          "sha256": "6051e4186e89e37086339bf4fecf54ee6dcd7438118d2a36f5254edd3b44b01b",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ne-metadata/6051e4186e89e37086339bf4fecf54ee6dcd7438118d2a36f5254edd3b44b01b",
+          "bytes": 54873,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 4,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "NE-01",
+          "NE-02",
+          "NE-03",
+          "NE-S"
+        ],
+        "county_unit_count": 0,
+        "county_race_count": 0,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "mi_kalamazoo",
+      "state": "MI",
+      "label": "Kalamazoo County Clerk, Michigan",
+      "source_kind": "official",
+      "url": "https://app.enhancedvoting.com/cdn/results/kalamazoo-county-mi/export-2026-General-Election.json",
+      "download_url": "https://app.enhancedvoting.com/cdn/results/kalamazoo-county-mi/export-2026-General-Election.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-02T19:33:08Z",
+      "normalization_version": 2,
+      "adapter": "enhanced_voting",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://app.enhancedvoting.com/cdn/results/kalamazoo-county-mi/export-2026-General-Election.json",
+          "sha256": "c170c528af8140e86b4708362f4a6caf9b1ac245a870e17b69a09e135c46bff0",
+          "path": "/private/tmp/pol-election-expanded-store/raw/mi_kalamazoo/c170c528af8140e86b4708362f4a6caf9b1ac245a870e17b69a09e135c46bff0",
+          "bytes": 4352967,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "MI-04",
+          "MI-05",
+          "MI-S"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 3,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "ny_rockland",
+      "state": "NY",
+      "label": "Rockland County Board of Elections, New York",
+      "source_kind": "official",
+      "url": "https://app.enhancedvoting.com/results/public/rockland-county-ny/GE2026",
+      "download_url": "https://app.enhancedvoting.com/cdn/results/rockland-county-ny/export-GE2026.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-26T17:27:23Z",
+      "normalization_version": 2,
+      "adapter": "new_york_county",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://app.enhancedvoting.com/cdn/results/rockland-county-ny/export-GE2026.json",
+          "sha256": "0c9e7e9a906ed137011eac6d51895af331a81a4464268f85073e5d5a428c325e",
+          "path": "/private/tmp/pol-election-expanded-store/raw/ny_rockland/0c9e7e9a906ed137011eac6d51895af331a81a4464268f85073e5d5a428c325e",
+          "bytes": 5936059,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 1,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "NY-17"
+        ],
+        "county_unit_count": 1,
+        "county_race_count": 1,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "md_house",
+      "state": "MD",
+      "label": "Maryland State Board of Elections",
+      "source_kind": "official",
+      "url": "https://elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html",
+      "download_url": "https://elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:41:39-05:00",
+      "fetched_at": "2026-11-03T14:41:39-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "adapter": "maryland_house",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html",
+          "sha256": "4aba6e131480054800d0a36be880ef2d60be98fd2eb8193c35ddfcc4b6fac945",
+          "path": "/private/tmp/pol-election-expanded-store/raw/md_house/4aba6e131480054800d0a36be880ef2d60be98fd2eb8193c35ddfcc4b6fac945",
+          "bytes": 31957,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 0,
+        "aggregate_unit_count": 0,
+        "race_keys": [],
+        "county_unit_count": 0,
+        "county_race_count": 0,
+        "all_current_counts_zero": null,
+        "unavailable_races": {
+          "MD-01": "State reports NR (not reported); no vote total substituted",
+          "MD-02": "State reports NR (not reported); no vote total substituted",
+          "MD-03": "State reports NR (not reported); no vote total substituted",
+          "MD-04": "State reports NR (not reported); no vote total substituted",
+          "MD-05": "State reports NR (not reported); no vote total substituted",
+          "MD-06": "State reports NR (not reported); no vote total substituted",
+          "MD-07": "State reports NR (not reported); no vote total substituted",
+          "MD-08": "State reports NR (not reported); no vote total substituted"
+        }
+      }
+    },
+    {
+      "id": "nj_atlantic",
+      "state": "NJ",
+      "label": "Atlantic County Clerk, New Jersey",
+      "source_kind": "official",
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/#/summary",
+      "download_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/en/summary.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "adapter": "clarity_county",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/en/summary.json",
+          "sha256": "4c2985fadc4a7ebd0e47cce1c2a013d6c91a833020e8d93d856f3ff4ee9e225a",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_atlantic/4c2985fadc4a7ebd0e47cce1c2a013d6c91a833020e8d93d856f3ff4ee9e225a",
+          "bytes": 55368,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/en/electionsettings.json",
+          "sha256": "27cd41b3122847942665f981cb26f550ac895b66a7ab55b71659d4bb1fbceb64",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_atlantic-metadata/27cd41b3122847942665f981cb26f550ac895b66a7ab55b71659d4bb1fbceb64",
+          "bytes": 23919,
+          "hash_verified": true
+        },
+        "version": {
+          "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/current_ver.txt",
+          "sha256": "351058392228bb9404d3be20b3ad5f65ae61194868478dbfe0f9bf12af1eac23",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_atlantic-version/351058392228bb9404d3be20b3ad5f65ae61194868478dbfe0f9bf12af1eac23",
+          "bytes": 6,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 2,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "NJ-02",
+          "NJ-S"
+        ],
+        "county_unit_count": 2,
+        "county_race_count": 2,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "nj_ocean",
+      "state": "NJ",
+      "label": "Ocean County Clerk, New Jersey",
+      "source_kind": "official",
+      "url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/web.345435/#/summary",
+      "download_url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/382478/json/en/summary.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "adapter": "clarity_county",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/382478/json/en/summary.json",
+          "sha256": "6a3e3b02c8022687a4747ba39bb397165a31dea532aa32bc05fc475ab06bfbd0",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_ocean/6a3e3b02c8022687a4747ba39bb397165a31dea532aa32bc05fc475ab06bfbd0",
+          "bytes": 76264,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/382478/json/en/electionsettings.json",
+          "sha256": "b6ae943c88fa07b6878b2add01fcd95e83e9f13c4c80773a01b76c4a0a36f41c",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_ocean-metadata/b6ae943c88fa07b6878b2add01fcd95e83e9f13c4c80773a01b76c4a0a36f41c",
+          "bytes": 28485,
+          "hash_verified": true
+        },
+        "version": {
+          "url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/current_ver.txt",
+          "sha256": "316082813be0039a2186a41d55cd61facf21727427a91ceb018316c0b80cb2af",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_ocean-version/316082813be0039a2186a41d55cd61facf21727427a91ceb018316c0b80cb2af",
+          "bytes": 6,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "NJ-02",
+          "NJ-04",
+          "NJ-S"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 3,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "nj_gloucester",
+      "state": "NJ",
+      "label": "Gloucester County Clerk, New Jersey",
+      "source_kind": "official",
+      "url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/web.345435/#/summary",
+      "download_url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/381896/json/en/summary.json",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "adapter": "clarity_county",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/381896/json/en/summary.json",
+          "sha256": "bcd75ae73c3cb41999114a3a93684a0919081613548c96aeec8a2c1d886d4ee1",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_gloucester/bcd75ae73c3cb41999114a3a93684a0919081613548c96aeec8a2c1d886d4ee1",
+          "bytes": 67415,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/381896/json/en/electionsettings.json",
+          "sha256": "c2eeb5e86650f29150f10c6ae2a3eff88b77513c1240defb04fe9aa95e24d877",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_gloucester-metadata/c2eeb5e86650f29150f10c6ae2a3eff88b77513c1240defb04fe9aa95e24d877",
+          "bytes": 33295,
+          "hash_verified": true
+        },
+        "version": {
+          "url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/current_ver.txt",
+          "sha256": "310c4f7f25dc32bb604928341763356401c915db42cae956ddc8217d0bd6406e",
+          "path": "/private/tmp/pol-election-expanded-store/raw/nj_gloucester-version/310c4f7f25dc32bb604928341763356401c915db42cae956ddc8217d0bd6406e",
+          "bytes": 6,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "NJ-01",
+          "NJ-02",
+          "NJ-S"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 3,
+        "all_current_counts_zero": true
+      }
+    },
+    {
+      "id": "la_senate",
+      "state": "LA",
+      "label": "Louisiana Secretary of State, Senate by parish",
+      "source_kind": "official",
+      "url": "https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=20261103/csv/ByParish_67997.csv",
+      "download_url": "https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=20261103/csv/ByParish_67997.csv",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": null,
+      "normalization_version": 2,
+      "expected_counties": 64,
+      "expected_races": [
+        "LA-S"
+      ],
+      "adapter": "louisiana_senate",
+      "minimum_interval_seconds": 180,
+      "archives": {
+        "raw": {
+          "url": "https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=20261103/csv/ByParish_67997.csv",
+          "sha256": "cccc059d578ffaaa0bc726dadf5511ded0ffbcc50deea7945feb616254111f55",
+          "path": "/private/tmp/pol-election-expanded-store/raw/la_senate/cccc059d578ffaaa0bc726dadf5511ded0ffbcc50deea7945feb616254111f55",
+          "bytes": 2437,
+          "hash_verified": true
+        },
+        "metadata": {
+          "url": "https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=ElectionDates.htm",
+          "sha256": "3ca905856cca28b22d7363a09d6fa892d4ff52f0888744627590034045d9faec",
+          "path": "/private/tmp/pol-election-expanded-store/raw/la_senate-metadata/3ca905856cca28b22d7363a09d6fa892d4ff52f0888744627590034045d9faec",
+          "bytes": 91491,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 64,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "LA-S"
+        ],
+        "county_unit_count": 64,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "election_date_basis": "Official pinned election 344 dated November 3; date-specific Senate CSV linked by the state application."
+      }
+    },
+    {
+      "id": "civic_ak_s",
+      "state": "AK",
+      "label": "CivicAPI raw results \u2014 AK-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/86916",
+      "download_url": "https://civicapi.org/api/v2/race/86916",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T06:22:31Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "AK-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/86916",
+          "sha256": "2fff9a859724988620ea9870e53fe6fd63c0d177b36035e1f89304c38adbb191",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ak_s/2fff9a859724988620ea9870e53fe6fd63c0d177b36035e1f89304c38adbb191",
+          "bytes": 57280,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 30,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "AK-S"
+        ],
+        "county_unit_count": 30,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_al_02",
+      "state": "AL",
+      "label": "CivicAPI raw results \u2014 AL-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/86901",
+      "download_url": "https://civicapi.org/api/v2/race/86901",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-30T18:52:46Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "AL-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/86901",
+          "sha256": "633df27e41ba84a661fedce643fcc4c42e4d0ab3aebabe57961c69b401940634",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_al_02/633df27e41ba84a661fedce643fcc4c42e4d0ab3aebabe57961c69b401940634",
+          "bytes": 7869,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 16,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "AL-02"
+        ],
+        "county_unit_count": 16,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_co_03",
+      "state": "CO",
+      "label": "CivicAPI raw results \u2014 CO-03",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87012",
+      "download_url": "https://civicapi.org/api/v2/race/87012",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:44:49Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "CO-03"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87012",
+          "sha256": "ff17f1042b6778ee6ebadfa270ee8be4811bd7334cda464b8f02e368df68cddd",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_co_03/ff17f1042b6778ee6ebadfa270ee8be4811bd7334cda464b8f02e368df68cddd",
+          "bytes": 21710,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 27,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "CO-03"
+        ],
+        "county_unit_count": 27,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_co_04",
+      "state": "CO",
+      "label": "CivicAPI raw results \u2014 CO-04",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87013",
+      "download_url": "https://civicapi.org/api/v2/race/87013",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:44:49Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "CO-04"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87013",
+          "sha256": "dda94aa19802f40c44a5759e5edc84d9c81b92c08b1a2574e849e7267bde5cd0",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_co_04/dda94aa19802f40c44a5759e5edc84d9c81b92c08b1a2574e849e7267bde5cd0",
+          "bytes": 17176,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 21,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "CO-04"
+        ],
+        "county_unit_count": 21,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_co_05",
+      "state": "CO",
+      "label": "CivicAPI raw results \u2014 CO-05",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87014",
+      "download_url": "https://civicapi.org/api/v2/race/87014",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:44:49Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "CO-05"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87014",
+          "sha256": "bab8d475212d41cf5cbd3517ea71be1c1d6cfecee477649d89c58df28719d408",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_co_05/bab8d475212d41cf5cbd3517ea71be1c1d6cfecee477649d89c58df28719d408",
+          "bytes": 2424,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 1,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "CO-05"
+        ],
+        "county_unit_count": 1,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_co_08",
+      "state": "CO",
+      "label": "CivicAPI raw results \u2014 CO-08",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87017",
+      "download_url": "https://civicapi.org/api/v2/race/87017",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:44:49Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "CO-08"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87017",
+          "sha256": "190f3293b3e60194b49ac534f00d3919bd433e4b18a71e1a88136e98c48dbc03",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_co_08/190f3293b3e60194b49ac534f00d3919bd433e4b18a71e1a88136e98c48dbc03",
+          "bytes": 2840,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "CO-08"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ia_01",
+      "state": "IA",
+      "label": "CivicAPI raw results \u2014 IA-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87147",
+      "download_url": "https://civicapi.org/api/v2/race/87147",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:36:58Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "IA-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87147",
+          "sha256": "44672eaab91bbbd45c97e1dbc044ec1da8ccc80aad0d41f45197fb4676a7f8d3",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ia_01/44672eaab91bbbd45c97e1dbc044ec1da8ccc80aad0d41f45197fb4676a7f8d3",
+          "bytes": 16685,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 20,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "IA-01"
+        ],
+        "county_unit_count": 20,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ia_02",
+      "state": "IA",
+      "label": "CivicAPI raw results \u2014 IA-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87148",
+      "download_url": "https://civicapi.org/api/v2/race/87148",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:36:58Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "IA-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87148",
+          "sha256": "497812a0efc51389abd882f8852efe2f7f305f3d163688c874014dbad5b6dbc2",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ia_02/497812a0efc51389abd882f8852efe2f7f305f3d163688c874014dbad5b6dbc2",
+          "bytes": 21422,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 22,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "IA-02"
+        ],
+        "county_unit_count": 22,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ia_03",
+      "state": "IA",
+      "label": "CivicAPI raw results \u2014 IA-03",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87149",
+      "download_url": "https://civicapi.org/api/v2/race/87149",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:36:59Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "IA-03"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87149",
+          "sha256": "3f3a7e18d79bb541ba86774125e9ca443d0f3aa1b6a78c6fe61ee6c02f62b7ad",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ia_03/3f3a7e18d79bb541ba86774125e9ca443d0f3aa1b6a78c6fe61ee6c02f62b7ad",
+          "bytes": 13494,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 21,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "IA-03"
+        ],
+        "county_unit_count": 21,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ia_s",
+      "state": "IA",
+      "label": "CivicAPI raw results \u2014 IA-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87151",
+      "download_url": "https://civicapi.org/api/v2/race/87151",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-01T23:37:00Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "IA-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87151",
+          "sha256": "d6aeb34e93bf72e134c3a09c0b016c250bde1d39e1f0a157f736212869c59977",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ia_s/d6aeb34e93bf72e134c3a09c0b016c250bde1d39e1f0a157f736212869c59977",
+          "bytes": 75143,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 99,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "IA-S"
+        ],
+        "county_unit_count": 99,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ks_02",
+      "state": "KS",
+      "label": "CivicAPI raw results \u2014 KS-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87159",
+      "download_url": "https://civicapi.org/api/v2/race/87159",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-29T23:58:55Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "KS-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87159",
+          "sha256": "ec9ac323ecf4189c388436de1d19430c22ef3697759b0230530b841e678d398c",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ks_02/ec9ac323ecf4189c388436de1d19430c22ef3697759b0230530b841e678d398c",
+          "bytes": 16970,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 27,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "KS-02"
+        ],
+        "county_unit_count": 27,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ks_s",
+      "state": "KS",
+      "label": "CivicAPI raw results \u2014 KS-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87162",
+      "download_url": "https://civicapi.org/api/v2/race/87162",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-29T23:58:55Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "KS-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87162",
+          "sha256": "eeacd3437c3edb811124bd81047cdab398b1b457c77ff7811cba85a4e342c715",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ks_s/eeacd3437c3edb811124bd81047cdab398b1b457c77ff7811cba85a4e342c715",
+          "bytes": 63655,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 105,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "KS-S"
+        ],
+        "county_unit_count": 105,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_md_01",
+      "state": "MD",
+      "label": "CivicAPI raw results \u2014 MD-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87190",
+      "download_url": "https://civicapi.org/api/v2/race/87190",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T06:24:55Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MD-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87190",
+          "sha256": "70507156a2335c57081d9be098fd4ff0e116f1737e7d0c3e4f1faf96654123b8",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_md_01/70507156a2335c57081d9be098fd4ff0e116f1737e7d0c3e4f1faf96654123b8",
+          "bytes": 9494,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 11,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MD-01"
+        ],
+        "county_unit_count": 11,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_me_02",
+      "state": "ME",
+      "label": "CivicAPI raw results \u2014 ME-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87187",
+      "download_url": "https://civicapi.org/api/v2/race/87187",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-30T23:08:25Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "ME-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87187",
+          "sha256": "fea0d9de1057141f6bfab744b61bb3b3c04eb3e24fadae850110de2f54b1389e",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_me_02/fea0d9de1057141f6bfab744b61bb3b3c04eb3e24fadae850110de2f54b1389e",
+          "bytes": 225199,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 11,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "ME-02"
+        ],
+        "county_unit_count": 11,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_me_s",
+      "state": "ME",
+      "label": "CivicAPI raw results \u2014 ME-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87188",
+      "download_url": "https://civicapi.org/api/v2/race/87188",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-30T23:08:25Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "ME-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87188",
+          "sha256": "e63b5372279daaf8557bb8fe0ce6d3171795fcb30420b33e452aed70f95e09ab",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_me_s/e63b5372279daaf8557bb8fe0ce6d3171795fcb30420b33e452aed70f95e09ab",
+          "bytes": 298941,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 16,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "ME-S"
+        ],
+        "county_unit_count": 16,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mi_01",
+      "state": "MI",
+      "label": "CivicAPI raw results \u2014 MI-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87201",
+      "download_url": "https://civicapi.org/api/v2/race/87201",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T03:44:05Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MI-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87201",
+          "sha256": "175da9b86bdf2037ff6b6614f43eb5c2adbacc87b6489153295c034240f9fdf0",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mi_01/175da9b86bdf2037ff6b6614f43eb5c2adbacc87b6489153295c034240f9fdf0",
+          "bytes": 52563,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 36,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MI-01"
+        ],
+        "county_unit_count": 36,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mi_04",
+      "state": "MI",
+      "label": "CivicAPI raw results \u2014 MI-04",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87204",
+      "download_url": "https://civicapi.org/api/v2/race/87204",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T03:44:05Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MI-04"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87204",
+          "sha256": "0aa123ae2e24ce78f9d237c9d2e2e95f5ef43d68dc0688b2d9cf1ec7214db988",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mi_04/0aa123ae2e24ce78f9d237c9d2e2e95f5ef43d68dc0688b2d9cf1ec7214db988",
+          "bytes": 5771,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 6,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MI-04"
+        ],
+        "county_unit_count": 6,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mi_07",
+      "state": "MI",
+      "label": "CivicAPI raw results \u2014 MI-07",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87207",
+      "download_url": "https://civicapi.org/api/v2/race/87207",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T03:44:06Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MI-07"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87207",
+          "sha256": "26a0fb4d6f4a96cf1a6b1e7e45df156125a1fa930f422652463f1b877f0a28fb",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mi_07/26a0fb4d6f4a96cf1a6b1e7e45df156125a1fa930f422652463f1b877f0a28fb",
+          "bytes": 6496,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 7,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MI-07"
+        ],
+        "county_unit_count": 7,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mi_10",
+      "state": "MI",
+      "label": "CivicAPI raw results \u2014 MI-10",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87210",
+      "download_url": "https://civicapi.org/api/v2/race/87210",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T03:44:06Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MI-10"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87210",
+          "sha256": "4574e733f0536f754062432b276fb91812a92aed36ce7cb5a419e7a9f8fa2734",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mi_10/4574e733f0536f754062432b276fb91812a92aed36ce7cb5a419e7a9f8fa2734",
+          "bytes": 3802,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 2,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MI-10"
+        ],
+        "county_unit_count": 2,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mi_s",
+      "state": "MI",
+      "label": "CivicAPI raw results \u2014 MI-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87214",
+      "download_url": "https://civicapi.org/api/v2/race/87214",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T03:44:10Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MI-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87214",
+          "sha256": "8b0cf1207e44e2f12dc645ee6cb0e7ef33d20af67e27c55c85722c7b74194c56",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mi_s/8b0cf1207e44e2f12dc645ee6cb0e7ef33d20af67e27c55c85722c7b74194c56",
+          "bytes": 161039,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 83,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MI-S"
+        ],
+        "county_unit_count": 83,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mn_01",
+      "state": "MN",
+      "label": "CivicAPI raw results \u2014 MN-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87221",
+      "download_url": "https://civicapi.org/api/v2/race/87221",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-23T18:49:15Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MN-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87221",
+          "sha256": "53e4024ab40729d0145fd22310d477306a1967e9d730ece0f825533bd74e5893",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mn_01/53e4024ab40729d0145fd22310d477306a1967e9d730ece0f825533bd74e5893",
+          "bytes": 13421,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 21,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MN-01"
+        ],
+        "county_unit_count": 21,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mn_08",
+      "state": "MN",
+      "label": "CivicAPI raw results \u2014 MN-08",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87228",
+      "download_url": "https://civicapi.org/api/v2/race/87228",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-23T18:49:15Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MN-08"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87228",
+          "sha256": "34c37a6488f84e1747700f194ab0d453183c5b86394faac341ecb1b2458eea5d",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mn_08/34c37a6488f84e1747700f194ab0d453183c5b86394faac341ecb1b2458eea5d",
+          "bytes": 13469,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 21,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MN-08"
+        ],
+        "county_unit_count": 21,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mn_s",
+      "state": "MN",
+      "label": "CivicAPI raw results \u2014 MN-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87229",
+      "download_url": "https://civicapi.org/api/v2/race/87229",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-23T18:49:15Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MN-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87229",
+          "sha256": "96448a523abc15ed53eb87b468b5325295a42570f89655275959de617b4216a8",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mn_s/96448a523abc15ed53eb87b468b5325295a42570f89655275959de617b4216a8",
+          "bytes": 81368,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 87,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MN-S"
+        ],
+        "county_unit_count": 87,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mo_02",
+      "state": "MO",
+      "label": "CivicAPI raw results \u2014 MO-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87235",
+      "download_url": "https://civicapi.org/api/v2/race/87235",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-26T23:25:55Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MO-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87235",
+          "sha256": "5109493c0147dd44a4d6cc22c5b4be5b637df3a9ee54e8324c76b63be12e500f",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mo_02/5109493c0147dd44a4d6cc22c5b4be5b637df3a9ee54e8324c76b63be12e500f",
+          "bytes": 3537,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 4,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MO-02"
+        ],
+        "county_unit_count": 4,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ms_s",
+      "state": "MS",
+      "label": "CivicAPI raw results \u2014 MS-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/81004",
+      "download_url": "https://civicapi.org/api/v2/race/81004",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-16T21:21:09Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MS-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/81004",
+          "sha256": "c84f89a6804fe2cedd497b79b5d83fd87be059e844feda59f24f5164db52f673",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ms_s/c84f89a6804fe2cedd497b79b5d83fd87be059e844feda59f24f5164db52f673",
+          "bytes": 49709,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 82,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MS-S"
+        ],
+        "county_unit_count": 82,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_mt_01",
+      "state": "MT",
+      "label": "CivicAPI raw results \u2014 MT-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87245",
+      "download_url": "https://civicapi.org/api/v2/race/87245",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-18T20:23:16Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "MT-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87245",
+          "sha256": "de4da40513e8837f6a5c35ef68300d282645e815be6a755c98825fb0dd8900e2",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_mt_01/de4da40513e8837f6a5c35ef68300d282645e815be6a755c98825fb0dd8900e2",
+          "bytes": 10524,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 16,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "MT-01"
+        ],
+        "county_unit_count": 16,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ne_01",
+      "state": "NE",
+      "label": "CivicAPI raw results \u2014 NE-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87251",
+      "download_url": "https://civicapi.org/api/v2/race/87251",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-18T20:24:53Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NE-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87251",
+          "sha256": "9963fac6252e83928513849f08cabd507c98920dee605b4d283a6229d7afaf21",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ne_01/9963fac6252e83928513849f08cabd507c98920dee605b4d283a6229d7afaf21",
+          "bytes": 10348,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 12,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NE-01"
+        ],
+        "county_unit_count": 12,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ne_02",
+      "state": "NE",
+      "label": "CivicAPI raw results \u2014 NE-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87252",
+      "download_url": "https://civicapi.org/api/v2/race/87252",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-18T20:24:53Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NE-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87252",
+          "sha256": "c77b377e70ddd7cfd1d8332314dba66a5688263bc8a0f21098c76d37e6db69d8",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ne_02/c77b377e70ddd7cfd1d8332314dba66a5688263bc8a0f21098c76d37e6db69d8",
+          "bytes": 2920,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NE-02"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ne_s",
+      "state": "NE",
+      "label": "CivicAPI raw results \u2014 NE-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87254",
+      "download_url": "https://civicapi.org/api/v2/race/87254",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-15T15:58:47Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NE-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87254",
+          "sha256": "28c4b3aaada2a8d6c5d0d21651fe8e575b98a938e8aec2fbf7bd3ed26c27afe1",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ne_s/28c4b3aaada2a8d6c5d0d21651fe8e575b98a938e8aec2fbf7bd3ed26c27afe1",
+          "bytes": 88755,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 93,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NE-S"
+        ],
+        "county_unit_count": 93,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_nh_s",
+      "state": "NH",
+      "label": "CivicAPI raw results \u2014 NH-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87283",
+      "download_url": "https://civicapi.org/api/v2/race/87283",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T19:42:38Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NH-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87283",
+          "sha256": "5e11713817e420726f989218fe6eb09fa7bc6659bf9dc1eb4968db122b9a54fe",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_nh_s/5e11713817e420726f989218fe6eb09fa7bc6659bf9dc1eb4968db122b9a54fe",
+          "bytes": 195118,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 10,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NH-S"
+        ],
+        "county_unit_count": 10,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_nj_02",
+      "state": "NJ",
+      "label": "CivicAPI raw results \u2014 NJ-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87291",
+      "download_url": "https://civicapi.org/api/v2/race/87291",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T18:18:48Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NJ-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87291",
+          "sha256": "31c7d475899507bbfa757fdcbd05945e50d0189033cdb5d5b620dfa8d3089967",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_nj_02/31c7d475899507bbfa757fdcbd05945e50d0189033cdb5d5b620dfa8d3089967",
+          "bytes": 5793,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 6,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NJ-02"
+        ],
+        "county_unit_count": 6,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_nj_07",
+      "state": "NJ",
+      "label": "CivicAPI raw results \u2014 NJ-07",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87296",
+      "download_url": "https://civicapi.org/api/v2/race/87296",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T18:18:50Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NJ-07"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87296",
+          "sha256": "221e38beb4ddc7d21c380333287cfd3dfaa4a156f72ed650013afceb57e715cb",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_nj_07/221e38beb4ddc7d21c380333287cfd3dfaa4a156f72ed650013afceb57e715cb",
+          "bytes": 5872,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 6,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NJ-07"
+        ],
+        "county_unit_count": 6,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ny_01",
+      "state": "NY",
+      "label": "CivicAPI raw results \u2014 NY-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87303",
+      "download_url": "https://civicapi.org/api/v2/race/87303",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-22T22:23:38Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NY-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87303",
+          "sha256": "3fb87e54e0fc5c33053883eb1c2eeb43570d3cd99019af700a2d5a80a040f8c0",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ny_01/3fb87e54e0fc5c33053883eb1c2eeb43570d3cd99019af700a2d5a80a040f8c0",
+          "bytes": 1340,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 1,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NY-01"
+        ],
+        "county_unit_count": 1,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ny_02",
+      "state": "NY",
+      "label": "CivicAPI raw results \u2014 NY-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87304",
+      "download_url": "https://civicapi.org/api/v2/race/87304",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-22T22:23:38Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NY-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87304",
+          "sha256": "9b48c5555e4cdee4a631a7ef6477b6a7fdd017b186d520c11e06bf2b2d34b8af",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ny_02/9b48c5555e4cdee4a631a7ef6477b6a7fdd017b186d520c11e06bf2b2d34b8af",
+          "bytes": 1788,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 2,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NY-02"
+        ],
+        "county_unit_count": 2,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ny_17",
+      "state": "NY",
+      "label": "CivicAPI raw results \u2014 NY-17",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87319",
+      "download_url": "https://civicapi.org/api/v2/race/87319",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-22T22:23:38Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NY-17"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87319",
+          "sha256": "34b5444b7fc4dba7596ec875da4aa0e2b7be2dba64d9e382d0bacb2f4cecead2",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ny_17/34b5444b7fc4dba7596ec875da4aa0e2b7be2dba64d9e382d0bacb2f4cecead2",
+          "bytes": 2637,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 4,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NY-17"
+        ],
+        "county_unit_count": 4,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ny_21",
+      "state": "NY",
+      "label": "CivicAPI raw results \u2014 NY-21",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87323",
+      "download_url": "https://civicapi.org/api/v2/race/87323",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-22T22:23:38Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "NY-21"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87323",
+          "sha256": "f26d06cb4252bc404098f10e610b226455cd99245c6cab0876a0248fc21f0fe4",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ny_21/f26d06cb4252bc404098f10e610b226455cd99245c6cab0876a0248fc21f0fe4",
+          "bytes": 7572,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 15,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "NY-21"
+        ],
+        "county_unit_count": 15,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_01",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87350",
+      "download_url": "https://civicapi.org/api/v2/race/87350",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87350",
+          "sha256": "8f820fdd89d56b591795ef6f59026665579ab5dd95ed930ff10003d2b44f2f65",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_01/8f820fdd89d56b591795ef6f59026665579ab5dd95ed930ff10003d2b44f2f65",
+          "bytes": 2854,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-01"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_07",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-07",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87356",
+      "download_url": "https://civicapi.org/api/v2/race/87356",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-07"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87356",
+          "sha256": "dea21185538e24a4f58980b53870150820af691dfe211cbb9aa7bb95e460e95b",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_07/dea21185538e24a4f58980b53870150820af691dfe211cbb9aa7bb95e460e95b",
+          "bytes": 4309,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 4,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-07"
+        ],
+        "county_unit_count": 4,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_08",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-08",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87357",
+      "download_url": "https://civicapi.org/api/v2/race/87357",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-08"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87357",
+          "sha256": "4f8f5f2e19047d33458bf266eaef14178d30b0df86810162c7d2c04b3c356e21",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_08/4f8f5f2e19047d33458bf266eaef14178d30b0df86810162c7d2c04b3c356e21",
+          "bytes": 3070,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 5,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-08"
+        ],
+        "county_unit_count": 5,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_09",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-09",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87358",
+      "download_url": "https://civicapi.org/api/v2/race/87358",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-09"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87358",
+          "sha256": "a8bf5afbd5751e0b013c235c342cf5c940de3b9a71ef74a932704ba15f32d776",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_09/a8bf5afbd5751e0b013c235c342cf5c940de3b9a71ef74a932704ba15f32d776",
+          "bytes": 6978,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 10,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-09"
+        ],
+        "county_unit_count": 10,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_10",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-10",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87359",
+      "download_url": "https://civicapi.org/api/v2/race/87359",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-10"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87359",
+          "sha256": "b19717c591c361a6543a0d9c81dfcdd66a172f3ef5c9ee375e1958a4925fa5fd",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_10/b19717c591c361a6543a0d9c81dfcdd66a172f3ef5c9ee375e1958a4925fa5fd",
+          "bytes": 2921,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-10"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_14",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-14",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87363",
+      "download_url": "https://civicapi.org/api/v2/race/87363",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-14"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87363",
+          "sha256": "81cbb0cdf8683de012c99f7f489259f9b7ff89660526008c8dbfde35cf2e1213",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_14/81cbb0cdf8683de012c99f7f489259f9b7ff89660526008c8dbfde35cf2e1213",
+          "bytes": 3496,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 6,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-14"
+        ],
+        "county_unit_count": 6,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_15",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-15",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87364",
+      "download_url": "https://civicapi.org/api/v2/race/87364",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-15"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87364",
+          "sha256": "a4fda9b6014e87f1253e586487cb786bf69f5fadecd640b4e3cc9d10bbc34d0a",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_15/a4fda9b6014e87f1253e586487cb786bf69f5fadecd640b4e3cc9d10bbc34d0a",
+          "bytes": 7817,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 7,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-15"
+        ],
+        "county_unit_count": 7,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_oh_s",
+      "state": "OH",
+      "label": "CivicAPI raw results \u2014 OH-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87527",
+      "download_url": "https://civicapi.org/api/v2/race/87527",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:51:08Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OH-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87527",
+          "sha256": "a1f420ec09af7b6d48016ec79e729177e45344448af071ee5083950e02cd722d",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_oh_s/a1f420ec09af7b6d48016ec79e729177e45344448af071ee5083950e02cd722d",
+          "bytes": 110426,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 88,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OH-S"
+        ],
+        "county_unit_count": 88,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_ok_05",
+      "state": "OK",
+      "label": "CivicAPI raw results \u2014 OK-05",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87513",
+      "download_url": "https://civicapi.org/api/v2/race/87513",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-19T22:16:45Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "OK-05"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87513",
+          "sha256": "e14c2475cad9b45886afcfad0866a40ef91e68a79d41f9729fb39ac855171f0c",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_ok_05/e14c2475cad9b45886afcfad0866a40ef91e68a79d41f9729fb39ac855171f0c",
+          "bytes": 5831,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 6,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "OK-05"
+        ],
+        "county_unit_count": 6,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_pa_01",
+      "state": "PA",
+      "label": "CivicAPI raw results \u2014 PA-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87376",
+      "download_url": "https://civicapi.org/api/v2/race/87376",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-23T02:05:36Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "PA-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87376",
+          "sha256": "7b1e68266e864c6e242af0852250746ccd07bc26babab03904f488239d255bdd",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_pa_01/7b1e68266e864c6e242af0852250746ccd07bc26babab03904f488239d255bdd",
+          "bytes": 1795,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 2,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "PA-01"
+        ],
+        "county_unit_count": 2,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_pa_07",
+      "state": "PA",
+      "label": "CivicAPI raw results \u2014 PA-07",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87382",
+      "download_url": "https://civicapi.org/api/v2/race/87382",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-23T02:05:37Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "PA-07"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87382",
+          "sha256": "f6883a00bee9e03e257f752bb9f8c1746a450b3f2774aee32a10d16fb5343e14",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_pa_07/f6883a00bee9e03e257f752bb9f8c1746a450b3f2774aee32a10d16fb5343e14",
+          "bytes": 2650,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 4,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "PA-07"
+        ],
+        "county_unit_count": 4,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_pa_08",
+      "state": "PA",
+      "label": "CivicAPI raw results \u2014 PA-08",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87383",
+      "download_url": "https://civicapi.org/api/v2/race/87383",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-23T02:05:37Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "PA-08"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87383",
+          "sha256": "b7abd4eb8a18900837e43472d6a347211756d4934f79ed4a3ea3cb048a36952b",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_pa_08/b7abd4eb8a18900837e43472d6a347211756d4934f79ed4a3ea3cb048a36952b",
+          "bytes": 3092,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 5,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "PA-08"
+        ],
+        "county_unit_count": 5,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_pa_10",
+      "state": "PA",
+      "label": "CivicAPI raw results \u2014 PA-10",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87385",
+      "download_url": "https://civicapi.org/api/v2/race/87385",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-23T02:05:37Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "PA-10"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87385",
+          "sha256": "cab145a959c62c21b29454a328ed6a8866543b62c7b0fb879da0b9ccf5739e9b",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_pa_10/cab145a959c62c21b29454a328ed6a8866543b62c7b0fb879da0b9ccf5739e9b",
+          "bytes": 2225,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 3,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "PA-10"
+        ],
+        "county_unit_count": 3,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_sc_01",
+      "state": "SC",
+      "label": "CivicAPI raw results \u2014 SC-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87402",
+      "download_url": "https://civicapi.org/api/v2/race/87402",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-31T01:55:20Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "SC-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87402",
+          "sha256": "afd6248eef86d24a8cf30cbfb75ebc55b7d3ba667f14421fd04f4fed09064ae9",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_sc_01/afd6248eef86d24a8cf30cbfb75ebc55b7d3ba667f14421fd04f4fed09064ae9",
+          "bytes": 5855,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 6,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "SC-01"
+        ],
+        "county_unit_count": 6,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_sc_02",
+      "state": "SC",
+      "label": "CivicAPI raw results \u2014 SC-02",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87403",
+      "download_url": "https://civicapi.org/api/v2/race/87403",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-31T01:55:20Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "SC-02"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87403",
+          "sha256": "903fc266e44734f078a251dcdf5413b70de6ad7c117d77d04a6cd98f1a569446",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_sc_02/903fc266e44734f078a251dcdf5413b70de6ad7c117d77d04a6cd98f1a569446",
+          "bytes": 5032,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 5,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "SC-02"
+        ],
+        "county_unit_count": 5,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_sc_04",
+      "state": "SC",
+      "label": "CivicAPI raw results \u2014 SC-04",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87405",
+      "download_url": "https://civicapi.org/api/v2/race/87405",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-31T01:55:21Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "SC-04"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87405",
+          "sha256": "27cfa9ae2dd5e3fe1494deaadb8d6bab79fb0fee7fa3fb7e91bb11b275b7f04d",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_sc_04/27cfa9ae2dd5e3fe1494deaadb8d6bab79fb0fee7fa3fb7e91bb11b275b7f04d",
+          "bytes": 2831,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 2,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "SC-04"
+        ],
+        "county_unit_count": 2,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_sc_s",
+      "state": "SC",
+      "label": "CivicAPI raw results \u2014 SC-S",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87409",
+      "download_url": "https://civicapi.org/api/v2/race/87409",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-31T01:55:22Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "SC-S"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87409",
+          "sha256": "80ed8ca4c6ae585c43c8f5fe86eb9ad6fdf6bda1f9ae0583af7e8f2eb4ea4252",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_sc_s/80ed8ca4c6ae585c43c8f5fe86eb9ad6fdf6bda1f9ae0583af7e8f2eb4ea4252",
+          "bytes": 43583,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 46,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "SC-S"
+        ],
+        "county_unit_count": 46,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_tn_07",
+      "state": "TN",
+      "label": "CivicAPI raw results \u2014 TN-07",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87454",
+      "download_url": "https://civicapi.org/api/v2/race/87454",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-31T02:08:07Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "TN-07"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87454",
+          "sha256": "c7fd7e78ba5558a09fc5ac75e702d431a343e01d8ea318060e8813ceb5e1cb9b",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_tn_07/c7fd7e78ba5558a09fc5ac75e702d431a343e01d8ea318060e8813ceb5e1cb9b",
+          "bytes": 7406,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 8,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "TN-07"
+        ],
+        "county_unit_count": 8,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_tn_08",
+      "state": "TN",
+      "label": "CivicAPI raw results \u2014 TN-08",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87455",
+      "download_url": "https://civicapi.org/api/v2/race/87455",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-31T02:08:07Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "TN-08"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87455",
+          "sha256": "b247570f0ac7bcc788ba118ef7029ae3a2d02ac9ec46ca81ba674bc0595c7039",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_tn_08/b247570f0ac7bcc788ba118ef7029ae3a2d02ac9ec46ca81ba674bc0595c7039",
+          "bytes": 19261,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 12,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "TN-08"
+        ],
+        "county_unit_count": 12,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_tn_09",
+      "state": "TN",
+      "label": "CivicAPI raw results \u2014 TN-09",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87456",
+      "download_url": "https://civicapi.org/api/v2/race/87456",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-31T02:08:07Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "TN-09"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87456",
+          "sha256": "21a2eec5233ff8340ea92a533ea5dc698cc59b1161d10605593c48132163fad5",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_tn_09/21a2eec5233ff8340ea92a533ea5dc698cc59b1161d10605593c48132163fad5",
+          "bytes": 12701,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 15,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "TN-09"
+        ],
+        "county_unit_count": 15,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_wi_01",
+      "state": "WI",
+      "label": "CivicAPI raw results \u2014 WI-01",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87483",
+      "download_url": "https://civicapi.org/api/v2/race/87483",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-30T18:31:58Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "WI-01"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87483",
+          "sha256": "ef94e0459ec9a9466a31277e2705e43c0e0ef7c05b6a67b342050c0f1de47758",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_wi_01/ef94e0459ec9a9466a31277e2705e43c0e0ef7c05b6a67b342050c0f1de47758",
+          "bytes": 3081,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 5,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "WI-01"
+        ],
+        "county_unit_count": 5,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_wi_03",
+      "state": "WI",
+      "label": "CivicAPI raw results \u2014 WI-03",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87485",
+      "download_url": "https://civicapi.org/api/v2/race/87485",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-30T18:31:58Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "WI-03"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87485",
+          "sha256": "8f944a6ee69b85df0133aa59995f165c7aaea857202d403da3b8c0dbd3dab026",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_wi_03/8f944a6ee69b85df0133aa59995f165c7aaea857202d403da3b8c0dbd3dab026",
+          "bytes": 9225,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 19,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "WI-03"
+        ],
+        "county_unit_count": 19,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_wi_06",
+      "state": "WI",
+      "label": "CivicAPI raw results \u2014 WI-06",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87488",
+      "download_url": "https://civicapi.org/api/v2/race/87488",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-30T18:31:59Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "WI-06"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87488",
+          "sha256": "9fb6d7457728070ca136b7879a513d08ee2879f42168bb800c2773c6edfa2d5e",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_wi_06/9fb6d7457728070ca136b7879a513d08ee2879f42168bb800c2773c6edfa2d5e",
+          "bytes": 5693,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 11,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "WI-06"
+        ],
+        "county_unit_count": 11,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "civic_wi_08",
+      "state": "WI",
+      "label": "CivicAPI raw results \u2014 WI-08",
+      "source_kind": "secondary",
+      "url": "https://civicapi.org/api/v2/race/87490",
+      "download_url": "https://civicapi.org/api/v2/race/87490",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-10-30T18:31:59Z",
+      "normalization_version": 2,
+      "expected_races": [
+        "WI-08"
+      ],
+      "adapter": "civic_api",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://civicapi.org/api/v2/race/87490",
+          "sha256": "a70a3c27ad8b80c3ece775deea8437e314b51a10f3acb801452165fcb650a953",
+          "path": "/private/tmp/pol-election-expanded-store/raw/civic_wi_08/a70a3c27ad8b80c3ece775deea8437e314b51a10f3acb801452165fcb650a953",
+          "bytes": 5633,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 11,
+        "aggregate_unit_count": 1,
+        "race_keys": [
+          "WI-08"
+        ],
+        "county_unit_count": 11,
+        "county_race_count": 1,
+        "all_current_counts_zero": true,
+        "county_totals_match_aggregate": true,
+        "source_scope": "race"
+      },
+      "county_detail_completeness": "Zero county sums do not establish a complete race manifest; selected scope is audited separately."
+    },
+    {
+      "id": "polling_desk",
+      "state": "US",
+      "label": "Polling Desk raw totals, via CivicAPI",
+      "source_kind": "secondary",
+      "url": "https://polling-desk.com/results.csv",
+      "download_url": "https://polling-desk.com/results.csv",
+      "upstream_url": "https://civicapi.org/",
+      "status": "ok",
+      "usable": true,
+      "attempted_at": "2026-11-03T14:42:44-05:00",
+      "fetched_at": "2026-11-03T14:42:44-05:00",
+      "published_at": "2026-11-03T18:19:02Z",
+      "normalization_version": 2,
+      "aggregate_only": true,
+      "adapter": "polling_desk",
+      "minimum_interval_seconds": 300,
+      "archives": {
+        "raw": {
+          "url": "https://polling-desk.com/results.csv",
+          "sha256": "93151f368a68362d9eb06b97e33913f8b1d4909301d374fed5bce934a2376718",
+          "path": "/private/tmp/pol-election-expanded-store/raw/polling_desk/93151f368a68362d9eb06b97e33913f8b1d4909301d374fed5bce934a2376718",
+          "bytes": 270656,
+          "hash_verified": true
+        }
+      },
+      "normalized": {
+        "election_date": "2026-11-03",
+        "test": false,
+        "unit_count": 470,
+        "aggregate_unit_count": 0,
+        "race_keys": [
+          "AK-AL",
+          "AK-S",
+          "AL-01",
+          "AL-02",
+          "AL-03",
+          "AL-04",
+          "AL-05",
+          "AL-06",
+          "AL-07",
+          "AL-S",
+          "AR-01",
+          "AR-02",
+          "AR-03",
+          "AR-04",
+          "AR-S",
+          "AZ-01",
+          "AZ-02",
+          "AZ-03",
+          "AZ-04",
+          "AZ-05",
+          "AZ-06",
+          "AZ-07",
+          "AZ-08",
+          "AZ-09",
+          "CA-01",
+          "CA-02",
+          "CA-03",
+          "CA-04",
+          "CA-05",
+          "CA-06",
+          "CA-07",
+          "CA-08",
+          "CA-09",
+          "CA-10",
+          "CA-11",
+          "CA-12",
+          "CA-13",
+          "CA-14",
+          "CA-15",
+          "CA-16",
+          "CA-17",
+          "CA-18",
+          "CA-19",
+          "CA-20",
+          "CA-21",
+          "CA-22",
+          "CA-23",
+          "CA-24",
+          "CA-25",
+          "CA-26",
+          "CA-27",
+          "CA-28",
+          "CA-29",
+          "CA-30",
+          "CA-31",
+          "CA-32",
+          "CA-33",
+          "CA-34",
+          "CA-35",
+          "CA-36",
+          "CA-37",
+          "CA-38",
+          "CA-39",
+          "CA-40",
+          "CA-41",
+          "CA-42",
+          "CA-43",
+          "CA-44",
+          "CA-45",
+          "CA-46",
+          "CA-47",
+          "CA-48",
+          "CA-49",
+          "CA-50",
+          "CA-51",
+          "CA-52",
+          "CO-01",
+          "CO-02",
+          "CO-03",
+          "CO-04",
+          "CO-05",
+          "CO-06",
+          "CO-07",
+          "CO-08",
+          "CO-S",
+          "CT-01",
+          "CT-02",
+          "CT-03",
+          "CT-04",
+          "CT-05",
+          "DE-AL",
+          "DE-S",
+          "FL-01",
+          "FL-02",
+          "FL-03",
+          "FL-04",
+          "FL-05",
+          "FL-06",
+          "FL-07",
+          "FL-08",
+          "FL-09",
+          "FL-10",
+          "FL-11",
+          "FL-12",
+          "FL-13",
+          "FL-14",
+          "FL-15",
+          "FL-16",
+          "FL-17",
+          "FL-18",
+          "FL-19",
+          "FL-20",
+          "FL-21",
+          "FL-22",
+          "FL-23",
+          "FL-24",
+          "FL-25",
+          "FL-26",
+          "FL-27",
+          "FL-28",
+          "FL-S",
+          "GA-01",
+          "GA-02",
+          "GA-03",
+          "GA-04",
+          "GA-05",
+          "GA-06",
+          "GA-07",
+          "GA-08",
+          "GA-09",
+          "GA-10",
+          "GA-11",
+          "GA-12",
+          "GA-13",
+          "GA-14",
+          "GA-S",
+          "HI-01",
+          "HI-02",
+          "IA-01",
+          "IA-02",
+          "IA-03",
+          "IA-04",
+          "IA-S",
+          "ID-01",
+          "ID-02",
+          "ID-S",
+          "IL-01",
+          "IL-02",
+          "IL-03",
+          "IL-04",
+          "IL-05",
+          "IL-06",
+          "IL-07",
+          "IL-08",
+          "IL-09",
+          "IL-10",
+          "IL-11",
+          "IL-12",
+          "IL-13",
+          "IL-14",
+          "IL-15",
+          "IL-16",
+          "IL-17",
+          "IL-S",
+          "IN-01",
+          "IN-02",
+          "IN-03",
+          "IN-04",
+          "IN-05",
+          "IN-06",
+          "IN-07",
+          "IN-08",
+          "IN-09",
+          "KS-01",
+          "KS-02",
+          "KS-03",
+          "KS-04",
+          "KS-S",
+          "KY-01",
+          "KY-02",
+          "KY-03",
+          "KY-04",
+          "KY-05",
+          "KY-06",
+          "KY-S",
+          "LA-01",
+          "LA-02",
+          "LA-03",
+          "LA-04",
+          "LA-05",
+          "LA-06",
+          "LA-S",
+          "MA-01",
+          "MA-02",
+          "MA-03",
+          "MA-04",
+          "MA-05",
+          "MA-06",
+          "MA-07",
+          "MA-08",
+          "MA-09",
+          "MA-S",
+          "MD-01",
+          "MD-02",
+          "MD-03",
+          "MD-04",
+          "MD-05",
+          "MD-06",
+          "MD-07",
+          "MD-08",
+          "ME-01",
+          "ME-02",
+          "ME-S",
+          "MI-01",
+          "MI-02",
+          "MI-03",
+          "MI-04",
+          "MI-05",
+          "MI-06",
+          "MI-07",
+          "MI-08",
+          "MI-09",
+          "MI-10",
+          "MI-11",
+          "MI-12",
+          "MI-13",
+          "MI-S",
+          "MN-01",
+          "MN-02",
+          "MN-03",
+          "MN-04",
+          "MN-05",
+          "MN-06",
+          "MN-07",
+          "MN-08",
+          "MN-S",
+          "MO-01",
+          "MO-02",
+          "MO-03",
+          "MO-04",
+          "MO-05",
+          "MO-06",
+          "MO-07",
+          "MO-08",
+          "MS-01",
+          "MS-02",
+          "MS-03",
+          "MS-04",
+          "MS-S",
+          "MT-01",
+          "MT-02",
+          "MT-S",
+          "NC-01",
+          "NC-02",
+          "NC-03",
+          "NC-04",
+          "NC-05",
+          "NC-06",
+          "NC-07",
+          "NC-08",
+          "NC-09",
+          "NC-10",
+          "NC-11",
+          "NC-12",
+          "NC-13",
+          "NC-14",
+          "NC-S",
+          "ND-AL",
+          "NE-01",
+          "NE-02",
+          "NE-03",
+          "NE-S",
+          "NH-01",
+          "NH-02",
+          "NH-S",
+          "NJ-01",
+          "NJ-02",
+          "NJ-03",
+          "NJ-04",
+          "NJ-05",
+          "NJ-06",
+          "NJ-07",
+          "NJ-08",
+          "NJ-09",
+          "NJ-10",
+          "NJ-11",
+          "NJ-12",
+          "NJ-S",
+          "NM-01",
+          "NM-02",
+          "NM-03",
+          "NM-S",
+          "NV-01",
+          "NV-02",
+          "NV-03",
+          "NV-04",
+          "NY-01",
+          "NY-02",
+          "NY-03",
+          "NY-04",
+          "NY-05",
+          "NY-06",
+          "NY-07",
+          "NY-08",
+          "NY-09",
+          "NY-10",
+          "NY-11",
+          "NY-12",
+          "NY-13",
+          "NY-14",
+          "NY-15",
+          "NY-16",
+          "NY-17",
+          "NY-18",
+          "NY-19",
+          "NY-20",
+          "NY-21",
+          "NY-22",
+          "NY-23",
+          "NY-24",
+          "NY-25",
+          "NY-26",
+          "OH-01",
+          "OH-02",
+          "OH-03",
+          "OH-04",
+          "OH-05",
+          "OH-06",
+          "OH-07",
+          "OH-08",
+          "OH-09",
+          "OH-10",
+          "OH-11",
+          "OH-12",
+          "OH-13",
+          "OH-14",
+          "OH-15",
+          "OH-S",
+          "OK-01",
+          "OK-02",
+          "OK-03",
+          "OK-04",
+          "OK-05",
+          "OK-S",
+          "OR-01",
+          "OR-02",
+          "OR-03",
+          "OR-04",
+          "OR-05",
+          "OR-06",
+          "OR-S",
+          "PA-01",
+          "PA-02",
+          "PA-03",
+          "PA-04",
+          "PA-05",
+          "PA-06",
+          "PA-07",
+          "PA-08",
+          "PA-09",
+          "PA-10",
+          "PA-11",
+          "PA-12",
+          "PA-13",
+          "PA-14",
+          "PA-15",
+          "PA-16",
+          "PA-17",
+          "RI-01",
+          "RI-02",
+          "RI-S",
+          "SC-01",
+          "SC-02",
+          "SC-03",
+          "SC-04",
+          "SC-05",
+          "SC-06",
+          "SC-07",
+          "SC-S",
+          "SD-AL",
+          "SD-S",
+          "TN-01",
+          "TN-02",
+          "TN-03",
+          "TN-04",
+          "TN-05",
+          "TN-06",
+          "TN-07",
+          "TN-08",
+          "TN-09",
+          "TN-S",
+          "TX-01",
+          "TX-02",
+          "TX-03",
+          "TX-04",
+          "TX-05",
+          "TX-06",
+          "TX-07",
+          "TX-08",
+          "TX-09",
+          "TX-10",
+          "TX-11",
+          "TX-12",
+          "TX-13",
+          "TX-14",
+          "TX-15",
+          "TX-16",
+          "TX-17",
+          "TX-18",
+          "TX-19",
+          "TX-20",
+          "TX-21",
+          "TX-22",
+          "TX-23",
+          "TX-24",
+          "TX-25",
+          "TX-26",
+          "TX-27",
+          "TX-28",
+          "TX-29",
+          "TX-30",
+          "TX-31",
+          "TX-32",
+          "TX-33",
+          "TX-34",
+          "TX-35",
+          "TX-36",
+          "TX-37",
+          "TX-38",
+          "TX-S",
+          "UT-01",
+          "UT-02",
+          "UT-03",
+          "UT-04",
+          "VA-01",
+          "VA-02",
+          "VA-03",
+          "VA-04",
+          "VA-05",
+          "VA-06",
+          "VA-07",
+          "VA-08",
+          "VA-09",
+          "VA-10",
+          "VA-11",
+          "VA-S",
+          "VT-AL",
+          "WA-01",
+          "WA-02",
+          "WA-03",
+          "WA-04",
+          "WA-05",
+          "WA-06",
+          "WA-07",
+          "WA-08",
+          "WA-09",
+          "WA-10",
+          "WI-01",
+          "WI-02",
+          "WI-03",
+          "WI-04",
+          "WI-05",
+          "WI-06",
+          "WI-07",
+          "WI-08",
+          "WV-01",
+          "WV-02",
+          "WV-S",
+          "WY-AL",
+          "WY-S"
+        ],
+        "county_unit_count": 0,
+        "county_race_count": 0,
+        "all_current_counts_zero": true,
+        "election_date_basis": "Publisher's canonical 2026 general-election catalog; CSV has no explicit election-date or test-data field."
+      }
+    }
+  ]
+}

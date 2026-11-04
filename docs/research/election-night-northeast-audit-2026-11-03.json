@@ -1,0 +1,701 @@
+{
+  "research_date": "2026-11-03",
+  "phase": "Before polls close; production scaffolds only, not observed live vote updates",
+  "verified_adapters": {
+    "new_york_county": {
+      "races": [
+        "NY-17"
+      ],
+      "geography": "Rockland county portion only",
+      "sample": "/private/tmp/pol-coverage/6abeed3020fe5f79.body",
+      "fusion": "Exact candidate-name matching sums Democratic/Working Families and Republican/Conservative lines; unrelated minor party candidates remain other"
+    },
+    "maryland_house": {
+      "races": [
+        "MD-01",
+        "MD-02",
+        "MD-03",
+        "MD-04",
+        "MD-05",
+        "MD-06",
+        "MD-07",
+        "MD-08"
+      ],
+      "geography": "Contest aggregates",
+      "sample": "/private/tmp/pol-coverage/1a6fd4ed140c9f52.body",
+      "status": "All NR; parser returns no units and explicit unavailable_races, never zero substitution"
+    },
+    "clarity_county": {
+      "counties": {
+        "Atlantic": [
+          "NJ-S",
+          "NJ-02"
+        ],
+        "Ocean": [
+          "NJ-S",
+          "NJ-02",
+          "NJ-04"
+        ],
+        "Gloucester": [
+          "NJ-S",
+          "NJ-01",
+          "NJ-02"
+        ]
+      },
+      "geography": "County portions only; no full race scaffold established",
+      "version_resolution": "Published current_ver.txt pointer determines both JSON URLs; immutable versions must not be hardcoded for live use"
+    }
+  },
+  "unresolved_alternatives": [
+    {
+      "state": "NJ",
+      "source": "Morris Clarity",
+      "reason": "Current metadata istestmode=1; rejected and proposed disabled"
+    },
+    {
+      "state": "NJ",
+      "source": "Cape May Clarity",
+      "reason": "Current metadata electiondate 10/29/2026 rather than 11/03/2026; rejected"
+    },
+    {
+      "state": "NJ",
+      "source": "Cumberland Clarity",
+      "reason": "Senate parseable, but House title omits district; no district identity invented"
+    },
+    {
+      "state": "NJ",
+      "source": "Sussex official general page",
+      "reason": "Current page lacks parsed federal vote table/download; no results adapter enabled"
+    },
+    {
+      "state": "NJ",
+      "source": "Somerset Clarity landing",
+      "reason": "Landing application lacks election ID in inspected static markup; no specific current payload verified"
+    },
+    {
+      "state": "ME",
+      "source": "BDN public race API Senate and CD2",
+      "reason": "Both test_data=true; rejected. Publisher combines municipal reporting with DDHQ; no source model fields would be used"
+    },
+    {
+      "state": "ME",
+      "source": "Secretary of State current results index",
+      "reason": "HTTP403; older indexed results contain primary historical files, no production general payload validated"
+    },
+    {
+      "state": "NH",
+      "source": "Secretary of State 2026 results index",
+      "reason": "HTTP403; general result link not directly retrieved; root investigates national raw fallback"
+    },
+    {
+      "state": "NY",
+      "source": "State ENR Home and HomeNoJS",
+      "reason": "Home eventually retrieved Governor scaffold only; linked all-contests no-JS page HTTP403. No federal data extrapolated"
+    },
+    {
+      "state": "NY",
+      "source": "Suffolk county archive",
+      "reason": "Archive newest general election is 2025; current election page indexed as general results Not Yet Available"
+    },
+    {
+      "state": "PA",
+      "source": "State electionreturns.pa.gov",
+      "reason": "HTTP200 challenge HTML, not election data"
+    },
+    {
+      "state": "PA",
+      "source": "Bucks county results and alert",
+      "reason": "Historical results and election alert pages retrieved, no current federal machine feed verified"
+    },
+    {
+      "state": "PA",
+      "source": "Dauphin county ?key=42",
+      "reason": "Current general election page retrieved, but inspected preclose static page lacked federal vote table; no adapter enabled"
+    },
+    {
+      "state": "NJ",
+      "source": "Union Clarity linked by county",
+      "reason": "Gzip-decoded metadata identifies 2026 Roselle Special School Election, 9/15/2026; summary contains two bond questions, no federal races"
+    }
+  ],
+  "limitations": [
+    "Source identity and zero scaffolds do not establish live cadence or availability after polls close.",
+    "Counties here do not establish statewide or district completeness; no expected_counties declared.",
+    "Do not combine county rows with an aggregate fallback for the same contest.",
+    "Local source timestamps lacking reliable timezone are left nil.",
+    "Fixtures are reduced copies of inspected public payloads; original complete files and hashes listed below."
+  ],
+  "probes": [
+    {
+      "id": "ny",
+      "url": "https://nyenr.elections.ny.gov/Home.aspx",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "pa",
+      "url": "https://www.electionreturns.pa.gov/",
+      "status": 200,
+      "bytes": 1037,
+      "sha256": "7b4f9c785dc057dbc1c35907e3ff0d8a7fd21eb9e920921df2b0ba239743c9ab",
+      "sample_path": "/private/tmp/election-night-northeast/pa.html",
+      "fetched_at": "2026-11-03T19:18:29.606066+00:00"
+    },
+    {
+      "id": "md",
+      "url": "https://elections.maryland.gov/elections/2026/election_data/",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "nh",
+      "url": "https://www.sos.nh.gov/elections/election-information/2026-election-results",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "me",
+      "url": "https://www.maine.gov/sos/cec/elec/results/index.html",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "nj",
+      "url": "https://www.nj.gov/state/elections/election-information-2026.shtml",
+      "status": 200,
+      "bytes": 87452,
+      "sha256": "2a9716aedeb26901096e5a306d1b405924b9fb504150d0adc9207d631c43a70b",
+      "sample_path": "/private/tmp/election-night-northeast/nj.html",
+      "fetched_at": "2026-11-03T19:18:29.687407+00:00"
+    },
+    {
+      "id": "pa_signal",
+      "url": "https://signaldata.org/elections/2026/pa/results/",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "ny_poliwave",
+      "url": "https://www.poliwave.com/us/live/midterms-2026/new-york",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "tally",
+      "url": "https://thepeoplestally.com/open-data/",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "tally_data",
+      "url": "https://thepeoplestally.com/data/results.json",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "nh_polling",
+      "url": "https://polling-desk.com/data/nh",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "id": "bangor",
+      "url": "https://www.bangordailynews.com/maine-election-results/",
+      "status": 200,
+      "bytes": 280350,
+      "sha256": "e06d131b85c2080b19d7aba39e666220cf6e8cdf7b9cb5077a3cb5a1f195a38a",
+      "sample_path": "/private/tmp/election-night-northeast/bangor.html",
+      "fetched_at": "2026-11-03T19:18:56.397670+00:00"
+    },
+    {
+      "id": "nj_counties",
+      "url": "https://www.nj.gov/state/elections/election-night-results.shtml",
+      "status": 200,
+      "bytes": 47595,
+      "sha256": "5d5560d7d257a07ed1ac79f8521b000c01c0fd46454f812c475652d7700612e4",
+      "sample_path": "/private/tmp/election-night-northeast/nj_counties.html",
+      "fetched_at": "2026-11-03T19:18:56.381270+00:00"
+    },
+    {
+      "url": "https://app.enhancedvoting.com/cdn/results/rockland-county-ny/export-GE2026.json",
+      "final_url": "https://app.enhancedvoting.com/cdn/results/rockland-county-ny/export-GE2026.json",
+      "status": 200,
+      "bytes": 5936059,
+      "sha256": "0c9e7e9a906ed137011eac6d51895af331a81a4464268f85073e5d5a428c325e",
+      "content_type": "application/octet-stream",
+      "path": "/private/tmp/pol-coverage/6abeed3020fe5f79.body",
+      "observed_at": "2026-11-03T19:19:17.003117+00:00"
+    },
+    {
+      "url": "https://bdn-election-results-main.vercel.app/api/race/us-house-district-2-general",
+      "final_url": "https://bdn-election-results-main.vercel.app/api/race/us-house-district-2-general",
+      "status": 200,
+      "bytes": 249209,
+      "sha256": "a54b6f283baec7ed42c068e1c2230850374c69938ff0426a5e45c4713eb04e1e",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/8c6188dc257b58a2.body",
+      "observed_at": "2026-11-03T19:20:00.503556+00:00"
+    },
+    {
+      "url": "https://bdn-election-results-main.vercel.app/api/race/us-senate-general",
+      "final_url": "https://bdn-election-results-main.vercel.app/api/race/us-senate-general",
+      "status": 200,
+      "bytes": 498709,
+      "sha256": "e9fb4280b7dec9100237dd50091866d7df59375d09d15d34d369d77232645bbf",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/9d4a3fe261503e2b.body",
+      "observed_at": "2026-11-03T19:19:39.480210+00:00"
+    },
+    {
+      "url": "https://bdn-election-results-main.vercel.app/embeds/embed-cd2-general.html",
+      "final_url": "https://bdn-election-results-main.vercel.app/embeds/embed-cd2-general.html",
+      "status": 200,
+      "bytes": 62596,
+      "sha256": "ea2bd380b6e0d4e882801ca8513ff5581be052529ab0c827408803feb9407acc",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/d5cedcbfb110c6da.body",
+      "observed_at": "2026-11-03T19:19:39.443169+00:00"
+    },
+    {
+      "url": "https://bdn-election-results-main.vercel.app/embeds/embed-senate-general.html",
+      "final_url": "https://bdn-election-results-main.vercel.app/embeds/embed-senate-general.html",
+      "status": 200,
+      "bytes": 62578,
+      "sha256": "72f05b7928938250ea8ce24d4c5788668d9d091ac7e63d60878c192106f218cb",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/6cd09235fa7b9e3e.body",
+      "observed_at": "2026-11-03T19:19:16.910183+00:00"
+    },
+    {
+      "url": "https://elections.dauphincounty.gov/?key=42",
+      "final_url": "https://elections.dauphincounty.gov/?key=42",
+      "status": 200,
+      "bytes": 34010,
+      "sha256": "b095b74b0bca93df04c7b5169de2d6922f00c6f2c71537e396680bb5f35dbd2e",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/8a3776552bb52eee.body",
+      "observed_at": "2026-11-03T19:21:32.267069+00:00"
+    },
+    {
+      "url": "https://elections.dauphincounty.gov/js/master.js",
+      "final_url": "https://elections.dauphincounty.gov/js/master.js",
+      "status": 200,
+      "bytes": 3190,
+      "sha256": "9732bb85694d43605e96b2e23e1b1e7392b9915b8d5868ad7307edce15c828ae",
+      "content_type": "text/javascript",
+      "path": "/private/tmp/pol-coverage/55e9997676dcaffd.body",
+      "observed_at": "2026-11-03T19:24:21.740972+00:00"
+    },
+    {
+      "url": "https://elections.maryland.gov/elections/2026/election_data/index.html",
+      "final_url": "https://elections.maryland.gov/elections/2026/election_data/index.html",
+      "status": 200,
+      "bytes": 41015,
+      "sha256": "6a16b3aee11abb072015ee10077289dab4f31ab9076c3f19e434b0ac08573af3",
+      "content_type": "text/html",
+      "path": "/private/tmp/pol-coverage/79cde92a4e84fb28.body",
+      "observed_at": "2026-11-03T19:19:16.925040+00:00"
+    },
+    {
+      "url": "https://nyenr.elections.ny.gov/Home.aspx",
+      "final_url": "https://nyenr.elections.ny.gov/Home.aspx",
+      "status": 200,
+      "bytes": 30978,
+      "sha256": "50fbfcc24d9deb55414cfeb8508ba865a54259d641930122c980fbb868341608",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/4e14feccbc889e7f.body",
+      "observed_at": "2026-11-03T19:19:39.629284+00:00"
+    },
+    {
+      "url": "https://nyenr.elections.ny.gov/HomeNoJS.aspx",
+      "final_url": "https://nyenr.elections.ny.gov/HomeNoJS.aspx",
+      "status": 403,
+      "bytes": 5419,
+      "sha256": "1ae5bd7208e97e54c9d81a8b306c2466c113c5ac00ba4cd1b911891e70d54ef9",
+      "content_type": "text/html; charset=UTF-8",
+      "path": "/private/tmp/pol-coverage/25e77b6442cd9c6a.body",
+      "observed_at": "2026-11-03T19:20:00.512753+00:00"
+    },
+    {
+      "url": "https://nyenr.elections.ny.gov/Scripts/TrackContest.js?v=1",
+      "final_url": "https://nyenr.elections.ny.gov/Scripts/TrackContest.js?v=1",
+      "status": 200,
+      "bytes": 2599,
+      "sha256": "f1e013f03734f3da4f75a4ae925201ee70392dd5b7c02e0e3f08c3237e5c4c40",
+      "content_type": "application/javascript",
+      "path": "/private/tmp/pol-coverage/7661c74152c41d45.body",
+      "observed_at": "2026-11-03T19:24:21.720723+00:00"
+    },
+    {
+      "url": "https://results.elections.maryland.gov/elections/2026/general_results/gen_detail_results_2026_4_1_District%201.html",
+      "final_url": "https://results.elections.maryland.gov/elections/2026/general_results/gen_detail_results_2026_4_1_District%201.html",
+      "status": 200,
+      "bytes": 20365,
+      "sha256": "b4428182b1397b3b046c5dcddd2acc93a2cf727902e47c7fb8b01282f224f170",
+      "content_type": "text/html",
+      "path": "/private/tmp/pol-coverage/f1d11e74fbb5c61e.body",
+      "observed_at": "2026-11-03T19:20:24.453069+00:00"
+    },
+    {
+      "url": "https://results.elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html",
+      "final_url": "https://results.elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html",
+      "status": 200,
+      "bytes": 33429,
+      "sha256": "fd34ddc86ce46a4c3e204f726b04ff7be38cf7318fc0c4f1ce9c8b71fa4d89d8",
+      "content_type": "text/html",
+      "path": "/private/tmp/pol-coverage/1a6fd4ed140c9f52.body",
+      "observed_at": "2026-11-03T19:19:40.171644+00:00"
+    },
+    {
+      "url": "https://results.elections.maryland.gov/elections/2026/general_results/index.html",
+      "final_url": "https://results.elections.maryland.gov/elections/2026/general_results/index.html",
+      "status": 200,
+      "bytes": 29476,
+      "sha256": "65c7e8a7c79e0018f64718cc504f848c478307d9e28c9bf48c1f83b02397942f",
+      "content_type": "text/html",
+      "path": "/private/tmp/pol-coverage/5c252f9ecd2be9d7.body",
+      "observed_at": "2026-11-03T19:19:16.970866+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/1/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/1/summary.json",
+      "status": 404,
+      "bytes": 2616,
+      "sha256": "6440c95aec584aedc40b580f591b15cb141bed997af6771a680ecedf8645f9e8",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/c5d10bae10686397.body",
+      "observed_at": "2026-11-03T19:20:00.469665+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/config.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/config.json",
+      "status": 200,
+      "bytes": 102,
+      "sha256": "c88b860760138e2482495ece8aa2ae7d49c9c6fc5827f55039031377606d91f2",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/7ba3130319b55975.body",
+      "observed_at": "2026-11-03T19:20:24.410199+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/en/electionsettings.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/en/electionsettings.json",
+      "status": 200,
+      "bytes": 23919,
+      "sha256": "27cd41b3122847942665f981cb26f550ac895b66a7ab55b71659d4bb1fbceb64",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/d63b8d75d6d65db9.body",
+      "observed_at": "2026-11-03T19:21:32.114133+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/en/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/381767/json/en/summary.json",
+      "status": 200,
+      "bytes": 55368,
+      "sha256": "4c2985fadc4a7ebd0e47cce1c2a013d6c91a833020e8d93d856f3ff4ee9e225a",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/eb2ccc747ff433ea.body",
+      "observed_at": "2026-11-03T19:21:32.111774+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/current_ver.txt",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/current_ver.txt",
+      "status": 200,
+      "bytes": 6,
+      "sha256": "351058392228bb9404d3be20b3ad5f65ae61194868478dbfe0f9bf12af1eac23",
+      "content_type": "text/plain; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/3246a7a7e50810aa.body",
+      "observed_at": "2026-11-03T19:20:00.471107+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/",
+      "status": 200,
+      "bytes": 16954,
+      "sha256": "e3514b8c1ce5a7496d3487a2816ef942742c38c32857681ed3c24ec6fa8238ce",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/7dd10466e951357c.body",
+      "observed_at": "2026-11-03T19:19:16.870028+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/main.2ea4cb41df122bbb.js",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/main.2ea4cb41df122bbb.js",
+      "status": 200,
+      "bytes": 5496497,
+      "sha256": "6b3ed613774a6b38fd89068e57c96e5c1e616546f103c38cad44908105012c98",
+      "content_type": "application/javascript; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/3189c2051868a4e3.body",
+      "observed_at": "2026-11-03T19:19:39.494510+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Cape_May/127585/383155/json/en/electionsettings.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Cape_May/127585/383155/json/en/electionsettings.json",
+      "status": 200,
+      "bytes": 32605,
+      "sha256": "5fc90230756548f0fb002b95a29f1ae5986359051b4a5e04e0e094473babb298",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/37c4c8d0cb9e7d34.body",
+      "observed_at": "2026-11-03T19:21:32.084392+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Cape_May/127585/383155/json/en/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Cape_May/127585/383155/json/en/summary.json",
+      "status": 200,
+      "bytes": 32486,
+      "sha256": "adb4c0923b90c348fdd38a9af8d021a01cb38aeb61c66cd0f900fdd6674bdead",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/ae875ee60e9e595d.body",
+      "observed_at": "2026-11-03T19:21:32.081819+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Cape_May/127585/current_ver.txt",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Cape_May/127585/current_ver.txt",
+      "status": 200,
+      "bytes": 6,
+      "sha256": "abbbceed287d77340a7e912fa1c049a71c5ccc0c85b152571039e8820aefb6cc",
+      "content_type": "text/plain; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/b247ae1cca9cefd0.body",
+      "observed_at": "2026-11-03T19:21:17.083249+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Cumberland/127562/381805/json/en/electionsettings.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Cumberland/127562/381805/json/en/electionsettings.json",
+      "status": 200,
+      "bytes": 29225,
+      "sha256": "ea8a785ec73fa1e6daee4f1f51257c97702862b54fd9cb62d14fdc2df6ac6fe3",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/7fa2aefbc3d9c3a0.body",
+      "observed_at": "2026-11-03T19:21:32.143233+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Cumberland/127562/381805/json/en/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Cumberland/127562/381805/json/en/summary.json",
+      "status": 200,
+      "bytes": 36128,
+      "sha256": "ec62f95d4312744ceca9d69d512c0e44ac67bbc1d6c455d71c6bf151181935c6",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/96ecbe1dbcaf2110.body",
+      "observed_at": "2026-11-03T19:21:32.143574+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Cumberland/127562/current_ver.txt",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Cumberland/127562/current_ver.txt",
+      "status": 200,
+      "bytes": 6,
+      "sha256": "66efde1917c1a6aa1ca5640194ca19813a65ee02599a3b96827f7ae7392c5b59",
+      "content_type": "text/plain; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/474132e7bdf97277.body",
+      "observed_at": "2026-11-03T19:21:17.079326+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/381896/json/en/electionsettings.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/381896/json/en/electionsettings.json",
+      "status": 200,
+      "bytes": 33295,
+      "sha256": "c2eeb5e86650f29150f10c6ae2a3eff88b77513c1240defb04fe9aa95e24d877",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/1b26057521bf37d4.body",
+      "observed_at": "2026-11-03T19:21:32.114223+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/381896/json/en/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/381896/json/en/summary.json",
+      "status": 200,
+      "bytes": 67415,
+      "sha256": "bcd75ae73c3cb41999114a3a93684a0919081613548c96aeec8a2c1d886d4ee1",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/dc45afec504ec8f2.body",
+      "observed_at": "2026-11-03T19:21:32.112821+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/current_ver.txt",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Gloucester/127298/current_ver.txt",
+      "status": 200,
+      "bytes": 6,
+      "sha256": "310c4f7f25dc32bb604928341763356401c915db42cae956ddc8217d0bd6406e",
+      "content_type": "text/plain; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/017505b07fa16a70.body",
+      "observed_at": "2026-11-03T19:21:17.077725+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Morris/127576/382416/json/en/electionsettings.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Morris/127576/382416/json/en/electionsettings.json",
+      "status": 200,
+      "bytes": 29688,
+      "sha256": "c9d64b54f8e9b3ded2db5107d4b9848a021b669f4629f9180771a204ad441809",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/68ab477be1cd8c47.body",
+      "observed_at": "2026-11-03T19:21:32.144890+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Morris/127576/382416/json/en/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Morris/127576/382416/json/en/summary.json",
+      "status": 200,
+      "bytes": 92788,
+      "sha256": "1ddb04deb9267412d98adcb8f448f3c8b11eff72e16f0f89807f6e9af6fe5ae8",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/5e2ac4341ad14f3e.body",
+      "observed_at": "2026-11-03T19:21:32.155039+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Morris/127576/current_ver.txt",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Morris/127576/current_ver.txt",
+      "status": 200,
+      "bytes": 6,
+      "sha256": "0bbf9a084c098521d0f954bb52a244eca25011559d9677ac17b7403f795ccf1c",
+      "content_type": "text/plain; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/30cc333f27eb124f.body",
+      "observed_at": "2026-11-03T19:21:17.076776+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Morris/127576/web.345435/",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Morris/127576/web.345435/",
+      "status": 200,
+      "bytes": 16952,
+      "sha256": "92d296e0911bfeba8adeec298c96560969b643e3bc1b1ba6474cf1f8193812e9",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/7752141dd32ad6c4.body",
+      "observed_at": "2026-11-03T19:19:16.866902+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/382478/json/en/electionsettings.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/382478/json/en/electionsettings.json",
+      "status": 200,
+      "bytes": 28485,
+      "sha256": "b6ae943c88fa07b6878b2add01fcd95e83e9f13c4c80773a01b76c4a0a36f41c",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/9fee21d2f53edd08.body",
+      "observed_at": "2026-11-03T19:21:32.078139+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/382478/json/en/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/382478/json/en/summary.json",
+      "status": 200,
+      "bytes": 76264,
+      "sha256": "6a3e3b02c8022687a4747ba39bb397165a31dea532aa32bc05fc475ab06bfbd0",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/c5406c0073f4a0ec.body",
+      "observed_at": "2026-11-03T19:21:32.086987+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/current_ver.txt",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Ocean/127556/current_ver.txt",
+      "status": 200,
+      "bytes": 6,
+      "sha256": "316082813be0039a2186a41d55cd61facf21727427a91ceb018316c0b80cb2af",
+      "content_type": "text/plain; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/53f27bd9238702cd.body",
+      "observed_at": "2026-11-03T19:21:17.110723+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Somerset/",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Somerset/",
+      "status": 200,
+      "bytes": 4440,
+      "sha256": "681804aa6eab2ec4ceaf55eecde80202f91088b2777b1e3630a3dfe7a824b981",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/778bd2a3bdc41e5b.body",
+      "observed_at": "2026-11-03T19:24:21.665802+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Union/127281/379539/json/en/electionsettings.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Union/127281/379539/json/en/electionsettings.json",
+      "status": 200,
+      "bytes": 9323,
+      "sha256": "f866261752db11757127e1d6b462f9981bb6470b5076970ccfa84b086c19c618",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/d412de16d3072d61.body",
+      "observed_at": "2026-11-03T19:25:02.552999+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Union/127281/379539/json/en/summary.json",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Union/127281/379539/json/en/summary.json",
+      "status": 200,
+      "bytes": 452,
+      "sha256": "48d0c1a590908734de56818b5af2698f3d3ef18acd5c2d0fd325b8f58342ba65",
+      "content_type": "application/json",
+      "path": "/private/tmp/pol-coverage/0cd562c818cd0164.body",
+      "observed_at": "2026-11-03T19:25:02.556895+00:00"
+    },
+    {
+      "url": "https://results.enr.clarityelections.com/NJ/Union/127281/current_ver.txt",
+      "final_url": "https://results.enr.clarityelections.com/NJ/Union/127281/current_ver.txt",
+      "status": 200,
+      "bytes": 6,
+      "sha256": "4c6ec36e440e469cdf4c8dbac1468f08570c1e7997c5b252d31b5a91e800e402",
+      "content_type": "text/plain; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/0db1cea4bef497e8.body",
+      "observed_at": "2026-11-03T19:24:54.184822+00:00"
+    },
+    {
+      "url": "https://suffolkcountyny.gov/Departments/BOE/Election-Results",
+      "final_url": "https://suffolkcountyny.gov/Departments/BOE/Election-Results",
+      "status": 200,
+      "bytes": 70009,
+      "sha256": "ea5ddd7ae337e45ff5bfb723776bf1dac70d0618fcdcc0d6b31b47f3fcdda58f",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/16d6fadc35622c2d.body",
+      "observed_at": "2026-11-03T19:19:39.560579+00:00"
+    },
+    {
+      "url": "https://unioncountyvotes.com/election-results/",
+      "final_url": "https://unioncountyvotes.com/election-results/",
+      "status": 200,
+      "bytes": 102442,
+      "sha256": "562db853dbbe5015920083035ebb162ba419701163ef0e5b9e036be6b8f84f4b",
+      "content_type": "text/html; charset=UTF-8",
+      "path": "/private/tmp/pol-coverage/475e8d80c5e2b654.body",
+      "observed_at": "2026-11-03T19:24:21.816326+00:00"
+    },
+    {
+      "url": "https://www.buckscounty.gov/1206/Election-Results",
+      "final_url": "https://www.buckscounty.gov/1206/Election-Results",
+      "status": 200,
+      "bytes": 106844,
+      "sha256": "8c77578a4bdefb4ba6808a4814a0f818b0133050ae80959c5473c85ecbeaf4b1",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/534cead5b90b0934.body",
+      "observed_at": "2026-11-03T19:21:32.199411+00:00"
+    },
+    {
+      "url": "https://www.buckscounty.gov/AlertCenter.aspx?AID=2026-General-Election-138",
+      "final_url": "https://www.buckscounty.gov/AlertCenter.aspx?AID=2026-General-Election-138",
+      "status": 200,
+      "bytes": 111900,
+      "sha256": "c00fffe0f24e6d8183c3b3ceed58ea3c28c1c2a1fd83103240018c96d5fcef24",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/40c2dd9e844879c7.body",
+      "observed_at": "2026-11-03T19:24:21.728631+00:00"
+    },
+    {
+      "url": "https://www.maine.gov/sos/elections-voting/election-results-data",
+      "final_url": "https://www.maine.gov/sos/elections-voting/election-results-data",
+      "status": 403,
+      "bytes": 919,
+      "sha256": "8f0ff4eaf5a3b15e9b6caa93c7bb35a9bf0571f3c770f111b73792d888c5fcba",
+      "content_type": "text/html",
+      "path": "/private/tmp/pol-coverage/edf577e754f778c0.body",
+      "observed_at": "2026-11-03T19:21:17.145982+00:00"
+    },
+    {
+      "url": "https://www.sos.nh.gov/2026-election-results",
+      "final_url": "https://www.sos.nh.gov/2026-election-results",
+      "status": 403,
+      "bytes": 401,
+      "sha256": "b50dfca5c65149ffa4edae398b83823b74a9aa38a522d6a22cba643b71fee532",
+      "content_type": "text/html",
+      "path": "/private/tmp/pol-coverage/dee2992214adbca2.body",
+      "observed_at": "2026-11-03T19:21:17.146019+00:00"
+    },
+    {
+      "url": "https://www.sussexcountyclerk.org/930/2026-Election-Results",
+      "final_url": "https://www.sussexcountyclerk.org/930/2026-Election-Results",
+      "status": 200,
+      "bytes": 82388,
+      "sha256": "5583c26b39bf42f59c44d3da339a5171e225ffff5c410a99f8e6fa4986ed9980",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/cc2baea8deaf2f41.body",
+      "observed_at": "2026-11-03T19:24:54.221478+00:00"
+    },
+    {
+      "url": "https://www.sussexcountyclerk.org/939/General-Election",
+      "final_url": "https://www.sussexcountyclerk.org/939/General-Election",
+      "status": 200,
+      "bytes": 82604,
+      "sha256": "86be4f3d5c302936309e5889176d51c385f4ec3de6358072f34d807f3980212f",
+      "content_type": "text/html; charset=utf-8",
+      "path": "/private/tmp/pol-coverage/49ab54596d89805f.body",
+      "observed_at": "2026-11-03T19:24:21.847111+00:00"
+    }
+  ]
+}

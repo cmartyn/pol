@@ -1,0 +1,375 @@
+# CivicAPI is the primary raw-count source for the complete congressional board.
+# Official feeds are retained for fallback and periodic independent cross-checks.
+# No provider forecasts, calls or vote-fraction estimates enter the model.
+---
+civic_api:
+  catalog: config/election_night_civic_races.json
+  minimum_interval: 180
+  concurrency: 2
+  priority: 0
+sources:
+- id: nc
+  label: North Carolina State Board of Elections
+  state: NC
+  adapter: north_carolina
+  url: https://dl.ncsbe.gov/ENRS/2026_11_03/results_pct_20261103.zip
+  minimum_interval: 600
+  expected_counties: 100
+  baseline_url: https://dl.ncsbe.gov/ENRS/2024_11_05/results_pct_20241105.zip
+  baseline_election_date: '2024-11-05'
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: az
+  label: Arizona Secretary of State
+  state: AZ
+  adapter: enhanced_voting
+  url: https://app.enhancedvoting.com/cdn/results/Arizona/export-110326GeneralElection.json
+  minimum_interval: 600
+  expected_counties: 15
+  baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+  baseline_adapter: county_baseline
+  baseline_election_date: '2024-11-05'
+  baseline_note: Public compilation of raw 2024 county counts; not official live data
+    or another forecast.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: ga
+  label: Georgia Secretary of State
+  state: GA
+  adapter: enhanced_voting
+  url: https://results.sos.ga.gov/cdn/results/Georgia/export-11032026GeneralAndSpecialElection.json
+  minimum_interval: 600
+  expected_counties: 159
+  baseline_url: https://results.sos.ga.gov/cdn/results/Georgia/export-2024NovGen.json
+  baseline_election_date: '2024-11-05'
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: va
+  label: Virginia Department of Elections
+  state: VA
+  adapter: enhanced_voting
+  url: https://enr.elections.virginia.gov/cdn/results/virginia/export-2026-November-General.json
+  minimum_interval: 600
+  expected_counties: 133
+  baseline_url: https://enr.elections.virginia.gov/cdn/results/Virginia/export-2024NovemberGeneral.json
+  baseline_election_date: '2024-11-05'
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: tx
+  label: Texas Secretary of State
+  state: TX
+  adapter: texas
+  url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/countyInfo/53815
+  metadata_url: https://goelect.txelections.civixapps.com/api-ivis-system/api/s3/enr/election/53815
+  minimum_interval: 600
+  expected_counties: 254
+  baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+  baseline_adapter: county_baseline
+  baseline_election_date: '2024-11-05'
+  baseline_note: Public compilation of raw 2024 county counts; not official live data
+    or another forecast.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: mi_kent
+  label: Kent County Clerk, Michigan
+  state: MI
+  adapter: enhanced_voting
+  url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-11032026_20261005115447.json
+  minimum_interval: 600
+  baseline_url: https://app.enhancedvoting.com/cdn/results/kent-county-mi/export-2024KentCountyGeneral.json
+  baseline_election_date: '2024-11-05'
+  coverage_note: One county only. Does not constitute statewide Michigan coverage.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: ia_ledger
+  label: Iowa Ledger, relaying Iowa Secretary of State totals
+  state: IA
+  adapter: iowa_ledger
+  url: https://iowaledger.com/results/2026.json
+  minimum_interval: 180
+  coverage_note: Alternative raw-results publisher. Contest totals only, no county
+    breakdown or counted-vote estimate.
+  enabled: true
+  source_kind: secondary
+  priority: 20
+  source_role: fallback
+- id: oh
+  label: Ohio Secretary of State
+  state: OH
+  adapter: ohio
+  url: https://liveresults.ohiosos.gov/Api/v1/download?filename=VSSC1622XmlFileBlob
+  minimum_interval: 600
+  expected_counties: 88
+  baseline_url: https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-24/master/2024_US_County_Level_Presidential_Results.csv
+  baseline_adapter: county_baseline
+  baseline_election_date: '2024-11-05'
+  baseline_note: Public compilation of raw 2024 county counts; not official live data
+    or another forecast.
+  coverage_note: Feed currently marked IsTest=true; unavailable until an explicitly
+    production payload is published.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: fl
+  label: Florida Division of Elections
+  state: FL
+  adapter: florida
+  url: https://flelectionfiles.floridados.gov/enightfilespublic/20261103_ElecResultsFL.txt
+  minimum_interval: 600
+  expected_counties: 67
+  baseline_url: https://flelectionfiles.floridados.gov/enightfilespublic/20241105_ElecResultsFL.txt
+  baseline_election_date: '2024-11-05'
+  coverage_note: Direct official county results file; no publication timestamp or
+    estimated vote fraction. Some uncontested races may be omitted by the state.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: ca
+  label: California Secretary of State
+  state: CA
+  adapter: california
+  url: https://media.sos.ca.gov/media/us-rep.json
+  metadata_url: https://media.sos.ca.gov/media/json-endpoints.csv
+  minimum_interval: 600
+  expected_counties: 58
+  coverage_note: All 52 House districts and 58 counties. Companion official endpoint
+    index binds the undated JSON to the November 3 general election. New congressional
+    boundaries require compatible historical baselines.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: wa
+  label: Washington Secretary of State
+  state: WA
+  adapter: washington
+  url: https://app.enhancedvoting.com/cdn/results/washington/export-20261103.json
+  minimum_interval: 600
+  expected_counties: 39
+  coverage_note: All 10 House districts and 39 counties. County totals only; precinct
+    percentages are not used as vote fractions.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: ak_summary
+  label: Alaska Division of Elections, official summary PDF
+  state: AK
+  adapter: alaska_summary
+  url: https://www.elections.alaska.gov/enr/26GENR/results/ElectionSummaryReportRPT.pdf
+  minimum_interval: 600
+  coverage_note: Statewide Senate and House first-choice totals only. Aggregate-only;
+    excludes ranked-choice transfers and makes no finality inference. Requires pdftotext
+    (poppler-utils).
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: ar
+  label: Arkansas Secretary of State, Tally results
+  state: AR
+  adapter: arkansas_tally
+  url: https://results.tally-enr.com/results/arkansas/11b07106-031e-4d7c-911a-d01fb473d6dd/FullDataFile.json
+  metadata_url: https://enr-results-api.totalresults.com/Election/GetElectionInfo?cId=arkansas&electionID=11b07106-031e-4d7c-911a-d01fb473d6dd
+  minimum_interval: 600
+  expected_counties: 75
+  coverage_note: Official Senate and all four House contests, county totals. Election
+    metadata validates UUID/date, county and party identities, and disjoint vote methods.
+    Nested precincts and statewide summaries are excluded.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: mo_st_charles
+  label: St. Charles County Election Authority, Missouri
+  state: MO
+  adapter: st_charles
+  url: https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/summary_33.csv
+  metadata_url: https://www.livevoterturnout.com/ENR/stcharlesmoenr/33/en/Index_33.html
+  minimum_interval: 600
+  coverage_note: Official St. Charles County portions of House districts 2 and 3 only;
+    does not constitute full district coverage. CSV counts reconcile against voting-method
+    subtotals; linked election page supplies current-date proof.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: in
+  label: Indiana Secretary of State
+  state: IN
+  adapter: indiana
+  url: https://enr.indianavoters.in.gov/site/data/OffCatC_1005_{version}.json
+  version_url: https://enr.indianavoters.in.gov/site/data/settings.json
+  metadata_url: https://enr.indianavoters.in.gov/site/data/settings.json
+  version_path:
+  - Root
+  - VersionType
+  minimum_interval: 600
+  expected_counties: 92
+  coverage_note: Official county portions across all nine House districts. County
+    totals are checked against both statewide and district summaries. No historical
+    House manifest is supplied, so this addition alone does not authorize direct inference.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: ne
+  label: Nebraska Secretary of State
+  state: NE
+  adapter: nebraska
+  url: https://electionresults.nebraska.gov/resultsCSV.aspx?text=All&type=All&map=CTY
+  metadata_url: https://electionresults.nebraska.gov/
+  minimum_interval: 600
+  aggregate_only: true
+  coverage_note: Official totals for Senate and all three House districts. Despite
+    map=CTY in the URL, rows are contest aggregates. Election date is checked against
+    the official homepage and 2026 contest/candidate IDs; CSV generation time is not
+    a new vote report.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: mi_kalamazoo
+  label: Kalamazoo County Clerk, Michigan
+  state: MI
+  adapter: enhanced_voting
+  url: https://app.enhancedvoting.com/cdn/results/kalamazoo-county-mi/export-2026-General-Election.json
+  minimum_interval: 600
+  coverage_note: Kalamazoo County only, including Senate and county portions of House
+    districts 4 and 5. This is not complete Michigan statewide or district coverage.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: ny_rockland
+  label: Rockland County Board of Elections, New York
+  state: NY
+  adapter: new_york_county
+  url: https://app.enhancedvoting.com/cdn/results/rockland-county-ny/export-GE2026.json
+  page_url: https://app.enhancedvoting.com/results/public/rockland-county-ny/GE2026
+  minimum_interval: 600
+  coverage_note: Rockland County portion of NY-17 only. Exact matching candidate names
+    consolidate fusion ballot lines. No complete district geography or historical
+    baseline established.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: md_house
+  label: Maryland State Board of Elections
+  state: MD
+  adapter: maryland_house
+  url: https://elections.maryland.gov/elections/2026/general_results/gen_results_2026_4.html
+  minimum_interval: 600
+  coverage_note: Official totals for all eight House districts. NR means not reported;
+    affected contests remain unknown. Contest totals only; no county inference.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: nj_atlantic
+  label: Atlantic County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Atlantic/127487/web.345435/#/summary
+  minimum_interval: 600
+  coverage_note: Atlantic County portion of NJ-02 and Senate only. County reporting
+    does not establish complete district geography or remaining vote.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: nj_ocean
+  label: Ocean County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Ocean/127556/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Ocean/127556/web.345435/#/summary
+  minimum_interval: 600
+  coverage_note: Ocean County portions of NJ-02, NJ-04 and Senate only. No complete
+    district geography or historical baseline established.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: nj_gloucester
+  label: Gloucester County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Gloucester/127298/web.345435/#/summary
+  minimum_interval: 600
+  coverage_note: Gloucester County portions of NJ-01, NJ-02 and Senate only. Explicit
+    congressional names identify House contests despite the publisher's State category.
+  enabled: true
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: nj_morris
+  label: Morris County Clerk, New Jersey
+  state: NJ
+  adapter: clarity_county
+  version_url: https://results.enr.clarityelections.com/NJ/Morris/127576/current_ver.txt
+  url: https://results.enr.clarityelections.com/NJ/Morris/127576/{version}/json/en/summary.json
+  metadata_url: https://results.enr.clarityelections.com/NJ/Morris/127576/{version}/json/en/electionsettings.json
+  page_url: https://results.enr.clarityelections.com/NJ/Morris/127576/web.345435/#/summary
+  minimum_interval: 600
+  coverage_note: Disabled. Inspected version 382416 explicitly has istestmode=1. NJ-07
+    and NJ-11 county portions require production validation before use.
+  enabled: false
+  source_kind: official
+  priority: 10
+  source_role: fallback
+- id: la_senate
+  state: LA
+  label: Louisiana Secretary of State, Senate by parish
+  adapter: louisiana_senate
+  source_kind: official
+  url: https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=20261103/csv/ByParish_67997.csv
+  metadata_url: https://voterportal.sos.la.gov/ElectionResults/ElectionResults/Data?blob=ElectionDates.htm
+  minimum_interval: 600
+  expected_counties: 64
+  expected_races:
+  - LA-S
+  coverage_note: Official Senate candidate totals for all 64 parishes. Date is bound
+    by the dated download and official election catalog; CSV has no publication timestamp.
+  enabled: true
+  priority: 10
+  source_role: fallback
+- id: polling_desk
+  label: Polling Desk raw totals, via CivicAPI
+  state: US
+  adapter: polling_desk
+  source_kind: secondary
+  url: https://polling-desk.com/results.csv
+  upstream_url: https://civicapi.org/
+  minimum_interval: 300
+  aggregate_only: true
+  coverage_note: 'Whole-board fallback: 435 House and 35 Senate contest totals. Same
+    CivicAPI upstream, not independent corroboration. CSV has a 2026 catalog identifier
+    but no explicit election-date or test-data field; lower-priority raw display only,
+    never direct model evidence.'
+  enabled: true
+  priority: 30
+  source_role: fallback
