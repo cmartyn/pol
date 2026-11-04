@@ -61,6 +61,25 @@ class ElectionNightControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "sampled probability endpoints display bounds without changing snapshot values" do
+    value = snapshot
+    value["chambers"]["house"].merge!("p_dem_control" => 1.0, "p_rep_control" => 0.0)
+    value["races"].first.merge!("p_dem_win" => 0.0, "p_rep_win" => 1.0, "p_other_win" => nil)
+    with_night_snapshot(value) do
+      get "/election-night"
+      assert_select "[data-testid='night-house'] .night-probability", ">99%"
+      assert_select "[data-testid='night-house'] .night-republican strong", "<1%"
+      assert_select "[data-testid='night-senate'] .night-probability", "50%"
+      assert_select "tr[data-race-key='NC-01'] td:nth-child(2)", "<1%"
+      assert_select "tr[data-race-key='NC-01'] td:nth-child(3)", ">99%"
+      assert_select "tr[data-race-key='NC-01'] td:nth-child(4)", "—"
+
+      get "/election-night/snapshot"
+      assert_equal 1.0, response.parsed_body.dig("chambers", "house", "p_dem_control")
+      assert_equal 0.0, response.parsed_body.dig("chambers", "house", "p_rep_control")
+    end
+  end
+
   test "stale snapshots retain numbers but prominently disclose age" do
     with_night_snapshot(snapshot.merge("generated_at" => 15.minutes.ago.iso8601)) do
       get "/election-night"
