@@ -16,8 +16,28 @@ RailsMind.configure do |config|
   # by default. Disable either if the app needs a stricter collection policy.
   # config.capture_exception_message = false
   # config.capture_query_shapes = false
-  # config.before_send = ->(event) { event } # Return nil to drop an event.
+
+  # Page views: each HTML page a controller renders for a person is counted.
+  # The first-party _rails_mind_visitor cookie is never set on a page
+  # EdgeCacheable marks public, so those pages stay cacheable; pages Cloudflare
+  # serves from its cache never reach the app and are not counted.
+  # config.page_views = false # Count no page views.
+  # config.visitor_cookie = false # Count visitors by a daily hash instead of a cookie.
+
+  # Unsubscribe and password-reset links carry their secret in the path, where
+  # filter_parameters cannot reach it, and a page view sends its path and the
+  # path of the page the reader came from. Mask that segment in both.
+  secret_in_path = %r{(?<=/unsubscribe/)[^/?#]+|(?<=/passwords/)(?!new(?:[/?#]|\z))[^/?#]+}
+  config.before_send = lambda do |event|
+    properties = event["properties"]
+    if event["kind"] == "pageview" && properties.is_a?(Hash)
+      %w[path referrer].each do |key|
+        properties[key] = properties[key].gsub(secret_in_path, "[FILTERED]") if properties[key].is_a?(String)
+      end
+    end
+    event
+  end
 end
 
-# No existing Ahoy store, Flipper adapter, or OpenTelemetry provider is changed.
+# No existing Flipper adapter or OpenTelemetry provider is changed.
 # Run `bin/rails rails_mind:doctor` and follow docs/sdk.md for opt-in integrations.
