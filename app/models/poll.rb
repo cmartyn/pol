@@ -53,6 +53,14 @@ class Poll < ApplicationRecord
     from_current_sources.where.not(pollster_id: excluded_pollster_ids || Pollster.excluded.select(:id))
   }
 
+  scope :published_corpus, -> {
+    if ForecastArchive.active?
+      model_corpus(ForecastArchive.excluded_pollster_ids).where(created_at: ..ForecastArchive.started_at)
+    else
+      model_corpus
+    end
+  }
+
   # Flagged as sponsored by a party-aligned client. What the internals
   # toggle includes or excludes.
   scope :internal, -> { where.not(partisan: :none) }

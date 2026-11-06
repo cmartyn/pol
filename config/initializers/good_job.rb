@@ -92,7 +92,14 @@ Rails.application.configure do
   # a separate worker process. Production runs a dedicated worker instead
   # (`bundle exec good_job start`), started as its own process/service.
   config.good_job.execution_mode = :async if Rails.env.development?
-  if ENV["ELECTION_NIGHT_ENABLED"] == "true"
+  if config.x.post_election
+    config.good_job.cron = {
+      pol_results: {
+        cron: "*/30 * * * * America/New_York", class: "PostElection::ResultsJob",
+        description: "Refresh uncalled races each sweep and projected races once a day"
+      }
+    }
+  elsif ENV["ELECTION_NIGHT_ENABLED"] == "true"
     config.good_job.cron[:election_night] = {
       cron: "*/3 * * * *", class: "ElectionNight::SweepJob",
       description: "Collect official results and update the independent experimental needle"

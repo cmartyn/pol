@@ -34,6 +34,7 @@ class Setting < ApplicationRecord
     # unarmed by construction; test and production are unaffected; see
     # Admin::KillSwitchStatus for the three-part display this decides.
     def agents_enabled?
+      return false if ForecastArchive.active?
       return false if ENV["AGENTS_DISABLED"].present?
 
       stored = get(AGENTS_ENABLED_KEY)

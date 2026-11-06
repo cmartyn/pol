@@ -3,7 +3,7 @@ module Newsroom
   # check whether any race has moved far enough since last week, or since the
   # newsroom last wrote about it, to be worth a note. Most runs find nothing
   # and write nothing.
-  class MovementNotesJob < ApplicationJob
+  class MovementNotesJob < PreElectionJob
     queue_as :default
 
     KIND = :movement_note

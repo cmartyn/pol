@@ -2,7 +2,7 @@ module Newsroom
   # The 07:00 America/New_York national brief (and `bin/rails pol:brief`, which
   # is the same code path by hand). The 06:30 cron model run goes first, so the
   # brief is always written from that morning's numbers.
-  class DailyBriefJob < ApplicationJob
+  class DailyBriefJob < PreElectionJob
     queue_as :default
 
     KIND = :daily_brief

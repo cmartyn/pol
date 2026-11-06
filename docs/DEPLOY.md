@@ -24,13 +24,47 @@ bin/kamal app exec 'bin/rails pol:model'   # any one-off task
 
 Kamal builds from git HEAD — commit before deploying.
 
+## Post-election results
+
+Both production roles use `POST_ELECTION_MODE=true`. The web entrypoint
+migrates, verifies the archived run, and imports missing results from retained
+civicAPI responses on the shared volume before serving traffic. It can be
+retried. A missing or mismatched pin stops startup. The worker then runs
+`PostElection::ResultsJob` twice an hour. Old queued polling, forecast and
+newsroom jobs skip execution. The election-night preview retains its last
+dated estimate.
+
+The downloadable archive comes from production model run **1339**, completed
+**November 3, 2026 at 4:32:14 p.m. Eastern**, the last completed run before the
+first poll close. Its ID and finish time match the frozen election-night prior.
+The 940 race forecasts and four chamber forecasts come from that run. The
+924 candidate records come from the November 4 08:15 UTC backup, before the
+next candidate sync. Every roster row in that backup predates the final run.
+Historical charts end at the pinned run. Later polling runs remain in the
+database for audit.
+
+The importer checks each pinned federal contest's identity, non-test flag,
+dated report, candidate identities, vote counts and archived raw hash.
+civicAPI makes its own projections. A single explicit winner can be displayed
+without a published call time. A missing report retains the last good record.
+Disputed or conflicting calls remain outstanding. An editor records certification
+and links the election authority under **Admin → Races → Election result**.
+Selecting **Use civicAPI calls** releases an editorial override. Changes to the
+displayed decision are retained in the race's decision history.
+
+Run `bin/rails post_election:refresh` for a due sweep, or
+`bin/rails 'post_election:refresh[senate-2026-me]'` for one race, including a
+vote correction after certification. The source's report time and the winner's
+decision time are recorded independently. To stop collection while preserving
+the archive, disable the results cron in GoodJob.
+
 ## Election-night preview
 
 The unlisted preview is `https://535.wtf/election-night`. It has no public
 navigation link, and both the HTML and snapshot endpoint request no indexing.
 Anyone with the URL can open it; it is not authenticated.
 
-The production `job` role enables `ELECTION_NIGHT_ENABLED=true` and uses one
+During election night the production `job` role enabled `ELECTION_NIGHT_ENABLED=true` and used one
 GoodJob worker thread on this 2 GB host. SweepJob caps queued plus running
 sweeps at one, skips overlapping manual collection, and waits for a frozen
 prior before attempting its first scheduled run. The web role does not

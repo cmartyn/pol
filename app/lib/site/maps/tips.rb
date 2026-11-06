@@ -48,7 +48,7 @@ module Site
       end
 
       def uncontested?(race)
-        race.uncontested? && race.uncontested_party.present?
+        race.forecast_uncontested?
       end
     end
   end

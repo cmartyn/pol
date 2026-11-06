@@ -20,7 +20,7 @@ module RacesHelper
   # a poll whose whole question is which party — so every margin helper below
   # handles race-less polls without growing a branch of its own.
   def race_sides(race)
-    Site::RaceSides.for(race&.candidates || [])
+    Site::RaceSides.for(race&.forecast_candidates || [])
   end
 
   # A margin value (side_a - side_b, in points) formatted as "D+3.2" and
@@ -50,7 +50,7 @@ module RacesHelper
   # sides (Phase 2 seeds no House candidates at all, and
   # Forecast::RaceModel#side_a/#side_b fall back to the bare party when
   # there's no candidate to name — see Site::HouseTable's header comment).
-  # Going through race.candidates here would lazy-load it per row, turning
+  # Going through race.forecast_candidates here would lazy-load it per row, turning
   # the House table's carefully-bounded 3 queries back into an N+1 — which
   # is exactly the bug a controller-level test with extra ad-hoc districts
   # caught. dem/rep is not a shortcut standing in for the real answer; for
@@ -75,7 +75,7 @@ module RacesHelper
   # the Tossup/Favors-{Party} call Site::Format makes from the forecast's
   # three win probabilities.
   def rating_word_for(race, forecast)
-    return "Uncontested" if race.uncontested? && race.uncontested_party.present?
+    return "Uncontested" if race.forecast_uncontested?
     return nil unless forecast
 
     Site::Format.rating_word(
@@ -155,9 +155,9 @@ module RacesHelper
   # group, not a matchup). Both sides are run through PollTableParser.surname
   # so a spelling variant of the same person doesn't false-flag.
   def earlier_matchup?(race, matchup_key)
-    return false if race.candidates.blank? || matchup_key.nil?
+    return false if race.forecast_candidates.blank? || matchup_key.nil?
 
-    current_surnames = race.candidates.group_by(&:party).transform_values do |group|
+    current_surnames = race.forecast_candidates.group_by(&:party).transform_values do |group|
       group.map { |candidate| Ingest::PollTableParser.surname(candidate.name) }
     end
 
@@ -244,7 +244,9 @@ module RacesHelper
     next_direction = active && current_direction == "asc" ? "desc" : "asc"
     indicator = active ? (current_direction == "asc" ? " ▲" : " ▼") : ""
     classes = active ? "font-semibold text-slate-900" : "text-slate-500 hover:text-slate-700"
-    href = "#{base_path}?#{{ sort: key, dir: next_direction }.to_query}"
+    query = { sort: key, dir: next_direction }
+    query[:status] = "outstanding" if @outstanding_only
+    href = "#{base_path}?#{query.to_query}"
 
     link_to "#{label}#{indicator}", href, class: classes,
             data: { testid: "#{testid_prefix}-sort-#{key}", table_filter_target: "sortLink", action: "table-filter#sort" }

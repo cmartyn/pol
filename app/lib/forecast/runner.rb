@@ -48,6 +48,7 @@ class Forecast::Runner
   Variant = Struct.new(:generic_ballot, :national_env, :race_models, :simulation, keyword_init: true)
 
   def call
+    raise "The 2026 polling forecast is archived" if ForecastArchive.active?
     @model_run = start_run!
 
     begin

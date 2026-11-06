@@ -1,8 +1,12 @@
-<% content_for :title, "535 — 2026 midterms forecast" %>
+<% heading = ForecastArchive.active? ? "2026 midterm results" : "2026 midterms forecast" %>
+<% content_for :title, "535 — #{heading}" %>
 
 <%= render layout: "shared/headline_row", locals: { source: "homepage" } do %>
-  <h1 class="font-serif text-3xl font-semibold text-slate-900">2026 midterms forecast</h1>
+  <h1 class="font-serif text-3xl font-semibold text-slate-900"><%= heading %></h1>
   <%= render "shared/as_of", time: @latest_run&.started_at %>
+  <% if ForecastArchive.active? %>
+    <%= link_to "Download the final forecast (JSON)", ForecastArchive::PATH, class: "mt-2 inline-block text-sm text-amber-800 underline", download: true %>
+  <% end %>
 <% end %>
 
 <%= render "home/corpus_note", note: @corpus_note if @corpus_note.visible? %>
@@ -12,9 +16,18 @@
     No forecast run has completed yet. Once one has, the Senate and House pictures will appear here.
   </p>
 <% else %>
+  <% if ForecastArchive.active? %>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 sm:gap-6" aria-label="Election results">
+      <%= render "races/chamber_results", chamber: "senate" %>
+      <%= render "races/chamber_results", chamber: "house" %>
+    </div>
+  <% end %>
   <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false, map: true, linked: true, trend: true %>
-    <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true, map: true, linked: true, trend: true %>
+    <% %w[senate house].each do |chamber| %>
+      <div class="flex flex-col">
+        <%= render "home/chamber_card", model_run: @latest_run, chamber: chamber, title: chamber.capitalize, house: chamber == "house", map: true, linked: true, trend: true %>
+      </div>
+    <% end %>
   </div>
 <% end %>
 
@@ -31,7 +44,7 @@
       <%# Its own line on a phone. Inline, the parenthetical broke after
           "45-day" and the second line took the text-lg line height. %>
       <span class="text-sm text-slate-500 max-sm:block">
-        (<%= pluralize(environment.poll_count, "poll") %>, <%= environment.window_days %>-day window, as of today)
+        (<%= pluralize(environment.poll_count, "poll") %>, <%= environment.window_days %>-day window, as of <%= ForecastArchive.active? ? "the final forecast" : "today" %>)
       </span>
     </p>
   <% else %>
@@ -91,5 +104,5 @@
     and outside the cached chamber cards. A form inside either card would
     duplicate, and a cache hit would skip rendering it. %>
 <div class="mt-10">
-  <%= render "shared/subscription_form", source: "homepage", layout: "band" %>
+  <%= render "shared/subscription_form", source: "homepage", layout: "band" unless ForecastArchive.active? %>
 </div>

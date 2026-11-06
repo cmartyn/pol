@@ -171,7 +171,7 @@ module Site
         # far less of each one.
         def forecasts(variant)
           Forecast.where(variant: variant, race_id: @race.id)
-            .joins(:model_run).merge(ModelRun.succeeded)
+            .joins(:model_run).merge(ModelRun.published_history)
             .order("model_runs.started_at ASC")
         end
 

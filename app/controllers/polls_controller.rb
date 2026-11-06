@@ -5,7 +5,7 @@ class PollsController < PublicController
   edge_cache
 
   def index
-    @latest_run = ModelRun.succeeded.latest.first
+    @latest_run = ModelRun.published.first
     @page = Site::PollFeed.normalize_page(params[:page])
 
     # The one query this action pays that the view's cache block does not
@@ -15,7 +15,7 @@ class PollsController < PublicController
     # as a redirect — never edge-cached, never a fragment — so both caches
     # only ever see page numbers that exist. That is the whole bound on how
     # many entries ?page= can mint; there is no numeric ceiling anywhere.
-    last_page = Site::PollFeed.last_page(Poll.model_corpus.count)
+    last_page = Site::PollFeed.last_page(Poll.published_corpus.count)
     redirect_to polls_path(page: (last_page if last_page > 1)) if @page > last_page
   end
 end

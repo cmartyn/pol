@@ -13,9 +13,8 @@
   <p class="mt-2 text-slate-700">
     <strong class="font-semibold text-slate-900">D+0.8 means this pollster's polls run 0.8 points more
     Democratic than the field; we subtract that before averaging.</strong>
-    R+0.8 means the same in the other direction. The effect is measured against the other firms polling the
-    same thing at the same time &mdash; never against the election result, which hasn't happened &mdash; so it
-    says a firm differs from its competitors, not that it is wrong.
+    R+0.8 means the same in the other direction. The comparison uses other firms polling the same
+    contest at the same time.
   </p>
   <p class="mt-3 text-sm text-slate-600">
     <strong class="font-medium text-slate-900">Raw</strong> is the firm's average gap from the field.
@@ -37,7 +36,7 @@
     freshness, so a new poll for a pollster with no estimate still changes
     the page. Site::PollsterTable.build's three queries live inside the
     block so a cache hit skips them. %>
-<% cache [ "pollster-table", @latest_run, Site::CacheKey.collection_freshness(Poll.model_corpus),
+<% cache [ "pollster-table", @latest_run, Site::CacheKey.collection_freshness(Poll.published_corpus),
            Site::CacheKey.timestamp(Pollster.maximum(:updated_at)) ] do %>
   <% rows = Site::PollsterTable.build(model_run: @latest_run) %>
   <% estimated = rows.count(&:estimated?) %>
@@ -61,7 +60,7 @@
       <%= rows.count(&:applied?) %> whose effect is being applied
       <% if excluded_pollsters.any? %>
         &middot; <%= link_to "#{excluded_pollsters.size} excluded", "#excluded-pollsters",
-                            class: "underline underline-offset-2 hover:text-slate-700" %>
+                            class: "underline underline-offset-2 hover:text-slate-700", data: { turbo: false } %>
       <% end %>
     </p>
 

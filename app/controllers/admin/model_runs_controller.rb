@@ -14,6 +14,7 @@ module Admin
     # and returning nil rather than raising, so enqueuing it is never a
     # promise that a run actually happens — the flash says so.
     def create
+      return redirect_to(admin_model_runs_path, alert: "The final forecast is archived.") if ForecastArchive.active?
       Forecast::RunJob.perform_later(trigger: :manual)
       redirect_to admin_model_runs_path, notice: "Model run enqueued — it will decline to run if one is already in flight."
     end

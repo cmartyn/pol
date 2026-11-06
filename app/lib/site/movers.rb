@@ -33,7 +33,7 @@ module Site
     # succeeded runs) or nothing clears the floor — callers read nil as "omit
     # the section", per the brief.
     def call
-      latest = ModelRun.succeeded.latest.first
+      latest = ModelRun.published.first
       return nil unless latest
 
       previous = comparison_run(latest)

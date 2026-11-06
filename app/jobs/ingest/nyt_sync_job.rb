@@ -1,7 +1,7 @@
 module Ingest
   # The scheduled feed sweep. GoodJob's cron runs this every
   # feed.cadence_hours hours (see config/initializers/good_job.rb).
-  class NytSyncJob < ApplicationJob
+  class NytSyncJob < PreElectionJob
     queue_as :default
 
     def perform

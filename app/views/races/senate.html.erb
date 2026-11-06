@@ -31,7 +31,8 @@
       partial owns its own border and padding — the dashboard renders it
       bare — so the card's wrapper carries layout only. %>
   <div class="mt-6 grid gap-10 xl:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] xl:items-start">
-    <div class="max-w-xl">
+    <div class="max-w-xl space-y-4">
+      <%= render "races/chamber_results", chamber: "senate" if ForecastArchive.active? %>
       <%= render "home/chamber_card", model_run: @latest_run, chamber: "senate", title: "Senate", house: false %>
     </div>
 
@@ -70,11 +71,16 @@
     hit skips its queries rather than this template paying for them
     regardless of whether the result is about to be thrown away. %>
 <div class="mt-10" data-controller="table-filter">
-  <% cache [ "senate-table", @latest_run, @sort, @direction, Site::CacheKey.collection_freshness(Race.senate) ] do %>
+  <span id="race-table"></span>
+  <% cache [ "senate-table", @latest_run, @results_version, @outstanding_only, @sort, @direction, Site::CacheKey.collection_freshness(Race.senate) ] do %>
     <% rows = Site::SenateTable.build(sort: @sort, direction: @direction) %>
+    <% if @outstanding_only %>
+      <% rows = rows.reject { |row| row.race.race_result&.called? } %>
+      <p class="mb-3 text-sm text-slate-600">Outstanding races · <%= link_to "Show all races", senate_path(anchor: "race-table"), class: "text-amber-800 underline" %></p>
+    <% end %>
     <% if rows.empty? %>
       <p class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="senate-table-empty">
-        No Senate races on the board yet.
+        <%= @outstanding_only ? "Every race has a recorded winner." : "No Senate races on the board yet." %>
       </p>
     <% else %>
       <%= render "races/search_box", label: "Search by state or race name",
@@ -102,11 +108,14 @@
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
                 <%= sort_header "Race", "state", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
               </th>
+              <% if ForecastArchive.active? %>
+                <th class="sticky top-0 z-10 border-b border-slate-200 bg-white py-2 pr-3 font-medium">Result</th>
+              <% end %>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
-                <%= sort_header "Rating", "rating", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+                <%= sort_header (ForecastArchive.active? ? "Final forecast" : "Rating"), "rating", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
               </th>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
-                <%= sort_header "Win prob.", "probability", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
+                <%= sort_header (ForecastArchive.active? ? "Final chance" : "Win prob."), "probability", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
               </th>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
                 <%= sort_header "Margin", "margin", base_path: senate_path, testid_prefix: "senate", current_sort: @sort, current_direction: @direction %>
@@ -130,13 +139,22 @@
                   <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
                   <% if row.race.special? %><span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">special</span><% end %>
                 </td>
+                <% if ForecastArchive.active? %>
+                  <% result = row.race.race_result %>
+                  <td class="py-2 pr-3" data-label="Result">
+                    <div class="min-w-0">
+                    <% if result&.winner %><span class="block font-semibold <%= party_text_color(result.winner.fetch("party")) %>"><%= result.winner.fetch("name") %></span><% end %>
+                    <span class="block text-xs text-slate-600"><%= result_label(result) %></span>
+                    </div>
+                  </td>
+                <% end %>
                 <td class="py-2.5 pr-3 text-slate-700" data-role="meta" data-testid="rating-word"><%= each_variant(tag_name: :span) do |variant|
                   rating_word_for(row.race, variant == :incl_internals ? row.incl_forecast : row.forecast) || "—"
                 end %></td>
-                <td class="py-2.5 pr-3" data-role="probability"><%= each_variant(tag_name: :span) do |variant|
+                <td class="py-2.5 pr-3" data-role="probability"><% if ForecastArchive.active? %><span class="mb-1 block text-xs text-slate-600 lg:hidden">Final chance</span><% end %><%= each_variant(tag_name: :span) do |variant|
                   probability_chip(variant == :incl_internals ? row.incl_forecast : row.forecast)
                 end %></td>
-                <td class="py-2.5 pr-3 font-semibold" data-label="Margin">
+                <td class="py-2.5 pr-3 font-semibold" data-label="<%= ForecastArchive.active? ? "Forecast margin" : "Margin" %>">
                   <%= each_variant(tag_name: :span) do |variant| %>
                     <% forecast = variant == :incl_internals ? row.incl_forecast : row.forecast %>
                     <% if forecast %>
@@ -178,5 +196,5 @@
 <%# Below the race table. The chamber card is cached, so the form stays a
     sibling of that cache, after the picture and the races. %>
 <div class="mt-10">
-  <%= render "shared/subscription_form", source: "senate", layout: "band" %>
+  <%= render "shared/subscription_form", source: "senate", layout: "band" unless ForecastArchive.active? %>
 </div>

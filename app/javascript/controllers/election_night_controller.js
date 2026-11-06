@@ -25,10 +25,10 @@ export default class extends Controller {
     } catch { /* The joke still works when browser storage is unavailable. */ }
     this.anxietyPanelTarget.hidden = false
     this.updateAnxiety()
-    this.timer = setInterval(() => this.refresh(), 30000)
+    if (this.hasUrlValue) this.timer = setInterval(() => this.refresh(), 30000)
     this.onVisibility = () => {
       this.updateAnxiety()
-      if (!document.hidden) this.refresh()
+      if (this.hasUrlValue && !document.hidden) this.refresh()
     }
     document.addEventListener("visibilitychange", this.onVisibility)
   }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_26_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_05_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -321,6 +321,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_000001) do
     t.index ["slug"], name: "index_pollsters_on_slug", unique: true
   end
 
+  create_table "race_results", force: :cascade do |t|
+    t.bigint "race_id", null: false
+    t.jsonb "votes", default: [], null: false
+    t.string "returns_url"
+    t.datetime "reported_at"
+    t.datetime "checked_at"
+    t.jsonb "provider_call"
+    t.jsonb "editor_call"
+    t.jsonb "call_history", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["race_id"], name: "index_race_results_on_race_id", unique: true
+  end
+
   create_table "races", force: :cascade do |t|
     t.integer "office", null: false
     t.string "state", null: false
@@ -424,5 +438,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_26_000001) do
   add_foreign_key "poll_results", "polls"
   add_foreign_key "polls", "pollsters"
   add_foreign_key "polls", "races"
+  add_foreign_key "race_results", "races"
   add_foreign_key "sessions", "users"
 end

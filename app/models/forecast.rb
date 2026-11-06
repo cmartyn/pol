@@ -20,6 +20,6 @@ class Forecast < ApplicationRecord
   # Defaults to the published variant; a caller after the internals view says
   # so explicitly.
   def self.latest_for_races(variant: :excl_internals)
-    where(variant: variant, model_run_id: ModelRun.succeeded.latest.limit(1).select(:id))
+    where(variant: variant, model_run_id: ModelRun.published.select(:id))
   end
 end

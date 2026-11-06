@@ -8,6 +8,7 @@ class ElectionNight::SweepJob < ApplicationJob
   good_job_concurrency_rule(total_limit: 1, label: "election-night-sweep")
 
   def perform
+    return if ForecastArchive.active?
     return unless ENV["ELECTION_NIGHT_ENABLED"] == "true"
     store = ElectionNight::Store.new
     unless store.read("prior")

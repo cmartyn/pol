@@ -85,7 +85,7 @@ module ApplicationHelper
   def latest_model_run
     return @latest_run if defined?(@latest_run)
 
-    @latest_run = ModelRun.succeeded.latest.first
+    @latest_run = ModelRun.published.first
   end
 
   # poll.source_url is stored free-form (Poll validates only its presence —
