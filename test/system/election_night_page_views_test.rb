@@ -1,10 +1,11 @@
 require "application_system_test_case"
 
-# rails_mind 0.4.0 counts a page view for each HTML GET a controller renders
+# rails_mind 0.4.1 counts a page view for each HTML GET a controller renders
 # for a person. Election night refreshes itself in the background: when the
-# snapshot's revision changes it fetches its own HTML and swaps the content
-# in. That fetch is the same reader on the same page, so it must not count as
-# another visit, or every open tab would add one on each update.
+# snapshot's revision changes it fetches its own HTML, asking for text/html as
+# a page load does, and swaps the content in. That fetch is the same reader on
+# the same page, so it must not count as another visit, or every open tab
+# would add one on each update.
 class ElectionNightPageViewsTest < ApplicationSystemTestCase
   test "a background refresh of election night is not counted as another visit" do
     store = Struct.new(:latest).new(snapshot(house: 0.64))

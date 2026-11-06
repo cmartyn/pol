@@ -24,9 +24,11 @@ RailsMind.configure do |config|
   # config.page_views = false # Count no page views.
   # config.visitor_cookie = false # Count visitors by a daily hash instead of a cookie.
 
-  # Unsubscribe and password-reset links carry their secret in the path, where
-  # filter_parameters cannot reach it, and a page view sends its path and the
-  # path of the page the reader came from. Mask that segment in both.
+  # Unsubscribe and password-reset links carry their secret in the path.
+  # rails_mind 0.4.1 masks a route segment filter_parameters masks (both are
+  # :token) and sends only the origin of a referrer inside the app. This masks
+  # the segment in the path and referrer again, in case a route is renamed or
+  # served from another host.
   secret_in_path = %r{(?<=/unsubscribe/)[^/?#]+|(?<=/passwords/)(?!new(?:[/?#]|\z))[^/?#]+}
   config.before_send = lambda do |event|
     properties = event["properties"]

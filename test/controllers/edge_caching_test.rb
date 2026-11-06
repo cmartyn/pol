@@ -36,7 +36,7 @@ class EdgeCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # rails_mind 0.4.0 counts page views and keeps a visitor ID in a
+  # rails_mind 0.4.1 counts page views and keeps a visitor ID in a
   # first-party cookie, which it never sets on a response marked public. The
   # rest of the suite runs with collection off, where the SDK sets nothing, so
   # this turns it on: a browser reading any cacheable page is counted, by a
