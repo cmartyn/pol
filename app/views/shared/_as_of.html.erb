@@ -1,6 +1,6 @@
 <%# locals: time — a ModelRun#started_at, or nil %>
 <% if ForecastArchive.active? && time %>
-  <p class="font-figure text-sm tracking-tight text-slate-600" data-testid="as-of">Final forecast · <%= result_time(ForecastArchive.finished_at) %></p>
+  <p class="font-figure text-sm tracking-tight text-slate-600" data-testid="as-of">Final forecast · <span class="block sm:inline"><%= result_time(ForecastArchive.finished_at) %></span></p>
 <% elsif time %>
   <p class="font-figure text-sm tracking-tight text-slate-600" data-testid="as-of"><%= Site::Format.as_of(time) %></p>
 <% else %>

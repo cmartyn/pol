@@ -1,28 +1,52 @@
 <% result = race.race_result || race.build_race_result %>
+<% values = @result_input || {} %>
+<% status = values.fetch("status", result.editor_call&.fetch("status") || "automatic") %>
+<% field_class = "mt-1 min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 placeholder:text-slate-500 focus:border-amber-600 focus:outline-2 focus:outline-offset-2 focus:outline-amber-600 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-500 sm:text-sm" %>
 <section class="mt-6 max-w-2xl rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="result-heading">
-  <h2 id="result-heading" class="font-serif text-xl font-semibold">Election result</h2>
-  <p class="mt-1 text-sm"><%= result_label(result) %><%= " · #{result.winner.fetch('name')}" if result.winner %></p>
-  <%= form_with scope: :result, url: admin_race_result_path(race), method: :patch, class: "mt-4 space-y-3 text-sm" do |f| %>
-    <div><%= f.label :status, "Decision", class: "block font-medium" %>
-      <%= f.select :status, options_for_select([ [ "Use civicAPI calls", "automatic" ], [ "Uncalled", "uncalled" ], [ "Projected winner", "projected" ], [ "Certified winner", "certified" ] ], result.editor_call&.fetch("status") || "automatic") %></div>
-    <div><%= f.label :candidate, "Winner", class: "block font-medium" %>
-      <%= f.select :candidate, options_for_select(result.winner_choices.map { |c| [ "#{c.fetch('name')} (#{c.fetch('party')})", c.to_json ] }, result.winner&.slice("name", "party")&.to_json), include_blank: "Select a candidate" %></div>
-    <div><%= f.label :source_url, "Decision source URL", class: "block font-medium" %>
-      <%= f.url_field :source_url, value: result.editor_call&.dig("url"), placeholder: "https://", class: "w-full" %></div>
-    <div><%= f.label :decided_at, "Decision time (Eastern)", class: "block font-medium" %>
-      <%= f.datetime_local_field :decided_at, value: result.editor_call&.dig("decided_at")&.in_time_zone&.strftime("%Y-%m-%dT%H:%M") %></div>
-    <p class="text-slate-600">Link the reporting outlet for a projection or the election authority for a certification. Certification ends scheduled vote checks. Your decision takes precedence until you select “Use civicAPI calls.”</p>
-    <%= f.submit "Save result", class: "rounded bg-slate-900 px-3 py-2 font-semibold text-white" %>
+  <h2 id="result-heading" class="font-serif text-xl font-semibold text-slate-900">Election result</h2>
+  <p class="mt-1 text-sm text-slate-600"><%= result_label(result) %><%= " · #{result.winner.fetch('name')}" if result.winner %></p>
+  <% if @result_error %>
+    <p id="result-error" role="alert" class="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800"><%= @result_error %></p>
+  <% end %>
+  <%= form_with scope: :result, url: admin_race_result_path(race), method: :patch,
+        class: "mt-5 space-y-4 text-sm", data: { controller: "race-result-form" },
+        aria: { describedby: ("result-error" if @result_error) } do |f| %>
+    <div>
+      <%= f.label :status, "Decision", class: "block font-medium text-slate-700" %>
+      <%= f.select :status, options_for_select([ [ "Use civicAPI calls", "automatic" ], [ "Uncalled", "uncalled" ], [ "Projected winner", "projected" ], [ "Certified winner", "certified" ] ], status),
+            {}, class: field_class, data: { race_result_form_target: "status", action: "change->race-result-form#update" } %>
+    </div>
+    <div>
+      <%= f.label :candidate, "Winner", class: "block font-medium text-slate-700" %>
+      <%= f.select :candidate, options_for_select(result.winner_choices.map { |c| [ "#{c.fetch('name')} (#{Site::Format::PARTY_LETTER.fetch(c.fetch('party'))})", c.to_json ] }, values.fetch("candidate", result.winner&.slice("name", "party")&.to_json)),
+            { include_blank: "Select a candidate" }, class: field_class, data: { race_result_form_target: "candidate" } %>
+    </div>
+    <div>
+      <%= f.label :source_url, "Decision source URL", class: "block font-medium text-slate-700" %>
+      <%= f.url_field :source_url, value: values.fetch("source_url", result.editor_call&.dig("url")), placeholder: "https://", class: field_class,
+            data: { race_result_form_target: "source" }, aria: { describedby: "result-source-help" } %>
+      <p id="result-source-help" class="mt-1 text-xs leading-relaxed text-slate-600">Link the reporting outlet for a projection or the election authority for a certification.</p>
+    </div>
+    <div>
+      <%= f.label :decided_at, "Decision time (Eastern)", class: "block font-medium text-slate-700" %>
+      <%= f.datetime_local_field :decided_at, value: values.fetch("decided_at", result.editor_call&.dig("decided_at")&.in_time_zone&.strftime("%Y-%m-%dT%H:%M")), class: field_class,
+            data: { race_result_form_target: "time" } %>
+    </div>
+    <p class="leading-relaxed text-slate-600">Your decision takes precedence until you select “Use civicAPI calls.” Certification ends scheduled vote checks.</p>
+    <%= f.submit "Save result", class: "min-h-11 cursor-pointer rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600 disabled:cursor-wait disabled:opacity-60", data: { turbo_submits_with: "Saving…" } %>
   <% end %>
   <% if result.call_history.any? %>
-    <details class="mt-4 text-sm"><summary class="cursor-pointer font-medium">Decision history</summary>
-      <ol class="mt-2 space-y-2">
+    <details class="mt-5 border-t border-slate-200 text-sm">
+      <summary class="min-h-11 cursor-pointer rounded py-3 font-medium text-slate-700 hover:text-amber-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600">Decision history</summary>
+      <ol class="divide-y divide-slate-100">
         <% result.call_history.reverse_each do |change| %>
           <% call = change["decision"] %>
-          <li><%= result_time(change.fetch("recorded_at")) %> · <%= change["editor_id"] ? "Editor" : "Feed" %> ·
-            <%= call&.fetch("status")&.humanize || "Awaiting report" %>
-            <%= call&.dig("winner", "name") %>
-            <% if call %> · <%= safe_external_link(call.fetch("url"), call.fetch("source"), class: "underline") %><% end %>
+          <li class="py-3 first:pt-0">
+            <p class="font-medium text-slate-900"><%= call&.fetch("status")&.humanize || "Awaiting report" %><%= " · #{call.dig('winner', 'name')}" if call&.dig("winner") %></p>
+            <p class="mt-1 text-xs leading-relaxed text-slate-600">
+              <%= result_time(change.fetch("recorded_at")) %> · <%= change["editor_id"] ? "Editor" : "Feed" %>
+              <% if call %> · <%= safe_external_link(call.fetch("url"), call.fetch("source"), class: "underline underline-offset-4 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600") %><% end %>
+            </p>
           </li>
         <% end %>
       </ol>

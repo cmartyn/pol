@@ -63,6 +63,10 @@ class PostElectionTest < ActionDispatch::IntegrationTest
     sign_in_as users(:one)
     patch route, params: { result: attrs.merge(candidate: "unlisted candidate") }
     assert_response :unprocessable_entity
+    assert_select "#result-error[role=alert]", text: "Choose a candidate from this race."
+    assert_select "#result_status option[selected][value=certified]"
+    assert_select "#result_source_url[value='https://example.gov/canvass']"
+    assert_select "#result_decided_at[value='2026-11-05T13:00']"
     assert_equal "uncalled", @result.reload.status
     patch route, params: { result: attrs }
     assert_redirected_to edit_admin_race_path(@race)

@@ -16,10 +16,15 @@
     No forecast run has completed yet. Once one has, the Senate and House pictures will appear here.
   </p>
 <% else %>
+  <% if ForecastArchive.active? %>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 sm:gap-6" aria-label="Election results">
+      <%= render "races/chamber_results", chamber: "senate" %>
+      <%= render "races/chamber_results", chamber: "house" %>
+    </div>
+  <% end %>
   <div class="mt-6 grid gap-6 sm:grid-cols-2" data-testid="chamber-cards">
     <% %w[senate house].each do |chamber| %>
       <div class="flex flex-col">
-        <%= render "races/chamber_results", chamber: chamber if ForecastArchive.active? %>
         <%= render "home/chamber_card", model_run: @latest_run, chamber: chamber, title: chamber.capitalize, house: chamber == "house", map: true, linked: true, trend: true %>
       </div>
     <% end %>

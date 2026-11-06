@@ -146,7 +146,7 @@
                 <% end %>
               </dl>
             <% end %>
-            <div class="mt-2"><%= render "shared/as_of", time: @latest_run&.started_at %></div>
+            <div class="mt-2"><%= render "shared/as_of", time: @latest_run&.started_at unless ForecastArchive.active? %></div>
           </div>
         </div>
       <% else %>

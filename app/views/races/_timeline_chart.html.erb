@@ -7,7 +7,11 @@
   <% else %>
     <% if payload[:sparse] %>
       <p class="mb-2 text-sm text-slate-500" data-testid="timeline-sparse-note">
-        Only <%= pluralize(payload[:points].size, "model run") %> so far — the trend will fill in as more land.
+        <% if ForecastArchive.active? %>
+          <%= pluralize(payload[:points].size, "archived model run") %>.
+        <% else %>
+          Only <%= pluralize(payload[:points].size, "model run") %> so far — the trend will fill in as more land.
+        <% end %>
       </p>
     <% end %>
     <div data-controller="timeline-chart">
