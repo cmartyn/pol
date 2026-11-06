@@ -36,6 +36,39 @@ class EdgeCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # rails_mind 0.4.1 counts page views and keeps a visitor ID in a
+  # first-party cookie, which it never sets on a response marked public. The
+  # rest of the suite runs with collection off, where the SDK sets nothing, so
+  # this turns it on: a browser reading any cacheable page is counted, by a
+  # daily hash rather than the cookie, and still gets no Set-Cookie. A reader
+  # who already holds the cookie (from an uncached page) is counted by it, and
+  # the cacheable page does not refresh it.
+  test "counting page views adds no Set-Cookie to a cacheable page" do
+    with_forgery_protection do
+      with_rails_mind_collecting do |events|
+        cacheable_paths.each do |path|
+          events.clear
+          get path, headers: BROWSER_HEADERS
+
+          assert_response :success
+          assert_nil response.headers["Set-Cookie"],
+            "RailsMind set a cookie on #{path}, so Cloudflare will refuse to cache it"
+          assert_equal "max-age=0, public, must-revalidate", response.headers["Cache-Control"]
+          assert_equal [ "daily_hash" ], page_views(events).map { |view| view.dig("properties", "visitor_id_kind") },
+            "#{path} was not counted once"
+        end
+
+        visitor = "0b6f2f8e-1c2d-4e5f-9a0b-1c2d3e4f5a6b"
+        cookies["_rails_mind_visitor"] = visitor
+        events.clear
+        get root_path, headers: BROWSER_HEADERS
+
+        assert_nil response.headers["Set-Cookie"]
+        assert_equal [ visitor ], page_views(events).map { |view| view["visitor_id"] }
+      end
+    end
+  end
+
   test "a cacheable page tells Cloudflare how long it may hold the page" do
     get root_path
 

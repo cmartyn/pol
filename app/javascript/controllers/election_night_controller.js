@@ -130,7 +130,9 @@ export default class extends Controller {
       if (!response.ok) throw new Error("Snapshot unavailable")
       const snapshot = await response.json()
       if (snapshot.revision !== this.revisionValue) {
-        const page = await fetch(window.location.pathname, { cache: "no-store", signal: this.request.signal, headers: { Accept: "text/html" } })
+        // Marked as a background request so RailsMind does not count the
+        // refresh as another page view.
+        const page = await fetch(window.location.pathname, { cache: "no-store", signal: this.request.signal, headers: { Accept: "text/html", "X-Requested-With": "XMLHttpRequest" } })
         if (!page.ok) throw new Error("Page unavailable")
         const documentCopy = new DOMParser().parseFromString(await page.text(), "text/html")
         const next = documentCopy.querySelector('[data-election-night-target="content"]')

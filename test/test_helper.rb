@@ -10,6 +10,7 @@ require_relative "test_helpers/newsroom_stub_helper"
 require_relative "test_helpers/query_counting"
 require_relative "test_helpers/fragment_caching_helper"
 require_relative "test_helpers/forgery_protection_helper"
+require_relative "test_helpers/rails_mind_collector_helper"
 require_relative "test_helpers/nyt_csv_helper"
 require_relative "test_helpers/tigerweb_stub_helper"
 require_relative "test_helpers/boundary_factory"
@@ -35,6 +36,7 @@ module ActiveSupport
     include QueryCounting
     include FragmentCachingHelper
     include ForgeryProtectionHelper
+    include RailsMindCollectorHelper
     include NytCsvHelper
     include TigerwebStubHelper
     include BoundaryFactory
