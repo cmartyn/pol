@@ -4,7 +4,7 @@ module Ingest
   # states with district polling (Sources::DISTRICT_POLL_STATES); a
   # district's nominee can settle in a state nobody is polling yet, so this
   # covers every state that holds a House race in the cycle instead.
-  class SyncHouseCandidatesJob < ApplicationJob
+  class SyncHouseCandidatesJob < PreElectionJob
     queue_as :default
 
     Outcome = Struct.new(:source, :status, :fetched, :synced, :skipped, :error, keyword_init: true)

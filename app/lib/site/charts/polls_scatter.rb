@@ -42,7 +42,7 @@ module Site
       # (ModelRun#internals_shift), for the toggled-on average.
       def initialize(race:, polls:, as_of:, house_effects: {}, internals_shift: nil)
         @race = race
-        excluded_ids = Pollster.excluded.pluck(:id)
+        excluded_ids = ForecastArchive.excluded_pollster_ids || Pollster.excluded.pluck(:id)
         @polls = polls.to_a.reject { |poll| excluded_ids.include?(poll.pollster_id) }
         @as_of = as_of
         @house_effects = house_effects || {}
@@ -52,12 +52,12 @@ module Site
       def build
         return nil if @polls.empty?
 
-        side_a, side_b = Site::RaceSides.for(@race.candidates)
-        average = Forecast::Averager.new(as_of: @as_of, house_effects: @house_effects).for_race(
+        side_a, side_b = Site::RaceSides.for(@race.forecast_candidates)
+        average = Forecast::Averager.new(as_of: @as_of, house_effects: @house_effects, excluded_pollster_ids: ForecastArchive.excluded_pollster_ids).for_race(
           @race, side_a: side_a.to_sym, side_b: side_b.to_sym, polls: @polls
         )
         incl_average = Forecast::Averager.new(
-          as_of: @as_of, house_effects: @house_effects,
+          as_of: @as_of, house_effects: @house_effects, excluded_pollster_ids: ForecastArchive.excluded_pollster_ids,
           internals: :adjusted, internals_shift: @internals_shift
         ).for_race(@race, side_a: side_a.to_sym, side_b: side_b.to_sym, polls: @polls)
         points = @polls.filter_map { |poll| point(poll, side_a, side_b) }

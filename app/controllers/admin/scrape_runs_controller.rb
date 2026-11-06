@@ -17,6 +17,7 @@ module Admin
     # failures, the ScrapeRun rows themselves) — this only enqueues it, so
     # the flash says "enqueued", not "done".
     def create
+      return redirect_to(admin_scrape_runs_path, alert: "Poll collection has ended for 2026.") if ForecastArchive.active?
       Ingest::ScrapeAllJob.perform_later
       redirect_to admin_scrape_runs_path, notice: "Scrape enqueued."
     end

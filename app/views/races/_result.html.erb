@@ -1,0 +1,27 @@
+<section class="my-5 max-w-3xl rounded-lg border border-slate-200 bg-slate-50 p-5" aria-label="Election result" data-testid="race-result">
+  <h2 class="font-serif text-xl font-semibold text-slate-900"><%= result_label(result) %></h2>
+  <% if result&.winner %>
+    <p class="mt-2 text-2xl font-semibold <%= party_text_color(result.winner.fetch("party")) %>"><%= result.winner.fetch("name") %> <span class="text-sm">(<%= Site::Format::PARTY_LETTER.fetch(result.winner.fetch("party")) %>)</span></p>
+  <% end %>
+  <% if (call = result&.decision) && (result.called? || result.editor_call || result.status == "under_review") %>
+    <p class="mt-1 text-sm text-slate-600">
+      <%= safe_external_link(call.fetch("url"), call.fetch("source"), class: "underline underline-offset-4 hover:text-slate-900 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600") %>
+      <% if call["decided_at"] %> · <%= result_time(call.fetch("decided_at")) %>
+      <% elsif result.called? %> · Call time unavailable<% end %>
+    </p>
+  <% end %>
+  <% if result&.reported_at %>
+    <details class="mt-4 border-t border-slate-200" <%= "open" unless result.called? %>>
+      <summary class="min-h-11 cursor-pointer rounded py-3 text-sm font-semibold text-slate-800 hover:text-amber-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600"><span class="font-figure"><%= number_with_delimiter(result.votes.sum { |row| row.fetch("votes") }) %></span> reported votes</summary>
+      <dl class="max-w-xl divide-y divide-slate-200 text-sm">
+        <% result.votes.sort_by { |row| -row.fetch("votes") }.each do |row| %>
+          <div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-2 first:pt-0">
+            <dt><span class="block font-medium text-slate-900"><%= row.fetch("name") %></span><span class="block text-xs text-slate-600"><%= row.fetch("party_label") %></span></dt>
+            <dd class="font-figure font-bold tabular-nums text-slate-900"><%= number_with_delimiter(row.fetch("votes")) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </details>
+    <p class="mt-1 text-xs leading-relaxed text-slate-600"><%= safe_external_link(result.returns_url, "civicAPI vote report", class: "underline underline-offset-4 hover:text-slate-900 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-600") %> · <%= result_time(result.reported_at) %></p>
+  <% end %>
+</section>

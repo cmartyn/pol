@@ -4,10 +4,14 @@
 <h1 class="font-serif text-2xl font-semibold text-slate-900"><%= @race.name %></h1>
 <%= link_to "View on the public site →", race_path(@race.slug), class: "text-sm text-amber-700 hover:text-amber-800" %>
 
+<% if ForecastArchive.active? %>
+  <%= render "admin/races/result_form", race: @race %>
+<% else %>
 <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-testid="admin-race-guardrail-note">
   Changes here apply starting with the <strong>next model run</strong> — they do not retroactively change any forecast already on the board. Use
   <%= link_to "Run model now", admin_model_runs_path, class: "font-semibold underline" %> to apply them immediately.
 </div>
+<% end %>
 
 <% if @race.errors.any? %>
   <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" data-testid="admin-race-errors">

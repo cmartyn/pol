@@ -25,7 +25,7 @@ module Site
 
         districts_by_state = Boundary.districts.order(:state, :district).to_a.group_by(&:state)
         canvas = Canvas.national(outlines, width: WIDTH, tolerance: @tolerance)
-        races = Race.house.to_a.index_by { |race| [ race.state, race.district ] }
+        races = Race.forecast_board.house.to_a.index_by { |race| [ race.state, race.district ] }
         forecasts = Forecasts.latest_by_variant(races.values.map(&:id))
 
         groups = outlines.filter_map do |outline|

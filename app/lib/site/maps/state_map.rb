@@ -24,7 +24,7 @@ module Site
         return nil if outline.nil? || districts.empty?
 
         canvas = Canvas.state(outline, width: WIDTH, max_height: MAX_HEIGHT, tolerance: TOLERANCE)
-        races = Race.house.where(state: @race.state).index_by(&:district)
+        races = Race.forecast_board.house.where(state: @race.state).index_by(&:district)
         forecasts = Forecasts.latest_by_variant(races.values.map(&:id))
         shapes = districts.map { |district| DistrictShape.build(district, canvas, races[district.district], forecasts) }
 

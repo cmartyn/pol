@@ -3,7 +3,7 @@ module Newsroom
   # run. Enqueued by Forecast::RunJob once the run those polls caused has
   # actually succeeded, so the piece can quote a forecast that already includes
   # them (Newsroom.after_model_run!).
-  class PollReactionsJob < ApplicationJob
+  class PollReactionsJob < PreElectionJob
     queue_as :default
 
     KIND = :poll_reaction

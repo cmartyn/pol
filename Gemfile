@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.1.3", ">= 8.1.3.1"
+gem "rails", "~> 8.1.4", ">= 8.1.4.1"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
@@ -88,4 +88,4 @@ end
 gem "posthog-ruby", "~> 3.23"
 gem "posthog-rails", "~> 3.18"
 
-gem "rails_mind", "~> 0.3.1"
+gem "rails_mind", "~> 0.4.1"

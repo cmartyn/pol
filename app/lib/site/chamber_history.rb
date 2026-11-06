@@ -54,7 +54,7 @@ module Site
 
     private
       def load_entries
-        runs = ModelRun.succeeded.with_input_revisions_only
+        runs = ModelRun.published_history.with_input_revisions_only
           .where(id: ChamberForecast.where(chamber: chamber).select(:model_run_id))
           .order(:started_at, :id).to_a
         return [] if runs.empty?

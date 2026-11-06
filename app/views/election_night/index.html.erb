@@ -5,12 +5,12 @@
 <% end %>
 
 <div class="election-night" data-controller="election-night"
-     data-election-night-url-value="<%= election_night_snapshot_path %>"
+     <% unless ForecastArchive.active? %>data-election-night-url-value="<%= election_night_snapshot_path %>"<% end %>
      data-election-night-revision-value="<%= @revision %>">
   <header class="night-heading">
     <p class="night-date">Experimental preview · November 3, 2026</p>
     <h1>Election night</h1>
-    <p class="night-deck">Who will control Congress? Our model updates as usable returns arrive.</p>
+    <p class="night-deck"><%= ForecastArchive.active? ? "House and Senate estimates from partial returns." : "Who will control Congress? Our model updates as usable returns arrive." %></p>
   </header>
 
   <section class="night-anxiety" aria-labelledby="night-anxiety-label" data-election-night-target="anxietyPanel" hidden>
@@ -37,6 +37,8 @@
     <%= render "snapshot" %>
   </div>
 
+  <% unless ForecastArchive.active? %>
   <p class="night-refresh-note">Checks for updates every 30 seconds. Anxiety wiggles are just for fun; forecast changes come from the model.</p>
   <noscript><p class="night-refresh-note">JavaScript is off. Refresh this page to check for a new forecast.</p></noscript>
+  <% end %>
 </div>

@@ -1,7 +1,7 @@
 module Ingest
   # The scheduled sweep — weekly and dry since the NYT feed became the
   # corpus (see config/initializers/good_job.rb and scrape.write_enabled).
-  class ScrapeAllJob < ApplicationJob
+  class ScrapeAllJob < PreElectionJob
     queue_as :default
 
     def perform

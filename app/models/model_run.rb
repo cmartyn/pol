@@ -12,6 +12,16 @@ class ModelRun < ApplicationRecord
   # .first to get the one run whose numbers the site should show.
   scope :latest, -> { order(started_at: :desc, id: :desc) }
 
+  def self.published
+    return succeeded.latest.limit(1) unless ForecastArchive.active?
+
+    succeeded.where(id: ForecastArchive.run_id, finished_at: ForecastArchive.finished_at)
+  end
+
+  def self.published_history
+    ForecastArchive.active? ? succeeded.where(finished_at: ..ForecastArchive.finished_at) : succeeded
+  end
+
   # Runs with only the three snapshot fields the input readers above use
   # (excluded_pollster_ids, poll_input_revision, baseline_revision). A recent
   # snapshot carries every district's baseline — about 137 KB of JSON per

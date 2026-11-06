@@ -70,7 +70,7 @@
           <%= link_to "535", root_path, class: "inline-flex min-h-11 items-center font-serif text-2xl font-semibold tracking-tight text-slate-900#{ " col-start-1 row-start-1" if app_shell? }" %>
           <% if controller_name != "election_night" && (run = latest_model_run) %>
             <span class="font-figure text-xs tracking-tight text-slate-600<%= " col-span-2 row-start-2 mt-0.5 xl:mt-0" if app_shell? %>" data-testid="header-updated">
-              <%= Site::Format.last_updated(run.started_at) %>
+              <%= ForecastArchive.active? ? "Final forecast · #{run.finished_at.strftime('%b %-d')}" : Site::Format.last_updated(run.started_at) %>
             </span>
           <% end %>
         </div>
@@ -144,6 +144,7 @@
               edge on a desktop. It opens the form in a dialog
               (subscribe_dialog_controller); the href is the no-JS fallback,
               the footer's copy, which every page carries. %>
+          <% unless ForecastArchive.active? %>
           <%= link_to "Subscribe", "#subscription-form-footer",
                 class: "inline-flex min-h-11 items-center rounded px-2 text-sm font-medium text-amber-700 hover:text-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600",
                 data: { action: "subscribe-dialog#open" } %>
@@ -160,6 +161,7 @@
                       class="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded text-xl leading-none text-slate-600 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-amber-600">&times;</button>
             </div>
           </dialog>
+          <% end %>
         </div>
       </div>
     </header>
@@ -225,9 +227,14 @@
       <div class="container mx-auto grid gap-8 px-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
         <div class="max-w-2xl">
           <p>
+            <% if ForecastArchive.active? %>
+            535’s final 2026 forecast and reported election results.
+            <%= link_to "Forecast methodology", methodology_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
+            <% else %>
             535 is an autonomous forecast newsroom — agents write from the numbers, an editor reviews.
             No secret sauce: every parameter this model uses is on the
             <%= link_to "methodology page", methodology_path, class: "font-medium text-amber-700 hover:text-amber-800" %>.
+            <% end %>
           </p>
           <p class="mt-2 text-sm text-slate-600">
             A project of <%= link_to "Appmakey LLC", "https://appmakey.com", class: "font-medium text-amber-700 hover:text-amber-800",
@@ -244,7 +251,11 @@
             </nav>
           <% end %>
         </div>
-        <%= render "shared/subscription_form", source: "footer", layout: "compact" %>
+        <% if ForecastArchive.active? %>
+          <%= link_to "Manage email preferences", email_preferences_path, class: "font-medium text-amber-700 underline" %>
+        <% else %>
+          <%= render "shared/subscription_form", source: "footer", layout: "compact" %>
+        <% end %>
       </div>
     </footer>
   </body>

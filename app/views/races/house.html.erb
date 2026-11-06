@@ -14,7 +14,8 @@
       partial owns its own border and padding — the dashboard renders it
       bare — so the card's wrapper carries layout only. %>
   <div class="mt-6 grid gap-10 xl:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] xl:items-start">
-    <div class="max-w-xl">
+    <div class="max-w-xl space-y-4">
+      <%= render "races/chamber_results", chamber: "house" if ForecastArchive.active? %>
       <%= render "home/chamber_card", model_run: @latest_run, chamber: "house", title: "House", house: true %>
     </div>
 
@@ -55,11 +56,16 @@
     on why the reader's ?q= is applied to sort links in the browser rather
     than baked into this fragment. %>
 <div class="mt-10" data-controller="table-filter">
-  <% cache [ "house-table", @latest_run, @sort, @direction, Forecast::HouseBaselines.current.revision, Site::CacheKey.collection_freshness(Race.house) ] do %>
+  <span id="race-table"></span>
+  <% cache [ "house-table", @latest_run, @results_version, @outstanding_only, @sort, @direction, Forecast::HouseBaselines.current.revision, Site::CacheKey.collection_freshness(Race.house) ] do %>
     <% rows = Site::HouseTable.build(sort: @sort, direction: @direction) %>
+    <% if @outstanding_only %>
+      <% rows = rows.reject { |row| row.race.race_result&.called? } %>
+      <p class="mb-3 text-sm text-slate-600">Outstanding races · <%= link_to "Show all races", house_path(anchor: "race-table"), class: "text-amber-800 underline" %></p>
+    <% end %>
     <% if rows.empty? %>
       <p class="rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-600" data-testid="house-table-empty">
-        No House districts on the board yet.
+        <%= @outstanding_only ? "Every race has a recorded winner." : "No House districts on the board yet." %>
       </p>
     <% else %>
       <%= render "races/search_box", label: "Search by state or district",
@@ -81,11 +87,14 @@
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
                 <%= sort_header "District", "state", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
               </th>
+              <% if ForecastArchive.active? %>
+                <th class="sticky top-0 z-10 border-b border-slate-200 bg-white py-2 pr-3 font-medium">Result</th>
+              <% end %>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
-                <%= sort_header "Rating", "rating", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+                <%= sort_header (ForecastArchive.active? ? "Final forecast" : "Rating"), "rating", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
               </th>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
-                <%= sort_header "Win prob.", "probability", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
+                <%= sort_header (ForecastArchive.active? ? "Final chance" : "Win prob."), "probability", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
               </th>
               <th class="sticky top-0 z-10 bg-white py-2 pr-3 font-medium border-b border-slate-200">
                 <%= sort_header "Margin", "margin", base_path: house_path, testid_prefix: "house", current_sort: @sort, current_direction: @direction %>
@@ -108,10 +117,19 @@
                 <td class="py-2 pr-3" data-role="name">
                   <%= link_to row.race.name, race_path(row.race.slug), class: "font-medium text-slate-900 hover:text-amber-700" %>
                 </td>
+                <% if ForecastArchive.active? %>
+                  <% result = row.race.race_result %>
+                  <td class="py-2 pr-3" data-label="Result">
+                    <div class="min-w-0">
+                    <% if result&.winner %><span class="block font-semibold <%= party_text_color(result.winner.fetch("party")) %>"><%= result.winner.fetch("name") %></span><% end %>
+                    <span class="block text-xs text-slate-600"><%= result_label(result) %></span>
+                    </div>
+                  </td>
+                <% end %>
                 <td class="py-2 pr-3 text-slate-700" data-role="meta" data-testid="rating-word"><%= each_variant(tag_name: :span) do |variant|
                   rating_word_for(row.race, variant == :incl_internals ? row.incl_forecast : row.forecast) || "—"
                 end %></td>
-                <td class="py-2 pr-3" data-role="probability"><%= each_variant(tag_name: :span) do |variant|
+                <td class="py-2 pr-3" data-role="probability"><% if ForecastArchive.active? %><span class="mb-1 block text-xs text-slate-600 lg:hidden">Final chance</span><% end %><%= each_variant(tag_name: :span) do |variant|
                   probability_chip(variant == :incl_internals ? row.incl_forecast : row.forecast)
                 end %></td>
                 <%# The forecast's own margin, which this table lacked until
@@ -121,7 +139,7 @@
                     where it started. house_margin/house_margin_party bypass
                     Site::RaceSides deliberately (no candidates are preloaded
                     for House rows), so the forecast margin uses them too. %>
-                <td class="whitespace-nowrap py-2 pr-3 font-semibold" data-label="Margin">
+                <td class="whitespace-nowrap py-2 pr-3 font-semibold" data-label="<%= ForecastArchive.active? ? "Forecast margin" : "Margin" %>">
                   <%= each_variant(tag_name: :span) do |variant| %>
                     <% forecast = variant == :incl_internals ? row.incl_forecast : row.forecast %>
                     <% if forecast %>
@@ -163,5 +181,5 @@
 <%# Below the district table. The chamber card is cached, so the form stays
     a sibling of that cache, after the picture and the districts. %>
 <div class="mt-10">
-  <%= render "shared/subscription_form", source: "house", layout: "band" %>
+  <%= render "shared/subscription_form", source: "house", layout: "band" unless ForecastArchive.active? %>
 </div>

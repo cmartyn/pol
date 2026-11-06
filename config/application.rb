@@ -18,6 +18,7 @@ module Pol
 
     # Postgres-backed job backend; see config/initializers/good_job.rb.
     config.active_job.queue_adapter = :good_job
+    config.x.post_election = ENV["POST_ELECTION_MODE"] == "true"
 
     # Eastern is this site's clock. American election coverage is written and
     # read on it: polls close on it, returns come in on it, and "Tuesday's

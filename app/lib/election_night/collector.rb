@@ -49,11 +49,6 @@ class ElectionNight::Collector
   end
 
   def call
-    # The breaker is local to this sweep. A later sweep probes again; cached
-    # errors never increment the count or prevent those fresh probes.
-    @civic_mutex = Mutex.new
-    @civic_failures = 0
-    @civic_open = false
     configuration = YAML.safe_load_file(@config)
     civic = configuration["civic_api"]
     primary = if civic
@@ -66,7 +61,7 @@ class ElectionNight::Collector
     ids = (primary + fallback).map { |source| source.fetch("id") }
     raise "Duplicate source ID" unless ids.uniq.size == ids.size
 
-    results = collect_parallel(primary, civic ? civic.fetch("concurrency", 2) : 1)
+    results = collect_civic(primary, concurrency: civic ? civic.fetch("concurrency", 2) : 1)
     fallback.each do |source|
       result = collect(source)
       # State exports contain tens of MB of precinct detail; only normalized
@@ -75,6 +70,14 @@ class ElectionNight::Collector
       results << result
     end
     results
+  end
+
+  # Also used for the subset of full-race endpoints due after election night.
+  def collect_civic(sources, concurrency: 2)
+    @civic_mutex = Mutex.new
+    @civic_failures = 0
+    @civic_open = false
+    collect_parallel(sources, concurrency)
   end
 
   private

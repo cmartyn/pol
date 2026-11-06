@@ -38,7 +38,7 @@ module Site
           forecasts = Forecasts.latest_by_variant([ @highlight.id ])
           outlines.map { |outline| shape_for(outline, canvas, [], forecasts) }
         else
-          races_by_state = Race.senate.includes(:candidates).order(:slug).to_a.group_by(&:state)
+          races_by_state = Race.forecast_board.senate.includes(:candidates).order(:slug).to_a.group_by(&:state)
           forecasts = Forecasts.latest_by_variant(races_by_state.values.flatten.map(&:id))
           outlines.map { |outline| shape_for(outline, canvas, races_by_state.fetch(outline.state, []), forecasts) }
         end
@@ -65,7 +65,7 @@ module Site
           fills = Forecasts::VARIANTS.index_with { |variant| Palette.fill(race: race, forecast: forecasts[variant][race.id]) }
           return Shape.new(**attributes, fills: fills) unless @interactive
 
-          sides = Site::RaceSides.for(race.candidates)
+          sides = Site::RaceSides.for(race.forecast_candidates)
           others = (races - [ race ]).map { |other| display_name(other) }.to_sentence.presence
           Shape.new(
             **attributes,

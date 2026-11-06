@@ -30,6 +30,19 @@ class Race < ApplicationRecord
   has_many :polls
   has_many :forecasts
   has_many :dispatches
+  has_one :race_result
+  scope :forecast_board, -> { ForecastArchive.active? ? where(slug: ForecastArchive.races.keys) : all }
+
+  def forecast_candidates
+    return candidates unless ForecastArchive.active?
+    return [] unless ForecastArchive.races.key?(slug)
+
+    @forecast_candidates ||= ForecastArchive.candidates(slug)
+  end
+
+  def forecast_uncontested?
+    ForecastArchive.uncontested_party(self).present?
+  end
 
   validates :state, presence: true, format: { with: /\A[A-Z]{2}\z/, message: "must be a 2-letter code" }
   validates :slug, presence: true, uniqueness: true

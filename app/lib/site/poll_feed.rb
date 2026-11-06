@@ -31,7 +31,7 @@ module Site
       def next_page = page < pages ? page + 1 : nil
     end
 
-    def self.build(page:, per_page: PER_PAGE, scope: Poll.model_corpus)
+    def self.build(page:, per_page: PER_PAGE, scope: Poll.published_corpus)
       new(page: page, per_page: per_page, scope: scope).build
     end
 
@@ -50,7 +50,7 @@ module Site
       [ (total.to_f / per_page).ceil, 1 ].max
     end
 
-    def initialize(page:, per_page: PER_PAGE, scope: Poll.model_corpus)
+    def initialize(page:, per_page: PER_PAGE, scope: Poll.published_corpus)
       @per_page = per_page
       @page = self.class.normalize_page(page)
       @scope = scope
