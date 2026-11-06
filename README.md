@@ -1,5 +1,12 @@
 # pol
 
+The production site now pairs reported 2026 election results with the
+[final November 3 forecast](public/archives/2026-11-03-forecast.json).
+Both variants, both chamber forecasts, and the original candidate roster
+are archived. Candidate totals and explicitly attributed projections come
+from [civicAPI](https://civicapi.org/faq). An editor can correct a call or
+record a certification with its source and time under **Admin → Races**.
+
 **pol** is a forecast of the 2026 U.S. midterms — all 35 Senate races and all
 435 House districts — that writes about itself. Polls come from the New York
 Times' poll files every hour, a correlated Monte Carlo model turns them into win
@@ -74,7 +81,12 @@ process. In production, run a worker of your own:
 bundle exec good_job start
 ```
 
-Five cron entries, defined in `config/initializers/good_job.rb`:
+Production runs one results job every 30 minutes. It checks outstanding
+races each time and projected races once per Eastern calendar day. Certified
+races can be refreshed individually for corrections. Poll ingestion, model
+runs and newsroom publication are paused. See [post-election operation](docs/DEPLOY.md#post-election-results).
+
+The pre-election schedule, retained for development with results mode off:
 
 | Job | Schedule | Why |
 |---|---|---|

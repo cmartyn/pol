@@ -52,9 +52,9 @@
         <% if linked %>
           <%= link_to chamber_path,
                 class: "transition-colors group-hover:text-amber-700 focus-visible:outline-none after:absolute after:inset-0 after:rounded-md focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-amber-600",
-                data: { testid: "chamber-card-link" } do %><%= title %><span class="ml-1 inline-block transition-transform group-hover:translate-x-0.5" aria-hidden="true">&rarr;</span><% end %>
+                data: { testid: "chamber-card-link" } do %><%= title %><%= " final forecast" if ForecastArchive.active? %><span class="ml-1 inline-block transition-transform group-hover:translate-x-0.5" aria-hidden="true">&rarr;</span><% end %>
         <% else %>
-          <%= title %>
+          <%= title %><%= " final forecast" if ForecastArchive.active? %>
         <% end %>
       </h2>
 

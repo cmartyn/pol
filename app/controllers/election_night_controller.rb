@@ -46,6 +46,7 @@ class ElectionNightController < PublicController
 
     def night_status
       return "unavailable" unless @snapshot
+      return "archived" if ForecastArchive.active?
       # A saved polling forecast is the starting point, not a stale returns
       # feed. Its real date remains visible while we wait for the first sweep.
       return "pre_election" if @snapshot["status"] == "pre_election"

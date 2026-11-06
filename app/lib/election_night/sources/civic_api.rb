@@ -21,13 +21,7 @@ class ElectionNight::Sources::CivicApi < ElectionNight::Sources::Base
 
   def parse(body)
     data = document(body)
-    raise InvalidData, "expected United States race" unless data.fetch("country") == "US"
-    raise InvalidData, "race state mismatch" unless STATES.include?(state) && data.fetch("province") == state
-    raise InvalidData, "expected general election" unless data.fetch("election_scope") == "General"
-    raise InvalidData, "test flag must explicitly be false" unless data.fetch("test_data") == false
-    raise InvalidData, "unexpected municipality" unless data.fetch("municipality").nil?
-    validate_date!(data.fetch("election_date"))
-    key = federal_race(data)
+    key = validated_race(data)
     candidates = candidate_counts(data.fetch("candidates"), require_ids: true)
     aggregate = result_unit(key, key.end_with?("-S") ? "STATEWIDE" : "DISTRICT #{key.split('-').last}", candidates)
       .merge("aggregate_only" => true, "geography_level" => "contest")
@@ -76,6 +70,16 @@ class ElectionNight::Sources::CivicApi < ElectionNight::Sources::Base
   end
 
   private
+    def validated_race(data)
+      raise InvalidData, "expected United States race" unless data.fetch("country") == "US"
+      raise InvalidData, "race state mismatch" unless STATES.include?(state) && data.fetch("province") == state
+      raise InvalidData, "expected general election" unless data.fetch("election_scope") == "General"
+      raise InvalidData, "test flag must explicitly be false" unless data.fetch("test_data") == false
+      raise InvalidData, "unexpected municipality" unless data.fetch("municipality").nil?
+      validate_date!(data.fetch("election_date"))
+      federal_race(data)
+    end
+
     def county_region?(region)
       return false unless region.is_a?(Hash)
       return true if [ "County", "Borough", "Parish", "Independent City" ].include?(region["type"])

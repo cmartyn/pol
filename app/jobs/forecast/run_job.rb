@@ -1,4 +1,4 @@
-class Forecast::RunJob < ApplicationJob
+class Forecast::RunJob < PreElectionJob
   queue_as :default
 
   # A full run takes a couple of seconds and a scrape sweep can finish while

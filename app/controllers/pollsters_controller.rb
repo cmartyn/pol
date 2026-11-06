@@ -6,7 +6,7 @@ class PollstersController < PublicController
   edge_cache
 
   def index
-    @latest_run = ModelRun.succeeded.latest.first
+    @latest_run = ModelRun.published.first
     # Site::PollsterTable.build runs inside the view's `cache` block, so a
     # cache hit skips its three queries entirely — same shape as /senate.
   end

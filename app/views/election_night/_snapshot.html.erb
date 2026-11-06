@@ -1,6 +1,9 @@
 <% races_with_reported_votes = @coverage.fetch("races_with_raw_returns") { @races.count { |race| night_reported_votes?(race) } } %>
 <section class="night-status night-status--<%= night_status %>" aria-label="Forecast status">
   <% case night_status %>
+  <% when "archived" %>
+    <strong>Archived election-night estimate</strong>
+    <p><%= link_to "See current race results and the final polling forecast", root_path %>.</p>
   <% when "unavailable" %>
     <strong>Waiting for the first forecast</strong>
     <p>The collector and model have not published a snapshot yet. Probabilities will appear here when one is available.</p>

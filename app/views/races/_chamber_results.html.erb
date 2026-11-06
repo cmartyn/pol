@@ -1,0 +1,16 @@
+<% totals = RaceResult.summary(chamber) %>
+<section class="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-5" aria-label="<%= chamber.capitalize %> results">
+  <h2 class="font-serif text-xl font-semibold text-slate-900"><%= chamber.capitalize %> results</h2>
+  <div class="mt-2 flex flex-wrap items-baseline gap-x-4 font-semibold">
+    <% { "dem" => "Democratic", "rep" => "Republican", "ind" => "Independent", "other" => "Other" }.each do |party, name| %>
+      <% count = totals[:parties].fetch(party, 0) %>
+      <% if count.positive? || %w[dem rep].include?(party) %>
+        <span class="<%= party_text_color(party) %>"><span class="font-figure text-xl"><%= count %></span> <%= name %></span>
+      <% end %>
+    <% end %>
+  </div>
+  <p class="mt-2 text-sm text-slate-700">
+    <%= link_to "#{totals[:outstanding]} outstanding", url_for(controller: "/races", action: chamber, status: "outstanding", only_path: true, anchor: "race-table"), class: "font-semibold underline" %>
+    of <%= totals[:total] %> seats on the ballot
+  </p>
+</section>

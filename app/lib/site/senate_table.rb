@@ -28,12 +28,14 @@ module Site
     attr_reader :sort, :direction
 
     def build
-      races = Race.senate.includes(:candidates).to_a
+      scope = Race.forecast_board.senate.includes(:candidates)
+      scope = scope.includes(:race_result) if ForecastArchive.active?
+      races = scope.to_a
       race_ids = races.map(&:id)
       forecasts = Forecast.latest_for_races.where(race_id: race_ids).index_by(&:race_id)
       incl_forecasts = Forecast.latest_for_races(variant: :incl_internals)
                                .where(race_id: race_ids).index_by(&:race_id)
-      poll_stats = Poll.model_corpus.where(race_id: race_ids)
+      poll_stats = Poll.published_corpus.where(race_id: race_ids)
         .group(:race_id)
         .select(:race_id, "COUNT(*) AS poll_count", "MAX(field_end) AS last_poll_date")
         .index_by(&:race_id)

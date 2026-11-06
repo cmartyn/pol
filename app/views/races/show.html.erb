@@ -28,7 +28,7 @@
     a cache hit skips all of them, not just the rendering. %>
 <%= render "shared/forecast_exclusion_notice" %>
 
-<% cache [ "race-core", @race, @latest_run, @latest_dispatch, Forecast::HouseBaselines.current.revision, Site::CacheKey.collection_freshness(Boundary.all) ] do %>
+<% cache [ "race-core", @race, @latest_run, @latest_dispatch, @result, Forecast::HouseBaselines.current.revision, Site::CacheKey.collection_freshness(Boundary.all) ] do %>
   <%# Both internals views of the forecast render here; the header toggle
       picks one (VariantsHelper). The published row stands in when a
       pre-toggle run wrote only one variant. %>
@@ -45,14 +45,19 @@
         <% if @race.special? %>
           <span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">Special election</span>
         <% end %>
-        <% if @race.uncontested? %>
+        <% if @race.forecast_uncontested? %>
           <span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">Uncontested</span>
         <% end %>
       </div>
 
       <% party_order = %w[dem rep ind other] %>
+      <% if ForecastArchive.active? %>
+        <%= render "races/result", result: @result %>
+        <h2 class="font-serif text-xl font-semibold text-slate-900">Final forecast</h2>
+        <p class="text-sm text-slate-600"><%= result_time(ForecastArchive.finished_at) %></p>
+      <% end %>
       <ul class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-        <% @race.candidates.sort_by { |candidate| party_order.index(candidate.party) || 99 }.each do |candidate| %>
+        <% @race.forecast_candidates.sort_by { |candidate| party_order.index(candidate.party) || 99 }.each do |candidate| %>
           <li class="font-medium <%= party_text_color(candidate.party) %>">
             <%= candidate.name %> <span class="text-slate-600">(<%= candidate.party.capitalize %><%= " · incumbent" if candidate.incumbent? %>)</span>
           </li>
@@ -216,17 +221,17 @@
   <%# The ask follows what moved and the line it moved on, before the
       poll table. Neutral, not amber: amber on this page is a warning. %>
   <div class="mt-10 max-w-xl">
-    <%= render "shared/subscription_form", source: "race", layout: "card" %>
+    <%= render "shared/subscription_form", source: "race", layout: "card" unless ForecastArchive.active? %>
   </div>
 
   <section class="mt-10">
     <h2 class="font-serif text-xl font-semibold text-slate-900">Polls</h2>
-    <% polls = @race.polls.model_corpus.recent_first.includes(:pollster, poll_results: :candidate) %>
+    <% polls = @race.polls.published_corpus.recent_first.includes(:pollster, poll_results: :candidate) %>
     <%# The same adjustments the run on show actually applied, so the poll
         table's arithmetic and the reference line on the chart both match
         what the model did rather than each recomputing their own version. %>
     <% house_effects = HouseEffect.applied_lookup(@latest_run) %>
-    <% polls_scatter = Site::Charts::PollsScatter.build(race: @race, polls: polls, as_of: Time.current,
+    <% polls_scatter = Site::Charts::PollsScatter.build(race: @race, polls: polls, as_of: ForecastArchive.polling_time,
                                                         house_effects: house_effects,
                                                         internals_shift: @latest_run&.internals_shift) %>
     <% if polls_scatter %>

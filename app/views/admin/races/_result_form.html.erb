@@ -1,0 +1,31 @@
+<% result = race.race_result || race.build_race_result %>
+<section class="mt-6 max-w-2xl rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="result-heading">
+  <h2 id="result-heading" class="font-serif text-xl font-semibold">Election result</h2>
+  <p class="mt-1 text-sm"><%= result_label(result) %><%= " · #{result.winner.fetch('name')}" if result.winner %></p>
+  <%= form_with scope: :result, url: admin_race_result_path(race), method: :patch, class: "mt-4 space-y-3 text-sm" do |f| %>
+    <div><%= f.label :status, "Decision", class: "block font-medium" %>
+      <%= f.select :status, options_for_select([ [ "Use civicAPI calls", "automatic" ], [ "Uncalled", "uncalled" ], [ "Projected winner", "projected" ], [ "Certified winner", "certified" ] ], result.editor_call&.fetch("status") || "automatic") %></div>
+    <div><%= f.label :candidate, "Winner", class: "block font-medium" %>
+      <%= f.select :candidate, options_for_select(result.winner_choices.map { |c| [ "#{c.fetch('name')} (#{c.fetch('party')})", c.to_json ] }, result.winner&.slice("name", "party")&.to_json), include_blank: "Select a candidate" %></div>
+    <div><%= f.label :source_url, "Decision source URL", class: "block font-medium" %>
+      <%= f.url_field :source_url, value: result.editor_call&.dig("url"), placeholder: "https://", class: "w-full" %></div>
+    <div><%= f.label :decided_at, "Decision time (Eastern)", class: "block font-medium" %>
+      <%= f.datetime_local_field :decided_at, value: result.editor_call&.dig("decided_at")&.in_time_zone&.strftime("%Y-%m-%dT%H:%M") %></div>
+    <p class="text-slate-600">Link the reporting outlet for a projection or the election authority for a certification. Certification ends scheduled vote checks. Your decision takes precedence until you select “Use civicAPI calls.”</p>
+    <%= f.submit "Save result", class: "rounded bg-slate-900 px-3 py-2 font-semibold text-white" %>
+  <% end %>
+  <% if result.call_history.any? %>
+    <details class="mt-4 text-sm"><summary class="cursor-pointer font-medium">Decision history</summary>
+      <ol class="mt-2 space-y-2">
+        <% result.call_history.reverse_each do |change| %>
+          <% call = change["decision"] %>
+          <li><%= result_time(change.fetch("recorded_at")) %> · <%= change["editor_id"] ? "Editor" : "Feed" %> ·
+            <%= call&.fetch("status")&.humanize || "Awaiting report" %>
+            <%= call&.dig("winner", "name") %>
+            <% if call %> · <%= safe_external_link(call.fetch("url"), call.fetch("source"), class: "underline") %><% end %>
+          </li>
+        <% end %>
+      </ol>
+    </details>
+  <% end %>
+</section>

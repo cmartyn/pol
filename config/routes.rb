@@ -76,6 +76,7 @@ Rails.application.routes.draw do
     resources :newsroom_skips, only: [ :index ]
 
     resources :races, only: [ :index, :edit, :update ] do
+      resource :result, only: :update, controller: :race_results
       resources :candidates, only: [ :create, :update, :destroy ]
     end
 

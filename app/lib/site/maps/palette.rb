@@ -15,7 +15,8 @@ module Site
       module_function
 
       def fill(race:, forecast:)
-        return PARTY.fetch(party_key(race.uncontested_party)) if race.uncontested? && race.uncontested_party.present?
+        certain_party = ForecastArchive.uncontested_party(race)
+        return PARTY.fetch(party_key(certain_party)) if certain_party.present?
         return NO_FORECAST unless forecast
 
         party, probability = Site::Format.leader(p_dem_win: forecast.p_dem_win, p_rep_win: forecast.p_rep_win, p_other_win: forecast.p_other_win)
