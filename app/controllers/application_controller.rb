@@ -33,7 +33,12 @@ class ApplicationController < ActionController::Base
       redirect_to destination, status: :moved_permanently, allow_other_host: true
     end
 
+    # The page only exists as HTML, so a missing record asked for as
+    # .xml/.json/.rss gets a bare 404 rather than a MissingTemplate 500.
     def render_not_found
-      render "errors/not_found", status: :not_found
+      respond_to do |format|
+        format.html { render "errors/not_found", status: :not_found }
+        format.any { head :not_found }
+      end
     end
 end
