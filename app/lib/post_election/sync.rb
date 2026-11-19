@@ -46,7 +46,7 @@ class PostElection::Sync
       sources.each do |source|
         key = source.fetch("expected_races").sole
         unless source["usable"] && (source["status"] == "ok" || retained)
-          failures << key
+          failures << "#{key}: #{source['collection_skipped'] || source['error'] || "status #{source['status']}"}"
           next
         end
         race = races.fetch(key)
@@ -64,10 +64,10 @@ class PostElection::Sync
         result.import!(report, fetched_at: fetched_at, refresh_certified: refresh_certified)
       rescue ElectionNight::Sources::Base::InvalidData, ArgumentError, KeyError, Errno::ENOENT => error
         Rails.logger.warn("Post-election results #{key}: #{error.message.truncate(200)}")
-        failures << key
+        failures << "#{key}: #{error.class.name}: #{error.message.truncate(100)}"
       end
       Rails.logger.info("Post-election results: #{sources.size - failures.size}/#{sources.size} reports accepted")
-      raise "Failed result sources: #{failures.join(', ')}" if failures.any? && !retained
+      raise "Failed result sources: #{failures.join('; ')}" if failures.any? && !retained
       sources.size - failures.size
     end
 
