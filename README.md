@@ -31,7 +31,7 @@ prose the newsroom is instructed to write.
 
 ## Quickstart
 
-Requires **Ruby 4.0.7** (see `.ruby-version`) and a running **PostgreSQL**.
+Requires the Ruby version in `.ruby-version` and a running **PostgreSQL**.
 Nothing else — no Redis, no Node.
 
 ```bash
